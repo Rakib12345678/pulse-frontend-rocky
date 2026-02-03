@@ -1,0 +1,64 @@
+import { create } from 'zustand';
+
+export type SignUpStep =
+    | 'welcome'
+    | 'input'
+    | 'otp'
+    | 'age'
+    | 'details'
+    | 'interests';
+
+interface SignUpState {
+    isOpen: boolean;
+    currentStep: SignUpStep;
+    mode: 'signup' | 'login';
+    // Form Data
+    method: 'phone' | 'email';
+    countryCode: string;
+    identifier: string;
+    isAdult: boolean; 
+    googleIdToken: string | null;
+
+    // Actions
+    openModal: () => void;
+    closeModal: () => void;
+    setStep: (step: SignUpStep) => void;
+    setMode: (mode: 'signup' | 'login') => void;
+    setMethod: (method: 'phone' | 'email') => void;
+    setCountryCode: (code: string) => void;
+    setIdentifier: (val: string) => void;
+    setIsAdult: (val: boolean) => void; // Added setter
+    setGoogleIdToken: (token: string | null) => void;
+    reset: () => void;
+}
+
+export const useSignUpStore = create<SignUpState>((set) => ({
+    isOpen: false,
+    currentStep: 'welcome',
+    mode: 'signup',
+    method: 'phone',
+    countryCode: '+91',
+    identifier: '',
+    isAdult: false,
+    googleIdToken: null,
+
+    openModal: () => set({ isOpen: true }),
+    closeModal: () => set({ isOpen: false }),
+    setStep: (step) => set({ currentStep: step }),
+    setMode: (mode) => set({ mode }),
+    setMethod: (method) => set({ method }),
+    setCountryCode: (code) => set({ countryCode: code }),
+    setIdentifier: (val) => set({ identifier: val }),
+    setIsAdult: (val) => set({ isAdult: val }),
+    setGoogleIdToken: (token) => set({ googleIdToken: token }),
+
+    reset: () => set({
+        currentStep: 'welcome',
+        mode: 'signup',
+        method: 'phone',
+        countryCode: '+91',
+        identifier: '',
+        isAdult: false,
+        googleIdToken: null
+    }),
+}));

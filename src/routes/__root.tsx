@@ -9,7 +9,6 @@ import { Suspense, lazy } from "react"
 
 import { Toaster } from "@/components/ui/sonner"
 import { SignUpModal } from "@/features/auth/components/SignUpModal"
-import { LoginModal } from "@/features/auth/components/LoginModal"
 
 import appCss from "../styles.css?url"
 import { Button } from "@/components/ui/button"
@@ -52,7 +51,6 @@ function RootComponent() {
           <Outlet />
           <Toaster />
           <SignUpModal />
-          <LoginModal />
         </GoogleOAuthProvider>
 
 
