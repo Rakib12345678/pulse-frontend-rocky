@@ -1,0 +1,56 @@
+/* Orbit rotation animations */
+@keyframes orbit-rotate {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes orbit-rotate-reverse {
+    from { transform: translate(-50%, -50%) rotate(360deg); }
+    to { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+/* Orbit container positioning */
+.orbit-container {
+    position: absolute;
+    left: 50%;
+    top: 400px;
+    border-radius: 50%;
+    animation: orbit-rotate linear infinite;
+}
+
+/* Base trail style */
+.orbit-trail {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 1);
+}
+
+/* For clockwise rotation: trail is counter-clockwise from 0deg */
+.orbit-trail-normal {
+    mask-image: conic-gradient(from 0deg, transparent 0%, transparent 30%, white 100%);
+    -webkit-mask-image: conic-gradient(from 0deg, transparent 0%, transparent 30%, white 100%);
+}
+
+/* For counter-clockwise rotation: trail is clockwise from 0deg */
+.orbit-trail-reverse {
+    mask-image: conic-gradient(from 0deg, white 0%, transparent 70%, transparent 100%);
+    -webkit-mask-image: conic-gradient(from 0deg, white 0%, transparent 70%, transparent 100%);
+}
+
+/* Planet styling with glow */
+.planet {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0.5rem; /* 8px */
+    height: 0.5rem; /* 8px */
+    background: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 1;
+    box-shadow: 
+        0 0 20px 6px rgba(255, 255, 255, 1),
+        0 0 40px 12px rgba(255, 255, 255, 0.6),
+        0 0 60px 18px rgba(255, 255, 255, 0.3);
+}

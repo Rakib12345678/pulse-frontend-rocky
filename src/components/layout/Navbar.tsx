@@ -133,10 +133,10 @@ export const Navbar: React.FC = () => {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/10 transition-transform hover:scale-105 active:scale-95 cursor-pointer bg-neutral-800 hover:bg-neutral-800 p-0"
                 >
-                  {user?.avatarUrl ? (
+                  {user?.profileImage ? (
                     <img
-                      src={user.avatarUrl}
-                      alt={user.displayName}
+                      src={user?.profileImage}
+                      alt={user?.displayName || user?.username || 'User'}
                       className="h-full w-full object-cover"
                     />
                   ) : (

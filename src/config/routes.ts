@@ -1,18 +1,11 @@
 /**
- * List of routes that do not require authentication. Will add it router later
+ * List of routes that do not require authentication.
  */
 export const PUBLIC_ROUTES = [
-    '/login',
-    '/register',
-    '/forgot-password',
-    '/about',
-    '/tos',
-    '/privacy',
-    '/reset-password',
     '/',        // Home
     '/explore', // Explore
     '/live',    // Live streams
-    '/coins'    // Coins page
+    '/for-you'
 ];
 
 /**

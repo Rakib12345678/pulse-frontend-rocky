@@ -13,10 +13,10 @@ export interface VerifyOtpPayload {
 
 export interface ProfilePayload {
     username: string;
-    displayName: string;
+    fullName: string;
     location: string;
     bio: string;
-    avatar?: File | string | null;
+    profileImage?: string;
     eighteenPlus?: boolean;
 }
 
@@ -47,11 +47,17 @@ export const authService = {
         });
     },
 
+    // Check Username Availability
+    checkUsernameAvailable: async (username: string) => {
+        const response = await api.get('/users/username-available', {
+            params: { username }
+        });
+        return response.data;
+    },
+
     // 3. Update Profile Details
     updateProfile: async (payload: ProfilePayload) => {
-        //TODO with backend put later on
-        console.log('API: Updating profile', payload);
-        return new Promise((resolve) => setTimeout(resolve, 1000));
+        return api.put('/users/me', payload);
     },
 
     // 4. Set Interests

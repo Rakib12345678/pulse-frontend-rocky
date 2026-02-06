@@ -12,8 +12,10 @@ import {
 import { GoogleLogin } from '@react-oauth/google';
 import { cn } from '@/lib/utils';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { authService } from '../services/auth.service';
 import { toast } from 'sonner';
+import { mediaService } from '../services/media.service';
 import { countryCodes } from '@/lib/countries';
 import GoogleLogo from '@/assets/google.svg';
 import Logo from "@/assets/Logo.svg"
@@ -38,7 +40,13 @@ import {
     FormItem,
     FormMessage,
 } from '@/components/ui/form';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuPortal
+} from '@radix-ui/react-dropdown-menu';
 
 interface StepWrapperProps {
     children: React.ReactNode;
@@ -530,7 +538,7 @@ const StepAge = () => {
 // --- 5. DETAILS STEP (FIXED TWO-COLUMN LAYOUT) ---
 const detailsSchema = z.object({
     username: z.string().min(3, "Min 3 chars"),
-    displayName: z.string().min(2, "Min 2 chars"),
+    fullName: z.string().min(2, "Min 2 chars"),
     location: z.string().min(2),
     bio: z.string().max(100),
 });
@@ -540,21 +548,119 @@ type DetailsFormData = z.infer<typeof detailsSchema>;
 const StepDetails = () => {
     const { setStep, identifier, countryCode, method, isAdult } = useSignUpStore();
     const [isLoading, setIsLoading] = useState(false);
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+    const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
+    const [profileImage, setProfileImage] = useState<string | null>(null);
+    const [profileImageKey, setProfileImageKey] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Setup React Hook Form
     const form = useForm<DetailsFormData>({
         resolver: zodResolver(detailsSchema),
-        defaultValues: { location: "India" }
+        defaultValues: {
+            location: "India",
+            fullName: ""
+        },
+        mode: 'onChange'
     });
 
+    const usernameValue = form.watch('username');
+
+    // Username Availability Check with Debounce
+    useEffect(() => {
+        if (!usernameValue || usernameValue.length < 3) {
+            setIsUsernameAvailable(null);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setIsCheckingUsername(true);
+            try {
+                const available = await authService.checkUsernameAvailable(usernameValue);
+                setIsUsernameAvailable(available);
+                if (!available) {
+                    form.setError('username', { message: 'Username is already taken' });
+                } else {
+                    form.clearErrors('username');
+                }
+            } catch (error) {
+                console.error('Failed to check username:', error);
+            } finally {
+                setIsCheckingUsername(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [usernameValue, form]);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validation
+        const allowedTypes = ['image/jpeg', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            toast.error("Please upload a JPEG or PNG image only");
+            return;
+        }
+
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        if (file.size > maxSize) {
+            toast.error("Image size must be less than 2MB");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            const extension = file.name.split('.').pop() || 'png';
+            const { uploadUrl, fullUrl } = await mediaService.generatePresignedUrl('PROFILE_IMAGE', extension);
+
+            await mediaService.uploadFileToS3(uploadUrl, file);
+
+            setProfileImage(fullUrl);
+            setProfileImageKey(fullUrl);
+            toast.success("Profile photo updated");
+        } catch (error) {
+            console.error("Upload failed:", error);
+            toast.error("Failed to upload image");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const handleDeletePhoto = async () => {
+        if (!profileImageKey) return;
+
+        try {
+            await mediaService.deleteFile(profileImageKey);
+            setProfileImage(null);
+            setProfileImageKey(null);
+            toast.success("Profile photo removed");
+        } catch (error) {
+            console.error("Delete failed:", error);
+            toast.error("Failed to delete image");
+        }
+    };
+
     const onSubmit = async (data: DetailsFormData) => {
+        if (isUsernameAvailable === false) return;
+
         setIsLoading(true);
         try {
-            await authService.updateProfile({
+            const response = await authService.updateProfile({
                 ...data,
-                eighteenPlus: isAdult
+                eighteenPlus: isAdult,
+                profileImage: profileImageKey || ""
             });
+
+            // Update auth store with returned user data
+            useAuthStore.getState().updateUser(response.data);
+
             setStep('interests');
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to update profile");
         } finally {
             setIsLoading(false);
         }
@@ -590,15 +696,66 @@ const StepDetails = () => {
                         </div>
 
                         {/* Avatar */}
-                        <div className="relative">
-                            <div className="w-32 h-32 rounded-full bg-linear-to-tr from-orange-400 to-pink-500 p-[3px]">
+                        <div className="relative group">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/jpeg,image/png"
+                                onChange={handleFileChange}
+                            />
+                            <div className="w-32 h-32 rounded-full bg-linear-to-tr from-orange-400 to-pink-500 p-[3px] overflow-hidden">
                                 <div className="w-full h-full rounded-full bg-[#FF8800] flex items-center justify-center text-5xl font-bold text-white overflow-hidden">
-                                    N
+                                    {profileImage ? (
+                                        <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        (form.watch('fullName')?.[0] || 'N').toUpperCase()
+                                    )}
+
+                                    {/* Loading Overlay */}
+                                    {isUploading && (
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
+                                            <Loader2 className="w-8 h-8 animate-spin text-white" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                            <div className="absolute bottom-0 right-0 bg-white rounded-full p-2 cursor-pointer shadow-lg hover:scale-110 transition-transform">
-                                <Camera className="w-5 h-5 text-black" />
-                            </div>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
+                                        disabled={isUploading}
+                                        className="absolute bottom-0 right-0 bg-white rounded-full p-2 cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
+                                    >
+                                        <Camera className="w-5 h-5 text-black" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuPortal>
+                                    <DropdownMenuContent
+                                        className="min-w-[150px] bg-[#1a1c24] border border-white/10 rounded-xl p-1 shadow-2xl z-50"
+                                        sideOffset={5}
+                                        align="end"
+                                    >
+                                        <DropdownMenuItem
+                                            onSelect={() => fileInputRef.current?.click()}
+                                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-200 cursor-pointer hover:bg-white/5 rounded-lg outline-none focus:bg-white/5"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                            {profileImage ? 'Change Photo' : 'Add Photo'}
+                                        </DropdownMenuItem>
+                                        {profileImage && (
+                                            <DropdownMenuItem
+                                                onSelect={handleDeletePhoto}
+                                                className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 cursor-pointer hover:bg-red-400/5 rounded-lg outline-none focus:bg-red-400/5"
+                                            >
+                                                <div className="w-4 h-4 flex items-center justify-center">×</div>
+                                                Delete Photo
+                                            </DropdownMenuItem>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenuPortal>
+                            </DropdownMenu>
                         </div>
 
                         {/* Name Input */}
@@ -607,7 +764,7 @@ const StepDetails = () => {
                             <Form {...form}>
                                 <FormField
                                     control={form.control}
-                                    name="displayName"
+                                    name="fullName"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
@@ -641,11 +798,19 @@ const StepDetails = () => {
                                         name="username"
                                         render={({ field }) => (
                                             <FormItem className="space-y-1">
-                                                <label className="text-xs text-gray-400 ml-1">User name</label>
+                                                <div className="flex justify-between items-center">
+                                                    <label className="text-xs text-gray-400 ml-1">User name</label>
+                                                    {isCheckingUsername && <Loader2 className="w-3 h-3 animate-spin text-gray-500 mr-2" />}
+                                                    {isUsernameAvailable === true && !isCheckingUsername && <Check className="w-3 h-3 text-green-500 mr-2" />}
+                                                </div>
                                                 <FormControl>
                                                     <Input
                                                         {...field}
-                                                        className="h-12 bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/50"
+                                                        className={cn(
+                                                            "h-12 bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/50",
+                                                            isUsernameAvailable === false && "border-red-500",
+                                                            isUsernameAvailable === true && "border-green-500/50"
+                                                        )}
                                                         placeholder="Enter your user name"
                                                     />
                                                 </FormControl>

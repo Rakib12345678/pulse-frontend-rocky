@@ -1,9 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 
-const baseURL = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/api` 
-  : '/api';
+const baseURL = `${import.meta.env.VITE_API_URL}/api`;
 
 const api = axios.create({
     baseURL,
@@ -12,7 +10,9 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-});
+    // This tells the browser not to send the Referer header with requests
+    referrerPolicy: "no-referrer" 
+} as any); // Type cast needed as referrerPolicy is a fetch option passed through axios
 
 let isRefreshing = false;
 let failedQueue: any[] = [];
@@ -44,7 +44,7 @@ api.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if ((error.response?.status === 401 || error.response?.status === 403) && !originalRequest._retry) {
             if (isRefreshing) {
                 return new Promise<string>((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -60,25 +60,24 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                // 1. Get the refresh token from LocalStorage/Store
                 const { refreshToken } = useAuthStore.getState();
 
                 if (!refreshToken) {
                     throw new Error("No refresh token available");
                 }
 
-                // 2. Send it in the body
                 const { data } = await axios.post(
-                    `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
-                    { refreshToken },
-                    { withCredentials: true }
+                    `${baseURL}/auth/refresh`, 
+                    null,
+                    { 
+                        params: { refreshToken },
+                        withCredentials: true 
+                    }
                 );
 
                 const newToken = data.accessToken;
-                const newRefreshToken = data.refreshToken; // If backend rotates it
+                const newRefreshToken = data.refreshToken;
                 const user = data.user;
-
-                // 3. Update Store (including new Refresh Token if provided, else keep old one)
                 useAuthStore.getState().setAuth({
                     accessToken: newToken,
                     refreshToken: newRefreshToken || refreshToken, 

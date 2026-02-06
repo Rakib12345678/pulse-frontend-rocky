@@ -15,15 +15,6 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
-  server: {
-    proxy: {
-      '/api': {
-        target: 'https://pulselive.zendot.in',
-        changeOrigin: true,
-        secure: false, 
-      },
-    }
-  }
 })
 
 export default config

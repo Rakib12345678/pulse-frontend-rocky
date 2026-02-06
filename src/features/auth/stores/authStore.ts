@@ -11,7 +11,10 @@ export interface User {
   eighteenPlus: boolean;
   username?: string;
   displayName?: string;
-  avatarUrl?: string;
+  fullName?: string;
+  bio?: string;
+  location?: string;
+  profileImage?: string;
   coins?: number;
 }
 
@@ -22,6 +25,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isNewUser: boolean;
   setAuth: (payload: { accessToken: string; refreshToken: string; user: User; newUser: boolean }) => void;
+  updateUser: (userData: Partial<User>) => void;
   clearAuth: () => void;
 }
 
@@ -42,6 +46,10 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: true,
       }),
 
+      updateUser: (userData) => set((state) => ({
+        user: state.user ? { ...state.user, ...userData } : null
+      })),
+
       clearAuth: () => set({
         accessToken: null,
         refreshToken: null, 
@@ -56,7 +64,8 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         user: state.user, 
-        isNewUser: state.isNewUser 
+        isNewUser: state.isNewUser,
+        isAuthenticated: state.isAuthenticated
       }) 
     }
   )

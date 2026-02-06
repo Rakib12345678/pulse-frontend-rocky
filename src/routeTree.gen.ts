@@ -9,92 +9,109 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as MainRouteImport } from './routes/_main'
-import { Route as MainIndexRouteImport } from './routes/_main.index'
-import { Route as MainProfileRouteImport } from './routes/_main.profile'
-import { Route as MainForYouRouteImport } from './routes/_main.for-you'
-import { Route as MainFollowingRouteImport } from './routes/_main.following'
-import { Route as MainExploreRouteImport } from './routes/_main.explore'
-import { Route as MainCoinsRouteImport } from './routes/_main.coins'
-import { Route as MainChatsRouteImport } from './routes/_main.chats'
-import { Route as MainLiveIndexRouteImport } from './routes/_main.live.$index'
+import { Route as MainRouteRouteImport } from './routes/_main/route'
+import { Route as MainProfileRouteRouteImport } from './routes/_main/profile/route'
+import { Route as MainLiveRouteRouteImport } from './routes/_main/live/route'
+import { Route as MainForYouRouteRouteImport } from './routes/_main/for-you/route'
+import { Route as MainFollowingRouteRouteImport } from './routes/_main/following/route'
+import { Route as MainExploreRouteRouteImport } from './routes/_main/explore/route'
+import { Route as MainCoinsRouteRouteImport } from './routes/_main/coins/route'
+import { Route as MainChatsRouteRouteImport } from './routes/_main/chats/route'
+import { Route as MainIndexRouteRouteImport } from './routes/_main/index/route'
+import { Route as MainLiveIndexRouteImport } from './routes/_main/live/index'
+import { Route as MainLiveIdRouteImport } from './routes/_main/live/$id'
 
-const MainRoute = MainRouteImport.update({
+const MainRouteRoute = MainRouteRouteImport.update({
   id: '/_main',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MainIndexRoute = MainIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => MainRoute,
-} as any)
-const MainProfileRoute = MainProfileRouteImport.update({
+const MainProfileRouteRoute = MainProfileRouteRouteImport.update({
   id: '/profile',
   path: '/profile',
-  getParentRoute: () => MainRoute,
+  getParentRoute: () => MainRouteRoute,
 } as any)
-const MainForYouRoute = MainForYouRouteImport.update({
+const MainLiveRouteRoute = MainLiveRouteRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainForYouRouteRoute = MainForYouRouteRouteImport.update({
   id: '/for-you',
   path: '/for-you',
-  getParentRoute: () => MainRoute,
+  getParentRoute: () => MainRouteRoute,
 } as any)
-const MainFollowingRoute = MainFollowingRouteImport.update({
+const MainFollowingRouteRoute = MainFollowingRouteRouteImport.update({
   id: '/following',
   path: '/following',
-  getParentRoute: () => MainRoute,
+  getParentRoute: () => MainRouteRoute,
 } as any)
-const MainExploreRoute = MainExploreRouteImport.update({
+const MainExploreRouteRoute = MainExploreRouteRouteImport.update({
   id: '/explore',
   path: '/explore',
-  getParentRoute: () => MainRoute,
+  getParentRoute: () => MainRouteRoute,
 } as any)
-const MainCoinsRoute = MainCoinsRouteImport.update({
+const MainCoinsRouteRoute = MainCoinsRouteRouteImport.update({
   id: '/coins',
   path: '/coins',
-  getParentRoute: () => MainRoute,
+  getParentRoute: () => MainRouteRoute,
 } as any)
-const MainChatsRoute = MainChatsRouteImport.update({
+const MainChatsRouteRoute = MainChatsRouteRouteImport.update({
   id: '/chats',
   path: '/chats',
-  getParentRoute: () => MainRoute,
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainIndexRouteRoute = MainIndexRouteRouteImport.update({
+  id: '/',
+  path: '',
+  getParentRoute: () => MainRouteRoute,
 } as any)
 const MainLiveIndexRoute = MainLiveIndexRouteImport.update({
-  id: '/live/$index',
-  path: '/live/$index',
-  getParentRoute: () => MainRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => MainLiveRouteRoute,
+} as any)
+const MainLiveIdRoute = MainLiveIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MainLiveRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof MainIndexRoute
-  '/chats': typeof MainChatsRoute
-  '/coins': typeof MainCoinsRoute
-  '/explore': typeof MainExploreRoute
-  '/following': typeof MainFollowingRoute
-  '/for-you': typeof MainForYouRoute
-  '/profile': typeof MainProfileRoute
-  '/live/$index': typeof MainLiveIndexRoute
+  '/': typeof MainIndexRouteRoute
+  '/chats': typeof MainChatsRouteRoute
+  '/coins': typeof MainCoinsRouteRoute
+  '/explore': typeof MainExploreRouteRoute
+  '/following': typeof MainFollowingRouteRoute
+  '/for-you': typeof MainForYouRouteRoute
+  '/live': typeof MainLiveRouteRouteWithChildren
+  '/profile': typeof MainProfileRouteRoute
+  '/live/$id': typeof MainLiveIdRoute
+  '/live/': typeof MainLiveIndexRoute
 }
 export interface FileRoutesByTo {
-  '/chats': typeof MainChatsRoute
-  '/coins': typeof MainCoinsRoute
-  '/explore': typeof MainExploreRoute
-  '/following': typeof MainFollowingRoute
-  '/for-you': typeof MainForYouRoute
-  '/profile': typeof MainProfileRoute
-  '/': typeof MainIndexRoute
-  '/live/$index': typeof MainLiveIndexRoute
+  '/': typeof MainIndexRouteRoute
+  '/chats': typeof MainChatsRouteRoute
+  '/coins': typeof MainCoinsRouteRoute
+  '/explore': typeof MainExploreRouteRoute
+  '/following': typeof MainFollowingRouteRoute
+  '/for-you': typeof MainForYouRouteRoute
+  '/profile': typeof MainProfileRouteRoute
+  '/live/$id': typeof MainLiveIdRoute
+  '/live': typeof MainLiveIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_main': typeof MainRouteWithChildren
-  '/_main/chats': typeof MainChatsRoute
-  '/_main/coins': typeof MainCoinsRoute
-  '/_main/explore': typeof MainExploreRoute
-  '/_main/following': typeof MainFollowingRoute
-  '/_main/for-you': typeof MainForYouRoute
-  '/_main/profile': typeof MainProfileRoute
-  '/_main/': typeof MainIndexRoute
-  '/_main/live/$index': typeof MainLiveIndexRoute
+  '/_main': typeof MainRouteRouteWithChildren
+  '/_main/': typeof MainIndexRouteRoute
+  '/_main/chats': typeof MainChatsRouteRoute
+  '/_main/coins': typeof MainCoinsRouteRoute
+  '/_main/explore': typeof MainExploreRouteRoute
+  '/_main/following': typeof MainFollowingRouteRoute
+  '/_main/for-you': typeof MainForYouRouteRoute
+  '/_main/live': typeof MainLiveRouteRouteWithChildren
+  '/_main/profile': typeof MainProfileRouteRoute
+  '/_main/live/$id': typeof MainLiveIdRoute
+  '/_main/live/': typeof MainLiveIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -105,33 +122,38 @@ export interface FileRouteTypes {
     | '/explore'
     | '/following'
     | '/for-you'
+    | '/live'
     | '/profile'
-    | '/live/$index'
+    | '/live/$id'
+    | '/live/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/chats'
     | '/coins'
     | '/explore'
     | '/following'
     | '/for-you'
     | '/profile'
-    | '/'
-    | '/live/$index'
+    | '/live/$id'
+    | '/live'
   id:
     | '__root__'
     | '/_main'
+    | '/_main/'
     | '/_main/chats'
     | '/_main/coins'
     | '/_main/explore'
     | '/_main/following'
     | '/_main/for-you'
+    | '/_main/live'
     | '/_main/profile'
-    | '/_main/'
-    | '/_main/live/$index'
+    | '/_main/live/$id'
+    | '/_main/live/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  MainRoute: typeof MainRouteWithChildren
+  MainRouteRoute: typeof MainRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -140,94 +162,124 @@ declare module '@tanstack/react-router' {
       id: '/_main'
       path: ''
       fullPath: '/'
-      preLoaderRoute: typeof MainRouteImport
+      preLoaderRoute: typeof MainRouteRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_main/': {
-      id: '/_main/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof MainIndexRouteImport
-      parentRoute: typeof MainRoute
     }
     '/_main/profile': {
       id: '/_main/profile'
       path: '/profile'
       fullPath: '/profile'
-      preLoaderRoute: typeof MainProfileRouteImport
-      parentRoute: typeof MainRoute
+      preLoaderRoute: typeof MainProfileRouteRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/live': {
+      id: '/_main/live'
+      path: '/live'
+      fullPath: '/live'
+      preLoaderRoute: typeof MainLiveRouteRouteImport
+      parentRoute: typeof MainRouteRoute
     }
     '/_main/for-you': {
       id: '/_main/for-you'
       path: '/for-you'
       fullPath: '/for-you'
-      preLoaderRoute: typeof MainForYouRouteImport
-      parentRoute: typeof MainRoute
+      preLoaderRoute: typeof MainForYouRouteRouteImport
+      parentRoute: typeof MainRouteRoute
     }
     '/_main/following': {
       id: '/_main/following'
       path: '/following'
       fullPath: '/following'
-      preLoaderRoute: typeof MainFollowingRouteImport
-      parentRoute: typeof MainRoute
+      preLoaderRoute: typeof MainFollowingRouteRouteImport
+      parentRoute: typeof MainRouteRoute
     }
     '/_main/explore': {
       id: '/_main/explore'
       path: '/explore'
       fullPath: '/explore'
-      preLoaderRoute: typeof MainExploreRouteImport
-      parentRoute: typeof MainRoute
+      preLoaderRoute: typeof MainExploreRouteRouteImport
+      parentRoute: typeof MainRouteRoute
     }
     '/_main/coins': {
       id: '/_main/coins'
       path: '/coins'
       fullPath: '/coins'
-      preLoaderRoute: typeof MainCoinsRouteImport
-      parentRoute: typeof MainRoute
+      preLoaderRoute: typeof MainCoinsRouteRouteImport
+      parentRoute: typeof MainRouteRoute
     }
     '/_main/chats': {
       id: '/_main/chats'
       path: '/chats'
       fullPath: '/chats'
-      preLoaderRoute: typeof MainChatsRouteImport
-      parentRoute: typeof MainRoute
+      preLoaderRoute: typeof MainChatsRouteRouteImport
+      parentRoute: typeof MainRouteRoute
     }
-    '/_main/live/$index': {
-      id: '/_main/live/$index'
-      path: '/live/$index'
-      fullPath: '/live/$index'
+    '/_main/': {
+      id: '/_main/'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof MainIndexRouteRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/live/': {
+      id: '/_main/live/'
+      path: '/'
+      fullPath: '/live/'
       preLoaderRoute: typeof MainLiveIndexRouteImport
-      parentRoute: typeof MainRoute
+      parentRoute: typeof MainLiveRouteRoute
+    }
+    '/_main/live/$id': {
+      id: '/_main/live/$id'
+      path: '/$id'
+      fullPath: '/live/$id'
+      preLoaderRoute: typeof MainLiveIdRouteImport
+      parentRoute: typeof MainLiveRouteRoute
     }
   }
 }
 
-interface MainRouteChildren {
-  MainChatsRoute: typeof MainChatsRoute
-  MainCoinsRoute: typeof MainCoinsRoute
-  MainExploreRoute: typeof MainExploreRoute
-  MainFollowingRoute: typeof MainFollowingRoute
-  MainForYouRoute: typeof MainForYouRoute
-  MainProfileRoute: typeof MainProfileRoute
-  MainIndexRoute: typeof MainIndexRoute
+interface MainLiveRouteRouteChildren {
+  MainLiveIdRoute: typeof MainLiveIdRoute
   MainLiveIndexRoute: typeof MainLiveIndexRoute
 }
 
-const MainRouteChildren: MainRouteChildren = {
-  MainChatsRoute: MainChatsRoute,
-  MainCoinsRoute: MainCoinsRoute,
-  MainExploreRoute: MainExploreRoute,
-  MainFollowingRoute: MainFollowingRoute,
-  MainForYouRoute: MainForYouRoute,
-  MainProfileRoute: MainProfileRoute,
-  MainIndexRoute: MainIndexRoute,
+const MainLiveRouteRouteChildren: MainLiveRouteRouteChildren = {
+  MainLiveIdRoute: MainLiveIdRoute,
   MainLiveIndexRoute: MainLiveIndexRoute,
 }
 
-const MainRouteWithChildren = MainRoute._addFileChildren(MainRouteChildren)
+const MainLiveRouteRouteWithChildren = MainLiveRouteRoute._addFileChildren(
+  MainLiveRouteRouteChildren,
+)
+
+interface MainRouteRouteChildren {
+  MainIndexRouteRoute: typeof MainIndexRouteRoute
+  MainChatsRouteRoute: typeof MainChatsRouteRoute
+  MainCoinsRouteRoute: typeof MainCoinsRouteRoute
+  MainExploreRouteRoute: typeof MainExploreRouteRoute
+  MainFollowingRouteRoute: typeof MainFollowingRouteRoute
+  MainForYouRouteRoute: typeof MainForYouRouteRoute
+  MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
+  MainProfileRouteRoute: typeof MainProfileRouteRoute
+}
+
+const MainRouteRouteChildren: MainRouteRouteChildren = {
+  MainIndexRouteRoute: MainIndexRouteRoute,
+  MainChatsRouteRoute: MainChatsRouteRoute,
+  MainCoinsRouteRoute: MainCoinsRouteRoute,
+  MainExploreRouteRoute: MainExploreRouteRoute,
+  MainFollowingRouteRoute: MainFollowingRouteRoute,
+  MainForYouRouteRoute: MainForYouRouteRoute,
+  MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
+  MainProfileRouteRoute: MainProfileRouteRoute,
+}
+
+const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(
+  MainRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
-  MainRoute: MainRouteWithChildren,
+  MainRouteRoute: MainRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

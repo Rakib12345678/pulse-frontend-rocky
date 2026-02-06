@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Outlet, createFileRoute } from '@tanstack/react-router'
+import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
+import { isPublicRoute } from '@/config/routes'
 import { Navbar } from '@/components/layout/Navbar'
 import { MobileFooter } from '@/components/layout/mobile-footer'
 import { useAuth } from '@/features/auth/hooks/useAuth'
@@ -27,6 +28,16 @@ export const Route = createFileRoute('/_main')({
             },
         ],
     }),
+    beforeLoad: ({ location, context }) => {
+        // Get the actual auths state from store as context can be stale
+        const isAuthenticated = context.auth.isAuthenticated || useAuthStore.getState().isAuthenticated
+
+        if (!isAuthenticated && !isPublicRoute(location.pathname)) {
+            throw redirect({
+                to: '/',
+            })
+        }
+    },
     component: MainLayout,
 })
 
