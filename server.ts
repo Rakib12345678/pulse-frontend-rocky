@@ -1,5 +1,8 @@
 /**
  * TanStack Start Production Server with Bun
+ * Reference: https://tanstack.com/start/latest/docs/framework/react/guide/hosting#production-server-with-bun
+ * code: https://github.com/tanstack/router/blob/main/examples/react/start-bun/server.ts
+ *
  *
  * A high-performance production server for TanStack Start applications that
  * implements intelligent static asset loading with configurable memory management.
