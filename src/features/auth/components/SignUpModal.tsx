@@ -279,7 +279,7 @@ const StepInput = () => {
                     className="text-xs text-white/90 hover:no-underline hover:text-white h-auto p-0 flex items-center gap-2"
                 >
                     {method === 'phone' ? <Mail className="w-4 h-4 text-white" /> : <Phone className="w-4 h-4 text-white" />}
-                    <span className="text-center">Signup with {method === 'phone' ? 'Email' : 'Phone'}</span>
+                    <span className="text-center">{mode === 'login' ? 'Login' : 'Signup'} with {method === 'phone' ? 'Email' : 'Phone'}</span>
                 </Button>
 
                 {/* Separator for desktop */}
@@ -291,7 +291,7 @@ const StepInput = () => {
                         className="text-xs text-white/90 hover:no-underline hover:text-white h-auto p-0 flex items-center gap-2"
                     >
                         <img src={GoogleLogo} alt="Google" className="w-4 h-4" />
-                        <span className="text-center">Signup with Google</span>
+                        <span className="text-center">{mode === 'login' ? 'Login' : 'Signup'} with Google</span>
                     </Button>
                     <div className="absolute inset-0 z-10 opacity-0 overflow-hidden cursor-pointer">
                         <GoogleLogin
@@ -437,7 +437,7 @@ const StepOTP = () => {
             {error && <p className="text-red-500 text-sm mb-6">{error}</p>}
 
             <div className='mb-8 text-sm text-gray-400'>
-                An OTP has been sent on your number <br />
+                An OTP has been sent on your {method === 'email' ? 'email' : 'number'} <br />
                 in <span className="text-white font-mono">{resendCooldown < 10 ? `0${resendCooldown}` : resendCooldown} sec</span>{' '}
                 <button
                     onClick={handleResend}
@@ -476,7 +476,7 @@ const StepOTP = () => {
 
 // --- 4. AGE CONFIRMATION STEP ---
 const StepAge = () => {
-    const { setStep, setIsAdult } = useSignUpStore();
+    const { setStep, setIsAdult, onAgeVerified, closeModal, reset } = useSignUpStore();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleAgeSelection = async (isAdult: boolean) => {
@@ -484,11 +484,34 @@ const StepAge = () => {
         setIsLoading(true);
 
         try {
-            // Update age consent via PUT endpoint
-            await authService.updateAgeConsent(isAdult);
+            if (isAdult) {
+                // Update age consent via PUT endpoint only if 18+
+                await authService.updateAgeConsent(true);
+            }
 
-            // After updating age, continue to profile details
-            setStep('details');
+            // Update local auth store so the user state is fresh
+            useAuthStore.getState().updateUser({ eighteenPlus: isAdult });
+
+            if (isAdult) {
+                if (onAgeVerified) {
+                    onAgeVerified();
+                    closeModal();
+                    reset();
+                } else {
+                    // Default flow for signup: continue to profile details
+                    setStep('details');
+                }
+            } else {
+                // If they say no, skip PUT request and move to next step automatically
+                if (onAgeVerified) {
+                    // If user was trying to go live, they can't. Close modal.
+                    closeModal();
+                    reset();
+                } else {
+                    // In signup flow, just move to details
+                    setStep('details');
+                }
+            }
         } catch (error: any) {
             console.error('Failed to update age consent:', error);
             toast.error(error.response?.data?.message || "Failed to update age consent");
@@ -546,7 +569,8 @@ const detailsSchema = z.object({
 type DetailsFormData = z.infer<typeof detailsSchema>;
 
 const StepDetails = () => {
-    const { setStep, identifier, countryCode, method, isAdult } = useSignUpStore();
+    const { identifier, countryCode, method, isAdult, closeModal } = useSignUpStore();
+    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
     const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
@@ -658,8 +682,12 @@ const StepDetails = () => {
             // Update auth store with returned user data
             useAuthStore.getState().updateUser(response.data);
 
-            setStep('interests');
+            toast.success("Account created successfully!");
+            closeModal();
+            useSignUpStore.getState().reset();
+            navigate({ to: '/for-you' });
         } catch (error: any) {
+            console.log("123" + error)
             toast.error(error.response?.data?.message || "Failed to update profile");
         } finally {
             setIsLoading(false);
@@ -669,7 +697,7 @@ const StepDetails = () => {
     return (
         <div className="flex flex-col h-full w-full overflow-y-auto custom-scrollbar">
             {/* Header */}
-            <div className="flex flex-col items-center gap-4 shrink-0 pt-8 pb-6 px-6">
+            <div className="flex flex-col items-center gap-4 shrink-0 pt-6 pb-4 px-6">
                 <img src={Logo} alt="PulseLive" className='h-12 w-12' />
                 <div className="text-center">
                     <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Almost There!</h2>
@@ -680,7 +708,7 @@ const StepDetails = () => {
             </div>
 
             {/* Two Column Layout */}
-            <div className="flex-1 flex items-start justify-center px-6 pb-8">
+            <div className="flex-1 flex items-start justify-center pt-10 px-6">
                 <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[380px_1fr] gap-8 items-start">
 
                     {/* Left Column - Verified Info & Avatar */}
@@ -898,66 +926,7 @@ const StepDetails = () => {
     );
 };
 
-// --- 6. INTERESTS STEP ---
-const INTERESTS = ['Lifestyle', 'Blogging', 'Coding', 'Dancing', 'Cooking', 'Speaking', 'Science & Tech', 'Others'];
-const StepInterests = () => {
-    const { reset, closeModal } = useSignUpStore();
-    const [selected, setSelected] = useState<string[]>([]);
-    const navigate = useNavigate();
 
-    const toggleInterest = (interest: string) => {
-        if (selected.includes(interest)) setSelected(selected.filter(i => i !== interest));
-        else setSelected([...selected, interest]);
-    };
-
-    const handleConfirm = async () => {
-        await authService.setInterests(selected);
-        toast.success("Account created successfully!");
-        closeModal();
-        reset();
-        navigate({ to: '/for-you' });
-    };
-
-    return (
-        <StepWrapper title="Interest">
-            <div className="bg-transparent mb-8 max-w-sm mx-auto">
-                <p className="text-gray-400 text-sm leading-relaxed">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed venenatis est. Cras sagittis luctus.
-                </p>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 mt-4 w-full">
-                {INTERESTS.map((item) => {
-                    const isActive = selected.includes(item);
-                    return (
-                        <Button
-                            key={item}
-                            type="button"
-                            variant="outline"
-                            onClick={() => toggleInterest(item)}
-                            className={cn(
-                                "rounded-full text-xs font-medium h-10 px-4 hover:bg-transparent transition-all",
-                                isActive
-                                    ? "border-[#FF8800] text-[#FF8800]"
-                                    : "border-gray-600 text-gray-400"
-                            )}
-                        >
-                            {isActive && <Check className="w-3 h-3 mr-1.5" />}
-                            {item}
-                        </Button>
-                    )
-                })}
-            </div>
-
-            <Button
-                onClick={handleConfirm}
-                className="w-52 rounded-full bg-[#FF8800] py-6 text-sm font-bold text-black hover:bg-[#ff9922]"
-            >
-                Confirm
-            </Button>
-        </StepWrapper>
-    );
-};
 
 // --- MAIN EXPORT ---
 export const SignUpModal = () => {
@@ -971,7 +940,6 @@ export const SignUpModal = () => {
             {currentStep === 'otp' && <StepOTP />}
             {currentStep === 'age' && <StepAge />}
             {currentStep === 'details' && <StepDetails />}
-            {currentStep === 'interests' && <StepInterests />}
         </AuthModalBackdrop>
     );
 };

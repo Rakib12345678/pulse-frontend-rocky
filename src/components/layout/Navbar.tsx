@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import {
   Bell,
@@ -48,7 +48,11 @@ export const Navbar: React.FC = () => {
   // 2. Local UI State
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // 3. Modal Controls
+  // 3. Hydration guard — prevent SSR flash of wrong auth UI
+  const [hasMounted, setHasMounted] = useState(false);
+  useEffect(() => { setHasMounted(true); }, []);
+
+  // 4. Modal Controls
   const { openModal: openSignUpModal, setStep: setSignUpStep, setMode: setSignUpMode } = useSignUpStore();
 
   const handleSignUpClick = () => {
@@ -94,8 +98,10 @@ export const Navbar: React.FC = () => {
         {/* ================= RIGHT SECTION: Auth & Profile ================= */}
         <div className="flex items-center gap-4 shrink-0">
 
-          {/* LOGGED OUT VIEW */}
-          {!isAuthenticated || !accessToken ? (
+          {/* Wait for client hydration before rendering auth UI */}
+          {!hasMounted ? (
+            <div className="w-[180px]" /> /* Placeholder to prevent layout shift */
+          ) : !isAuthenticated || !accessToken ? (
             <div className="flex items-center gap-3">
               <Button
                 onClick={handleSignUpClick}

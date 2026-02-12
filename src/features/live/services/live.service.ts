@@ -1,0 +1,112 @@
+import api from '@/lib/api';
+
+// Types for GetStream integration
+export interface CreateLiveStreamPayload {
+    title: string;
+    category: string;
+}
+
+export interface LiveStreamResponse {
+    callId: string;
+    callType: string;
+    token: string;
+}
+
+// Type for stream listing from /stream/feed endpoint
+export interface FeedStreamItem {
+    callId: string;
+    callType: string;
+    title: string;
+    category: string;
+    profileImage: string | null;
+    createdByUserId: string;
+    participantCount: number;
+    createdAt: string;
+    isLive: boolean;
+}
+
+export interface StreamFeedResponse {
+    data: FeedStreamItem[];
+    nextCursor: string | null;
+    hasMore: boolean;
+}
+
+export interface JoinStreamResponse {
+    callId: string;
+    callType: string;
+    token: string;
+}
+
+export const liveService = {
+    // Create and start a live stream
+    createLiveStream: async (payload: CreateLiveStreamPayload): Promise<LiveStreamResponse> => {
+        try {
+            // Updated to match backend swagger: POST /api/stream/go-live
+            const response = await api.post('/stream/go-live', payload);
+            return response.data;
+        } catch (error) {
+            console.error('Failed to create live stream:', error);
+            throw error;
+        }
+    },
+
+    // End a live stream
+    endLiveStream: async (callId: string): Promise<void> => {
+        try {
+            // Updated to match backend swagger: POST /api/stream/end?callId=...
+            await api.post('/stream/end', null, {
+                params: { callId }
+            });
+        } catch (error) {
+            console.error('Failed to end live stream:', error);
+            throw error;
+        }
+    },
+
+    // Update stream settings
+    updateStreamSettings: async (streamId: string, settings: Partial<CreateLiveStreamPayload>): Promise<void> => {
+        try {
+            await api.put(`/live/${streamId}/settings`, settings);
+        } catch (error) {
+            console.error('Failed to update stream settings:', error);
+            throw error;
+        }
+    },
+
+    // Get GetStream token for client-side SDK
+    getStreamToken: async (): Promise<string> => {
+        try {
+            const response = await api.get('/live/token');
+            return response.data.token;
+        } catch (error) {
+            console.error('Failed to get stream token:', error);
+            throw error;
+        }
+    },
+
+    // Get stream feed with pagination
+    getStreamFeed: async (cursor?: string, limit: number = 10): Promise<StreamFeedResponse> => {
+        try {
+            const response = await api.get('/stream/feed', {
+                params: { cursor, limit }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to get stream feed:', error);
+            throw error;
+        }
+    },
+
+    // Join a stream as a viewer
+    joinStream: async (callId: string): Promise<JoinStreamResponse> => {
+        try {
+            const response = await api.post('/stream/join', null, {
+                params: { callId }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to join stream:', error);
+            throw error;
+        }
+    }
+};

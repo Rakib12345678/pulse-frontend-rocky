@@ -5,7 +5,7 @@ export const PUBLIC_ROUTES = [
     '/',        // Home
     '/explore', // Explore
     '/live',    // Live streams
-    '/for-you'
+    '/for-you', // For you
 ];
 
 /**

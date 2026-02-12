@@ -9,6 +9,7 @@ import { Suspense, lazy } from "react"
 
 import { Toaster } from "@/components/ui/sonner"
 import { SignUpModal } from "@/features/auth/components/SignUpModal"
+import { GoLiveModal } from "@/features/live/components/GoLiveModal"
 
 import appCss from "../styles.css?url"
 import { Button } from "@/components/ui/button"
@@ -40,6 +41,7 @@ function RootComponent() {
           name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
+        {/* <meta name="referrer" content="no-referrer" /> */}
         <title>Pulse Live</title>
 
         <HeadContent />
@@ -51,6 +53,7 @@ function RootComponent() {
           <Outlet />
           <Toaster />
           <SignUpModal />
+          <GoLiveModal />
         </GoogleOAuthProvider>
 
 

@@ -1,6 +1,8 @@
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { useSignUpStore } from '@/features/auth/stores/signUpStore'
+import { useAuthStore } from '@/features/auth/stores/authStore'
+import { useNavigate } from '@tanstack/react-router'
 import '../styles/landing.css'
 
 // Helper component for background (moved from LandingPage.tsx)
@@ -36,6 +38,16 @@ interface LandingPageServerProps {
 
 export function LandingPageServer({ children }: LandingPageServerProps) {
     const openSignUp = useSignUpStore((s) => s.openModal)
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+    const navigate = useNavigate()
+
+    const handleInteractNow = () => {
+        if (isAuthenticated) {
+            navigate({ to: '/for-you' })
+        } else {
+            openSignUp()
+        }
+    }
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-[#0f1117] font-sans text-white selection:bg-pink-500/30">
@@ -83,7 +95,7 @@ export function LandingPageServer({ children }: LandingPageServerProps) {
                     </p>
 
                     <Button
-                        onClick={openSignUp}
+                        onClick={handleInteractNow}
                         size="lg"
                         className="h-14 rounded-full bg-linear-to-r from-indigo-600 to-pink-600 px-10 text-base font-bold text-white shadow-[0_0_20px_rgba(219,39,119,0.3)] hover:opacity-90 hover:shadow-[0_0_30px_rgba(219,39,119,0.5)] transition-all"
                     >

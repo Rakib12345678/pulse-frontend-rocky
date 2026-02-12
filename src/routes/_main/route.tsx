@@ -29,8 +29,12 @@ export const Route = createFileRoute('/_main')({
         ],
     }),
     beforeLoad: ({ location, context }) => {
-        // Get the actual auths state from store as context can be stale
-        const isAuthenticated = context.auth.isAuthenticated || useAuthStore.getState().isAuthenticated
+        if (typeof window === 'undefined') {
+            return
+        }
+
+        const storeState = useAuthStore.getState()
+        const isAuthenticated = context.auth.isAuthenticated || storeState.isAuthenticated || !!storeState.accessToken
 
         if (!isAuthenticated && !isPublicRoute(location.pathname)) {
             throw redirect({

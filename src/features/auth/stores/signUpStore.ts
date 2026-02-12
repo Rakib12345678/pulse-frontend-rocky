@@ -5,8 +5,7 @@ export type SignUpStep =
     | 'input'
     | 'otp'
     | 'age'
-    | 'details'
-    | 'interests';
+    | 'details';
 
 interface SignUpState {
     isOpen: boolean;
@@ -18,6 +17,7 @@ interface SignUpState {
     identifier: string;
     isAdult: boolean; 
     googleIdToken: string | null;
+    onAgeVerified?: () => void;
 
     // Actions
     openModal: () => void;
@@ -29,6 +29,7 @@ interface SignUpState {
     setIdentifier: (val: string) => void;
     setIsAdult: (val: boolean) => void; // Added setter
     setGoogleIdToken: (token: string | null) => void;
+    setOnAgeVerified: (cb: () => void) => void;
     reset: () => void;
 }
 
@@ -41,6 +42,7 @@ export const useSignUpStore = create<SignUpState>((set) => ({
     identifier: '',
     isAdult: false,
     googleIdToken: null,
+    onAgeVerified: undefined,
 
     openModal: () => set({ isOpen: true }),
     closeModal: () => set({ isOpen: false }),
@@ -51,6 +53,7 @@ export const useSignUpStore = create<SignUpState>((set) => ({
     setIdentifier: (val) => set({ identifier: val }),
     setIsAdult: (val) => set({ isAdult: val }),
     setGoogleIdToken: (token) => set({ googleIdToken: token }),
+    setOnAgeVerified: (cb) => set({ onAgeVerified: cb }),
 
     reset: () => set({
         currentStep: 'welcome',
@@ -59,6 +62,7 @@ export const useSignUpStore = create<SignUpState>((set) => ({
         countryCode: '+91',
         identifier: '',
         isAdult: false,
-        googleIdToken: null
+        googleIdToken: null,
+        onAgeVerified: undefined
     }),
 }));

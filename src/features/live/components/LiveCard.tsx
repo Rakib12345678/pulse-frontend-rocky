@@ -3,35 +3,38 @@ import { Link } from '@tanstack/react-router';
 import { Users, Heart } from 'lucide-react';
 
 interface LiveCardProps {
-  index: string | number;
+  callId: string;
   thumbnailUrl: string;
   avatarUrl: string;
   streamerName: string;
   viewerCount: string | number;
   followersCount: string;
   category: string;
+  title?: string;
+  isLive?: boolean;
   collaboratorAvatarUrl?: string;
 }
 
 export const LiveCard: React.FC<LiveCardProps> = ({
-  index,
+  callId,
   thumbnailUrl,
   avatarUrl,
   streamerName,
   viewerCount,
   followersCount,
   category,
+  isLive = false,
   collaboratorAvatarUrl,
 }) => {
   return (
     <Link
       to="/live/$id"
-      params={{ id: String(index) }}
+      params={{ id: callId }}
       className="group relative aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 transition-all hover:ring-2 hover:ring-primary cursor-pointer block shadow-lg"
     >
       {/* Background Image */}
       <img
-        src={thumbnailUrl}
+        src={avatarUrl}
         alt={streamerName}
         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
@@ -71,9 +74,11 @@ export const LiveCard: React.FC<LiveCardProps> = ({
               alt={streamerName}
               className="h-12 w-12 rounded-full border-2 border-white object-cover"
             />
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-md bg-red-600 px-1 py-0.5 text-[8px] font-bold text-white uppercase ring-1 ring-white">
-              Live
-            </div>
+            {isLive && (
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-md bg-red-600 px-1 py-0.5 text-[8px] font-bold text-white uppercase ring-1 ring-white">
+                Live
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col">
