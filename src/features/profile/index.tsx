@@ -54,7 +54,7 @@ export const ProfilePage = () => {
 
   if (!isOwnProfile && isProfileLoading) {
     return (
-      <div className="h-[calc(100vh-1000px)] bg-black flex items-center justify-center overflow-hidden">
+      <div className="h-[calc(100vh-73px)] bg-black flex items-center justify-center overflow-hidden">
         <div className="w-12 h-12 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin" />
       </div>
     );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, MoreHorizontal, Radio } from 'lucide-react';
+import { MapPin, MoreHorizontal } from 'lucide-react';
 import { useToggleFollow, useUserLiveStatus } from '@/features/profile/services/profile.service';
 import type { User } from '@/features/profile/services/profile.types';
 import cameraLogo from "@/assets/Camera.png"
@@ -63,7 +63,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
               className={`w-32 h-32 rounded-full p-1 ${isLive ? 'animate-live-ring' : ''}`}
               style={{
                 background: isLive
-                  ? 'linear-gradient(135deg, #FF3B3B 0%, #FF6B00 100%)'
+                  ? 'linear-gradient(77.21deg, #718FF2 0%, #2927C5 53%, #FF471A 100%)'
                   : 'linear-gradient(77.21deg, #718FF2 0%, #2927C5 53%, #FF471A 100%)',
               }}
             >
@@ -85,10 +85,9 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
             {isLive && (
               <button
                 onClick={handleLiveClick}
-                className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#FF0000] text-white text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full shadow-md border border-black whitespace-nowrap cursor-pointer hover:bg-red-500 transition-colors"
+                className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#FF0000] text-white text-[12px] font-bold tracking-widest px-4 py-1 rounded-full shadow-md border border-black whitespace-nowrap cursor-pointer hover:bg-red-500 transition-colors"
               >
-                <Radio className="w-2.5 h-2.5" />
-                LIVE NOW
+                Live
               </button>
             )}
           </div>
@@ -99,15 +98,6 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 {user.fullName || user.username}
               </h1>
 
-              {isLive && (
-                <button
-                  onClick={handleLiveClick}
-                  className="flex items-center gap-1.5 bg-[#FF3B3B]/15 border border-[#FF3B3B]/50 text-[#FF5555] text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full hover:bg-[#FF3B3B]/25 transition-colors cursor-pointer mb-1"
-                >
-                  <span className="w-2 h-2 rounded-full bg-[#FF3B3B] animate-pulse inline-block" />
-                  Live
-                </button>
-              )}
             </div>
 
             <div className="flex items-center gap-4 text-[#494E50] text-sm mb-3">
