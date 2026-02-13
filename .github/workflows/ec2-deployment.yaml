@@ -1,0 +1,70 @@
+name: Deploy PulseLive Dashboard
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Setup pnpm (only for build)
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      # Setup Node
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build app
+        run: pnpm run build
+
+      # Compress build output
+      - name: Compress Build
+        run: tar -czf project.tar.gz dist server.ts package.json
+
+      # Upload to EC2
+      - name: Copy to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          source: project.tar.gz
+          target: "/home/ubuntu/pulselive_dashboard_dev/"
+
+      # Deploy on EC2
+      - name: Deploy & Restart
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            # Create directory if missing
+            mkdir -p /home/ubuntu/pulselive_dashboard_dev
+            cd /home/ubuntu/pulselive_dashboard_dev
+
+            # Extract build
+            tar -xzf project.tar.gz
+            rm project.tar.gz
+            pnpm install
+
+            # Reload systemd in case service changed
+            sudo systemctl daemon-reload
+
+            # Restart service
+            sudo systemctl restart pulselive-dashboard-dev
