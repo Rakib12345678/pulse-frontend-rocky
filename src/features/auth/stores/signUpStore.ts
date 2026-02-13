@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export type SignUpStep =
     | 'welcome'
@@ -33,36 +34,46 @@ interface SignUpState {
     reset: () => void;
 }
 
-export const useSignUpStore = create<SignUpState>((set) => ({
-    isOpen: false,
-    currentStep: 'welcome',
-    mode: 'signup',
-    method: 'phone',
-    countryCode: '+91',
-    identifier: '',
-    isAdult: false,
-    googleIdToken: null,
-    onAgeVerified: undefined,
+export const useSignUpStore = create<SignUpState>()(
+    persist(
+        (set) => ({
+            isOpen: false,
+            currentStep: 'welcome',
+            mode: 'signup',
+            method: 'phone',
+            countryCode: '+91',
+            identifier: '',
+            isAdult: false,
+            googleIdToken: null,
+            onAgeVerified: undefined,
 
-    openModal: () => set({ isOpen: true }),
-    closeModal: () => set({ isOpen: false }),
-    setStep: (step) => set({ currentStep: step }),
-    setMode: (mode) => set({ mode }),
-    setMethod: (method) => set({ method }),
-    setCountryCode: (code) => set({ countryCode: code }),
-    setIdentifier: (val) => set({ identifier: val }),
-    setIsAdult: (val) => set({ isAdult: val }),
-    setGoogleIdToken: (token) => set({ googleIdToken: token }),
-    setOnAgeVerified: (cb) => set({ onAgeVerified: cb }),
+            openModal: () => set({ isOpen: true }),
+            closeModal: () => set({ isOpen: false }),
+            setStep: (step) => set({ currentStep: step }),
+            setMode: (mode) => set({ mode }),
+            setMethod: (method) => set({ method }),
+            setCountryCode: (code) => set({ countryCode: code }),
+            setIdentifier: (val) => set({ identifier: val }),
+            setIsAdult: (val) => set({ isAdult: val }),
+            setGoogleIdToken: (token) => set({ googleIdToken: token }),
+            setOnAgeVerified: (cb) => set({ onAgeVerified: cb }),
 
-    reset: () => set({
-        currentStep: 'welcome',
-        mode: 'signup',
-        method: 'phone',
-        countryCode: '+91',
-        identifier: '',
-        isAdult: false,
-        googleIdToken: null,
-        onAgeVerified: undefined
-    }),
-}));
+            reset: () => set({
+                currentStep: 'welcome',
+                mode: 'signup',
+                method: 'phone',
+                countryCode: '+91',
+                identifier: '',
+                isAdult: false,
+                googleIdToken: null,
+                onAgeVerified: undefined
+            }),
+        }),
+        {
+            name: 'signup-storage',
+            partialize: (state) => ({
+                currentStep: state.currentStep,
+            }),
+        }
+    )
+);

@@ -562,10 +562,10 @@ const StepAge = () => {
 
 // --- 5. DETAILS STEP (FIXED TWO-COLUMN LAYOUT) ---
 const detailsSchema = z.object({
-    username: z.string().min(3, "Min 3 chars"),
-    fullName: z.string().min(2, "Min 2 chars"),
-    location: z.string().min(2),
-    bio: z.string().max(100),
+    username: z.string({ message: "Username is required" }).min(3, "Min 3 chars").regex(/^\S+$/, "Spaces are not allowed"),
+    fullName: z.string({ message: "Full name is required" }).min(2, "Min 2 chars"),
+    location: z.string({ message: "Please select a location" }).min(2, "Please select a location"),
+    bio: z.string().max(100).nullable().optional(),
 });
 
 type DetailsFormData = z.infer<typeof detailsSchema>;
@@ -610,6 +610,7 @@ const generateAvatarFile = async (name: string): Promise<File> => {
 
 const StepDetails = () => {
     const { identifier, countryCode, method, isAdult, closeModal } = useSignUpStore();
+    const user = useAuthStore((s) => s.user);
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
@@ -635,6 +636,13 @@ const StepDetails = () => {
     useEffect(() => {
         if (!usernameValue || usernameValue.length < 3) {
             setIsUsernameAvailable(null);
+            return;
+        }
+
+        // Don't check availability if username contains spaces
+        if (/\s/.test(usernameValue)) {
+            setIsUsernameAvailable(false);
+            form.setError('username', { message: 'Spaces are not allowed' });
             return;
         }
 
@@ -730,12 +738,15 @@ const StepDetails = () => {
 
             const response = await authService.updateProfile({
                 ...data,
+                bio: data.bio ?? "",
                 eighteenPlus: isAdult,
                 profileImage: currentProfileImageKey || ""
             });
 
             // Update auth store with returned user data
             useAuthStore.getState().updateUser(response.data);
+            // make onboarding as complete so modal wont reopen again
+            useAuthStore.setState({ isNewUser: false });
 
             toast.success("Account created successfully!");
             closeModal();
@@ -771,7 +782,7 @@ const StepDetails = () => {
                         {/* Verified Box */}
                         <div className="w-full rounded-xl border border-blue-500/30 bg-blue-500/10 h-14 px-4 flex justify-between items-center">
                             <span className="text-gray-300 text-sm font-medium truncate">
-                                {method === 'phone' && identifier ? `${countryCode} ${identifier}` : (identifier || "Google Account")}
+                                {method === 'phone' && identifier ? `${countryCode} ${identifier}` : (identifier || user?.email || "Email Verified")}
                             </span>
                             <div className="bg-blue-500 rounded-full p-0.5 shrink-0">
                                 <Check className="w-3 h-3 text-black" strokeWidth={4} />
@@ -875,7 +886,7 @@ const StepDetails = () => {
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
                                 {/* Username & Location Row */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                     <FormField
                                         control={form.control}
                                         name="username"
@@ -910,7 +921,7 @@ const StepDetails = () => {
                                                 <label className="text-xs text-gray-400 ml-1">Location</label>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger className="w-full h-12 bg-transparent border-white/20 rounded-xl text-white focus:ring-0 focus:border-white/50 py-5.5 mt-1">
+                                                        <SelectTrigger className="w-full h-12 bg-transparent border-white/20 rounded-xl text-white focus:ring-0 focus:border-white/50 py-5.5">
                                                             <SelectValue placeholder="Select Location" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -939,6 +950,7 @@ const StepDetails = () => {
                                                 <div className="relative">
                                                     <Textarea
                                                         {...field}
+                                                        value={field.value ?? ""}
                                                         className="bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/50 resize-none h-28 py-3 pr-10"
                                                         placeholder="Dancer | Singer | Streamer"
                                                         maxLength={100}
@@ -985,11 +997,32 @@ const StepDetails = () => {
 
 // --- MAIN EXPORT ---
 export const SignUpModal = () => {
-    const { isOpen, currentStep, closeModal } = useSignUpStore();
+    const { isOpen, currentStep, closeModal, openModal, setStep } = useSignUpStore();
+    const { isNewUser, isAuthenticated, isHydrated } = useAuthStore();
+
+    useEffect(() => {
+        if (isHydrated && isAuthenticated && isNewUser && !isOpen) {
+            const step = currentStep;
+            if (step === 'welcome' || step === 'input' || step === 'otp') {
+                setStep('age');
+            }
+            openModal();
+        }
+    }, [isHydrated, isAuthenticated, isNewUser]);
+
     if (!isOpen) return null;
 
+    const handleClose = () => {
+        // If user is authenticated and flagged as a new user, 
+        // they must complete the onboarding (Age/Details) and cannot dismiss the modal.
+        if (isAuthenticated && isNewUser) {
+            return;
+        }
+        closeModal();
+    };
+
     return (
-        <AuthModalBackdrop onClose={closeModal} size={currentStep === 'details' ? 'large' : 'default'}>
+        <AuthModalBackdrop onClose={handleClose} size={currentStep === 'details' ? 'large' : 'default'}>
             {currentStep === 'welcome' && <StepWelcome />}
             {currentStep === 'input' && <StepInput />}
             {currentStep === 'otp' && <StepOTP />}
