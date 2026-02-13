@@ -63,9 +63,9 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
                         callId={stream.callId}
                         thumbnailUrl={stream.profileImage || bunnyTeacher}
                         avatarUrl={stream.profileImage || `https://i.pravatar.cc/150?u=${stream.createdByUserId + 20}`}
-                        streamerName={`User ${stream.createdByUserId}`}
+                        streamerName={stream.username || `User ${stream.createdByUserId}`}
                         viewerCount={formatViewerCount(stream.participantCount)}
-                        followersCount="--"
+                        followersCount="12K"
                         category={stream.category || 'Live'}
                         title={stream.title}
                         isLive={stream.isLive}

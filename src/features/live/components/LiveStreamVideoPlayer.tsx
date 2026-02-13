@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCallStateHooks, ParticipantView } from '@stream-io/video-react-sdk';
 import { Pin } from 'lucide-react';
 import { useLiveStreamContext } from './LiveStreamLayout';
+import { useNavigate } from '@tanstack/react-router';
+import { StreamerInfoOverlay } from './StreamerInfoOverlay';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
-    const { isViewer } = useLiveStreamContext();
+    const { isViewer, isChatVisible } = useLiveStreamContext();
     const participants = useParticipants();
+    const navigate = useNavigate();
 
     // Filter participants: only show those who are publishing video OR audio
     // Viewers won't appear in the video grid - only hosts/publishers
@@ -25,11 +28,22 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     });
     const count = sortedParticipants.length;
 
+    // Auto-exit if no streamers for 10 seconds
+    useEffect(() => {
+        if (count === 0) {
+            const timer = setTimeout(() => {
+                navigate({ to: '/for-you' });
+            }, 15000);
+            return () => clearTimeout(timer);
+        }
+    }, [count, navigate]);
+
     const renderParticipant = (p: any, showPin = false) => (
         <div key={p.sessionId} className="relative h-full w-full rounded-3xl overflow-hidden bg-neutral-900 border border-white/5 shadow-2xl group">
             <ParticipantView
                 participant={p}
                 className="h-full w-full object-cover"
+                ParticipantViewUI={null}
             />
             {showPin && (
                 <div className="absolute top-4 left-4 flex gap-2">
@@ -38,11 +52,20 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     </div>
                 </div>
             )}
-            <div className="absolute bottom-4 left-4">
-                <span className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10">
-                    {p.name || (p.isLocalParticipant ? 'Host' : 'Guest')}
-                </span>
-            </div>
+            {isChatVisible && (
+                <div className="absolute bottom-4 left-4 right-4">
+                    {showPin && isViewer ? (
+                        <StreamerInfoOverlay
+                            streamerName={p.name || (p.isLocalParticipant ? 'Host' : 'Guest')}
+                            streamerImage={p.image}
+                        />
+                    ) : (
+                        <span className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block">
+                            {p.name || (p.isLocalParticipant ? 'Host' : 'Guest')}
+                        </span>
+                    )}
+                </div>
+            )}
         </div>
     );
 
@@ -50,7 +73,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         if (count === 0) {
             return (
                 <div className="flex-1 flex items-center justify-center rounded-3xl bg-neutral-900 border border-white/5">
-                    <span className="text-white/50 text-lg">Waiting for participants...</span>
+                    <span className="text-white/50 text-lg">Streamer not available</span>
                 </div>
             );
         }

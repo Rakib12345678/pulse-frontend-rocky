@@ -5,24 +5,33 @@ import {
     Call,
     StreamCall,
 } from '@stream-io/video-react-sdk';
+import { StreamChat } from 'stream-chat';
+import { Chat } from 'stream-chat-react';
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { useGoLiveStore } from '../stores/goLiveStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { liveService } from '../services/live.service';
+import { FloatingHearts } from './FloatingHearts';
 
 const apiKey = import.meta.env.VITE_STREAM_API_KEY || 'placeholder_key';
+
+import { UserProfileModal } from './UserProfileModal';
 
 // Context for sharing viewer state with child components
 interface LiveStreamContextValue {
     isViewer: boolean;
     call: Call | null;
+    isChatVisible: boolean;
+    setChatVisible: (visible: boolean) => void;
 }
 
 const LiveStreamContext = createContext<LiveStreamContextValue>({
     isViewer: false,
     call: null,
+    isChatVisible: true,
+    setChatVisible: () => { },
 });
 
 export const useLiveStreamContext = () => useContext(LiveStreamContext);
@@ -37,11 +46,14 @@ const LiveStreamInner: React.FC<{
     children: React.ReactNode;
     isViewer: boolean;
     call: Call;
-}> = ({ children, isViewer, call }) => {
+    isChatVisible: boolean;
+    setChatVisible: (visible: boolean) => void;
+}> = ({ children, isViewer, call, isChatVisible, setChatVisible }) => {
     return (
-        <LiveStreamContext.Provider value={{ isViewer, call }}>
+        <LiveStreamContext.Provider value={{ isViewer, call, isChatVisible, setChatVisible }}>
             <div className="relative h-screen w-full bg-[#0f1117] text-white overflow-hidden" data-viewer={isViewer}>
                 {children}
+                <UserProfileModal />
             </div>
         </LiveStreamContext.Provider>
     );
@@ -51,8 +63,10 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     const { streamData } = useGoLiveStore();
     const { user } = useAuthStore();
     const [client, setClient] = useState<StreamVideoClient | null>(null);
+    const [chatClient, setChatClient] = useState<StreamChat | null>(null);
     const [call, setCall] = useState<Call | null>(null);
     const [isViewer, setIsViewer] = useState(false);
+    const [isChatVisible, setChatVisible] = useState(true);
 
     useEffect(() => {
         // Determine if user is a host (has streamData) or viewer (has viewerCallId but no streamData)
@@ -63,6 +77,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
         let mounted = true;
         let _client: StreamVideoClient | null = null;
+        let _chatClient: StreamChat | null = null;
         let _call: Call | null = null;
         let _callId: string | null = null;
         let _isHost = false;
@@ -103,15 +118,28 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 return;
             }
 
+            const userData = {
+                id: String(user.id),
+                name: user.username || `User ${user.id}`,
+                image: user.profileImage,
+            };
+
+            // Initialize Video Client
             _client = StreamVideoClient.getOrCreateInstance({
                 apiKey,
-                user: {
-                    id: String(user.id),
-                    // name: user.username || user.displayName || user.fullName || `User ${user.id}`,
-                },
+                user: userData,
                 tokenProvider: async () => token,
             });
             _call = _client.call(callType, callIdToUse);
+
+            // Initialize Chat Client
+            _chatClient = StreamChat.getInstance(apiKey);
+            try {
+                await _chatClient.connectUser(userData, token);
+            } catch (err) {
+                console.error('Failed to connect chat user:', err);
+                // We don't want to block the video if chat fails, but maybe log it
+            }
 
             try {
                 // For viewers, just join without create permission
@@ -161,6 +189,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
             if (mounted) {
                 setClient(_client);
+                setChatClient(_chatClient);
                 setCall(_call);
             }
         };
@@ -178,26 +207,41 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             window.removeEventListener('beforeunload', handleBeforeUnload);
 
             if (_call) {
+                _call.camera.disable();
+                _call.microphone.disable();
                 _call.leave();
             }
             if (_client) {
                 _client.disconnectUser();
             }
+            if (_chatClient) {
+                _chatClient.disconnectUser();
+            }
 
-            // If host, end the stream on the backend and reset the store
+            // If host, end the stream on the backend if not already ending
+            // Logic:
+            // 1. If isEndingStream is true, the header already called the API. We just need to reset.
+            // 2. If isEndingStream is false, user navigated away/closed tab. We need to call the API.
             if (_isHost && _callId) {
-                liveService.endLiveStream(_callId).catch((err) => {
-                    console.error('Failed to end live stream on navigate away:', err);
-                });
+                const { isEndingStream } = useGoLiveStore.getState();
+
+                if (!isEndingStream) {
+                    liveService.endLiveStream(_callId).catch((err) => {
+                        console.error('Failed to end live stream on navigate away:', err);
+                    });
+                }
+
+                // Always reset the store when the component unmounts for a host
                 useGoLiveStore.getState().reset();
             }
 
             setClient(null);
+            setChatClient(null);
             setCall(null);
         };
     }, [streamData, user, viewerCallId]);
 
-    if (!client || !call) {
+    if (!client || !call || !chatClient) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-[#0f1117]">
                 <Loader2 className="h-10 w-10 animate-spin text-[#FF8800]" />
@@ -207,11 +251,19 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
     return (
         <StreamVideo client={client}>
-            <StreamCall call={call}>
-                <LiveStreamInner isViewer={isViewer} call={call}>
-                    {children}
-                </LiveStreamInner>
-            </StreamCall>
+            <Chat client={chatClient}>
+                <StreamCall call={call}>
+                    <LiveStreamInner
+                        isViewer={isViewer}
+                        call={call}
+                        isChatVisible={isChatVisible}
+                        setChatVisible={setChatVisible}
+                    >
+                        {children}
+                        <FloatingHearts />
+                    </LiveStreamInner>
+                </StreamCall>
+            </Chat>
         </StreamVideo>
     );
 };

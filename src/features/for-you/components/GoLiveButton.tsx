@@ -8,9 +8,16 @@ import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 export const GoLiveButton: React.FC = () => {
     const { openModal: openGoLiveModal } = useGoLiveStore();
     const { user } = useAuthStore();
-    const { openModal: openSignUpModal, setStep, setOnAgeVerified } = useSignUpStore();
+    const { openModal: openSignUpModal, setStep, setOnAgeVerified, setMode } = useSignUpStore();
 
     const handleGoLiveClick = () => {
+        if (!user) {
+            setMode('login');
+            setStep('input');
+            openSignUpModal();
+            return;
+        }
+
         if (user && !user.eighteenPlus) {
             setStep('age');
             setOnAgeVerified(() => {

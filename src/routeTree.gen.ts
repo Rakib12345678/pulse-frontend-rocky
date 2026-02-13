@@ -13,7 +13,6 @@ import { Route as MainRouteRouteImport } from './routes/_main/route'
 import { Route as MainProfileRouteRouteImport } from './routes/_main/profile/route'
 import { Route as MainLiveRouteRouteImport } from './routes/_main/live/route'
 import { Route as MainForYouRouteRouteImport } from './routes/_main/for-you/route'
-import { Route as MainFollowingRouteRouteImport } from './routes/_main/following/route'
 import { Route as MainExploreRouteRouteImport } from './routes/_main/explore/route'
 import { Route as MainCoinsRouteRouteImport } from './routes/_main/coins/route'
 import { Route as MainChatsRouteRouteImport } from './routes/_main/chats/route'
@@ -38,11 +37,6 @@ const MainLiveRouteRoute = MainLiveRouteRouteImport.update({
 const MainForYouRouteRoute = MainForYouRouteRouteImport.update({
   id: '/for-you',
   path: '/for-you',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainFollowingRouteRoute = MainFollowingRouteRouteImport.update({
-  id: '/following',
-  path: '/following',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainExploreRouteRoute = MainExploreRouteRouteImport.update({
@@ -81,7 +75,6 @@ export interface FileRoutesByFullPath {
   '/chats': typeof MainChatsRouteRoute
   '/coins': typeof MainCoinsRouteRoute
   '/explore': typeof MainExploreRouteRoute
-  '/following': typeof MainFollowingRouteRoute
   '/for-you': typeof MainForYouRouteRoute
   '/live': typeof MainLiveRouteRouteWithChildren
   '/profile': typeof MainProfileRouteRoute
@@ -93,7 +86,6 @@ export interface FileRoutesByTo {
   '/chats': typeof MainChatsRouteRoute
   '/coins': typeof MainCoinsRouteRoute
   '/explore': typeof MainExploreRouteRoute
-  '/following': typeof MainFollowingRouteRoute
   '/for-you': typeof MainForYouRouteRoute
   '/profile': typeof MainProfileRouteRoute
   '/live/$id': typeof MainLiveIdRoute
@@ -106,7 +98,6 @@ export interface FileRoutesById {
   '/_main/chats': typeof MainChatsRouteRoute
   '/_main/coins': typeof MainCoinsRouteRoute
   '/_main/explore': typeof MainExploreRouteRoute
-  '/_main/following': typeof MainFollowingRouteRoute
   '/_main/for-you': typeof MainForYouRouteRoute
   '/_main/live': typeof MainLiveRouteRouteWithChildren
   '/_main/profile': typeof MainProfileRouteRoute
@@ -120,7 +111,6 @@ export interface FileRouteTypes {
     | '/chats'
     | '/coins'
     | '/explore'
-    | '/following'
     | '/for-you'
     | '/live'
     | '/profile'
@@ -132,7 +122,6 @@ export interface FileRouteTypes {
     | '/chats'
     | '/coins'
     | '/explore'
-    | '/following'
     | '/for-you'
     | '/profile'
     | '/live/$id'
@@ -144,7 +133,6 @@ export interface FileRouteTypes {
     | '/_main/chats'
     | '/_main/coins'
     | '/_main/explore'
-    | '/_main/following'
     | '/_main/for-you'
     | '/_main/live'
     | '/_main/profile'
@@ -184,13 +172,6 @@ declare module '@tanstack/react-router' {
       path: '/for-you'
       fullPath: '/for-you'
       preLoaderRoute: typeof MainForYouRouteRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/following': {
-      id: '/_main/following'
-      path: '/following'
-      fullPath: '/following'
-      preLoaderRoute: typeof MainFollowingRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/explore': {
@@ -257,7 +238,6 @@ interface MainRouteRouteChildren {
   MainChatsRouteRoute: typeof MainChatsRouteRoute
   MainCoinsRouteRoute: typeof MainCoinsRouteRoute
   MainExploreRouteRoute: typeof MainExploreRouteRoute
-  MainFollowingRouteRoute: typeof MainFollowingRouteRoute
   MainForYouRouteRoute: typeof MainForYouRouteRoute
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
   MainProfileRouteRoute: typeof MainProfileRouteRoute
@@ -268,7 +248,6 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainChatsRouteRoute: MainChatsRouteRoute,
   MainCoinsRouteRoute: MainCoinsRouteRoute,
   MainExploreRouteRoute: MainExploreRouteRoute,
-  MainFollowingRouteRoute: MainFollowingRouteRoute,
   MainForYouRouteRoute: MainForYouRouteRoute,
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
   MainProfileRouteRoute: MainProfileRouteRoute,

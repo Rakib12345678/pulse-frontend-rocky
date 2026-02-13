@@ -90,7 +90,6 @@ export const Navbar: React.FC = () => {
         {/* ================= CENTER SECTION: Navigation ================= */}
         <div className="hidden md:flex flex-row items-center gap-8 lg:gap-16">
           <NavLink to="/for-you" label="For You" />
-          <NavLink to="/following" label="Following" />
           <NavLink to="/explore" label="Explore" />
           <NavLink to="/chats" label="Chats" />
         </div>

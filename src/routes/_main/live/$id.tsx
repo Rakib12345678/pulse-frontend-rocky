@@ -2,7 +2,7 @@ import { createFileRoute, useBlocker } from '@tanstack/react-router'
 import { LiveStreamLayout, useLiveStreamContext } from '@/features/live/components/LiveStreamLayout'
 import { LiveStreamHeader } from '@/features/live/components/LiveStreamHeader'
 import { LiveStreamVideoPlayer } from '@/features/live/components/LiveStreamVideoPlayer'
-// import { LiveStreamChat } from '@/features/live/components/LiveStreamChat'
+import { LiveStreamChat } from '@/features/live/components/LiveStreamChat'
 import { LiveStreamControls } from '@/features/live/components/LiveStreamControls'
 import { useGoLiveStore } from '@/features/live/stores/goLiveStore'
 import { useEffect } from 'react'
@@ -23,14 +23,13 @@ export const Route = createFileRoute('/_main/live/$id')({
 // Inner component that can use the context
 function LiveStreamContent() {
   const { isViewer } = useLiveStreamContext()
-  const { streamData } = useGoLiveStore()
+
 
   return (
     <>
-      {/* Only show header for hosts */}
-      {streamData && <LiveStreamHeader />}
+      <LiveStreamHeader />
       <LiveStreamVideoPlayer />
-      {/* <LiveStreamChat /> */}
+      <LiveStreamChat />
       <LiveStreamControls isViewer={isViewer} />
     </>
   )
@@ -38,13 +37,15 @@ function LiveStreamContent() {
 
 function LiveStreamComponent() {
   const { id } = Route.useParams()
-  const { closeModal, streamData, isEndingStream } = useGoLiveStore()
-  const isHost = !!streamData
+  const { closeModal } = useGoLiveStore()
 
   // Block in-app navigation with a custom confirmation dialog (only for hosts)
   // Skip the blocker when the host intentionally ends the stream
   const { proceed, reset, status } = useBlocker({
-    shouldBlockFn: () => isHost && !isEndingStream,
+    shouldBlockFn: () => {
+      const { streamData, isEndingStream } = useGoLiveStore.getState();
+      return !!streamData && !isEndingStream;
+    },
     withResolver: true,
   })
 

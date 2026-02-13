@@ -14,6 +14,7 @@ export interface LiveStreamResponse {
 
 // Type for stream listing from /stream/feed endpoint
 export interface FeedStreamItem {
+    username?: string | null;
     callId: string;
     callType: string;
     title: string;

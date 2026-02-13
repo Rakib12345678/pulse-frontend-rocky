@@ -568,6 +568,38 @@ const detailsSchema = z.object({
 
 type DetailsFormData = z.infer<typeof detailsSchema>;
 
+const generateAvatarFile = async (name: string): Promise<File> => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 200;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Could not get canvas context');
+
+    // Background
+    const colors = ['#FF8800', '#FF5500', '#FFAA00', '#FF3300', '#FFCC00'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    ctx.fillStyle = randomColor;
+    ctx.fillRect(0, 0, 200, 200);
+
+    // Text
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 100px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const initial = (name[0] || '?').toUpperCase();
+    ctx.fillText(initial, 100, 100);
+
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) {
+                resolve(new File([blob], 'avatar.png', { type: 'image/png' }));
+            } else {
+                reject(new Error('Failed to generate avatar'));
+            }
+        }, 'image/png');
+    });
+};
+
 const StepDetails = () => {
     const { identifier, countryCode, method, isAdult, closeModal } = useSignUpStore();
     const navigate = useNavigate();
@@ -673,10 +705,25 @@ const StepDetails = () => {
 
         setIsLoading(true);
         try {
+            let currentProfileImageKey = profileImageKey;
+
+            if (!currentProfileImageKey) {
+                try {
+                    const file = await generateAvatarFile(data.fullName);
+                    const { uploadUrl, fullUrl } = await mediaService.generatePresignedUrl('PROFILE_IMAGE', 'png');
+                    await mediaService.uploadFileToS3(uploadUrl, file);
+                    currentProfileImageKey = fullUrl;
+                } catch (err) {
+                    console.error("Failed to generate/upload default avatar", err);
+                    // Fallback if generation/upload fails
+                    currentProfileImageKey = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=random`;
+                }
+            }
+
             const response = await authService.updateProfile({
                 ...data,
                 eighteenPlus: isAdult,
-                profileImage: profileImageKey || ""
+                profileImage: currentProfileImageKey || ""
             });
 
             // Update auth store with returned user data

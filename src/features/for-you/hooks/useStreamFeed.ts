@@ -11,12 +11,23 @@ export function useStreamFeed() {
 
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
-    const fetchStreams = async () => {
-        setIsLoading(true);
+    const fetchStreams = async (retryState: boolean | unknown = false) => {
+        // Handle event object from click handlers by checking for boolean true
+        const isRetry = retryState === true;
+
+        if (!isRetry) setIsLoading(true);
         setError(null);
         try {
             const response = await liveService.getStreamFeed();
-            setStreams(Array.isArray(response.data) ? response.data : []);
+            const newStreams = Array.isArray(response.data) ? response.data : [];
+            
+            // If no streams found and this wasn't a retry attempt, try once more
+            if (newStreams.length === 0 && !isRetry) {
+                await fetchStreams(true);
+                return;
+            }
+
+            setStreams(newStreams);
             setNextCursor(response.nextCursor);
             setHasMore(response.hasMore);
         } catch (err) {
