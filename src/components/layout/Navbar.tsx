@@ -111,6 +111,7 @@ export const Navbar: React.FC = () => {
               </Button>
               <Button
                 onClick={handleLoginClick}
+                variant="ghost"
                 className="whitespace-nowrap px-6 py-2 rounded-full bg-[#FF8800] text-black text-sm font-bold hover:bg-[#ff9922] transition-all shadow-[0_0_15px_rgba(255,136,0,0.3)] cursor-pointer hover:text-black"
               >
                 Log in

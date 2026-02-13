@@ -234,10 +234,7 @@ export const UserProfileModal: React.FC = () => {
                                 <div className="h-48 overflow-y-auto custom-scrollbar">
                                     <TabsContent value="moments" className="p-4 mt-0">
                                         <div className="grid grid-cols-3 gap-2">
-                                            {/* Placeholders */}
-                                            {[1, 2, 3].map(i => (
-                                                <div key={i} className="aspect-square bg-white/5 rounded-lg"></div>
-                                            ))}
+
                                         </div>
                                         <p className="text-center text-white/20 text-sm mt-4">No moments to show</p>
                                     </TabsContent>

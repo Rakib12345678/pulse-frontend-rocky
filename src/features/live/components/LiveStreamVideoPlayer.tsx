@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useCallStateHooks, ParticipantView } from '@stream-io/video-react-sdk';
-import { Pin } from 'lucide-react';
 import { useLiveStreamContext } from './LiveStreamLayout';
 import { useNavigate } from '@tanstack/react-router';
 import { StreamerInfoOverlay } from './StreamerInfoOverlay';
@@ -45,13 +44,6 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                 className="h-full w-full object-cover"
                 ParticipantViewUI={null}
             />
-            {showPin && (
-                <div className="absolute top-4 left-4 flex gap-2">
-                    <div className="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
-                        <Pin className="w-4 h-4 text-[#FF8800]" />
-                    </div>
-                </div>
-            )}
             {isChatVisible && (
                 <div className="absolute bottom-4 left-4 right-4">
                     {showPin && isViewer ? (

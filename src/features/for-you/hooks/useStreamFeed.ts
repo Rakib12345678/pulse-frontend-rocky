@@ -9,13 +9,18 @@ export function useStreamFeed() {
     const [nextCursor, setNextCursor] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(false);
 
+    const [hasPaginated, setHasPaginated] = useState(false);
+
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
     const fetchStreams = async (retryState: boolean | unknown = false) => {
         // Handle event object from click handlers by checking for boolean true
         const isRetry = retryState === true;
 
-        if (!isRetry) setIsLoading(true);
+        if (!isRetry) {
+            setIsLoading(true);
+            setHasPaginated(false);
+        }
         setError(null);
         try {
             const response = await liveService.getStreamFeed();
@@ -32,7 +37,6 @@ export function useStreamFeed() {
             setHasMore(response.hasMore);
         } catch (err) {
             console.error('Failed to fetch streams:', err);
-            setError('Failed to load streams. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -47,6 +51,7 @@ export function useStreamFeed() {
             setStreams(prev => [...prev, ...(Array.isArray(response.data) ? response.data : [])]);
             setNextCursor(response.nextCursor);
             setHasMore(response.hasMore);
+            setHasPaginated(true);
         } catch (err) {
             console.error('Failed to load more streams:', err);
         } finally {
@@ -82,6 +87,7 @@ export function useStreamFeed() {
         isLoadingMore,
         error,
         hasMore,
+        hasPaginated,
         loadMoreRef,
         fetchStreams,
     };

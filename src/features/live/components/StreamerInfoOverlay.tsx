@@ -123,8 +123,8 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
                 <Button
                     size="sm"
                     className={`ml-auto h-8 px-6 rounded-full transition-all text-xs font-semibold ${isFollowing
-                        ? "bg-[#FF4500] hover:bg-[#FF5722] text-white border-none"
-                        : "bg-[#FF4500] hover:bg-[#FF5722] text-white"
+                        ? "bg-[#FF8800] hover:bg-[#FF5722] text-white border-none"
+                        : "bg-[#FF8800] hover:bg-[#FF5722] text-white"
                         }`}
                     onClick={handleFollowToggle}
                     disabled={isLoading}

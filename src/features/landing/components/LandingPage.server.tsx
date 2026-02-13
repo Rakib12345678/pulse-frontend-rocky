@@ -14,23 +14,23 @@ const BackgroundDecor = () => (
     </div>
 )
 
-const UserPill = () => (
-    <div className="flex w-fit shrink-0 mx-auto items-center gap-3 rounded-full bg-[#1a1a1a] border border-white/10 px-3 py-1.5 pr-5 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="flex -space-x-3">
-            {[1, 2, 3, 4].map((i) => (
-                <img
-                    key={i}
-                    src={`https://picsum.photos/seed/${i + 88}/100`}
-                    alt="User"
-                    className="h-8 w-8 rounded-full border-2 border-[#1a1a1a]"
-                />
-            ))}
-        </div>
-        <span className="text-xs font-medium text-gray-300">
-            10+ Million users
-        </span>
-    </div>
-)
+// const UserPill = () => (
+//     <div className="flex w-fit shrink-0 mx-auto items-center gap-3 rounded-full bg-[#1a1a1a] border border-white/10 px-3 py-1.5 pr-5 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+//         <div className="flex -space-x-3">
+//             {[1, 2, 3, 4].map((i) => (
+//                 <img
+//                     key={i}
+//                     src={`https://picsum.photos/seed/${i + 88}/100`}
+//                     alt="User"
+//                     className="h-8 w-8 rounded-full border-2 border-[#1a1a1a]"
+//                 />
+//             ))}
+//         </div>
+//         <span className="text-xs font-medium text-gray-300">
+//             10+ Million users
+//         </span>
+//     </div>
+// )
 
 interface LandingPageServerProps {
     children: React.ReactNode
@@ -80,7 +80,7 @@ export function LandingPageServer({ children }: LandingPageServerProps) {
 
                 {/* HERO */}
                 <div className="container mx-auto flex flex-col items-center px-4 pb-12 text-center">
-                    <UserPill />
+                    {/* <UserPill /> */}
                     <h1 className="mb-6 max-w-4xl text-5xl font-extrabold tracking-tight sm:text-7xl leading-[1.1]">
                         The Ultimate Platform for <br />
                         <span className="bg-linear-to-r from-white via-gray-200 to-gray-500 bg-clip-text text-transparent">
@@ -97,7 +97,7 @@ export function LandingPageServer({ children }: LandingPageServerProps) {
                     <Button
                         onClick={handleInteractNow}
                         size="lg"
-                        className="h-14 rounded-full bg-linear-to-r from-indigo-600 to-pink-600 px-10 text-base font-bold text-white shadow-[0_0_20px_rgba(219,39,119,0.3)] hover:opacity-90 hover:shadow-[0_0_30px_rgba(219,39,119,0.5)] transition-all"
+                        className="h-14 rounded-full bg-linear-to-r from-indigo-600 to-pink-600 px-10 text-base font-bold text-white shadow-[0_0_20px_rgba(219,39,119,0.3)] transition-all"
                     >
                         <Plus className="mr-2 h-5 w-5" />
                         Interact Now

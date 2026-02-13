@@ -15,9 +15,9 @@ export function useAuth() {
     const navigate = useNavigate();
 
     const processAuth = useMutation({
-        mutationFn: async ({ url, payload }: { url: string; payload: any }) => {
+        mutationFn: async ({ url, payload, redirect = true }: { url: string; payload: any; redirect?: boolean }) => {
             const res = await api.post(url, payload);
-            return res.data;
+            return { ...res.data, redirect };
         },
         onSuccess: (data) => {
             setAuth({
@@ -34,8 +34,17 @@ export function useAuth() {
             } else {
                 // Existing user - close modal and navigate to home
                 closeSignUp();
-                navigate({ to: '/for-you' });
-                toast.success("Welcome back!");
+                console.log('useAuth: onSuccess', { newUser: data.newUser, redirect: data.redirect });
+                if (data.redirect !== false) {
+                    console.log('useAuth: Redirecting to /for-you');
+                    navigate({ to: '/for-you' });
+                } else {
+                    console.log('useAuth: Redirect suppressed');
+                }
+                // Only show welcome back toast if it's an explicit login action (redirect is true)
+                if (data.redirect !== false) {
+                    toast.success("Welcome back!");
+                }
             }
         },
         onError: (err: any) => {

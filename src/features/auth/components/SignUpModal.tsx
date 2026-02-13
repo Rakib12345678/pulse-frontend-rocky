@@ -339,6 +339,7 @@ const StepOTP = () => {
 
     const handleChange = (index: number, value: string) => {
         if (isNaN(Number(value))) return;
+        if (error) setError('');
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
@@ -353,6 +354,7 @@ const StepOTP = () => {
 
     const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
         e.preventDefault();
+        if (error) setError('');
         const pastedData = e.clipboardData.getData('text/plain').trim();
 
         // Only process if it's a 6-digit number
@@ -570,24 +572,30 @@ type DetailsFormData = z.infer<typeof detailsSchema>;
 
 const generateAvatarFile = async (name: string): Promise<File> => {
     const canvas = document.createElement('canvas');
-    canvas.width = 200;
-    canvas.height = 200;
+    canvas.width = 400;
+    canvas.height = 400;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Could not get canvas context');
+
+    // Make it rounded
+    ctx.beginPath();
+    ctx.arc(200, 200, 200, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
 
     // Background
     const colors = ['#FF8800', '#FF5500', '#FFAA00', '#FF3300', '#FFCC00'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     ctx.fillStyle = randomColor;
-    ctx.fillRect(0, 0, 200, 200);
+    ctx.fillRect(0, 0, 400, 400);
 
     // Text
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 100px Arial';
+    ctx.font = 'bold 200px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const initial = (name[0] || '?').toUpperCase();
-    ctx.fillText(initial, 100, 100);
+    ctx.fillText(initial, 200, 200);
 
     return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
@@ -779,12 +787,12 @@ const StepDetails = () => {
                                 accept="image/jpeg,image/png"
                                 onChange={handleFileChange}
                             />
-                            <div className="w-32 h-32 rounded-full bg-linear-to-tr from-orange-400 to-pink-500 p-[3px] overflow-hidden">
-                                <div className="w-full h-full rounded-full bg-[#FF8800] flex items-center justify-center text-5xl font-bold text-white overflow-hidden">
+                            <div className="w-32 h-32 rounded-full bg-blue-500/10 p-[3px] overflow-hidden">
+                                <div className="w-full h-full rounded-full bg-blue-500/10 flex items-center justify-center text-5xl font-bold text-white overflow-hidden">
                                     {profileImage ? (
                                         <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
                                     ) : (
-                                        (form.watch('fullName')?.[0] || 'N').toUpperCase()
+                                        (form.watch('fullName')?.[0] || '👤').toUpperCase()
                                     )}
 
                                     {/* Loading Overlay */}
@@ -902,7 +910,7 @@ const StepDetails = () => {
                                                 <label className="text-xs text-gray-400 ml-1">Location</label>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger className="h-12 bg-transparent border-white/20 rounded-xl text-white focus:ring-0 focus:border-white/50">
+                                                        <SelectTrigger className="w-full h-12 bg-transparent border-white/20 rounded-xl text-white focus:ring-0 focus:border-white/50 py-5.5 mt-1">
                                                             <SelectValue placeholder="Select Location" />
                                                         </SelectTrigger>
                                                     </FormControl>

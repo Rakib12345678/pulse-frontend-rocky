@@ -20,6 +20,7 @@ export const ForYouPage: React.FC = () => {
         isLoadingMore,
         error,
         hasMore,
+        hasPaginated,
         loadMoreRef,
         fetchStreams,
     } = useStreamFeed();
@@ -36,8 +37,6 @@ export const ForYouPage: React.FC = () => {
                 <h1 className="text-3xl font-bold text-white">Creators</h1>
                 <div className="flex items-center gap-2">
                     <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
-
-                    {/* Show refresh button with icon only when activeTab is 'live' */}
                     {activeTab === 'live' ? (
                         <Button
                             onClick={fetchStreams}
@@ -64,6 +63,7 @@ export const ForYouPage: React.FC = () => {
                     isLoadingMore={isLoadingMore}
                     error={error}
                     hasMore={hasMore}
+                    hasPaginated={hasPaginated}
                     loadMoreRef={loadMoreRef}
                     onRetry={fetchStreams}
                 />

@@ -22,6 +22,7 @@ export interface FeedStreamItem {
     profileImage: string | null;
     createdByUserId: string;
     participantCount: number;
+    followerCount: number;
     createdAt: string;
     isLive: boolean;
 }

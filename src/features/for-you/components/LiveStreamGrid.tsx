@@ -12,6 +12,7 @@ interface LiveStreamGridProps {
     isLoadingMore: boolean;
     error: string | null;
     hasMore: boolean;
+    hasPaginated: boolean;
     loadMoreRef: React.RefObject<HTMLDivElement | null>;
     onRetry: () => void;
 }
@@ -22,6 +23,7 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
     isLoadingMore,
     error,
     hasMore,
+    hasPaginated,
     loadMoreRef,
     onRetry,
 }) => {
@@ -65,7 +67,7 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
                         avatarUrl={stream.profileImage || `https://i.pravatar.cc/150?u=${stream.createdByUserId + 20}`}
                         streamerName={stream.username || `User ${stream.createdByUserId}`}
                         viewerCount={formatViewerCount(stream.participantCount)}
-                        followersCount="12K"
+                        followersCount={formatViewerCount(stream.followerCount)}
                         category={stream.category || 'Live'}
                         title={stream.title}
                         isLive={stream.isLive}
@@ -78,7 +80,7 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
                 {isLoadingMore && (
                     <Loader2 className="h-6 w-6 animate-spin text-[#FF8800]" />
                 )}
-                {!hasMore && streams.length > 0 && (
+                {!hasMore && streams.length > 0 && hasPaginated && (
                     <p className="text-gray-500 text-sm">You've seen all streams</p>
                 )}
             </div>

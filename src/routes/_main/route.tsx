@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
-import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
-import { isPublicRoute } from '@/config/routes'
+import { Outlet, createFileRoute } from '@tanstack/react-router'
 import { Navbar } from '@/components/layout/Navbar'
 import { MobileFooter } from '@/components/layout/mobile-footer'
 import { useAuth } from '@/features/auth/hooks/useAuth'
@@ -28,20 +27,7 @@ export const Route = createFileRoute('/_main')({
             },
         ],
     }),
-    beforeLoad: ({ location, context }) => {
-        if (typeof window === 'undefined') {
-            return
-        }
 
-        const storeState = useAuthStore.getState()
-        const isAuthenticated = context.auth.isAuthenticated || storeState.isAuthenticated || !!storeState.accessToken
-
-        if (!isAuthenticated && !isPublicRoute(location.pathname)) {
-            throw redirect({
-                to: '/',
-            })
-        }
-    },
     component: MainLayout,
 })
 
@@ -49,14 +35,33 @@ function MainLayout() {
     const { authenticate } = useAuth()
     const { accessToken, refreshToken } = useAuthStore()
 
+    // Check hydration
+    const isHydrated = useAuthStore(s => s.isHydrated)
+
+    // Debug logging
     useEffect(() => {
-        if (!accessToken && refreshToken) {
+        console.log('MainLayout: Auth State', { isHydrated, accessToken: !!accessToken });
+    }, [isHydrated, accessToken]);
+
+    useEffect(() => {
+        console.log('MainLayout: Checking auth', { accessToken: !!accessToken, refreshToken: !!refreshToken });
+        if (isHydrated && !accessToken && refreshToken) {
+            console.log('MainLayout: Refreshing token...');
             authenticate({
                 url: '/auth/refresh-token',
                 payload: { refreshToken },
+                redirect: false
             })
         }
-    }, [])
+    }, [isHydrated])
+
+    if (!isHydrated) {
+        return <div className="flex h-screen w-full items-center justify-center bg-[#0f1117] text-white">
+            <div className="flex flex-col items-center gap-4">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#FF8800]"></div>
+            </div>
+        </div>
+    }
 
     return (
         <div className="flex min-h-screen flex-col bg-[#0f1117] text-white overflow-x-hidden">

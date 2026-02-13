@@ -30,7 +30,7 @@ export const LiveCard: React.FC<LiveCardProps> = ({
     <Link
       to="/live/$id"
       params={{ id: callId }}
-      className="group relative aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 transition-all hover:ring-2 hover:ring-primary cursor-pointer block shadow-lg"
+      className="group relative aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 transition-all  cursor-pointer block shadow-lg"
     >
       {/* Background Image */}
       <img
