@@ -9,6 +9,9 @@ export interface User {
   status: string;
   emailVerified: boolean;
   eighteenPlus: boolean;
+  followerCount: number,
+  followingCount: number,
+  postCount: number,
   username?: string;
   displayName?: string;
   fullName?: string;
@@ -16,6 +19,7 @@ export interface User {
   location?: string;
   profileImage?: string;
   coins?: number;
+  followedByMe?: boolean
 }
 
 interface AuthState {

@@ -18,6 +18,7 @@ import { Route as MainCoinsRouteRouteImport } from './routes/_main/coins/route'
 import { Route as MainChatsRouteRouteImport } from './routes/_main/chats/route'
 import { Route as MainIndexRouteRouteImport } from './routes/_main/index/route'
 import { Route as MainLiveIndexRouteImport } from './routes/_main/live/index'
+import { Route as MainProfileUsernameRouteImport } from './routes/_main/profile/$username'
 import { Route as MainLiveIdRouteImport } from './routes/_main/live/$id'
 
 const MainRouteRoute = MainRouteRouteImport.update({
@@ -64,6 +65,11 @@ const MainLiveIndexRoute = MainLiveIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MainLiveRouteRoute,
 } as any)
+const MainProfileUsernameRoute = MainProfileUsernameRouteImport.update({
+  id: '/$username',
+  path: '/$username',
+  getParentRoute: () => MainProfileRouteRoute,
+} as any)
 const MainLiveIdRoute = MainLiveIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -77,8 +83,9 @@ export interface FileRoutesByFullPath {
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
   '/live': typeof MainLiveRouteRouteWithChildren
-  '/profile': typeof MainProfileRouteRoute
+  '/profile': typeof MainProfileRouteRouteWithChildren
   '/live/$id': typeof MainLiveIdRoute
+  '/profile/$username': typeof MainProfileUsernameRoute
   '/live/': typeof MainLiveIndexRoute
 }
 export interface FileRoutesByTo {
@@ -87,8 +94,9 @@ export interface FileRoutesByTo {
   '/coins': typeof MainCoinsRouteRoute
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
-  '/profile': typeof MainProfileRouteRoute
+  '/profile': typeof MainProfileRouteRouteWithChildren
   '/live/$id': typeof MainLiveIdRoute
+  '/profile/$username': typeof MainProfileUsernameRoute
   '/live': typeof MainLiveIndexRoute
 }
 export interface FileRoutesById {
@@ -100,8 +108,9 @@ export interface FileRoutesById {
   '/_main/explore': typeof MainExploreRouteRoute
   '/_main/for-you': typeof MainForYouRouteRoute
   '/_main/live': typeof MainLiveRouteRouteWithChildren
-  '/_main/profile': typeof MainProfileRouteRoute
+  '/_main/profile': typeof MainProfileRouteRouteWithChildren
   '/_main/live/$id': typeof MainLiveIdRoute
+  '/_main/profile/$username': typeof MainProfileUsernameRoute
   '/_main/live/': typeof MainLiveIndexRoute
 }
 export interface FileRouteTypes {
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/profile'
     | '/live/$id'
+    | '/profile/$username'
     | '/live/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
     | '/for-you'
     | '/profile'
     | '/live/$id'
+    | '/profile/$username'
     | '/live'
   id:
     | '__root__'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/_main/live'
     | '/_main/profile'
     | '/_main/live/$id'
+    | '/_main/profile/$username'
     | '/_main/live/'
   fileRoutesById: FileRoutesById
 }
@@ -209,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainLiveIndexRouteImport
       parentRoute: typeof MainLiveRouteRoute
     }
+    '/_main/profile/$username': {
+      id: '/_main/profile/$username'
+      path: '/$username'
+      fullPath: '/profile/$username'
+      preLoaderRoute: typeof MainProfileUsernameRouteImport
+      parentRoute: typeof MainProfileRouteRoute
+    }
     '/_main/live/$id': {
       id: '/_main/live/$id'
       path: '/$id'
@@ -233,6 +252,17 @@ const MainLiveRouteRouteWithChildren = MainLiveRouteRoute._addFileChildren(
   MainLiveRouteRouteChildren,
 )
 
+interface MainProfileRouteRouteChildren {
+  MainProfileUsernameRoute: typeof MainProfileUsernameRoute
+}
+
+const MainProfileRouteRouteChildren: MainProfileRouteRouteChildren = {
+  MainProfileUsernameRoute: MainProfileUsernameRoute,
+}
+
+const MainProfileRouteRouteWithChildren =
+  MainProfileRouteRoute._addFileChildren(MainProfileRouteRouteChildren)
+
 interface MainRouteRouteChildren {
   MainIndexRouteRoute: typeof MainIndexRouteRoute
   MainChatsRouteRoute: typeof MainChatsRouteRoute
@@ -240,7 +270,7 @@ interface MainRouteRouteChildren {
   MainExploreRouteRoute: typeof MainExploreRouteRoute
   MainForYouRouteRoute: typeof MainForYouRouteRoute
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
-  MainProfileRouteRoute: typeof MainProfileRouteRoute
+  MainProfileRouteRoute: typeof MainProfileRouteRouteWithChildren
 }
 
 const MainRouteRouteChildren: MainRouteRouteChildren = {
@@ -250,7 +280,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainExploreRouteRoute: MainExploreRouteRoute,
   MainForYouRouteRoute: MainForYouRouteRoute,
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
-  MainProfileRouteRoute: MainProfileRouteRoute,
+  MainProfileRouteRoute: MainProfileRouteRouteWithChildren,
 }
 
 const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(
