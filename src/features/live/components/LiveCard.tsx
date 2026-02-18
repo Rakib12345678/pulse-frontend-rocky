@@ -30,34 +30,34 @@ export const LiveCard: React.FC<LiveCardProps> = ({
     <Link
       to="/live/$id"
       params={{ id: callId }}
-      className="group relative aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 transition-all  cursor-pointer block shadow-lg"
+      className="group relative block w-full aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 shadow-lg transition-all hover:shadow-xl cursor-pointer"
     >
       {/* Background Image */}
       <img
-        src={avatarUrl}
+        src={thumbnailUrl || avatarUrl}
         alt={streamerName}
         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
       />
 
-      {/* Overlays */}
-      <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-black/20" />
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-black/10" />
 
       {/* Top Left: Viewers Pill */}
-      <div className="absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-[#FFE9C0] px-3 py-1.5 text-xs font-bold text-[#8B5E3C] shadow-sm">
-        <Users className="h-3.5 w-3.5 fill-[#8B5E3C]" />
+      <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-[#FFE9C0] px-2.5 py-1 text-[11px] font-bold text-[#8B5E3C] shadow-sm">
+        <Users className="h-3 w-3 fill-[#8B5E3C]" />
         <span>{viewerCount}</span>
       </div>
 
       {/* Top Right: Collaborator */}
       {collaboratorAvatarUrl && (
-        <div className="absolute right-3 top-3">
+        <div className="absolute right-3 top-3 z-10">
           <div className="relative">
             <img
               src={collaboratorAvatarUrl}
               alt="Collaborator"
-              className="h-10 w-10 rounded-full border-2 border-white object-cover"
+              className="h-9 w-9 rounded-full border-2 border-white object-cover"
             />
-            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFE9C0] border border-white">
+            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFE9C0] ring-1 ring-white">
               <Heart className="h-2.5 w-2.5 fill-[#8B5E3C] text-[#8B5E3C]" />
             </div>
           </div>
@@ -65,33 +65,40 @@ export const LiveCard: React.FC<LiveCardProps> = ({
       )}
 
       {/* Bottom Info Section */}
-      <div className="absolute bottom-4 left-3 right-3 flex items-end justify-between">
-        <div className="flex items-center gap-3">
-          {/* Streamer Avatar with Live Badge */}
-          <div className="relative">
-            <img
-              src={avatarUrl}
-              alt={streamerName}
-              className="h-12 w-12 rounded-full border-2 border-white object-cover"
-            />
-            {isLive && (
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-md bg-red-600 px-1 py-0.5 text-[8px] font-bold text-white uppercase ring-1 ring-white">
-                Live
-              </div>
-            )}
+      <div className="absolute bottom-0 left-0 right-0 p-3">
+        <div className="flex items-end justify-between gap-2">
+
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {/* Streamer Avatar */}
+            <div className="relative shrink-0">
+              <img
+                src={avatarUrl}
+                alt={streamerName}
+                className="h-10 w-10 rounded-full border-2 border-white object-cover"
+              />
+              {isLive && (
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-md bg-red-600 px-1.5 py-0.5 text-[8px] font-bold text-white uppercase leading-none ring-1 ring-white">
+                  Live
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col min-w-0">
+              <h3 className="truncate text-sm font-bold text-white leading-tight">
+                @{streamerName}
+              </h3>
+              <p className="truncate text-[10px] font-medium text-gray-300">
+                {followersCount} Followers
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-col">
-            <h3 className="text-sm font-bold text-white">@{streamerName}</h3>
-            <p className="text-[11px] font-medium text-gray-300">
-              {followersCount} Followers
-            </p>
+          <div className="shrink-0 max-w-[40%]">
+            <div className="truncate rounded-2xl bg-zinc-600/60 px-2.5 py-1.5 text-[10px] font-semibold text-white backdrop-blur-md text-center">
+              {category}
+            </div>
           </div>
-        </div>
 
-        {/* Category Badge */}
-        <div className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-md">
-          {category}
         </div>
       </div>
     </Link>
