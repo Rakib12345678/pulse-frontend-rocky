@@ -1,5 +1,14 @@
 import { create } from 'zustand';
 
+const getPersistedStreamData = (): { callId: string; callType: string; token: string } | null => {
+    try {
+        const stored = sessionStorage.getItem("pulse_host_stream");
+        return stored ? JSON.parse(stored) : null;
+    } catch {
+        return null;
+    }
+};
+
 export type Category = 
     | 'Lifestyle' 
     | 'Blogging' 
@@ -49,7 +58,7 @@ export const useGoLiveStore = create<GoLiveState>((set) => ({
     isCameraEnabled: true,
     isMicEnabled: true,
     isLoading: false,
-    streamData: null,
+    streamData: getPersistedStreamData(),
     isEndingStream: false,
 
     openModal: () => set({ isOpen: true }),
@@ -59,16 +68,26 @@ export const useGoLiveStore = create<GoLiveState>((set) => ({
     toggleCamera: () => set((state) => ({ isCameraEnabled: !state.isCameraEnabled })),
     toggleMic: () => set((state) => ({ isMicEnabled: !state.isMicEnabled })),
     setLoading: (loading) => set({ isLoading: loading }),
-    setStreamData: (data) => set({ streamData: data }),
+    setStreamData: (data) => {
+        if (data) {
+            sessionStorage.setItem("pulse_host_stream", JSON.stringify(data));
+        } else {
+            sessionStorage.removeItem("pulse_host_stream");
+        }
+        set({ streamData: data });
+    },
     setEndingStream: (ending) => set({ isEndingStream: ending }),
 
-    reset: () => set({
-        streamTitle: '',
-        selectedCategory: null,
-        isCameraEnabled: true,
-        isMicEnabled: true,
-        isLoading: false,
-        streamData: null,
-        isEndingStream: false
-    }),
+    reset: () => {
+        sessionStorage.removeItem("pulse_host_stream");
+        set({
+            streamTitle: '',
+            selectedCategory: null,
+            isCameraEnabled: true,
+            isMicEnabled: true,
+            isLoading: false,
+            streamData: null,
+            isEndingStream: false
+        });
+    },
 }));

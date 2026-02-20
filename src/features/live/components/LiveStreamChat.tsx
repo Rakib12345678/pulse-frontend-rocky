@@ -1,23 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Smile, Plus, Lock, Heart } from 'lucide-react';
+import { Lock, Heart, SendHorizonal } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import {
     Channel,
     useChannelStateContext,
     useChatContext,
 } from 'stream-chat-react';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Channel as StreamChannel } from 'stream-chat';
 import { useLiveStreamContext } from './LiveStreamLayout';
 import { useUserProfileStore } from '../stores/userProfileStore';
 
 export const LiveStreamChat: React.FC = () => {
     const { client: chatClient } = useChatContext();
-    const { call, isChatVisible } = useLiveStreamContext();
+    const { call, isChatVisible, isViewer } = useLiveStreamContext();
+    const { user } = useAuthStore();
 
     if (!isChatVisible) return null;
 
@@ -31,6 +27,7 @@ export const LiveStreamChat: React.FC = () => {
             <div className="absolute bottom-10 left-4 right-4 sm:left-10 sm:right-auto sm:w-80 max-h-[400px] flex flex-col z-20">
                 <LiveStreamMessageList />
                 <LiveStreamMessageInput />
+                <JoinMessageSender channel={channel} isViewer={isViewer} userId={user?.id} />
             </div>
         </Channel>
     );
@@ -63,21 +60,22 @@ const LiveStreamMessageList: React.FC = () => {
                             >
                                 @{msg.user?.name || msg.user?.id}
                             </span>
-                            {/* Show first line bold next to username if short */}
+                            {typeof msg.text === 'string' && msg.text.split('\n').length > 1 && (
+                                <>
+                                    <span className="text-sm font-bold text-white mt-0.5">
+                                        {msg.text.split('\n')[0]}
+                                    </span>
+                                    <p className="text-sm text-white/80 mt-1 leading-relaxed">
+                                        {msg.text.split('\n').slice(1).join('\n')}
+                                    </p>
+                                </>
+                            )}
                             {typeof msg.text === 'string' && msg.text.split('\n').length === 1 && (
-                                <span className="text-sm font-bold text-white">{msg.text}</span>
+                                <span className={`text-sm font-bold ${(msg as any).isJoinMessage ? 'text-white/50 italic' : 'text-white'}`}>
+                                    {msg.text}
+                                </span>
                             )}
                         </div>
-                        {typeof msg.text === 'string' && msg.text.split('\n').length > 1 && (
-                            <>
-                                <span className="text-sm font-bold text-white mt-0.5">
-                                    {msg.text.split('\n')[0]}
-                                </span>
-                                <p className="text-sm text-white/80 mt-1 leading-relaxed">
-                                    {msg.text.split('\n').slice(1).join('\n')}
-                                </p>
-                            </>
-                        )}
                     </div>
                 </div>
             ))}
@@ -85,6 +83,8 @@ const LiveStreamMessageList: React.FC = () => {
         </div>
     );
 };
+
+const HEART_EMOJI = { char: '❤️', icon: Heart, color: 'text-red-500' };
 
 const LiveStreamMessageInput: React.FC = () => {
     const { isAuthenticated, user } = useAuthStore();
@@ -107,18 +107,18 @@ const LiveStreamMessageInput: React.FC = () => {
 
     const [lastReactionTime, setLastReactionTime] = useState(0);
 
-    const handleSendHeart = async () => {
+    const handleSendReaction = async () => {
         const now = Date.now();
-        if (now - lastReactionTime < 3000) return; // 3 seconds cooldown
+        if (now - lastReactionTime < 2000) return; // 2 seconds cooldown
 
         setLastReactionTime(now);
 
-        // Dispath local event for immediate feedback
-        window.dispatchEvent(new CustomEvent('local-heart'));
-
         if (call) {
             try {
-                await call.sendReaction({ type: 'live-heart', emoji_code: ':heart:' });
+                await call.sendReaction({
+                    type: 'live-reaction',
+                    custom: { emoji: HEART_EMOJI.char }
+                });
             } catch (err) {
                 console.error('Failed to send reaction:', err);
             }
@@ -129,36 +129,32 @@ const LiveStreamMessageInput: React.FC = () => {
         return (
             <div className="flex items-center gap-3">
                 <div className="flex-1 relative">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <button className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#C5B358]/80 flex items-center justify-center hover:bg-[#C5B358] transition-colors">
-                                <Smile className="w-5 h-5 text-[#2A2A1A]" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent side="top" align="start" className="w-16 min-w-0 p-2 bg-[#2A3A2A]/90 border border-[#C5B358]/30 backdrop-blur-md">
-                            <DropdownMenuItem
-                                onClick={handleSendHeart}
-                                className="flex justify-center p-2 focus:bg-white/10 cursor-pointer"
-                            >
-                                <Heart className="w-6 h-6 text-red-500 fill-red-500 hover:scale-110 active:scale-95 transition-transform" />
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
                     <input
                         type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                         placeholder="Add a Comment"
-                        className="w-full h-12 bg-[#2A3A2A]/80 border border-[#C5B358]/60 rounded-full pl-14 pr-4 text-sm text-white focus:outline-none focus:border-[#C5B358] transition-all placeholder:text-[#C5B358]/70"
+                        className="w-full h-12 bg-[#2A3A2A]/80 border border-[#C5B358]/60 rounded-full pl-14 pr-14 text-sm text-white focus:outline-none focus:border-[#C5B358] transition-all placeholder:text-[#C5B358]/70"
+
                     />
+
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                        <button
+                            onClick={handleSendReaction}
+                            className="flex items-center justify-center transition-transform hover:scale-125 active:scale-95"
+                            title="Send heart"
+                        >
+                            <Heart className="w-6 h-6 text-red-500 fill-red-500 drop-shadow-sm" />
+                        </button>
+                    </div>
                 </div>
+
                 <button
                     onClick={handleSendMessage}
                     className="w-12 h-12 rounded-full bg-[#E8D5A0] flex items-center justify-center text-[#3A3A2A] hover:bg-[#F0DFA8] hover:scale-105 active:scale-95 transition-all shadow-lg"
                 >
-                    <Plus className="w-6 h-6" strokeWidth={2.5} />
+                    <SendHorizonal className="w-6 h-6" strokeWidth={2.5} />
                 </button>
             </div>
         );
@@ -177,3 +173,25 @@ const LiveStreamMessageInput: React.FC = () => {
         </div>
     );
 };
+
+// Component to handle sending the join message
+const JoinMessageSender: React.FC<{ channel: StreamChannel; isViewer: boolean; userId?: number }> = ({ channel, isViewer, userId }) => {
+    useEffect(() => {
+        if (!channel || !isViewer || !userId) return;
+
+        const sessionKey = `pulse_joined_${channel.id}`;
+        const hasJoined = sessionStorage.getItem(sessionKey);
+
+        if (!hasJoined) {
+            channel.sendMessage({
+                text: 'has joined the live',
+                isJoinMessage: true
+            } as any).catch((err: any) => console.error('Failed to send join message:', err));
+
+            sessionStorage.setItem(sessionKey, 'true');
+        }
+    }, [channel, isViewer, userId]);
+
+    return null;
+};
+

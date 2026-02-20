@@ -5,16 +5,20 @@ import { AnimatePresence, motion } from 'motion/react';
 interface Heart {
     id: string;
     color: string;
-    x: number; // Random horizontal start position offset
+    x: number;
+    rotation: number;
+    delay: number;
+    drift: number;
+    size: number;
+    emoji: string;
 }
 
-const HEART_COLORS = ['#FF4D4D', '#FF0000', '#FF6B6B', '#FF8080', '#D90000'];
+const HEART_COLORS = ['#FF4D4D', '#FF0000', '#FF6B6B', '#FF8080', '#D90000', '#FF3366', '#FF1744'];
 
 export const FloatingHearts: React.FC = () => {
     const { call } = useLiveStreamContext();
     const [hearts, setHearts] = useState<Heart[]>([]);
 
-    // Subscribe to reactions
     useEffect(() => {
         if (!call) {
             console.log('FloatingHearts: No call object available');
@@ -25,9 +29,10 @@ export const FloatingHearts: React.FC = () => {
 
         const handleNewReaction = (event: any) => {
             console.log('FloatingHearts: New reaction received:', event);
-            if (event.reaction.type === 'live-heart') {
-                console.log('FloatingHearts: Adding heart!');
-                addHeart();
+            if (event.reaction.type === 'live-heart' || event.reaction.type === 'live-reaction') {
+                const emoji = event.reaction.custom?.emoji || '♥';
+                console.log('FloatingHearts: Adding emoji!', emoji);
+                addHeart(emoji);
             }
         };
 
@@ -41,44 +46,79 @@ export const FloatingHearts: React.FC = () => {
         };
     }, [call]);
 
-    const addHeart = useCallback(() => {
+    const addHeart = useCallback((emoji: string = '♥') => {
         const id = Math.random().toString(36).substring(7);
         const color = HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)];
-        const x = Math.floor(Math.random() * 60) - 30; // Random x between -30 and 30 px
+        const x = Math.floor(Math.random() * 80) - 40; // Wider starting range
+        const rotation = (Math.random() * 30) - 15;
+        const delay = Math.random() * 0.1; // Slight stagger
+        const drift = (Math.random() - 0.5) * 100; // How much it drifts sideways
+        const size = 0.8 + Math.random() * 0.5; // Varying sizes
 
-        setHearts((prev) => [...prev, { id, color, x }]);
+        setHearts((prev) => {
+            const updated = [...prev, { id, color, x, rotation, delay, drift, size, emoji }];
+            return updated.length > 10 ? updated.slice(updated.length - 10) : updated;
+        });
 
-        // Remove heart after animation
         setTimeout(() => {
             setHearts((prev) => prev.filter((h) => h.id !== id));
-        }, 2000); // Animation duration
+        }, 3000);
     }, []);
 
-    useEffect(() => {
-        const handleLocalHeart = () => addHeart();
-        window.addEventListener('local-heart', handleLocalHeart);
-        return () => window.removeEventListener('local-heart', handleLocalHeart);
-    }, [addHeart]);
-
     return (
-        <div className="absolute bottom-20 right-4 w-20 h-96 pointer-events-none z-30 overflow-visible flex flex-col justify-end items-center">
+        <div className="absolute bottom-20 right-[35%] w-20 h-96 pointer-events-none z-30 overflow-visible flex flex-col justify-end items-center">
             <AnimatePresence>
                 {hearts.map((heart) => (
                     <motion.div
                         key={heart.id}
-                        initial={{ opacity: 1, y: 0, x: heart.x, scale: 0.5 }}
-                        animate={{
+                        initial={{
                             opacity: 0,
-                            y: -300,
-                            x: heart.x + (Math.random() * 40 - 20),
-                            scale: 1.2,
+                            y: 0,
+                            x: heart.x,
+                            scale: 0,
+                            rotate: heart.rotation
                         }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 2, ease: "easeOut" }}
+                        animate={{
+                            opacity: [0, 1, 1, 0.8, 0],
+                            y: -350,
+                            x: [
+                                heart.x,
+                                heart.x + heart.drift * 0.3,
+                                heart.x + heart.drift * 0.7,
+                                heart.x + heart.drift,
+                            ],
+                            scale: [0, heart.size * 1.1, heart.size, heart.size * 0.9, heart.size * 0.7],
+                            rotate: [heart.rotation, heart.rotation + 15, heart.rotation - 10, heart.rotation + 20],
+                        }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        transition={{
+                            duration: 2.5,
+                            delay: heart.delay,
+                            ease: [0.25, 0.46, 0.45, 0.94], // Custom bezier for more natural movement
+                            opacity: {
+                                times: [0, 0.1, 0.5, 0.8, 1],
+                                duration: 2.5,
+                            },
+                            y: {
+                                duration: 2.5,
+                                ease: "easeOut",
+                            },
+                            x: {
+                                duration: 2.5,
+                                ease: "easeInOut",
+                            },
+                            rotate: {
+                                duration: 2.5,
+                                ease: "easeInOut",
+                            },
+                        }}
                         className="absolute bottom-0 text-4xl drop-shadow-lg"
-                        style={{ color: heart.color }}
+                        style={{
+                            color: heart.emoji === '♥' ? heart.color : undefined, // Only color the default heart
+                            filter: 'drop-shadow(0 2px 8px rgba(255, 0, 0, 0.3))',
+                        }}
                     >
-                        ♥
+                        {heart.emoji}
                     </motion.div>
                 ))}
             </AnimatePresence>

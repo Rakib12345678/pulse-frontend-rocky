@@ -10,8 +10,10 @@ import { Chat } from 'stream-chat-react';
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { useGoLiveStore } from '../stores/goLiveStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from '@tanstack/react-router';
 import { liveService } from '../services/live.service';
 import { FloatingHearts } from './FloatingHearts';
 
@@ -67,13 +69,15 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     const [call, setCall] = useState<Call | null>(null);
     const [isViewer, setIsViewer] = useState(false);
     const [isChatVisible, setChatVisible] = useState(true);
+    const navigate = useNavigate();
+    const { openModal, setMode } = useSignUpStore();
 
     useEffect(() => {
         // Determine if user is a host (has streamData) or viewer (has viewerCallId but no streamData)
         const isHostMode = !!streamData;
         const isViewerMode = !streamData && !!viewerCallId;
 
-        if (!user || (!isHostMode && !isViewerMode)) return;
+        if (!isHostMode && !isViewerMode) return;
 
         let mounted = true;
         let _client: StreamVideoClient | null = null;
@@ -81,6 +85,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
         let _call: Call | null = null;
         let _callId: string | null = null;
         let _isHost = false;
+        let _isReloading = false;
 
         const initCall = async () => {
             // Wait for hardware to release from GoLiveModal
@@ -111,17 +116,22 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                     setIsViewer(true);
                 } catch (error) {
                     console.error('Failed to join stream:', error);
-                    toast.error('Failed to join the stream');
+                    toast.error('Stream ended or blocked for current user');
+                    navigate({ to: '/for-you' });
                     return;
                 }
             } else {
                 return;
             }
 
-            const userData = {
+            const userData = user ? {
                 id: String(user.id),
                 name: user.username || `User ${user.id}`,
                 image: user.profileImage,
+            } : {
+                id: `guest-${Math.random().toString(36).substring(7)}`,
+                name: 'Guest User',
+                image: '',
             };
 
             // Initialize Video Client
@@ -138,7 +148,6 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 await _chatClient.connectUser(userData, token);
             } catch (err) {
                 console.error('Failed to connect chat user:', err);
-                // We don't want to block the video if chat fails, but maybe log it
             }
 
             try {
@@ -146,6 +155,23 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 await _call.join({ create: isHostMode });
 
                 if (!mounted) return;
+
+                // Restriction: Prevent creator from joining their own stream as a viewer
+                if (isViewerMode && user && _call.state.createdBy?.id === String(user.id)) {
+                    // Clean up before redirecting
+                    await _call.leave();
+                    _client?.disconnectUser();
+                    if (_chatClient) await _chatClient.disconnectUser();
+                    toast.error('Cannot join your own livestream as a viewer with same account!');
+                    navigate({ to: '/for-you' });
+                    return;
+                }
+
+                // If guest, show login modal
+                if (!user && isViewerMode) {
+                    setMode('login');
+                    openModal();
+                }
 
                 // Only configure camera/mic for hosts
                 if (isHostMode) {
@@ -196,6 +222,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
         // Warn user before closing/refreshing the tab during a live stream
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            _isReloading = true;
             e.preventDefault();
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
@@ -221,8 +248,12 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             // If host, end the stream on the backend if not already ending
             // Logic:
             // 1. If isEndingStream is true, the header already called the API. We just need to reset.
-            // 2. If isEndingStream is false, user navigated away/closed tab. We need to call the API.
+            // 2. If isEndingStream is false and NOT a page reload, user navigated away. End the stream.
+            // 3. If page is reloading (_isReloading), skip ending so host can rejoin.
             if (_isHost && _callId) {
+                // If page is reloading, skip ending stream so host can rejoin
+                if (_isReloading) return;
+
                 const { isEndingStream } = useGoLiveStore.getState();
 
                 if (!isEndingStream) {
@@ -231,7 +262,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                     });
                 }
 
-                // Always reset the store when the component unmounts for a host
+                // Always reset the store when actually navigating away
                 useGoLiveStore.getState().reset();
             }
 

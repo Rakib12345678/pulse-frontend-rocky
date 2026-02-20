@@ -4,6 +4,7 @@ import { Camera, Mic, MicOff, CameraOff, Check, Loader2, X } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { useGoLiveStore, Category } from '../stores/goLiveStore';
 import { liveService } from '../services/live.service';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -154,25 +155,22 @@ export const GoLiveModal = () => {
             toast.error("Please fix camera/microphone permissions first");
             return;
         }
-        if (!streamTitle) {
-            toast.error("Please enter a stream title");
-            return;
-        }
-        if (!selectedCategory) {
-            toast.error("Please select a category");
-            return;
-        }
+
+        const { user } = useAuthStore.getState();
+        const fallbackTitle = user?.username ? `${user.username}'s Live Stream` : "Untitled Stream";
+        const finalTitle = streamTitle.trim() || fallbackTitle;
+        const finalCategory = selectedCategory || 'Others';
 
         const { setStreamData } = useGoLiveStore.getState();
 
-        console.log("Handle Go Live triggered", { streamTitle, selectedCategory });
+        console.log("Handle Go Live triggered", { finalTitle, finalCategory });
 
         setLoading(true);
         try {
             console.log("Calling liveService.createLiveStream...");
             const response = await liveService.createLiveStream({
-                title: streamTitle,
-                category: selectedCategory
+                title: finalTitle,
+                category: finalCategory
             });
             console.log("Live stream created successfully", response);
 
@@ -335,7 +333,7 @@ export const GoLiveModal = () => {
                             <div className="flex flex-col sm:flex-row gap-4 pt-4">
                                 <Button
                                     onClick={handleGoLive}
-                                    disabled={isLoading || !streamTitle || !selectedCategory}
+                                    disabled={isLoading}
                                     className="h-14 flex-1 rounded-full bg-[#FF8800] text-black font-bold text-lg hover:bg-[#ff9d2e] hover:scale-[1.02] active:scale-95 transition-all shadow-[0_8px_20px_-4px_rgba(255,136,0,0.4)] disabled:opacity-50 disabled:hover:scale-100"
                                 >
                                     {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Go Live"}

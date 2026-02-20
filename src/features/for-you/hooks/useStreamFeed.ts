@@ -25,12 +25,6 @@ export function useStreamFeed() {
         try {
             const response = await liveService.getStreamFeed();
             const newStreams = Array.isArray(response.data) ? response.data : [];
-            
-            // If no streams found and this wasn't a retry attempt, try once more
-            if (newStreams.length === 0 && !isRetry) {
-                await fetchStreams(true);
-                return;
-            }
 
             setStreams(newStreams);
             setNextCursor(response.nextCursor);

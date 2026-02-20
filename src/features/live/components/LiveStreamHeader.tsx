@@ -43,10 +43,11 @@ export const LiveStreamHeader: React.FC = () => {
             const now = Date.now();
             const diff = endsAt - now;
 
-            if (diff <= 500 && !autoEndTriggered.current && streamData) {
+            if (diff <= 750 && !autoEndTriggered.current && streamData) {
                 autoEndTriggered.current = true;
                 try {
                     await liveService.endLiveStream(streamData.callId);
+                    if (call) await call.endCall();
                     toast.success('Live stream ended automatically due to time limit');
                     setEndingStream(true);
                     navigate({ to: '/for-you' });
@@ -105,7 +106,7 @@ export const LiveStreamHeader: React.FC = () => {
 
         try {
             await liveService.endLiveStream(streamData.callId);
-            toast.success('Live stream ended');
+            if (call) await call.endCall();
             setEndingStream(true);
             navigate({ to: '/for-you' });
         } catch (error) {
