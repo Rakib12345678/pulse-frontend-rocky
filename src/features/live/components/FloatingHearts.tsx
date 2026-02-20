@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLiveStreamContext } from './LiveStreamLayout';
+import { useChatContext } from 'stream-chat-react';
 import { AnimatePresence, motion } from 'motion/react';
 
 interface Heart {
@@ -16,7 +17,8 @@ interface Heart {
 const HEART_COLORS = ['#FF4D4D', '#FF0000', '#FF6B6B', '#FF8080', '#D90000', '#FF3366', '#FF1744'];
 
 export const FloatingHearts: React.FC = () => {
-    const { call } = useLiveStreamContext();
+    const { call, isGuest } = useLiveStreamContext();
+    const { client: chatClient } = useChatContext();
     const [hearts, setHearts] = useState<Heart[]>([]);
 
     useEffect(() => {
@@ -36,15 +38,42 @@ export const FloatingHearts: React.FC = () => {
             }
         };
 
-        // @ts-ignore
-        call.on('call.reaction_new', handleNewReaction);
+        // Authenticated users get the video SDK event
+        if (!isGuest) {
+            // @ts-ignore
+            call.on('call.reaction_new', handleNewReaction);
+        }
+
+        // Setup chat listener for guests
+        let chatChannel: any = null;
+        let chatListener: any = null;
+
+        if (isGuest && chatClient) {
+            try {
+                chatChannel = chatClient.channel('livestream', call.id);
+
+                chatListener = chatChannel.on('client-live-reaction', (event: any) => {
+                    console.log('FloatingHearts: New chat event reaction received:', event);
+                    const emoji = event.emoji || '♥';
+                    addHeart(emoji);
+                });
+            } catch (err) {
+                console.error('FloatingHearts: Failed to setup chat listener', err);
+            }
+        }
 
         return () => {
             console.log('FloatingHearts: Unsubscribing');
-            // @ts-ignore
-            call.off('call.reaction_new', handleNewReaction);
+            if (!isGuest) {
+                // @ts-ignore
+                call.off('call.reaction_new', handleNewReaction);
+            }
+
+            if (chatListener) {
+                chatListener.unsubscribe();
+            }
         };
-    }, [call]);
+    }, [call, chatClient, isGuest]);
 
     const addHeart = useCallback((emoji: string = '♥') => {
         const id = Math.random().toString(36).substring(7);

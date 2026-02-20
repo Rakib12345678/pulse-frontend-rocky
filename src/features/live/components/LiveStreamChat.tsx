@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Lock, Heart, SendHorizonal } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import {
     Channel,
     useChannelStateContext,
@@ -23,7 +24,7 @@ export const LiveStreamChat: React.FC = () => {
     const channel = chatClient.channel('livestream', call.id);
 
     return (
-        <Channel channel={channel}>
+        <Channel key={chatClient.userID || 'anonymous'} channel={channel}>
             <div className="absolute bottom-10 left-4 right-4 sm:left-10 sm:right-auto sm:w-80 max-h-[400px] flex flex-col z-20">
                 <LiveStreamMessageList />
                 <LiveStreamMessageInput />
@@ -36,11 +37,23 @@ export const LiveStreamChat: React.FC = () => {
 const LiveStreamMessageList: React.FC = () => {
     const { messages } = useChannelStateContext();
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const { openModal } = useUserProfileStore();
+    const { openModal: openProfileModal } = useUserProfileStore();
+    const { openModal: openLoginModal, setMode } = useSignUpStore();
+    const { isGuest } = useLiveStreamContext();
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    const handleUserClick = (username?: string) => {
+        if (!username) return;
+        if (isGuest) {
+            setMode('login');
+            openLoginModal();
+        } else {
+            openProfileModal(username);
+        }
+    };
 
     return (
         <div className="flex-1 overflow-y-auto space-y-5 mb-4 scrollbar-hide pr-2">
@@ -49,14 +62,14 @@ const LiveStreamMessageList: React.FC = () => {
                     <img
                         src={msg.user?.image || 'https://i.pravatar.cc/150'}
                         alt={msg.user?.name || msg.user?.id}
-                        onClick={() => msg.user?.name && openModal(msg.user.name)}
+                        onClick={() => handleUserClick(msg.user?.name)}
                         className="w-10 h-10 rounded-full border-2 border-blue-500/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                     />
                     <div className="flex flex-col min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                             <span
                                 className="text-sm font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors"
-                                onClick={() => msg.user?.name && openModal(msg.user.name)}
+                                onClick={() => handleUserClick(msg.user?.name)}
                             >
                                 @{msg.user?.name || msg.user?.id}
                             </span>
@@ -89,10 +102,20 @@ const HEART_EMOJI = { char: '❤️', icon: Heart, color: 'text-red-500' };
 const LiveStreamMessageInput: React.FC = () => {
     const { isAuthenticated, user } = useAuthStore();
     const { channel } = useChannelStateContext();
-    const { call } = useLiveStreamContext();
+    const { call, isGuest } = useLiveStreamContext();
+    const { openModal, setMode } = useSignUpStore();
     const [inputValue, setInputValue] = useState('');
 
+    const openLoginModal = () => {
+        setMode('login');
+        openModal();
+    };
+
     const handleSendMessage = async () => {
+        if (isGuest) {
+            openLoginModal();
+            return;
+        }
         if (!inputValue.trim() || !channel) return;
 
         try {
@@ -108,6 +131,11 @@ const LiveStreamMessageInput: React.FC = () => {
     const [lastReactionTime, setLastReactionTime] = useState(0);
 
     const handleSendReaction = async () => {
+        if (isGuest) {
+            openLoginModal();
+            return;
+        }
+
         const now = Date.now();
         if (now - lastReactionTime < 2000) return; // 2 seconds cooldown
 
@@ -115,10 +143,19 @@ const LiveStreamMessageInput: React.FC = () => {
 
         if (call) {
             try {
+                // Send video reaction
                 await call.sendReaction({
                     type: 'live-reaction',
                     custom: { emoji: HEART_EMOJI.char }
                 });
+
+                // Also send a custom chat channel event for anonymous guest viewers
+                if (channel) {
+                    await channel.sendEvent({
+                        type: 'client-live-reaction',
+                        emoji: HEART_EMOJI.char
+                    } as any);
+                }
             } catch (err) {
                 console.error('Failed to send reaction:', err);
             }
@@ -161,13 +198,13 @@ const LiveStreamMessageInput: React.FC = () => {
     }
 
     return (
-        <div className="flex items-center">
+        <div className="flex items-center cursor-pointer" onClick={openLoginModal}>
             <div className="flex-1 relative">
                 <div className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#C5B358]/80 flex items-center justify-center">
                     <Lock className="w-4 h-4 text-[#2A2A1A]" />
                 </div>
                 <div className="w-full h-12 bg-[#2A3A2A]/80 border border-[#C5B358]/60 rounded-full pl-14 pr-4 flex items-center">
-                    <span className="text-sm text-white/50">Please log in to add a comment.</span>
+                    <span className="text-sm text-white/50">Log in to chat</span>
                 </div>
             </div>
         </div>
@@ -183,12 +220,24 @@ const JoinMessageSender: React.FC<{ channel: StreamChannel; isViewer: boolean; u
         const hasJoined = sessionStorage.getItem(sessionKey);
 
         if (!hasJoined) {
-            channel.sendMessage({
-                text: 'has joined the live',
-                isJoinMessage: true
-            } as any).catch((err: any) => console.error('Failed to send join message:', err));
-
+            // Set immediately to prevent strict mode double-firing
             sessionStorage.setItem(sessionKey, 'true');
+
+            const sendJoinEvent = async () => {
+                try {
+                    if (!channel.initialized) {
+                        await channel.watch();
+                    }
+                    await channel.sendMessage({
+                        text: 'has joined the live',
+                        isJoinMessage: true
+                    } as any);
+                } catch (err) {
+                    console.error('Failed to send join message:', err);
+                    sessionStorage.removeItem(sessionKey);
+                }
+            };
+            sendJoinEvent();
         }
     }, [channel, isViewer, userId]);
 

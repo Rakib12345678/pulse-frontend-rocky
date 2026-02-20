@@ -66,12 +66,13 @@ export const Navbar: React.FC = () => {
     openSignUpModal();
   };
 
- 
- 
+
+
   const handleLogout = () => {
     clearAuth();
     resetSignUp();
     setIsDropdownOpen(false);
+    setShowLogoutConfirm(false);
     navigate({ to: '/' });
   };
 
@@ -84,9 +85,9 @@ export const Navbar: React.FC = () => {
   return (
     <>
       <LogoutModal
-          isOpen={showLogoutConfirm}
-          onConfirm={handleLogout}
-          onCancel={() => setShowLogoutConfirm(false)}
+        isOpen={showLogoutConfirm}
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
       />
       <header className="sticky top-0 z-50 w-full bg-[#0f1117] border-b border-white/5">
         <div className="flex h-[72px] w-full items-center justify-between px-4 lg:px-8">
@@ -200,7 +201,10 @@ export const Navbar: React.FC = () => {
 
                         <div className="p-1 border-t border-white/5">
                           <button
-                            onClick={() => setShowLogoutConfirm(true)}
+                            onClick={() => {
+                              setIsDropdownOpen(false);
+                              setShowLogoutConfirm(true);
+                            }}
                             className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-60"
                           >
                             <LogOut className="h-4 w-4" />

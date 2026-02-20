@@ -33,11 +33,17 @@ export const UserProfileModal: React.FC = () => {
 
     useEffect(() => {
         if (isOpen && targetUsername) {
+            if (!currentUser) {
+                closeModal();
+                setMode('login');
+                openLoginModal();
+                return;
+            }
             fetchProfile(targetUsername);
         } else {
             setProfile(null);
         }
-    }, [isOpen, targetUsername]);
+    }, [isOpen, targetUsername, currentUser]);
 
     const fetchProfile = async (username: string) => {
         setIsLoading(true);

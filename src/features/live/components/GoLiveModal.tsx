@@ -190,9 +190,13 @@ export const GoLiveModal = () => {
             });
 
             closeModal();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to start stream:", error);
-            toast.error("Failed to start stream");
+            if (error?.response?.status === 409) {
+                toast.error("Already live with this account");
+            } else {
+                toast.error("Failed to start stream");
+            }
         } finally {
             setLoading(false);
         }

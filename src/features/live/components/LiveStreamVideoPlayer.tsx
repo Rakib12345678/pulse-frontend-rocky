@@ -9,7 +9,7 @@ import { useGoLiveStore } from '../stores/goLiveStore';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
-    const { isViewer, isChatVisible, call } = useLiveStreamContext();
+    const { isViewer, isGuest, isChatVisible, call } = useLiveStreamContext();
     const participants = useParticipants();
     const navigate = useNavigate();
 
@@ -43,8 +43,30 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             toast.info('Stream has ended');
             navigate({ to: '/for-you' });
         });
-        return () => unsubscribe();
-    }, [call, navigate]);
+
+        // Polling fallback for guests who don't receive WebSocket events
+        let pollInterval: NodeJS.Timeout;
+        if (isGuest) {
+            pollInterval = setInterval(async () => {
+                try {
+                    const callState = await call.get();
+                    if (callState.call.ended_at) {
+                        toast.info('Stream has ended');
+                        navigate({ to: '/for-you' });
+                    }
+                } catch (e) {
+                    // Call might be deleted or inaccessible
+                    toast.info('Stream has ended');
+                    navigate({ to: '/for-you' });
+                }
+            }, 5000); // Check every 5 seconds
+        }
+
+        return () => {
+            unsubscribe();
+            if (pollInterval) clearInterval(pollInterval);
+        };
+    }, [call, navigate, isGuest]);
 
     // Fallback: auto-exit if no streamers for 15 seconds
     useEffect(() => {

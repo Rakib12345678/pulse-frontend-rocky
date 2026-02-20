@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import {
     StreamVideo,
     StreamVideoClient,
@@ -10,7 +10,6 @@ import { Chat } from 'stream-chat-react';
 import '@stream-io/video-react-sdk/dist/css/styles.css';
 import { useGoLiveStore } from '../stores/goLiveStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
@@ -24,6 +23,7 @@ import { UserProfileModal } from './UserProfileModal';
 // Context for sharing viewer state with child components
 interface LiveStreamContextValue {
     isViewer: boolean;
+    isGuest: boolean;
     call: Call | null;
     isChatVisible: boolean;
     setChatVisible: (visible: boolean) => void;
@@ -31,6 +31,7 @@ interface LiveStreamContextValue {
 
 const LiveStreamContext = createContext<LiveStreamContextValue>({
     isViewer: false,
+    isGuest: false,
     call: null,
     isChatVisible: true,
     setChatVisible: () => { },
@@ -47,12 +48,13 @@ interface LiveStreamLayoutProps {
 const LiveStreamInner: React.FC<{
     children: React.ReactNode;
     isViewer: boolean;
+    isGuest: boolean;
     call: Call;
     isChatVisible: boolean;
     setChatVisible: (visible: boolean) => void;
-}> = ({ children, isViewer, call, isChatVisible, setChatVisible }) => {
+}> = ({ children, isViewer, isGuest, call, isChatVisible, setChatVisible }) => {
     return (
-        <LiveStreamContext.Provider value={{ isViewer, call, isChatVisible, setChatVisible }}>
+        <LiveStreamContext.Provider value={{ isViewer, isGuest, call, isChatVisible, setChatVisible }}>
             <div className="relative h-screen w-full bg-[#0f1117] text-white overflow-hidden" data-viewer={isViewer}>
                 {children}
                 <UserProfileModal />
@@ -64,13 +66,17 @@ const LiveStreamInner: React.FC<{
 export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, callId: viewerCallId }) => {
     const { streamData } = useGoLiveStore();
     const { user } = useAuthStore();
+    const userRef = useRef(user);
     const [client, setClient] = useState<StreamVideoClient | null>(null);
     const [chatClient, setChatClient] = useState<StreamChat | null>(null);
     const [call, setCall] = useState<Call | null>(null);
     const [isViewer, setIsViewer] = useState(false);
     const [isChatVisible, setChatVisible] = useState(true);
     const navigate = useNavigate();
-    const { openModal, setMode } = useSignUpStore();
+
+    useEffect(() => {
+        userRef.current = user;
+    }, [user]);
 
     useEffect(() => {
         // Determine if user is a host (has streamData) or viewer (has viewerCallId but no streamData)
@@ -108,11 +114,19 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             } else if (isViewerMode && viewerCallId) {
                 // Viewer mode - join the stream
                 try {
-                    const joinResponse = await liveService.joinStream(viewerCallId);
-                    callType = joinResponse.callType;
-                    callIdToUse = joinResponse.callId;
-                    token = joinResponse.token;
-                    _callId = joinResponse.callId;
+                    // Use guest join for unauthenticated users
+                    if (userRef.current) {
+                        const joinResponse = await liveService.joinStream(viewerCallId);
+                        callType = joinResponse.callType;
+                        callIdToUse = joinResponse.callId;
+                        token = joinResponse.token;
+                    } else {
+                        // Anonymous join without backend endpoint
+                        callType = 'livestream';
+                        callIdToUse = viewerCallId;
+                        token = undefined as any;
+                    }
+                    _callId = callIdToUse;
                     setIsViewer(true);
                 } catch (error) {
                     console.error('Failed to join stream:', error);
@@ -124,28 +138,31 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 return;
             }
 
-            const userData = user ? {
-                id: String(user.id),
-                name: user.username || `User ${user.id}`,
-                image: user.profileImage,
+            const currentUser = userRef.current;
+            const userData = currentUser ? {
+                id: String(currentUser.id),
+                name: currentUser.username || `User ${currentUser.id}`,
+                image: currentUser.profileImage,
             } : {
-                id: `guest-${Math.random().toString(36).substring(7)}`,
-                name: 'Guest User',
-                image: '',
+                type: 'anonymous'
             };
 
             // Initialize Video Client
             _client = StreamVideoClient.getOrCreateInstance({
                 apiKey,
-                user: userData,
-                tokenProvider: async () => token,
+                user: userData as any,
+                tokenProvider: token ? async () => token : undefined,
             });
             _call = _client.call(callType, callIdToUse);
 
             // Initialize Chat Client
             _chatClient = StreamChat.getInstance(apiKey);
             try {
-                await _chatClient.connectUser(userData, token);
+                if (!currentUser) {
+                    await _chatClient.connectAnonymousUser();
+                } else {
+                    await _chatClient.connectUser(userData as any, token);
+                }
             } catch (err) {
                 console.error('Failed to connect chat user:', err);
             }
@@ -157,7 +174,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 if (!mounted) return;
 
                 // Restriction: Prevent creator from joining their own stream as a viewer
-                if (isViewerMode && user && _call.state.createdBy?.id === String(user.id)) {
+                if (isViewerMode && userRef.current && _call.state.createdBy?.id === String(userRef.current.id)) {
                     // Clean up before redirecting
                     await _call.leave();
                     _client?.disconnectUser();
@@ -167,11 +184,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                     return;
                 }
 
-                // If guest, show login modal
-                if (!user && isViewerMode) {
-                    setMode('login');
-                    openModal();
-                }
+                // Guest viewers can watch freely - login modal will appear on interaction
 
                 // Only configure camera/mic for hosts
                 if (isHostMode) {
@@ -270,7 +283,9 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             setChatClient(null);
             setCall(null);
         };
-    }, [streamData, user, viewerCallId]);
+    }, [streamData, viewerCallId, user?.id]);
+
+
 
     if (!client || !call || !chatClient) {
         return (
@@ -286,6 +301,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 <StreamCall call={call}>
                     <LiveStreamInner
                         isViewer={isViewer}
+                        isGuest={!user}
                         call={call}
                         isChatVisible={isChatVisible}
                         setChatVisible={setChatVisible}

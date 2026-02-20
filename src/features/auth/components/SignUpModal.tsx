@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useLocation } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +17,6 @@ import { authService } from '../services/auth.service';
 import { toast } from 'sonner';
 import { mediaService } from '../services/media.service';
 import { countryCodes } from '@/lib/countries';
-import GoogleLogo from '@/assets/google.svg';
 import Logo from "@/assets/Logo.svg"
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AuthModalBackdrop } from './AuthModalBackdrop';
@@ -112,7 +111,7 @@ const inputSchema = z.object({
 
 type InputFormData = z.infer<typeof inputSchema>;
 
-const StepInput = () => {
+const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
     const { setStep, method, setMethod, setIdentifier, countryCode, setCountryCode, mode } = useSignUpStore();
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -288,48 +287,40 @@ const StepInput = () => {
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-8 mx-auto items-center justify-center w-full">
-                <Button
-                    variant="link"
-                    type="button"
-                    onClick={() => setMethod(method === 'phone' ? 'email' : 'phone')}
-                    className="text-xs text-white/90 hover:no-underline hover:text-white h-auto p-0 flex items-center gap-2"
-                >
-                    {method === 'phone' ? <Mail className="w-4 h-4 text-white" /> : <Phone className="w-4 h-4 text-white" />}
-                    <span className="text-center">{mode === 'login' ? 'Login' : 'Signup'} with {method === 'phone' ? 'Email' : 'Phone'}</span>
-                </Button>
+            <div className="flex flex-col sm:flex-row gap-6 mx-auto items-center justify-center w-full">
+                <div className="flex-1 flex justify-center sm:justify-end">
+                    <Button
+                        variant="link"
+                        type="button"
+                        onClick={() => setMethod(method === 'phone' ? 'email' : 'phone')}
+                        className="text-xs text-white/90 hover:no-underline hover:text-white h-auto p-0 flex items-center gap-2"
+                    >
+                        {method === 'phone' ? <Mail className="w-4 h-4 text-white" /> : <Phone className="w-4 h-4 text-white" />}
+                        <span className="text-center">{mode === 'login' ? 'Login' : 'Signup'} with {method === 'phone' ? 'Email' : 'Phone'}</span>
+                    </Button>
+                </div>
 
                 {/* Separator for desktop */}
                 <div className="hidden sm:block w-px h-4 bg-white/20" />
 
-                <div className="relative w-max">
-                    <Button
-                        variant="link"
-                        className="text-xs text-white/90 hover:no-underline hover:text-white h-auto p-0 flex items-center gap-2"
-                    >
-                        <img src={GoogleLogo} alt="Google" className="w-4 h-4" />
-                        <span className="text-center">{mode === 'login' ? 'Login' : 'Signup'} with Google</span>
-                    </Button>
-                    <div className="absolute inset-0 z-10 opacity-0 overflow-hidden cursor-pointer">
-                        <GoogleLogin
-                            onSuccess={(credentialResponse) => {
-                                if (credentialResponse.credential) {
-                                    authenticate({
-                                        url: '/auth/google',
-                                        payload: {
-                                            idToken: credentialResponse.credential,
-                                        }
-                                    });
-                                }
-                            }}
-                            onError={() => toast.error("Google Signup Failed")}
-                            theme="filled_black"
-                            shape="rectangular"
-                            size="medium"
-                            width="200"
-                            text="signup_with"
-                        />
-                    </div>
+                <div className="flex-1 flex justify-center sm:justify-start">
+                    <GoogleLogin
+                        onSuccess={(credentialResponse) => {
+                            if (credentialResponse.credential) {
+                                authenticate({
+                                    url: '/auth/google',
+                                    payload: { idToken: credentialResponse.credential },
+                                    redirect: !isLiveStream
+                                });
+                            }
+                        }}
+                        onError={() => toast.error("Google Signup Failed")}
+                        theme="filled_black"
+                        shape="pill"
+                        size="medium"
+                        text={mode === 'login' ? 'continue_with' : 'signup_with'}
+                        width="120"
+                    />
                 </div>
             </div>
         </StepWrapper>
@@ -337,7 +328,7 @@ const StepInput = () => {
 };
 
 // --- 3. OTP STEP ---
-const StepOTP = () => {
+const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
     const { setStep, identifier, method, countryCode } = useSignUpStore();
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [error, setError] = useState('');
@@ -394,7 +385,8 @@ const StepOTP = () => {
 
         authenticate({
             url: '/otp/verify',
-            payload: payload
+            payload: payload,
+            redirect: !isLiveStream
         }, {
             onSuccess: () => {
                 setStep('age');
@@ -643,8 +635,9 @@ export const StepDetails = ({
 }: StepDetailsProps) => {
     const store = useSignUpStore();
     const { mutateAsync: updateProfileMutation } = useUpdateProfile();
-    const user = useAuthStore((s) => s.user);
     const isAdult = isAdultProp ?? store.isAdult;
+    const location = useLocation();
+    const isLiveStream = location.pathname.startsWith('/live');
 
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
@@ -748,11 +741,11 @@ export const StepDetails = ({
         }
     };
 
-   const onSubmit = async (data: DetailsFormData) => {
+    const onSubmit = async (data: DetailsFormData) => {
         if (mode === 'signup') {
-            if (username.length < 3) { 
-                setUsernameError('Min 3 chars'); 
-                return; 
+            if (username.length < 3) {
+                setUsernameError('Min 3 chars');
+                return;
             }
             if (isUsernameAvailable === false) return;
         }
@@ -793,7 +786,9 @@ export const StepDetails = ({
                 onSuccess?.();
                 store.closeModal();
                 store.reset();
-                navigate({ to: '/for-you' });
+                if (!isLiveStream) {
+                    navigate({ to: '/for-you' });
+                }
             } else {
                 toast.success("Profile updated successfully!");
                 onSuccess?.();
@@ -1096,6 +1091,8 @@ export const StepDetails = ({
 export const SignUpModal = () => {
     const { isOpen, currentStep, closeModal, openModal, setStep, isAdult, identifier, method, countryCode } = useSignUpStore();
     const { isNewUser, isAuthenticated, isHydrated } = useAuthStore();
+    const location = useLocation();
+    const isLiveStream = location.pathname.startsWith('/live');
 
     useEffect(() => {
         if (isHydrated && isAuthenticated && isNewUser && !isOpen) {
@@ -1121,8 +1118,8 @@ export const SignUpModal = () => {
     return (
         <AuthModalBackdrop onClose={handleClose} size={currentStep === 'details' ? 'large' : 'default'}>
             {currentStep === 'welcome' && <StepWelcome />}
-            {currentStep === 'input' && <StepInput />}
-            {currentStep === 'otp' && <StepOTP />}
+            {currentStep === 'input' && <StepInput isLiveStream={isLiveStream} />}
+            {currentStep === 'otp' && <StepOTP isLiveStream={isLiveStream} />}
             {currentStep === 'age' && <StepAge />}
             {currentStep === 'details' && (
                 <StepDetails
