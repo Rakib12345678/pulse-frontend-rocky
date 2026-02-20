@@ -19,6 +19,7 @@ export interface User {
   isFollowing?: boolean;
   isFollower?: boolean;
   followedByMe?: boolean;
+  blockedByMe?: boolean;
 }
 
 export interface LiveStream {
@@ -53,3 +54,10 @@ export interface Moment extends LiveStream {
 export interface ProfileRouteParams {
   username?: string;
 }
+export interface BlockedUser {
+  id: number;
+  username: string;
+  fullName: string;
+  profileImage: string;
+}
+

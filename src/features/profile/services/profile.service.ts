@@ -208,25 +208,87 @@ export const useToggleFollow = () => {
   });
 };
 
-export const useUpdateProfile = () => {
+// Block / Unblock 
+export const useBlockUser = () => {
   const queryClient = useQueryClient();
 
+  return useMutation<void, unknown, { targetUserId: number; blockedByMe: boolean }>({
+    mutationFn: async ({ targetUserId, blockedByMe }) => {
+      if (blockedByMe) {
+        // already blocked → unblock
+        await api.post('/users/unblock', { targetUserId, block: false });
+      } else {
+        // not blocked → block
+        await api.post('/users/block', { targetUserId, block: true });
+      }
+    },
+
+    // Optimistic update — flip blockedByMe immediately
+    onMutate: async ({ targetUserId, blockedByMe }) => {
+      await queryClient.cancelQueries({ queryKey: ['userProfile', targetUserId] });
+      await queryClient.cancelQueries({ queryKey: ['userByUsername'] });
+
+      queryClient.setQueryData<User>(['userProfile', targetUserId], (old) => {
+        if (!old) return old;
+        return { ...old, blockedByMe: !blockedByMe };
+      });
+
+      const queries = queryClient
+        .getQueriesData({ queryKey: ['userByUsername'] })
+        .filter(([key]) => key[0] === 'userByUsername') as [readonly unknown[], User | undefined][];
+
+      queries.forEach(([key]) => {
+        queryClient.setQueryData<User>(key, (old) => {
+          if (!old || old.id !== targetUserId) return old;
+          return { ...old, blockedByMe: !blockedByMe };
+        });
+      });
+    },
+
+    onError: (_err, variables) => {
+      // Revert on error
+      queryClient.invalidateQueries({ queryKey: ['userProfile', variables.targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ['userByUsername'] });
+    },
+
+    onSettled: (_data, _error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile', variables.targetUserId] });
+      queryClient.invalidateQueries({ queryKey: ['userByUsername'] });
+    },
+  });
+};
+
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  const updateUserStore = useAuthStore((state) => state.updateUser);
+
   return useMutation({
-    mutationFn: async ({
-      userId,
-      data,
-    }: {
-      userId: number;
-      data: Partial<User>;
-    }) => {
-      const response = await api.patch(`/users/${userId}`, data);
+    mutationFn: async ({ data }: { data: Partial<User> }) => {
+      // Changed from .patch to .put and used the '/users/me' endpoint
+      const response = await api.put('/users/me', data);
       return response.data;
     },
 
-    onSuccess: (_, { userId }) => {
-      queryClient.invalidateQueries({ queryKey: ['userProfile', userId] });
+    onSuccess: (updatedUser) => {
+      // 1. Update the 'currentUser' query cache immediately
+      queryClient.setQueryData(['currentUser'], updatedUser);
+
+      // 2. Update the 'userProfile' cache if we have an ID
+      if (updatedUser.id) {
+        queryClient.setQueryData(['userProfile', updatedUser.id], updatedUser);
+      }
+
+      // 3. Update the 'userByUsername' cache
+      if (updatedUser.username) {
+        queryClient.setQueryData(['userByUsername', updatedUser.username], updatedUser);
+      }
+
+      // 4. Update Zustand store
+      updateUserStore(updatedUser);
+
+      // 5. Invalidate to ensure everything stays in sync
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      queryClient.invalidateQueries({ queryKey: ['userByUsername'] });
     },
   });
 };

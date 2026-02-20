@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { MapPin, MoreHorizontal } from 'lucide-react';
-import { useToggleFollow, useUserLiveStatus } from '@/features/profile/services/profile.service';
+import { useNavigate } from '@tanstack/react-router';
+import { useToggleFollow, useUserLiveStatus, useBlockUser } from '@/features/profile/services/profile.service';
 import type { User } from '@/features/profile/services/profile.types';
 import cameraLogo from "@/assets/Camera.png"
 import { toast } from 'sonner';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
+import { EditProfile } from '@/features/profile/components/EditProfile';
+import { useReportUser } from '@/features/setting/services/setting.service';
+import { BlockUserModal } from '@/components/internal/ConfirmModal';
+import { ReportUserModal } from '@/components/internal/ReasonModal';
+import { SuccessModal } from '@/features/setting/components/SuccessModal';
 
 interface ProfileHeaderProps {
   user: User;
@@ -12,10 +18,17 @@ interface ProfileHeaderProps {
 }
 
 export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
+  const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showReportSuccess, setShowReportSuccess] = useState(false);
 
   const { mutate: toggleFollow, isPending } = useToggleFollow();
+  const { mutate: toggleBlock, isPending: isBlockPending } = useBlockUser();
+  const { mutate: reportUser, isPending: isReportPending } = useReportUser();
   const handleGoLiveClick = useGoLive();
 
   const { data: liveStatus } = useUserLiveStatus(
@@ -24,6 +37,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
   );
 
   const isLive = !isOwnProfile && liveStatus?.isLive === true;
+  const isBlocked = user.blockedByMe ?? false;
 
   const handleLiveClick = () => {
     if (isLive && liveStatus?.callId) {
@@ -44,6 +58,43 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
     });
   };
 
+  // Block / Unblock
+  const handleBlockConfirm = () => {
+    toggleBlock(
+      { targetUserId: user.id, blockedByMe: isBlocked },
+      {
+        onSuccess: () => {
+          toast.success(isBlocked ? 'User unblocked' : 'User blocked');
+          setShowBlockModal(false);
+          setActionMenuOpen(false);
+          if (!isBlocked) {
+            navigate({ to: '/profile' });
+          }
+        },
+        onError: () => {
+          toast.error(isBlocked ? 'Failed to unblock user' : 'Failed to block user');
+        },
+      }
+    );
+  };
+
+  // Report
+  const handleReportConfirm = (reasonId: string, otherText?: string) => {
+    reportUser(
+      { targetUserId: user.id, reasonId, otherText },
+      {
+        onSuccess: () => {
+          setShowReportModal(false);
+          setActionMenuOpen(false);
+          setShowReportSuccess(true);
+        },
+        onError: () => {
+          toast.error('Failed to submit report');
+        },
+      }
+    );
+  };
+
   const handleShare = async () => {
     try {
       const url = `${window.location.origin}/profile/${user.username}`;
@@ -55,149 +106,213 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
   };
 
   return (
-    <div className="bg-[#111213] flex flex-col rounded-2xl p-14 border-2 border-[#1D1F20] mb-15">
-      <div className="flex flex-col sm:flex-row gap-8 justify-between items-start md:items-center mb-10">
-        <div className="flex flex-row gap-6 items-center">
-          <div className="relative shrink-0">
-            <div
-              className={`w-32 h-32 rounded-full p-1 ${isLive ? 'animate-live-ring' : ''}`}
-              style={{
-                background: isLive
-                  ? 'linear-gradient(77.21deg, #718FF2 0%, #2927C5 53%, #FF471A 100%)'
-                  : 'linear-gradient(77.21deg, #718FF2 0%, #2927C5 53%, #FF471A 100%)',
-              }}
-            >
-              <div className="w-full h-full rounded-full border-[3px] border-black overflow-hidden bg-zinc-900">
-                <img
-                  src={user.profileImage || '/api/placeholder/128/128'}
-                  alt={user.username}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
+    <>
+      <EditProfile
+        isOpen={editProfileOpen}
+        onClose={() => setEditProfileOpen(false)}
+      />
 
-            {isOwnProfile && (
-              <button className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200 hover:scale-110 transition-transform">
-                <img src={cameraLogo} alt="Edit profile" className="w-4 h-4" />
-              </button>
-            )}
+      {/* Block / Unblock modal */}
+      <BlockUserModal
+        isOpen={showBlockModal}
+        username={user.username ?? ''}
+        avatarUrl={user.profileImage}
+        isBlocked={isBlocked}
+        isLoading={isBlockPending}
+        onConfirm={handleBlockConfirm}
+        onCancel={() => setShowBlockModal(false)}
+      />
 
-            {isLive && (
-              <button
-                onClick={handleLiveClick}
-                className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#FF0000] text-white text-[12px] font-bold tracking-widest px-4 py-1 rounded-full shadow-md border border-black whitespace-nowrap cursor-pointer hover:bg-red-500 transition-colors"
+      {/* Report success modal */}
+      <SuccessModal
+        isOpen={showReportSuccess}
+        title={`You Reported @${user.username ?? ''} Successfully`}
+        description="Lorem ipsum dolor sit amet, consectetur adipiscing elit. In elementum odio turpis, eget dictum felis fringilla non."
+        buttonLabel="Explore More"
+        onAction={() => setShowReportSuccess(false)}
+      />
+
+      {/* Report modal */}
+      <ReportUserModal
+        isOpen={showReportModal}
+        username={user.username ?? ''}
+        isLoading={isReportPending}
+        onConfirm={handleReportConfirm}
+        onCancel={() => setShowReportModal(false)}
+      />
+
+      <div className="bg-[#111213] flex flex-col rounded-2xl p-14 border-2 border-[#1D1F20] mb-15">
+        <div className="flex flex-col sm:flex-row gap-8 justify-between items-start md:items-center mb-10">
+          <div className="flex flex-row gap-6 items-center">
+            <div className="relative shrink-0">
+              <div
+                className={`w-32 h-32 rounded-full p-1 ${isLive ? 'animate-live-ring' : ''}`}
+                style={{
+                  background: 'linear-gradient(77.21deg, #718FF2 0%, #2927C5 53%, #FF471A 100%)',
+                }}
               >
-                Live
-              </button>
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-1">
-                {user.fullName || user.username}
-              </h1>
-
-            </div>
-
-            <div className="flex items-center gap-4 text-[#494E50] text-sm mb-3">
-              <span className="font-medium">@{user.username}</span>
-              {user.location && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>{user.location}</span>
+                <div className="w-full h-full rounded-full border-[3px] border-black overflow-hidden bg-zinc-900">
+                  <img
+                    src={user.profileImage || '/api/placeholder/128/128'}
+                    alt={user.username}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
+              </div>
+
+              {isOwnProfile && (
+                <button
+                  onClick={() => setEditProfileOpen(true)}
+                  className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200 hover:scale-110 transition-transform"
+                >
+                  <img src={cameraLogo} alt="Edit profile" className="w-4 h-4" />
+                </button>
+              )}
+
+              {isLive && (
+                <button
+                  onClick={handleLiveClick}
+                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#FF0000] text-white text-[12px] font-bold tracking-widest px-4 py-1 rounded-full shadow-md border border-black whitespace-nowrap cursor-pointer hover:bg-red-500 transition-colors"
+                >
+                  Live
+                </button>
               )}
             </div>
-            {user.bio && (
-              <p className="text-zinc-300 text-base max-w-lg leading-relaxed">{user.bio}</p>
+
+            <div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-3xl md:text-4xl font-bold text-white mb-1">
+                  {user.fullName || user.username}
+                </h1>
+              </div>
+
+              <div className="flex items-center gap-4 text-[#494E50] text-sm mb-3">
+                <span className="font-medium">@{user.username}</span>
+                {user.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>{user.location}</span>
+                  </div>
+                )}
+              </div>
+              {user.bio && (
+                <p className="text-zinc-300 text-base max-w-lg leading-relaxed">{user.bio}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 w-full md:w-auto">
+            {isOwnProfile ? (
+              <>
+                <button
+                  onClick={handleGoLiveClick}
+                  className="bg-[#FF7700] text-[#111213] py-3 px-12 rounded-full font-bold hover:bg-[#FF7700] transition-colors cursor-pointer"
+                >
+                  Go Live
+                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setEditProfileOpen(true)}
+                    className="flex-1 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
+                  >
+                    Edit Profile
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setSettingsOpen((prev) => !prev)}
+                      className="w-12 h-12 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer"
+                    >
+                      <MoreHorizontal className="w-6 h-6" />
+                    </button>
+                    {settingsOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
+                        <div className="absolute -right-15 bottom-full w-30 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+                          <button
+                            onClick={() => { setSettingsOpen(false); navigate({ to: '/profile/setting' }); }}
+                            className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+                          >
+                            Settings
+                          </button>
+                          <div className="h-px bg-zinc-800 mx-2" />
+                          <button
+                            onClick={() => { setSettingsOpen(false); handleShare(); }}
+                            className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+                          >
+                            Share Profile
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Follow / Unblock button */}
+                <button
+                  onClick={isBlocked ? () => setShowBlockModal(true) : handleFollowClick}
+                  disabled={isBlocked ? isBlockPending : isPending}
+                  className="w-full md:w-64 bg-[#FF7700] text-[#111213] font-bold py-3.5 rounded-full disabled:opacity-60 hover:bg-[#FF7700] transition-colors cursor-pointer"
+                >
+                  {isBlocked
+                    ? (isBlockPending ? 'Please wait...' : 'Unblock User')
+                    : (isPending ? 'Please wait...' : user.followedByMe ? 'Unfollow' : 'Follow')
+                  }
+                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleShare}
+                    className="flex-1 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
+                  >
+                    Share Profile
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setActionMenuOpen((prev) => !prev)}
+                      className="w-12 h-12 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer"
+                    >
+                      <MoreHorizontal className="w-6 h-6" />
+                    </button>
+                    {actionMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(false)} />
+                        <div className="absolute -right-15 bottom-full w-30 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+                          <button
+                            onClick={() => { setShowBlockModal(true); setActionMenuOpen(false); }}
+                            disabled={isBlockPending}
+                            className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer disabled:opacity-60"
+                          >
+                            {isBlocked ? 'Unblock User' : 'Block User'}
+                          </button>
+                          <div className="h-px bg-zinc-800 mx-2" />
+                          <button
+                            onClick={() => { setShowReportModal(true); setActionMenuOpen(false); }}
+                            className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+                          >
+                            Report User
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 w-full md:w-auto">
-          {isOwnProfile ? (
-            <>
-              <button
-                onClick={handleGoLiveClick}
-                className="bg-[#FF7700] text-[#111213] py-3 px-12 rounded-full font-bold hover:bg-[#FF7700] transition-colors cursor-pointer"
-              >
-                Go Live
-              </button>
-              <div className="flex gap-3">
-                <button className="flex-1 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer">
-                  Edit Profile
-                </button>
-                <div className="relative">
-                  <button
-                    onClick={() => setSettingsOpen((prev) => !prev)}
-                    className="w-12 h-12 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer"
-                  >
-                    <MoreHorizontal className="w-6 h-6" />
-                  </button>
-                  {settingsOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
-                      <div className="absolute -right-15 bottom-full w-30 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
-                        <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer">Settings</button>
-                        <div className="h-px bg-zinc-800 mx-2" />
-                        <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer">Share Profile</button>
-                      </div>
-                    </>
-                  )}
-                </div>
+        <div className="bg-[#1D1F20] rounded-4xl py-3 px-10 md:px-20 border border-zinc-800/40 shadow-2xl">
+          <div className="flex justify-between items-center max-w-2xl">
+            {stats.map((stat, i) => (
+              <div key={i} className="flex flex-col items-center gap-1.5">
+                <span className="text-[#494E50] text-xs font-bold tracking-widest">{stat.label}</span>
+                <span className="text-[#FFE2A5] text-3xl md:text-4xl font-extrabold tracking-tight">{stat.value}</span>
               </div>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleFollowClick}
-                disabled={isPending}
-                className="w-full md:w-64 bg-[#FF7700] text-[#111213] font-bold py-3.5 rounded-full disabled:opacity-60 hover:bg-[#FF7700] transition-colors cursor-pointer"
-              >
-                {isPending ? 'Please wait...' : user.followedByMe ? 'Unfollow' : 'Follow'}
-              </button>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleShare}
-                  className="flex-1 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
-                >
-                  Share Profile
-                </button>
-                <div className="relative">
-                  <button
-                    onClick={() => setActionMenuOpen((prev) => !prev)}
-                    className="w-12 h-12 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer"
-                  >
-                    <MoreHorizontal className="w-6 h-6" />
-                  </button>
-                  {actionMenuOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(false)} />
-                      <div className="absolute -right-15 bottom-full w-30 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
-                        <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer">Block User</button>
-                        <div className="h-px bg-zinc-800 mx-2" />
-                        <button className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer">Report User</button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+            ))}
+          </div>
         </div>
       </div>
-
-      <div className="bg-[#1D1F20] rounded-4xl py-3 px-10 md:px-20 border border-zinc-800/40 shadow-2xl">
-        <div className="flex justify-between items-center max-w-2xl">
-          {stats.map((stat, i) => (
-            <div key={i} className="flex flex-col items-center gap-1.5">
-              <span className="text-[#494E50] text-xs font-bold tracking-widest">{stat.label}</span>
-              <span className="text-[#FFE2A5] text-3xl md:text-4xl font-extrabold tracking-tight">{stat.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    </>
   );
 };

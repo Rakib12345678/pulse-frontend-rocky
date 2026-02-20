@@ -13,12 +13,34 @@ export const AuthModalBackdrop = ({ children, onClose, size = 'default' }: AuthM
             <div className="absolute inset-0" onClick={onClose} />
             <div
                 className={cn(
-                    "relative z-10 overflow-hidden rounded-[24px] bg-[#0f1117] shadow-2xl animate-in zoom-in-95 duration-200 border border-white/5",
-                    size === 'large' ? "w-[920px] h-[720px]" : "w-[660px] h-[560px]"
+                    "relative z-10 overflow-hidden rounded-2xl bg-[#111213] shadow-2xl animate-in zoom-in-95 duration-200 border border-white/5",
+                    size === 'large' ? "w-237.5 h-140" : "w-165 h-140"
                 )}
             >
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_120%_at_100%_0%,rgba(255,71,26,0.15)_0%,rgba(200,60,100,0.1)_25%,rgba(100,60,180,0.05)_50%,transparent_75%)]" />
-
+                <div
+                    className="pointer-events-none absolute rounded-full"
+                    style={{
+                        width: 169,
+                        height: 220,
+                        top: -108,
+                        right: -92,
+                        background: '#FF7700',
+                        filter: 'blur(180px)',
+                        mixBlendMode: 'color-dodge',
+                    }}
+                />
+                <div
+                    className="pointer-events-none absolute rounded-full"
+                    style={{
+                        width: 220,
+                        height: 220,
+                        bottom: -110,
+                        left: -110,
+                        background: '#3E2AB5',
+                        filter: 'blur(354px)',
+                        mixBlendMode: 'color-dodge',
+                    }}
+                />
                 <div className="relative z-10 h-full">
                     {children}
                 </div>

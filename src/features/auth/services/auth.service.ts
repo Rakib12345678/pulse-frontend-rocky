@@ -12,7 +12,7 @@ export interface VerifyOtpPayload {
 }
 
 export interface ProfilePayload {
-    username: string;
+    username?: string;
     fullName: string;
     location: string;
     bio: string;

@@ -10,25 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MainRouteRouteImport } from './routes/_main/route'
-import { Route as MainProfileRouteRouteImport } from './routes/_main/profile/route'
 import { Route as MainLiveRouteRouteImport } from './routes/_main/live/route'
 import { Route as MainForYouRouteRouteImport } from './routes/_main/for-you/route'
 import { Route as MainExploreRouteRouteImport } from './routes/_main/explore/route'
 import { Route as MainCoinsRouteRouteImport } from './routes/_main/coins/route'
 import { Route as MainChatsRouteRouteImport } from './routes/_main/chats/route'
 import { Route as MainIndexRouteRouteImport } from './routes/_main/index/route'
+import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
 import { Route as MainLiveIndexRouteImport } from './routes/_main/live/index'
+import { Route as MainProfileSettingRouteImport } from './routes/_main/profile/setting'
 import { Route as MainProfileUsernameRouteImport } from './routes/_main/profile/$username'
 import { Route as MainLiveIdRouteImport } from './routes/_main/live/$id'
 
 const MainRouteRoute = MainRouteRouteImport.update({
   id: '/_main',
   getParentRoute: () => rootRouteImport,
-} as any)
-const MainProfileRouteRoute = MainProfileRouteRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => MainRouteRoute,
 } as any)
 const MainLiveRouteRoute = MainLiveRouteRouteImport.update({
   id: '/live',
@@ -60,15 +56,25 @@ const MainIndexRouteRoute = MainIndexRouteRouteImport.update({
   path: '',
   getParentRoute: () => MainRouteRoute,
 } as any)
+const MainProfileIndexRoute = MainProfileIndexRouteImport.update({
+  id: '/profile/',
+  path: '/profile/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainLiveIndexRoute = MainLiveIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => MainLiveRouteRoute,
 } as any)
+const MainProfileSettingRoute = MainProfileSettingRouteImport.update({
+  id: '/profile/setting',
+  path: '/profile/setting',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainProfileUsernameRoute = MainProfileUsernameRouteImport.update({
-  id: '/$username',
-  path: '/$username',
-  getParentRoute: () => MainProfileRouteRoute,
+  id: '/profile/$username',
+  path: '/profile/$username',
+  getParentRoute: () => MainRouteRoute,
 } as any)
 const MainLiveIdRoute = MainLiveIdRouteImport.update({
   id: '/$id',
@@ -83,10 +89,11 @@ export interface FileRoutesByFullPath {
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
   '/live': typeof MainLiveRouteRouteWithChildren
-  '/profile': typeof MainProfileRouteRouteWithChildren
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
+  '/profile/setting': typeof MainProfileSettingRoute
   '/live/': typeof MainLiveIndexRoute
+  '/profile/': typeof MainProfileIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof MainIndexRouteRoute
@@ -94,10 +101,11 @@ export interface FileRoutesByTo {
   '/coins': typeof MainCoinsRouteRoute
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
-  '/profile': typeof MainProfileRouteRouteWithChildren
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
+  '/profile/setting': typeof MainProfileSettingRoute
   '/live': typeof MainLiveIndexRoute
+  '/profile': typeof MainProfileIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -108,10 +116,11 @@ export interface FileRoutesById {
   '/_main/explore': typeof MainExploreRouteRoute
   '/_main/for-you': typeof MainForYouRouteRoute
   '/_main/live': typeof MainLiveRouteRouteWithChildren
-  '/_main/profile': typeof MainProfileRouteRouteWithChildren
   '/_main/live/$id': typeof MainLiveIdRoute
   '/_main/profile/$username': typeof MainProfileUsernameRoute
+  '/_main/profile/setting': typeof MainProfileSettingRoute
   '/_main/live/': typeof MainLiveIndexRoute
+  '/_main/profile/': typeof MainProfileIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -122,10 +131,11 @@ export interface FileRouteTypes {
     | '/explore'
     | '/for-you'
     | '/live'
-    | '/profile'
     | '/live/$id'
     | '/profile/$username'
+    | '/profile/setting'
     | '/live/'
+    | '/profile/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,10 +143,11 @@ export interface FileRouteTypes {
     | '/coins'
     | '/explore'
     | '/for-you'
-    | '/profile'
     | '/live/$id'
     | '/profile/$username'
+    | '/profile/setting'
     | '/live'
+    | '/profile'
   id:
     | '__root__'
     | '/_main'
@@ -146,10 +157,11 @@ export interface FileRouteTypes {
     | '/_main/explore'
     | '/_main/for-you'
     | '/_main/live'
-    | '/_main/profile'
     | '/_main/live/$id'
     | '/_main/profile/$username'
+    | '/_main/profile/setting'
     | '/_main/live/'
+    | '/_main/profile/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -164,13 +176,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof MainRouteRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_main/profile': {
-      id: '/_main/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof MainProfileRouteRouteImport
-      parentRoute: typeof MainRouteRoute
     }
     '/_main/live': {
       id: '/_main/live'
@@ -214,6 +219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainIndexRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
+    '/_main/profile/': {
+      id: '/_main/profile/'
+      path: '/profile'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof MainProfileIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/live/': {
       id: '/_main/live/'
       path: '/'
@@ -221,12 +233,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainLiveIndexRouteImport
       parentRoute: typeof MainLiveRouteRoute
     }
+    '/_main/profile/setting': {
+      id: '/_main/profile/setting'
+      path: '/profile/setting'
+      fullPath: '/profile/setting'
+      preLoaderRoute: typeof MainProfileSettingRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/profile/$username': {
       id: '/_main/profile/$username'
-      path: '/$username'
+      path: '/profile/$username'
       fullPath: '/profile/$username'
       preLoaderRoute: typeof MainProfileUsernameRouteImport
-      parentRoute: typeof MainProfileRouteRoute
+      parentRoute: typeof MainRouteRoute
     }
     '/_main/live/$id': {
       id: '/_main/live/$id'
@@ -252,17 +271,6 @@ const MainLiveRouteRouteWithChildren = MainLiveRouteRoute._addFileChildren(
   MainLiveRouteRouteChildren,
 )
 
-interface MainProfileRouteRouteChildren {
-  MainProfileUsernameRoute: typeof MainProfileUsernameRoute
-}
-
-const MainProfileRouteRouteChildren: MainProfileRouteRouteChildren = {
-  MainProfileUsernameRoute: MainProfileUsernameRoute,
-}
-
-const MainProfileRouteRouteWithChildren =
-  MainProfileRouteRoute._addFileChildren(MainProfileRouteRouteChildren)
-
 interface MainRouteRouteChildren {
   MainIndexRouteRoute: typeof MainIndexRouteRoute
   MainChatsRouteRoute: typeof MainChatsRouteRoute
@@ -270,7 +278,9 @@ interface MainRouteRouteChildren {
   MainExploreRouteRoute: typeof MainExploreRouteRoute
   MainForYouRouteRoute: typeof MainForYouRouteRoute
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
-  MainProfileRouteRoute: typeof MainProfileRouteRouteWithChildren
+  MainProfileUsernameRoute: typeof MainProfileUsernameRoute
+  MainProfileSettingRoute: typeof MainProfileSettingRoute
+  MainProfileIndexRoute: typeof MainProfileIndexRoute
 }
 
 const MainRouteRouteChildren: MainRouteRouteChildren = {
@@ -280,7 +290,9 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainExploreRouteRoute: MainExploreRouteRoute,
   MainForYouRouteRoute: MainForYouRouteRoute,
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
-  MainProfileRouteRoute: MainProfileRouteRouteWithChildren,
+  MainProfileUsernameRoute: MainProfileUsernameRoute,
+  MainProfileSettingRoute: MainProfileSettingRoute,
+  MainProfileIndexRoute: MainProfileIndexRoute,
 }
 
 const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(

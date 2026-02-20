@@ -45,8 +45,10 @@ import {
     DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuPortal
 } from '@radix-ui/react-dropdown-menu';
+import { useUpdateProfile } from '@/features/profile/services/profile.service';
+
+// -----StepWrapper ------- 
 
 interface StepWrapperProps {
     children: React.ReactNode;
@@ -118,11 +120,26 @@ const StepInput = () => {
     const { closeModal } = useSignUpStore();
     const { authenticate } = useAuth();
 
+    const storeIdentifier = useSignUpStore((s) => s.identifier);
+
     const form = useForm<InputFormData>({
         resolver: zodResolver(inputSchema),
-        defaultValues: { identifier: useSignUpStore.getState().identifier },
+        defaultValues: { identifier: storeIdentifier },
         mode: 'onChange'
     });
+
+    useEffect(() => {
+        form.setValue('identifier', storeIdentifier, { shouldValidate: false });
+    }, [storeIdentifier]);
+
+    const prevMethod = useRef(method);
+    useEffect(() => {
+        if (prevMethod.current !== method) {
+            form.setValue('identifier', '', { shouldValidate: false });
+            setIdentifier('');
+            prevMethod.current = method;
+        }
+    }, [method]);
 
     const filteredCountries = countryCodes.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -562,7 +579,6 @@ const StepAge = () => {
 
 // --- 5. DETAILS STEP (FIXED TWO-COLUMN LAYOUT) ---
 const detailsSchema = z.object({
-    username: z.string({ message: "Username is required" }).min(3, "Min 3 chars").regex(/^\S+$/, "Spaces are not allowed"),
     fullName: z.string({ message: "Full name is required" }).min(2, "Min 2 chars"),
     location: z.string({ message: "Please select a location" }).min(2, "Please select a location"),
     bio: z.string().max(100).nullable().optional(),
@@ -585,8 +601,7 @@ const generateAvatarFile = async (name: string): Promise<File> => {
 
     // Background
     const colors = ['#FF8800', '#FF5500', '#FFAA00', '#FF3300', '#FFCC00'];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    ctx.fillStyle = randomColor;
+    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
     ctx.fillRect(0, 0, 400, 400);
 
     // Text
@@ -594,68 +609,88 @@ const generateAvatarFile = async (name: string): Promise<File> => {
     ctx.font = 'bold 200px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const initial = (name[0] || '?').toUpperCase();
-    ctx.fillText(initial, 200, 200);
+    ctx.fillText((name[0] || '?').toUpperCase(), 200, 200);
 
     return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
-            if (blob) {
-                resolve(new File([blob], 'avatar.png', { type: 'image/png' }));
-            } else {
-                reject(new Error('Failed to generate avatar'));
-            }
+            if (blob) resolve(new File([blob], 'avatar.png', { type: 'image/png' }));
+            else reject(new Error('Failed to generate avatar'));
         }, 'image/png');
     });
 };
 
-const StepDetails = () => {
-    const { identifier, countryCode, method, isAdult, closeModal } = useSignUpStore();
+export interface StepDetailsProps {
+    mode?: 'signup' | 'edit';
+    initialValues?: {
+        fullName?: string;
+        location?: string;
+        bio?: string;
+        profileImage?: string;
+        username?: string;
+        identifier?: string;
+    };
+    isAdult?: boolean;
+    onSuccess?: () => void;
+    onCancel?: () => void;
+}
+
+export const StepDetails = ({
+    mode = 'signup',
+    initialValues,
+    isAdult: isAdultProp,
+    onSuccess,
+    onCancel,
+}: StepDetailsProps) => {
+    const store = useSignUpStore();
+    const { mutateAsync: updateProfileMutation } = useUpdateProfile();
     const user = useAuthStore((s) => s.user);
+    const isAdult = isAdultProp ?? store.isAdult;
+
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+
+    const [username, setUsername] = useState('');
+    const [usernameError, setUsernameError] = useState('');
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
     const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
-    const [profileImage, setProfileImage] = useState<string | null>(null);
-    const [profileImageKey, setProfileImageKey] = useState<string | null>(null);
+    const [profileImage, setProfileImage] = useState<string | null>(initialValues?.profileImage ?? null);
+    const [profileImageKey, setProfileImageKey] = useState<string | null>(initialValues?.profileImage ?? null);
     const [isUploading, setIsUploading] = useState(false);
+    const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Setup React Hook Form
     const form = useForm<DetailsFormData>({
         resolver: zodResolver(detailsSchema),
         defaultValues: {
-            location: "India",
-            fullName: ""
+            fullName: initialValues?.fullName ?? "",
+            location: initialValues?.location ?? "India",
+            bio: initialValues?.bio ?? "",
         },
         mode: 'onChange'
     });
 
-    const usernameValue = form.watch('username');
-
     // Username Availability Check with Debounce
     useEffect(() => {
-        if (!usernameValue || usernameValue.length < 3) {
+        if (mode !== 'signup') return;
+        if (!username || username.length < 3) {
             setIsUsernameAvailable(null);
             return;
         }
 
         // Don't check availability if username contains spaces
-        if (/\s/.test(usernameValue)) {
+        if (/\s/.test(username)) {
             setIsUsernameAvailable(false);
-            form.setError('username', { message: 'Spaces are not allowed' });
+            setUsernameError('Spaces are not allowed');
             return;
         }
 
         const timer = setTimeout(async () => {
             setIsCheckingUsername(true);
             try {
-                const available = await authService.checkUsernameAvailable(usernameValue);
+                const available = await authService.checkUsernameAvailable(username);
                 setIsUsernameAvailable(available);
-                if (!available) {
-                    form.setError('username', { message: 'Username is already taken' });
-                } else {
-                    form.clearErrors('username');
-                }
+                setUsernameError(available ? '' : 'Username is already taken');
             } catch (error) {
                 console.error('Failed to check username:', error);
             } finally {
@@ -664,21 +699,18 @@ const StepDetails = () => {
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [usernameValue, form]);
+    }, [username, mode]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         // Validation
-        const allowedTypes = ['image/jpeg', 'image/png'];
-        if (!allowedTypes.includes(file.type)) {
+        if (!['image/jpeg', 'image/png'].includes(file.type)) {
             toast.error("Please upload a JPEG or PNG image only");
             return;
         }
-
-        const maxSize = 2 * 1024 * 1024; // 2MB
-        if (file.size > maxSize) {
+        if (file.size > 2 * 1024 * 1024) {
             toast.error("Image size must be less than 2MB");
             return;
         }
@@ -716,13 +748,20 @@ const StepDetails = () => {
         }
     };
 
-    const onSubmit = async (data: DetailsFormData) => {
-        if (isUsernameAvailable === false) return;
+   const onSubmit = async (data: DetailsFormData) => {
+        if (mode === 'signup') {
+            if (username.length < 3) { 
+                setUsernameError('Min 3 chars'); 
+                return; 
+            }
+            if (isUsernameAvailable === false) return;
+        }
 
         setIsLoading(true);
         try {
             let currentProfileImageKey = profileImageKey;
 
+            // Avatar generation logic
             if (!currentProfileImageKey) {
                 try {
                     const file = await generateAvatarFile(data.fullName);
@@ -736,259 +775,317 @@ const StepDetails = () => {
                 }
             }
 
-            const response = await authService.updateProfile({
-                ...data,
-                bio: data.bio ?? "",
-                eighteenPlus: isAdult,
-                profileImage: currentProfileImageKey || ""
+            // --- UPDATED MUTATION CALL ---
+            await updateProfileMutation({
+                data: {
+                    ...data,
+                    username: mode === 'signup' ? username : (initialValues?.username ?? ''),
+                    bio: data.bio ?? "",
+                    eighteenPlus: isAdult,
+                    profileImage: currentProfileImageKey || ""
+                }
             });
+            // ------------------------------
 
-            // Update auth store with returned user data
-            useAuthStore.getState().updateUser(response.data);
-            // make onboarding as complete so modal wont reopen again
-            useAuthStore.setState({ isNewUser: false });
-
-            toast.success("Account created successfully!");
-            closeModal();
-            useSignUpStore.getState().reset();
-            navigate({ to: '/for-you' });
+            if (mode === 'signup') {
+                useAuthStore.setState({ isNewUser: false });
+                toast.success("Account created successfully!");
+                onSuccess?.();
+                store.closeModal();
+                store.reset();
+                navigate({ to: '/for-you' });
+            } else {
+                toast.success("Profile updated successfully!");
+                onSuccess?.();
+            }
         } catch (error: any) {
-            console.log("123" + error)
+            console.error("Profile update error:", error);
             toast.error(error.response?.data?.message || "Failed to update profile");
         } finally {
             setIsLoading(false);
         }
     };
 
+    const title = mode === 'edit' ? 'Edit Profile' : 'Almost There!';
+    const subtitle = mode === 'edit' ? 'Update your profile details below.' : 'Welcome, Please fill the missing fields.';
+    const submitLabel = mode === 'edit' ? 'Save' : 'Enter PulseLive';
+
+    const identifierPill = mode === 'signup'
+        ? (store.identifier?.includes('@')
+            ? store.identifier
+            : (store.identifier && store.method === 'phone' && store.countryCode
+                ? `${store.countryCode} ${store.identifier}`
+                : (store.identifier || useAuthStore.getState().user?.email || '')))
+        : initialValues?.identifier;
+
     return (
-        <div className="flex flex-col h-full w-full overflow-y-auto custom-scrollbar">
-            {/* Header */}
-            <div className="flex flex-col items-center gap-4 shrink-0 pt-6 pb-4 px-6">
-                <img src={Logo} alt="PulseLive" className='h-12 w-12' />
-                <div className="text-center">
-                    <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Almost There!</h2>
-                    <p className="text-gray-400 font-normal text-sm md:text-base leading-relaxed tracking-normal mt-2">
-                        Welcome, Please fill the missing fields.
-                    </p>
-                </div>
-            </div>
+        <div className="flex h-full w-full overflow-y-auto custom-scrollbar items-start p-5">
 
-            {/* Two Column Layout */}
-            <div className="flex-1 flex items-start justify-center pt-10 px-6">
-                <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-[380px_1fr] gap-8 items-start">
+            {/* ── Left Card ── */}
+            <div className="flex flex-col items-center gap-8 bg-[#1D1F20] rounded-xl py-16.5 px-8 w-97.5 h-full shrink-0 border border-white/5 self-start">
 
-                    {/* Left Column - Verified Info & Avatar */}
-                    <div className="flex flex-col items-center gap-6 bg-[#1a1c24]/40 rounded-2xl p-8 border border-white/5">
-                        {/* Verified Box */}
-                        <div className="w-full rounded-xl border border-blue-500/30 bg-blue-500/10 h-14 px-4 flex justify-between items-center">
-                            <span className="text-gray-300 text-sm font-medium truncate">
-                                {method === 'phone' && identifier ? `${countryCode} ${identifier}` : (identifier || user?.email || "Email Verified")}
-                            </span>
-                            <div className="bg-blue-500 rounded-full p-0.5 shrink-0">
-                                <Check className="w-3 h-3 text-black" strokeWidth={4} />
+                {/* Verified identifier pill */}
+                {identifierPill && (
+                    <div className="w-full rounded-lg border border-blue-500/50 bg-transparent h-12 px-5 py-7 flex justify-between items-center gap-8">
+                        <span className="text-gray-300 text-[16px] truncate">{identifierPill}</span>
+                        <div className="shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                        </div>
+                    </div>
+                )}
+
+                {/* Avatar with gradient ring */}
+                <div className="relative mt-1">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/jpeg,image/png"
+                        onChange={handleFileChange}
+                    />
+                    <div className="size-33 rounded-full p-0.75"
+                        style={{ background: 'linear-gradient(135deg, #6366f1 0%, #3b3bd6 50%, #ef4444 100%)' }}
+                    >
+                        <div className="w-full h-full rounded-full bg-[#1c1e27] p-0.5">
+                            <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center text-4xl font-bold text-white">
+                                {profileImage ? (
+                                    <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    (form.watch('fullName')?.[0] || '👤').toUpperCase()
+                                )}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Avatar */}
-                        <div className="relative group">
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept="image/jpeg,image/png"
-                                onChange={handleFileChange}
-                            />
-                            <div className="w-32 h-32 rounded-full bg-blue-500/10 p-[3px] overflow-hidden">
-                                <div className="w-full h-full rounded-full bg-blue-500/10 flex items-center justify-center text-5xl font-bold text-white overflow-hidden">
-                                    {profileImage ? (
-                                        <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
-                                    ) : (
-                                        (form.watch('fullName')?.[0] || '👤').toUpperCase()
-                                    )}
+                    {isUploading && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
+                            <Loader2 className="w-7 h-7 animate-spin text-white" />
+                        </div>
+                    )}
 
-                                    {/* Loading Overlay */}
-                                    {isUploading && (
-                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full">
-                                            <Loader2 className="w-8 h-8 animate-spin text-white" />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
+                    <div className="absolute bottom-0.5 right-0.5">
+                        <button
+                            type="button"
+                            disabled={isUploading}
+                            onClick={() => setCameraMenuOpen(o => !o)}
+                            className="bg-white rounded-full p-1.5 cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center border-2 border-[#1D1F20]"
+                        >
+                            <Camera className="w-4 h-4 text-black" />
+                        </button>
+                        {cameraMenuOpen && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-40"
+                                    style={{ background: 'transparent' }}
+                                    onClick={() => setCameraMenuOpen(false)}
+                                />
+                                <div className="absolute bottom-full -right-20 mb-2 z-50 min-w-[130px] bg-[#1a1c24] border border-white/10 rounded-xl p-1 shadow-2xl">
                                     <button
                                         type="button"
-                                        disabled={isUploading}
-                                        className="absolute bottom-0 right-0 bg-white rounded-full p-2 cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
+                                        onClick={() => { fileInputRef.current?.click(); setCameraMenuOpen(false); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-white/5 rounded-lg"
                                     >
-                                        <Camera className="w-5 h-5 text-black" />
+                                        {profileImage ? 'Change Photo' : 'Add Photo'}
                                     </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuPortal>
-                                    <DropdownMenuContent
-                                        className="min-w-[150px] bg-[#1a1c24] border border-white/10 rounded-xl p-1 shadow-2xl z-50"
-                                        sideOffset={5}
-                                        align="end"
-                                    >
-                                        <DropdownMenuItem
-                                            onSelect={() => fileInputRef.current?.click()}
-                                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-200 cursor-pointer hover:bg-white/5 rounded-lg outline-none focus:bg-white/5"
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                            {profileImage ? 'Change Photo' : 'Add Photo'}
-                                        </DropdownMenuItem>
-                                        {profileImage && (
-                                            <DropdownMenuItem
-                                                onSelect={handleDeletePhoto}
-                                                className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 cursor-pointer hover:bg-red-400/5 rounded-lg outline-none focus:bg-red-400/5"
+
+                                    {profileImage && (
+                                        <>
+                                            <div className="my-1 border-t border-white/10" />
+                                            <button
+                                                type="button"
+                                                onClick={() => { handleDeletePhoto(); setCameraMenuOpen(false); }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-red-400/5 rounded-lg"
                                             >
-                                                <div className="w-4 h-4 flex items-center justify-center">×</div>
                                                 Delete Photo
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenuPortal>
-                            </DropdownMenu>
-                        </div>
-
-                        {/* Name Input */}
-                        <div className="w-full">
-                            <label className="block text-xs text-gray-400 mb-2 ml-1">Your name</label>
-                            <Form {...form}>
-                                <FormField
-                                    control={form.control}
-                                    name="fullName"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    className="h-12 bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/50"
-                                                    placeholder="No Name"
-                                                />
-                                            </FormControl>
-                                            <FormMessage className="text-[10px]" />
-                                        </FormItem>
+                                            </button>
+                                        </>
                                     )}
-                                />
-                            </Form>
-                        </div>
-
-                        <p className="text-xs text-gray-500 text-center leading-relaxed mt-2">
-                            You can edit your profile picture or upload a new one (JPG or PNG)
-                        </p>
-                    </div>
-
-                    {/* Right Column - Form Fields */}
-                    <div className="flex flex-col">
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-
-                                {/* Username & Location Row */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                                    <FormField
-                                        control={form.control}
-                                        name="username"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-1">
-                                                <div className="flex justify-between items-center">
-                                                    <label className="text-xs text-gray-400 ml-1">User name</label>
-                                                    {isCheckingUsername && <Loader2 className="w-3 h-3 animate-spin text-gray-500 mr-2" />}
-                                                    {isUsernameAvailable === true && !isCheckingUsername && <Check className="w-3 h-3 text-green-500 mr-2" />}
-                                                </div>
-                                                <FormControl>
-                                                    <Input
-                                                        {...field}
-                                                        className={cn(
-                                                            "h-12 bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/50",
-                                                            isUsernameAvailable === false && "border-red-500",
-                                                            isUsernameAvailable === true && "border-green-500/50"
-                                                        )}
-                                                        placeholder="Enter your user name"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage className="text-[10px]" />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
-                                        name="location"
-                                        render={({ field }) => (
-                                            <FormItem className="space-y-1">
-                                                <label className="text-xs text-gray-400 ml-1">Location</label>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className="w-full h-12 bg-transparent border-white/20 rounded-xl text-white focus:ring-0 focus:border-white/50 py-5.5">
-                                                            <SelectValue placeholder="Select Location" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent className="bg-[#1a1c24] border-white/10 text-white max-h-60">
-                                                        {countryCodes.map(c => (
-                                                            <SelectItem key={c.code} value={c.name} className="focus:bg-white/10 focus:text-white cursor-pointer">
-                                                                {c.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage className="text-[10px]" />
-                                            </FormItem>
-                                        )}
-                                    />
                                 </div>
-
-                                {/* Bio */}
-                                <FormField
-                                    control={form.control}
-                                    name="bio"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-1">
-                                            <label className="text-xs text-gray-400 ml-1">Bio</label>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <Textarea
-                                                        {...field}
-                                                        value={field.value ?? ""}
-                                                        className="bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/50 resize-none h-28 py-3 pr-10"
-                                                        placeholder="Dancer | Singer | Streamer"
-                                                        maxLength={100}
-                                                    />
-                                                    <div className="absolute bottom-3 right-3">
-                                                        <Pencil className="w-4 h-4 text-gray-500" />
-                                                    </div>
-                                                    <span className="absolute -bottom-5 right-1 text-[10px] text-gray-500">
-                                                        {field.value?.length || 0}/100
-                                                    </span>
-                                                </div>
-                                            </FormControl>
-                                            <FormMessage className="text-[10px]" />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                {/* Submit Button */}
-                                <Button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="w-full mt-8 rounded-full bg-[#1a1c24] border border-white/5 h-14 text-sm font-medium text-gray-300 hover:bg-[#252833] hover:text-white"
-                                >
-                                    {isLoading ? 'Saving...' : 'Enter PulseLive'}
-                                </Button>
-
-                                {/* Terms */}
-                                <p className="text-xs text-gray-500 text-center pt-4">
-                                    By continuing, I agree to{' '}
-                                    <span className="text-blue-500 cursor-pointer hover:underline">terms & conditions</span>
-                                    {' '}&{' '}
-                                    <span className="text-blue-500 cursor-pointer hover:underline">privacy policy</span>
-                                </p>
-                            </form>
-                        </Form>
+                            </>
+                        )}
                     </div>
                 </div>
+
+                {/* Name Input */}
+                <div className="w-full">
+                    <label className="block text-xs text-gray-400 mb-2">Your name</label>
+                    <Form {...form}>
+                        <FormField
+                            control={form.control}
+                            name="fullName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            className="h-12 bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 text-[16px] px-5 py-7"
+                                            placeholder="No Name"
+                                            style={{ border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                        />
+                                    </FormControl>
+                                    <FormMessage className="text-[10px]" />
+                                </FormItem>
+                            )}
+                        />
+                    </Form>
+                </div>
+
+                <p className="text-xs text-gray-600 text-center leading-relaxed">
+                    You can edit your profile picture or upload a new one (JPG or PNG)
+                </p>
             </div>
+
+            {/* Right Column - Form Fields */}
+            <div className="flex flex-col flex-1 justify-start px-8 py-4 min-w-0">
+
+                <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-1">{title}</h2>
+                <p className="text-gray-400 text-sm mb-7">{subtitle}</p>
+
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+
+                        {/* Username & Location Row */}
+                        <div className="grid grid-cols-2 gap-4 items-start">
+                            {/* Username */}
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center justify-between" style={{ height: '20px' }}>
+                                    <label className="text-xs text-gray-400">User name</label>
+                                    {mode === 'signup' && isCheckingUsername && <Loader2 className="w-3 h-3 animate-spin text-gray-500" />}
+                                    {mode === 'signup' && isUsernameAvailable === true && !isCheckingUsername && <Check className="w-3 h-3 text-green-500" />}
+                                </div>
+                                {mode === 'signup' ? (
+                                    <>
+                                        <input
+                                            value={username}
+                                            onChange={(e) => {
+                                                setUsername(e.target.value);
+                                                setUsernameError('');
+                                                setIsUsernameAvailable(null);
+                                            }}
+                                            placeholder="Enter your user name"
+                                            className={cn(
+                                                "w-full bg-[#111213] border rounded-xl text-white text-sm placeholder:text-gray-600 outline-none transition-colors px-5 py-7",
+                                                "border-white/20 focus:border-white/40",
+                                                isUsernameAvailable === false && "border-red-500/70",
+                                                isUsernameAvailable === true && "border-green-500/40"
+                                            )}
+                                            style={{ height: '48px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                        />
+                                        {usernameError && <p className="text-[10px] text-red-400 mt-0.5">{usernameError}</p>}
+                                    </>
+                                ) : (
+                                    <input
+                                        value={initialValues?.username ?? ''}
+                                        readOnly
+                                        tabIndex={-1}
+                                        className="w-full bg-white/3 border border-white/10 rounded-lg text-gray-500 cursor-not-allowed text-sm select-none outline-none px-5 py-7"
+                                        style={{ height: '48px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Location */}
+                            <FormField
+                                control={form.control}
+                                name="location"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col gap-1.5">
+                                        <label className="text-xs text-gray-400" style={{ height: '20px', display: 'flex', alignItems: 'center' }}>Location</label>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger
+                                                    className="bg-[#111213] border-white/20 rounded-lg text-white
+                                                                focus:ring-0 focus:border-white/40
+                                                                text-sm w-full px-5 py-7 h-12
+                                                                [&>svg]:text-white!
+                                                                [&>svg]:opacity-100!
+                                                                [&>svg]:w-5
+                                                                [&>svg]:h-5"
+                                                    style={{ border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                                >
+                                                    <SelectValue placeholder="Select Location" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent
+                                                className="bg-[#1a1c24] border-white/10 text-white max-h-60"
+                                                position="popper"
+                                            >
+                                                {countryCodes.map(c => (
+                                                    <SelectItem key={c.code} value={c.name} className="focus:bg-white/10 focus:text-white cursor-pointer text-[16px]">
+                                                        {c.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {/* Bio */}
+                        <FormField
+                            control={form.control}
+                            name="bio"
+                            render={({ field }) => (
+                                <FormItem className="space-y-1.5">
+                                    <label className="text-xs text-gray-400">Bio</label>
+                                    <FormControl>
+                                        <div className="relative">
+                                            <Textarea
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                className="bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 resize-y min-h-[100px] py-3 text-[16px]"
+                                                placeholder="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                                                maxLength={100}
+                                                style={{ border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                            />
+                                            <span className="absolute bottom-2 right-3 text-[10px] text-gray-500">
+                                                {field.value?.length || 0}/100
+                                            </span>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage className="text-[10px]" />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Submit Button */}
+                        <div className="flex gap-3 mt-8">
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="rounded-full bg-[#FF8800] h-12 px-18 text-sm font-bold text-black hover:bg-[#ff9922] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                            >
+                                {isLoading
+                                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
+                                    : submitLabel
+                                }
+                            </Button>
+
+                            {onCancel && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={onCancel}
+                                    disabled={isLoading}
+                                    className="rounded-full border-[#FF8800] h-12 px-18 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800] cursor-pointer"
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+                        </div>
+
+                        <p className="text-xs text-gray-500 mt-4">
+                            By continuing, I agree to{' '}
+                            <span className="text-blue-500 cursor-pointer hover:underline">terms & conditions</span>
+                            {' '}&{' '}
+                            <span className="text-blue-500 cursor-pointer hover:underline">privacy policy</span>
+                        </p>
+                    </form>
+                </Form>
+            </div>
+
+
         </div>
     );
 };
@@ -997,7 +1094,7 @@ const StepDetails = () => {
 
 // --- MAIN EXPORT ---
 export const SignUpModal = () => {
-    const { isOpen, currentStep, closeModal, openModal, setStep } = useSignUpStore();
+    const { isOpen, currentStep, closeModal, openModal, setStep, isAdult, identifier, method, countryCode } = useSignUpStore();
     const { isNewUser, isAuthenticated, isHydrated } = useAuthStore();
 
     useEffect(() => {
@@ -1013,13 +1110,13 @@ export const SignUpModal = () => {
     if (!isOpen) return null;
 
     const handleClose = () => {
-        // If user is authenticated and flagged as a new user, 
-        // they must complete the onboarding (Age/Details) and cannot dismiss the modal.
-        if (isAuthenticated && isNewUser) {
-            return;
-        }
+        if (isAuthenticated && isNewUser) return;
         closeModal();
     };
+
+    const verifiedIdentifier = method === 'phone' && countryCode
+        ? `${countryCode} ${identifier}`
+        : identifier;
 
     return (
         <AuthModalBackdrop onClose={handleClose} size={currentStep === 'details' ? 'large' : 'default'}>
@@ -1027,7 +1124,13 @@ export const SignUpModal = () => {
             {currentStep === 'input' && <StepInput />}
             {currentStep === 'otp' && <StepOTP />}
             {currentStep === 'age' && <StepAge />}
-            {currentStep === 'details' && <StepDetails />}
+            {currentStep === 'details' && (
+                <StepDetails
+                    mode="signup"
+                    isAdult={isAdult}
+                    initialValues={{ identifier: verifiedIdentifier }}
+                />
+            )}
         </AuthModalBackdrop>
     );
 };
