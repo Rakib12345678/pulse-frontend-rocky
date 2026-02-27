@@ -7,7 +7,9 @@ import {
     ChevronDown, Check, Pencil,
     Search, Loader2,
     Mail, Phone,
-    Camera
+    Camera,
+    ChevronLeft,
+    X,
 } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { cn } from '@/lib/utils';
@@ -17,7 +19,7 @@ import { authService } from '../services/auth.service';
 import { toast } from 'sonner';
 import { mediaService } from '../services/media.service';
 import { countryCodes } from '@/lib/countries';
-import Logo from "@/assets/Logo.svg"
+import Logo from "@/assets/Logo.svg";
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AuthModalBackdrop } from './AuthModalBackdrop';
 
@@ -45,15 +47,172 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from '@radix-ui/react-dropdown-menu';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+} from '@/components/ui/drawer';
 import { useUpdateProfile } from '@/features/profile/services/profile.service';
 
-// -----StepWrapper ------- 
+// ---------- Country Drawer (mobile only) --------------
+interface CountryDrawerProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    selectedValue: string;
+    mode: 'dialCode' | 'location';
+    onSelect: (value: string) => void;
+    title?: string;
+}
 
+const CountryDrawer: React.FC<CountryDrawerProps> = ({
+    open,
+    onOpenChange,
+    selectedValue,
+    mode,
+    onSelect,
+    title = 'Select Country',
+}) => {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filtered = countryCodes.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (mode === 'dialCode' && c.dial_code.includes(searchQuery))
+    );
+
+    const handleSelect = (c: typeof countryCodes[0]) => {
+        onSelect(mode === 'dialCode' ? c.dial_code : c.name);
+        onOpenChange(false);
+        setSearchQuery('');
+    };
+
+    return (
+        <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
+            {open && (
+                <div
+                    className="fixed inset-0 z-499 bg-black/60"
+                    onClick={() => onOpenChange(false)}
+                />
+            )}
+            <DrawerContent
+                aria-describedby={undefined}
+                onPointerDownOutside={() => onOpenChange(false)}
+                onInteractOutside={() => onOpenChange(false)}
+                className="fixed bottom-0 left-0 right-0 z-500 bg-[#111213] border-t border-[#1D1F20] flex flex-col rounded-t-2xl focus:outline-none"
+                style={{
+                    maxHeight: '70dvh',
+                    paddingBottom: 'env(safe-area-inset-bottom)',
+                }}
+            >
+                <DrawerHeader className="shrink-0 pb-0 px-4 pt-4">
+                    <DrawerTitle className="text-white text-base font-semibold text-left">
+                        {title}
+                    </DrawerTitle>
+                    <div className="flex items-center gap-2 mt-3 px-3 h-11 bg-[#1a1c24] rounded-xl border border-white/10 focus-within:border-white/25 transition-colors">
+                        <Search className="w-4 h-4 text-gray-500 shrink-0" />
+                        <input
+                            className="flex-1 bg-transparent border-none text-white focus:outline-none placeholder:text-gray-600"
+                            placeholder="Search country..."
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            style={{ fontSize: '16px' }}
+                        />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')} className="text-gray-500">
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                </DrawerHeader>
+                <div className="overflow-y-auto flex-1 px-2 pb-6 pt-2 [&::-webkit-scrollbar]:hidden">
+                    {filtered.length === 0 && (
+                        <p className="text-center text-sm text-gray-500 py-10">No country found</p>
+                    )}
+                    {filtered.map(c => {
+                        const isSelected =
+                            mode === 'dialCode' ? selectedValue === c.dial_code : selectedValue === c.name;
+                        return (
+                            <button
+                                key={c.code}
+                                onClick={() => handleSelect(c)}
+                                className={cn(
+                                    'w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors',
+                                    isSelected ? 'bg-[#FF8800]/10' : 'hover:bg-white/5'
+                                )}
+                            >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    {mode === 'dialCode' && (
+                                        <span className="text-gray-500 font-mono text-xs w-10 text-right shrink-0">
+                                            {c.dial_code}
+                                        </span>
+                                    )}
+                                    <span className={cn('text-sm truncate', isSelected ? 'text-[#FF8800] font-semibold' : 'text-gray-200')}>
+                                        {c.name}
+                                    </span>
+                                </div>
+                                {isSelected && <Check className="w-4 h-4 text-[#FF8800] shrink-0" />}
+                            </button>
+                        );
+                    })}
+                </div>
+            </DrawerContent>
+        </Drawer>
+    );
+};
+
+// -------- Mobile Page Header ---------
+interface MobilePageHeaderProps {
+    title?: string;
+    showBack?: boolean;
+    onBack?: () => void;
+    onClose?: () => void;
+    showClose?: boolean;
+}
+
+const MobilePageHeader: React.FC<MobilePageHeaderProps> = ({
+    title = 'Profile',
+    showBack = false,
+    onBack,
+    onClose,
+    showClose = true,
+}) => (
+    <div className="flex md:hidden items-center justify-between px-4 h-18 shrink-0 w-full bg-[#111213] border-b border-[#1D1F20] sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+            {showBack ? (
+                <button
+                    onClick={onBack}
+                    className="p-1 -ml-1 flex items-center justify-center cursor-pointer text-white"
+                >
+                    <ChevronLeft className="w-6 h-6" strokeWidth={2.5} />
+                </button>
+            ) : (
+                <img src={Logo} alt="PulseLive" className="w-8 h-8 rounded-lg" />
+            )}
+            <span className="text-white font-bold text-lg">{title}</span>
+        </div>
+        <div className="flex items-center gap-2">
+            {showClose && (
+                <button
+                    onClick={onClose}
+                    className="p-1 -mr-1 flex items-center justify-center cursor-pointer text-white hover:bg-white/10 rounded-full transition-colors"
+                >
+                    <X className="w-6 h-6" />
+                </button>
+            )}
+        </div>
+    </div>
+);
+
+// ------ Step Wrapper --------
 interface StepWrapperProps {
     children: React.ReactNode;
     title: string;
     subtitle?: string;
     className?: string;
+    showBackButton?: boolean;
+    onBack?: () => void;
+    mobileHeaderTitle?: string;
+    showMobileHeader?: boolean;
 }
 
 const StepWrapper = ({
@@ -61,22 +220,46 @@ const StepWrapper = ({
     title,
     subtitle,
     className = "",
+    showBackButton,
+    onBack,
+    mobileHeaderTitle = "Profile",
+    showMobileHeader = true,
 }: StepWrapperProps) => {
-    return (
-        <div className={cn("flex flex-col h-full w-full overflow-y-auto custom-scrollbar", className)}>
-            <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 min-h-full w-full max-w-[500px] mx-auto text-center">
-                {/* Logo & Header */}
-                <div className="flex flex-col items-center gap-6 shrink-0 mb-8">
-                    <img src={Logo} alt="PulseLive" className='h-16 w-16 md:h-20 md:w-20' />
-                    <div>
-                        <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">{title}</h2>
-                        {subtitle && <p className="text-gray-400 font-normal text-sm md:text-lg leading-relaxed tracking-normal mt-3">{subtitle}</p>}
-                    </div>
-                </div>
+    const { closeModal } = useSignUpStore();
+    const { isAuthenticated, isNewUser } = useAuthStore();
 
-                {/* Content */}
-                <div className="w-full flex flex-col items-center flex-1">
-                    {children}
+    const handleClose = () => {
+        if (isAuthenticated && isNewUser) return;
+        closeModal();
+    };
+
+    return (
+        <div className={cn("flex flex-col h-full w-full", className)}>
+            {showMobileHeader && (
+                <MobilePageHeader
+                    title={mobileHeaderTitle}
+                    showBack={showBackButton}
+                    onBack={onBack}
+                    onClose={!(isAuthenticated && isNewUser) ? handleClose : undefined}
+                    showClose={!(isAuthenticated && isNewUser)}
+                />
+            )}
+            <div className="flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar flex flex-col mt-4">
+                <div className="flex flex-col items-center justify-center p-6 md:p-8 pt-4 md:pt-6 w-full max-w-125 mx-auto text-center flex-1">
+                    <div className="flex flex-col items-center gap-3 shrink-0 mb-5 md:mb-6">
+                        <img src={Logo} alt="PulseLive" className="h-16 w-16 md:h-20 md:w-20" />
+                        <div>
+                            <h2 className="text-4xl font-bold text-white tracking-tight">{title}</h2>
+                            {subtitle && (
+                                <p className="text-gray-400 font-normal text-sm md:text-lg leading-relaxed tracking-normal mt-3">
+                                    {subtitle}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    <div className="w-full flex flex-col items-center flex-1 gap-4">
+                        {children}
+                    </div>
                 </div>
             </div>
         </div>
@@ -87,15 +270,20 @@ const StepWrapper = ({
 const StepWelcome = () => {
     const { setStep } = useSignUpStore();
     return (
-        <StepWrapper title="Welcome to PulseLive" subtitle="Go Live. Connect. Inspire">
-            <div className="mt-8 w-full flex flex-col items-center">
+        <StepWrapper
+            title="Welcome to PulseLive"
+            subtitle="Go Live. Connect. Inspire"
+            mobileHeaderTitle="PulseLive"
+            showMobileHeader={false}
+        >
+            <div className="mt-8 w-full flex flex-col items-center m-auto">
                 <Button
                     onClick={() => setStep('input')}
                     className="w-52 rounded-full bg-[#FF8800] py-6 text-base font-bold text-black hover:bg-[#ff9922] transition-transform active:scale-95"
                 >
                     Get Started →
                 </Button>
-                <p className="mt-16 text-md text-muted-foreground/60 px-4 max-w-xs mx-auto leading-relaxed">
+                <p className="mt-16 text-md text-muted-foreground/60 px-4 max-w-md mx-auto leading-relaxed">
                     By continuing, you agree to our Terms of Service and Privacy Policy
                 </p>
             </div>
@@ -103,22 +291,24 @@ const StepWelcome = () => {
     );
 };
 
-
 // --- 2. INPUT STEP ---
 const inputSchema = z.object({
     identifier: z.string().min(3, "Field is required"),
 });
-
 type InputFormData = z.infer<typeof inputSchema>;
 
 const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
     const { setStep, method, setMethod, setIdentifier, countryCode, setCountryCode, mode } = useSignUpStore();
     const [isLoading, setIsLoading] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    // Mobile drawer state
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    // Desktop dropdown state
+    const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
+    const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
+
     const { closeModal } = useSignUpStore();
     const { authenticate } = useAuth();
-
     const storeIdentifier = useSignUpStore((s) => s.identifier);
 
     const form = useForm<InputFormData>({
@@ -140,9 +330,9 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
         }
     }, [method]);
 
-    const filteredCountries = countryCodes.filter(c =>
-        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.dial_code.includes(searchQuery)
+    const filteredDesktopCountries = countryCodes.filter(c =>
+        c.name.toLowerCase().includes(desktopSearchQuery.toLowerCase()) ||
+        c.dial_code.includes(desktopSearchQuery)
     );
 
     const onSubmit = async (data: InputFormData) => {
@@ -153,15 +343,36 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
             toast.success(`OTP sent to ${data.identifier}`);
             setStep('otp');
         } catch (error: any) {
-            console.error(error);
             toast.error(error.response?.data?.message || "Failed to send code");
         } finally {
             setIsLoading(false);
         }
     };
 
+    const title = mode === 'login' ? 'Welcome to PulseLive' : 'Create Account';
+    const subtitle = mode === 'login' ? 'Go Live. Connect. Inspire' : 'Go Live. Connect. Inspire';
+
     return (
-        <StepWrapper title={mode === 'login' ? 'Welcome to PulseLive' : 'Create Account'}>
+        <StepWrapper
+            title={title}
+            subtitle={subtitle}
+            showBackButton={true}
+            onBack={() => setStep('welcome')}
+            mobileHeaderTitle="Profile"
+            showMobileHeader={true}
+        >
+            {/* ── Mobile-only: Country Code Drawer ── */}
+            <div className="md:hidden">
+                <CountryDrawer
+                    open={drawerOpen}
+                    onOpenChange={setDrawerOpen}
+                    selectedValue={countryCode}
+                    mode="dialCode"
+                    onSelect={setCountryCode}
+                    title="Select Country Code"
+                />
+            </div>
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
                     <div className="text-left relative w-full">
@@ -170,71 +381,87 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         </label>
                         <div className="flex gap-3 w-full">
                             {method === 'phone' && (
-                                <div className="relative">
-                                    <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                className="flex items-center justify-between h-12 min-w-[100px] bg-transparent border-white/20 rounded-xl text-white hover:bg-white/5 hover:text-white hover:border-white/40 transition-all"
-                                            >
-                                                <span className="text-base font-medium">{countryCode}</span>
-                                                <ChevronDown className="w-4 h-4 text-gray-500 ml-2 opacity-70" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
+                                <>
+                                    {/* ── Mobile → opens Drawer ── */}
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setDrawerOpen(true)}
+                                        className="md:hidden flex items-center justify-between h-14 min-w-25 bg-transparent border-white/20 rounded-xl text-white hover:bg-white/5 hover:text-white hover:border-white/40 transition-all"
+                                    >
+                                        <span className="text-base font-medium">{countryCode}</span>
+                                        <ChevronDown className="w-4 h-4 text-gray-500 ml-2 opacity-70" />
+                                    </Button>
 
-                                        <DropdownMenuContent
-                                            className="w-[300px] p-0 bg-[#1a1c24] border-white/10 text-white z-50 shadow-2xl rounded-xl"
-                                            align="start"
-                                            sideOffset={8}
+                                    {/* ── Desktop → opens DropdownMenu ── */}
+                                    <div className="hidden md:block relative">
+                                        <DropdownMenu
+                                            open={desktopDropdownOpen}
+                                            onOpenChange={(open) => {
+                                                setDesktopDropdownOpen(open);
+                                                if (!open) setDesktopSearchQuery('');
+                                            }}
                                         >
-                                            <div className="p-3 border-b border-white/5 bg-[#1a1c24] rounded-t-xl sticky top-0 z-10">
-                                                <div className="flex items-center px-3 h-10 bg-[#0f1117] rounded-lg border border-white/5 transition-colors focus-within:border-white/20">
-                                                    <Search className="w-4 h-4 text-gray-500 mr-2" />
-                                                    <input
-                                                        className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-600"
-                                                        placeholder="Search country..."
-                                                        value={searchQuery}
-                                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                                        onKeyDown={(e) => e.stopPropagation()}
-                                                        autoFocus
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="overflow-y-auto max-h-[240px] p-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
-                                                {filteredCountries.map((c) => (
-                                                    <DropdownMenuItem
-                                                        key={c.code}
-                                                        onClick={() => {
-                                                            setCountryCode(c.dial_code);
-                                                            setSearchQuery("");
-                                                            setIsDropdownOpen(false);
-                                                        }}
-                                                        className="cursor-pointer py-2.5 px-3 rounded-lg text-sm hover:bg-white/5 focus:bg-white/5 text-gray-200 focus:text-white flex items-center justify-between group transition-colors"
-                                                    >
-                                                        <div className="flex items-center gap-3 overflow-hidden">
-                                                            <span className="text-gray-500 font-mono text-xs w-10 text-right shrink-0 group-hover:text-gray-400 transition-colors">
-                                                                {c.dial_code}
-                                                            </span>
-                                                            <span className="truncate font-medium">
-                                                                {c.name}
-                                                            </span>
-                                                        </div>
-                                                        {countryCode === c.dial_code && (
-                                                            <Check className="w-4 h-4 text-[#FF8800]" />
-                                                        )}
-                                                    </DropdownMenuItem>
-                                                ))}
-                                                {filteredCountries.length === 0 && (
-                                                    <div className="py-8 text-center text-sm text-gray-500">
-                                                        No country found
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    className="flex items-center justify-between h-14 min-w-25 bg-transparent border-white/20 rounded-xl text-white hover:bg-white/5 hover:text-white hover:border-white/40 transition-all"
+                                                >
+                                                    <span className="text-base font-medium">{countryCode}</span>
+                                                    <ChevronDown className="w-4 h-4 text-gray-500 ml-2 opacity-70" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                className="w-75 p-0 bg-[#1a1c24] border-white/10 text-white z-50 shadow-2xl rounded-xl"
+                                                align="start"
+                                                sideOffset={8}
+                                            >
+                                                <div className="p-3 border-b border-white/5 bg-[#1a1c24] rounded-t-xl sticky top-0 z-10">
+                                                    <div className="flex items-center px-3 h-10 bg-[#0f1117] rounded-lg border border-white/5 transition-colors focus-within:border-white/20">
+                                                        <Search className="w-4 h-4 text-gray-500 mr-2" />
+                                                        <input
+                                                            className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-600"
+                                                            placeholder="Search country..."
+                                                            value={desktopSearchQuery}
+                                                            onChange={(e) => setDesktopSearchQuery(e.target.value)}
+                                                            onKeyDown={(e) => e.stopPropagation()}
+                                                            autoFocus
+                                                        />
                                                     </div>
-                                                )}
-                                            </div>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
+                                                </div>
+                                                <div className="overflow-y-auto max-h-60 p-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]">
+                                                    {filteredDesktopCountries.map((c) => (
+                                                        <DropdownMenuItem
+                                                            key={c.code}
+                                                            onClick={() => {
+                                                                setCountryCode(c.dial_code);
+                                                                setDesktopSearchQuery('');
+                                                                setDesktopDropdownOpen(false);
+                                                            }}
+                                                            className="cursor-pointer py-2.5 px-3 rounded-lg text-sm hover:bg-white/5 focus:bg-white/5 text-gray-200 focus:text-white flex items-center justify-between group transition-colors"
+                                                        >
+                                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                                <span className="text-gray-500 font-mono text-xs w-10 text-right shrink-0 group-hover:text-gray-400 transition-colors">
+                                                                    {c.dial_code}
+                                                                </span>
+                                                                <span className="truncate font-medium">{c.name}</span>
+                                                            </div>
+                                                            {countryCode === c.dial_code && (
+                                                                <Check className="w-4 h-4 text-[#FF8800]" />
+                                                            )}
+                                                        </DropdownMenuItem>
+                                                    ))}
+                                                    {filteredDesktopCountries.length === 0 && (
+                                                        <div className="py-8 text-center text-sm text-gray-500">
+                                                            No country found
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                </>
                             )}
 
                             <FormField
@@ -247,7 +474,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                                                 {...field}
                                                 type={method === 'phone' ? 'tel' : 'email'}
                                                 placeholder={method === 'phone' ? "Enter mobile number here..." : "Enter email address here..."}
-                                                className="h-12 bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-white/40 shadow-none"
+                                                className="h-14 bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-white/40 shadow-none"
                                             />
                                         </FormControl>
                                         <FormMessage className="text-xs text-red-400" />
@@ -257,7 +484,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         </div>
                     </div>
 
-                    <div className="flex gap-4 pt-4 w-full">
+                    <div className="flex gap-4 pt-2 w-full">
                         <Button
                             type="submit"
                             disabled={isLoading || !form.formState.isValid}
@@ -279,50 +506,59 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 </form>
             </Form>
 
-            <div className="pt-6 w-full flex justify-center mb-6">
-                <div className="flex items-center w-full max-w-[200px]">
+            <div className="pt-6 w-full flex justify-center mb-4">
+                <div className="flex items-center w-full max-w-60">
                     <div className="flex-1 h-px bg-white/10" />
                     <span className="px-3 text-xs text-gray-500">or</span>
                     <div className="flex-1 h-px bg-white/10" />
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-6 mx-auto items-center justify-center w-full">
-                <div className="flex-1 flex justify-center sm:justify-end">
-                    <Button
-                        variant="link"
-                        type="button"
-                        onClick={() => setMethod(method === 'phone' ? 'email' : 'phone')}
-                        className="text-xs text-white/90 hover:no-underline hover:text-white h-auto p-0 flex items-center gap-2"
-                    >
-                        {method === 'phone' ? <Mail className="w-4 h-4 text-white" /> : <Phone className="w-4 h-4 text-white" />}
-                        <span className="text-center">{mode === 'login' ? 'Login' : 'Signup'} with {method === 'phone' ? 'Email' : 'Phone'}</span>
-                    </Button>
-                </div>
+            <div className="flex flex-row gap-4 items-center justify-center w-full">
+                <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => setMethod(method === 'phone' ? 'email' : 'phone')}
+                    className="flex items-center gap-2 rounded-full border-white/20 text-white bg-transparent hover:bg-white/5 hover:text-white px-5 py-2.5 text-sm"
+                >
+                    {method === 'phone' ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+                    {/* Mobile: short label */}
+                    <span className="md:hidden">
+                        {method === 'phone' ? 'Email' : 'Phone'}
+                    </span>
+                    {/* Desktop/tablet: full label */}
+                    <span className="hidden md:inline">
+                        {mode === 'login'
+                            ? (method === 'phone' ? 'Login with Email' : 'Login with Phone')
+                            : (method === 'phone' ? 'Signup with Email' : 'Signup with Phone')
+                        }
+                    </span>
+                </Button>
 
-                {/* Separator for desktop */}
-                <div className="hidden sm:block w-px h-4 bg-white/20" />
-
-                <div className="flex-1 flex justify-center sm:justify-start">
-                    <GoogleLogin
-                        onSuccess={(credentialResponse) => {
-                            if (credentialResponse.credential) {
-                                authenticate({
-                                    url: '/auth/google',
-                                    payload: { idToken: credentialResponse.credential },
-                                    redirect: !isLiveStream
-                                });
-                            }
-                        }}
-                        onError={() => toast.error("Google Signup Failed")}
-                        theme="filled_black"
-                        shape="pill"
-                        size="medium"
-                        text={mode === 'login' ? 'continue_with' : 'signup_with'}
-                        width="120"
-                    />
-                </div>
+                <GoogleLogin
+                    onSuccess={(credentialResponse) => {
+                        if (credentialResponse.credential) {
+                            authenticate({
+                                url: '/auth/google',
+                                payload: { idToken: credentialResponse.credential },
+                                redirect: !isLiveStream
+                            });
+                        }
+                    }}
+                    onError={() => toast.error("Google Signup Failed")}
+                    theme="filled_black"
+                    shape="pill"
+                    size="medium"
+                    text={mode === 'login' ? 'continue_with' : 'signup_with'}
+                    width="140"
+                />
             </div>
+
+            <p className="md:hidden mt-8 text-xs text-gray-500 px-4 text-center mb-4">
+                By continuing, you agree to our{' '}
+                <span className="text-blue-500 cursor-pointer">Terms of Service</span> and{' '}
+                <span className="text-blue-500 cursor-pointer">Privacy Policy</span>
+            </p>
         </StepWrapper>
     );
 };
@@ -364,12 +600,8 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
         e.preventDefault();
         if (error) setError('');
         const pastedData = e.clipboardData.getData('text/plain').trim();
-
-        // Only process if it's a 6-digit number
         if (/^\d{6}$/.test(pastedData)) {
-            const digits = pastedData.split('');
-            setOtp(digits);
-            // Focus the last input
+            setOtp(pastedData.split(''));
             inputRefs.current[5]?.focus();
         }
     };
@@ -378,21 +610,20 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
         const code = otp.join('');
         if (code.length !== 6) return;
         setError('');
-
         const payload = method === 'email'
             ? { email: identifier, otp: code }
             : { identifier, otp: code };
 
         authenticate({
             url: '/otp/verify',
-            payload: payload,
+            payload,
             redirect: !isLiveStream
         }, {
             onSuccess: () => {
                 setStep('age');
             },
             onError: () => {
-                setError("Invalid OTP or expired.");
+                setError("Wrong OTP. Please try again");
                 setOtp(['', '', '', '', '', '']);
                 inputRefs.current[0]?.focus();
             }
@@ -405,28 +636,36 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
             await authService.resendOtp(identifier, method);
             toast.success("OTP sent again!");
             setResendCooldown(30);
-        } catch (e) {
+        } catch {
             toast.error("Failed to resend OTP");
         }
-    }
+    };
 
     return (
-        <StepWrapper title="">
-            {/* Custom Title to match specific layout of OTP screen */}
-            <div className="mb-8">
-                <p className="text-gray-400 text-lg flex items-center justify-center gap-2">
-                    OTP sent to  <span className="text-white font-semibold text-xl">{method === 'phone' ? `${countryCode}-${identifier}` : identifier}</span>
+        <StepWrapper
+            title=""
+            showBackButton={true}
+            onBack={() => setStep('input')}
+            mobileHeaderTitle="Profile"
+            showMobileHeader={true}
+        >
+            <div className="mb-4 md:mb-5">
+                <p className="text-gray-400 text-lg flex items-center justify-center gap-2 flex-wrap">
+                    OTP has sent to
+                    <span className="text-white font-semibold text-xl">
+                        {method === 'phone' ? `${countryCode}-${identifier}` : identifier}
+                    </span>
                     <button onClick={() => setStep('input')} className="text-blue-500 hover:text-blue-400 cursor-pointer ml-1">
                         <Pencil className="w-4 h-4" />
                     </button>
                 </p>
             </div>
 
-            <div className="flex gap-3 justify-center mb-8">
+            <div className="flex gap-3 justify-center">
                 {otp.map((digit, i) => (
                     <Input
                         key={i}
-                        ref={(el) => { if (el) inputRefs.current[i] = el }}
+                        ref={(el) => { if (el) inputRefs.current[i] = el; }}
                         type="text"
                         maxLength={1}
                         value={digit}
@@ -436,20 +675,19 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         disabled={isLoading}
                         className={cn(
                             "w-12 h-14 md:w-14 md:h-16 text-center text-xl md:text-2xl font-normal text-white transition-all bg-transparent rounded-xl",
-                            error
-                                ? "border-red-500 text-red-500 focus-visible:ring-0"
-                                : "border-white/20 focus-visible:ring-0 focus-visible:border-white/50"
-
+                            error ? "border-red-500 text-red-500 focus-visible:ring-0" : "border-white/20 focus-visible:ring-0 focus-visible:border-white/50"
                         )}
                     />
                 ))}
             </div>
 
-            {error && <p className="text-red-500 text-sm mb-6">{error}</p>}
+            <div className="h-5 flex items-center justify-center">{error && <p className="text-red-500 text-sm">{error}</p>}</div>
 
-            <div className='mb-8 text-sm text-gray-400'>
+            <div className="mb-4 md:mb-5 text-sm text-gray-400">
                 An OTP has been sent on your {method === 'email' ? 'email' : 'number'} <br />
-                in <span className="text-white font-mono">{resendCooldown < 10 ? `0${resendCooldown}` : resendCooldown} sec</span>{' '}
+                in <span className="text-white font-mono">
+                    {resendCooldown < 10 ? `0${resendCooldown}` : resendCooldown} sec
+                </span>{' '}
                 <button
                     onClick={handleResend}
                     disabled={resendCooldown > 0 || isLoading}
@@ -478,8 +716,10 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 </Button>
             </div>
 
-            <p className="mt-12 text-xs text-gray-500">
-                by logging in you agree to our <span className="text-blue-500 cursor-pointer">terms & conditions</span> & <span className="text-blue-500 cursor-pointer">privacy policy</span>
+            <p className="mt-5 md:mt-6 text-xs text-gray-500">
+                by logging in you agree to our{' '}
+                <span className="text-blue-500 cursor-pointer">terms & conditions</span> &{' '}
+                <span className="text-blue-500 cursor-pointer">privacy policy</span>
             </p>
         </StepWrapper>
     );
@@ -493,16 +733,13 @@ const StepAge = () => {
     const handleAgeSelection = async (isAdult: boolean) => {
         setIsAdult(isAdult);
         setIsLoading(true);
-
         try {
             if (isAdult) {
                 // Update age consent via PUT endpoint only if 18+
                 await authService.updateAgeConsent(true);
             }
-
             // Update local auth store so the user state is fresh
             useAuthStore.getState().updateUser({ eighteenPlus: isAdult });
-
             if (isAdult) {
                 if (onAgeVerified) {
                     onAgeVerified();
@@ -524,7 +761,6 @@ const StepAge = () => {
                 }
             }
         } catch (error: any) {
-            console.error('Failed to update age consent:', error);
             toast.error(error.response?.data?.message || "Failed to update age consent");
         } finally {
             setIsLoading(false);
@@ -532,22 +768,25 @@ const StepAge = () => {
     };
 
     return (
-        <StepWrapper title="Age Confirmation">
-            <p className="text-gray-400 text-sm md:text-base mb-12 leading-relaxed max-w-sm mx-auto">
+        <StepWrapper
+            title="Age Confirmation"
+            mobileHeaderTitle="Complete Your Profile"
+            showMobileHeader={true}
+        >
+            <p className="text-gray-400 text-sm md:text-base mb-5 leading-relaxed max-w-md mx-auto">
                 Before entering this website, you must confirm the following information.
             </p>
-
-            <div className="bg-transparent mb-12 max-w-sm mx-auto">
+            <div className="bg-transparent mb-12 max-w-md mx-auto">
                 <p className="text-gray-400 text-sm leading-relaxed">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed venenatis est. Cras sagittis luctus erat, nec dignissim dui fermentum quis. Fusce pharetra sit amet.
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed venenatis est.
+                    Cras sagittis luctus erat, nec dignissim dui fermentum quis. Fusce pharetra sit amet.
                 </p>
             </div>
-
-            <div className="flex gap-4 w-full">
+            <div className="flex flex-col md:flex-row gap-2 w-full">
                 <Button
                     onClick={() => handleAgeSelection(true)}
                     disabled={isLoading}
-                    className="flex-1 rounded-full bg-[#FF8800] py-6 text-sm font-bold text-black hover:bg-[#ff9922]"
+                    className="w-full rounded-full bg-[#FF8800] py-6 text-sm font-bold text-black hover:bg-[#ff9922]"
                 >
                     {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     Yes, I agree let me in
@@ -556,14 +795,15 @@ const StepAge = () => {
                     variant="outline"
                     onClick={() => handleAgeSelection(false)}
                     disabled={isLoading}
-                    className="flex-1 rounded-full border-[#FF8800] py-6 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800]"
+                    className="w-full rounded-full border-[#FF8800] py-6 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800]"
                 >
                     Disagree, I am under 18
                 </Button>
             </div>
-
-            <p className="mt-12 text-xs text-gray-500">
-                by logging in you agree to our <span className="text-blue-500 cursor-pointer">terms & conditions</span> & <span className="text-blue-500 cursor-pointer">privacy policy</span>
+            <p className="mt-5 text-xs text-gray-500">
+                by logging in you agree to our{' '}
+                <span className="text-blue-500 cursor-pointer">terms & conditions</span> &{' '}
+                <span className="text-blue-500 cursor-pointer">privacy policy</span>
             </p>
         </StepWrapper>
     );
@@ -575,7 +815,6 @@ const detailsSchema = z.object({
     location: z.string({ message: "Please select a location" }).min(2, "Please select a location"),
     bio: z.string().max(100).nullable().optional(),
 });
-
 type DetailsFormData = z.infer<typeof detailsSchema>;
 
 const generateAvatarFile = async (name: string): Promise<File> => {
@@ -602,7 +841,6 @@ const generateAvatarFile = async (name: string): Promise<File> => {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText((name[0] || '?').toUpperCase(), 200, 200);
-
     return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
             if (blob) resolve(new File([blob], 'avatar.png', { type: 'image/png' }));
@@ -638,10 +876,8 @@ export const StepDetails = ({
     const isAdult = isAdultProp ?? store.isAdult;
     const location = useLocation();
     const isLiveStream = location.pathname.startsWith('/live');
-
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
-
     const [username, setUsername] = useState('');
     const [usernameError, setUsernameError] = useState('');
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
@@ -650,9 +886,10 @@ export const StepDetails = ({
     const [profileImageKey, setProfileImageKey] = useState<string | null>(initialValues?.profileImage ?? null);
     const [isUploading, setIsUploading] = useState(false);
     const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
+    // Mobile drawer (location)
+    const [locationDrawerOpen, setLocationDrawerOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Setup React Hook Form
     const form = useForm<DetailsFormData>({
         resolver: zodResolver(detailsSchema),
         defaultValues: {
@@ -677,7 +914,6 @@ export const StepDetails = ({
             setUsernameError('Spaces are not allowed');
             return;
         }
-
         const timer = setTimeout(async () => {
             setIsCheckingUsername(true);
             try {
@@ -690,15 +926,12 @@ export const StepDetails = ({
                 setIsCheckingUsername(false);
             }
         }, 500);
-
         return () => clearTimeout(timer);
     }, [username, mode]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        // Validation
         if (!['image/jpeg', 'image/png'].includes(file.type)) {
             toast.error("Please upload a JPEG or PNG image only");
             return;
@@ -707,14 +940,11 @@ export const StepDetails = ({
             toast.error("Image size must be less than 2MB");
             return;
         }
-
         setIsUploading(true);
         try {
             const extension = file.name.split('.').pop() || 'png';
             const { uploadUrl, fullUrl } = await mediaService.generatePresignedUrl('PROFILE_IMAGE', extension);
-
             await mediaService.uploadFileToS3(uploadUrl, file);
-
             setProfileImage(fullUrl);
             setProfileImageKey(fullUrl);
             toast.success("Profile photo updated");
@@ -729,7 +959,6 @@ export const StepDetails = ({
 
     const handleDeletePhoto = async () => {
         if (!profileImageKey) return;
-
         try {
             await mediaService.deleteFile(profileImageKey);
             setProfileImage(null);
@@ -749,7 +978,6 @@ export const StepDetails = ({
             }
             if (isUsernameAvailable === false) return;
         }
-
         setIsLoading(true);
         try {
             let currentProfileImageKey = profileImageKey;
@@ -767,7 +995,6 @@ export const StepDetails = ({
                     currentProfileImageKey = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=random`;
                 }
             }
-
             // --- UPDATED MUTATION CALL ---
             await updateProfileMutation({
                 data: {
@@ -778,8 +1005,6 @@ export const StepDetails = ({
                     profileImage: currentProfileImageKey || ""
                 }
             });
-            // ------------------------------
-
             if (mode === 'signup') {
                 useAuthStore.setState({ isNewUser: false });
                 toast.success("Account created successfully!");
@@ -794,7 +1019,6 @@ export const StepDetails = ({
                 onSuccess?.();
             }
         } catch (error: any) {
-            console.error("Profile update error:", error);
             toast.error(error.response?.data?.message || "Failed to update profile");
         } finally {
             setIsLoading(false);
@@ -813,286 +1037,353 @@ export const StepDetails = ({
                 : (store.identifier || useAuthStore.getState().user?.email || '')))
         : initialValues?.identifier;
 
+    const locationValue = form.watch('location');
+
     return (
-        <div className="flex h-full w-full overflow-y-auto custom-scrollbar items-start p-5">
 
-            {/* ── Left Card ── */}
-            <div className="flex flex-col items-center gap-8 bg-[#1D1F20] rounded-xl py-16.5 px-8 w-97.5 h-full shrink-0 border border-white/5 self-start">
+        <div className="flex flex-col h-full w-full">
 
-                {/* Verified identifier pill */}
-                {identifierPill && (
-                    <div className="w-full rounded-lg border border-blue-500/50 bg-transparent h-12 px-5 py-7 flex justify-between items-center gap-8">
-                        <span className="text-gray-300 text-[16px] truncate">{identifierPill}</span>
-                        <div className="shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                            <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-                        </div>
-                    </div>
-                )}
+            {/* -- Location Drawer -- */}
+            <div className="md:hidden">
+                <CountryDrawer
+                    open={locationDrawerOpen}
+                    onOpenChange={setLocationDrawerOpen}
+                    selectedValue={locationValue}
+                    mode="location"
+                    onSelect={(val) => form.setValue('location', val, { shouldValidate: true })}
+                    title="Select Location"
+                />
+            </div>
 
-                {/* Avatar with gradient ring */}
-                <div className="relative mt-1">
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/jpeg,image/png"
-                        onChange={handleFileChange}
-                    />
-                    <div className="size-33 rounded-full p-0.75"
-                        style={{ background: 'linear-gradient(135deg, #6366f1 0%, #3b3bd6 50%, #ef4444 100%)' }}
-                    >
-                        <div className="w-full h-full rounded-full bg-[#1c1e27] p-0.5">
-                            <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center text-4xl font-bold text-white">
-                                {profileImage ? (
-                                    <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
-                                ) : (
-                                    (form.watch('fullName')?.[0] || '👤').toUpperCase()
-                                )}
+            {/* mobile header */}
+            <MobilePageHeader
+                title={mode === 'edit' ? 'Edit Profile' : 'Complete Your Profile'}
+                showBack={true}
+                onBack={mode === 'edit' ? onCancel : () => store.setStep('age')}
+                showClose={false}
+            />
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar flex flex-col">
+                <div className="flex flex-col md:flex-row w-full items-start p-4 md:p-5 h-full">
+
+                    {/* ── Left Card ── */}
+                    <div className="flex flex-col items-center gap-6 md:gap-8 bg-[#1D1F20] rounded-xl py-8 md:py-16.5 px-6 md:px-8 w-full md:w-97.5 h-129 shrink-0 border border-white/5">
+
+                        {/* Verified identifier pill */}
+                        {identifierPill && (
+                            <div className="w-full rounded-lg border border-blue-500/50 bg-transparent h-14 px-5 py-7 flex justify-between items-center gap-8">
+                                <span className="text-gray-300 text-[16px] truncate">{identifierPill}</span>
+                                <div className="shrink-0 w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
+                                    <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        )}
 
-                    {isUploading && (
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
-                            <Loader2 className="w-7 h-7 animate-spin text-white" />
-                        </div>
-                    )}
-
-                    <div className="absolute bottom-0.5 right-0.5">
-                        <button
-                            type="button"
-                            disabled={isUploading}
-                            onClick={() => setCameraMenuOpen(o => !o)}
-                            className="bg-white rounded-full p-1.5 cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center border-2 border-[#1D1F20]"
-                        >
-                            <Camera className="w-4 h-4 text-black" />
-                        </button>
-                        {cameraMenuOpen && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-40"
-                                    style={{ background: 'transparent' }}
-                                    onClick={() => setCameraMenuOpen(false)}
-                                />
-                                <div className="absolute bottom-full -right-20 mb-2 z-50 min-w-[130px] bg-[#1a1c24] border border-white/10 rounded-xl p-1 shadow-2xl">
-                                    <button
-                                        type="button"
-                                        onClick={() => { fileInputRef.current?.click(); setCameraMenuOpen(false); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-white/5 rounded-lg"
-                                    >
-                                        {profileImage ? 'Change Photo' : 'Add Photo'}
-                                    </button>
-
-                                    {profileImage && (
-                                        <>
-                                            <div className="my-1 border-t border-white/10" />
+                        {/* Avatar with gradient ring */}
+                        <div className="relative mt-1">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/jpeg,image/png"
+                                onChange={handleFileChange}
+                            />
+                            <div className="size-33 rounded-full p-0.75"
+                                style={{ background: 'linear-gradient(135deg, #6366f1 0%, #3b3bd6 50%, #ef4444 100%)' }}
+                            >
+                                <div className="w-full h-full rounded-full bg-[#1c1e27] p-0.5">
+                                    <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center text-4xl font-bold text-white">
+                                        {profileImage ? (
+                                            <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
+                                        ) : (
+                                            (form.watch('fullName')?.[0] || '👤').toUpperCase()
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            {isUploading && (
+                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full">
+                                    <Loader2 className="w-7 h-7 animate-spin text-white" />
+                                </div>
+                            )}
+                            <div className="absolute bottom-0.5 right-0.5">
+                                <button
+                                    type="button"
+                                    disabled={isUploading}
+                                    onClick={() => setCameraMenuOpen(o => !o)}
+                                    className="bg-white rounded-full p-1.5 cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center border-2 border-[#1D1F20]"
+                                >
+                                    <Camera className="w-4 h-4 text-black" />
+                                </button>
+                                {cameraMenuOpen && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-40"
+                                            style={{ background: 'transparent' }}
+                                            onClick={() => setCameraMenuOpen(false)}
+                                        />
+                                        <div className="absolute bottom-full -right-20 mb-2 z-50 min-w-32.5 bg-[#1a1c24] border border-white/10 rounded-xl p-1 shadow-2xl">
                                             <button
                                                 type="button"
-                                                onClick={() => { handleDeletePhoto(); setCameraMenuOpen(false); }}
-                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-red-400/5 rounded-lg"
+                                                onClick={() => { fileInputRef.current?.click(); setCameraMenuOpen(false); }}
+                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-white/5 rounded-lg"
                                             >
-                                                Delete Photo
+                                                {profileImage ? 'Change Photo' : 'Add Photo'}
                                             </button>
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </div>
 
-                {/* Name Input */}
-                <div className="w-full">
-                    <label className="block text-xs text-gray-400 mb-2">Your name</label>
-                    <Form {...form}>
-                        <FormField
-                            control={form.control}
-                            name="fullName"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            className="h-12 bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 text-[16px] px-5 py-7"
-                                            placeholder="No Name"
-                                            style={{ border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                        />
-                                    </FormControl>
-                                    <FormMessage className="text-[10px]" />
-                                </FormItem>
-                            )}
-                        />
-                    </Form>
-                </div>
-
-                <p className="text-xs text-gray-600 text-center leading-relaxed">
-                    You can edit your profile picture or upload a new one (JPG or PNG)
-                </p>
-            </div>
-
-            {/* Right Column - Form Fields */}
-            <div className="flex flex-col flex-1 justify-start px-8 py-4 min-w-0">
-
-                <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-1">{title}</h2>
-                <p className="text-gray-400 text-sm mb-7">{subtitle}</p>
-
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
-
-                        {/* Username & Location Row */}
-                        <div className="grid grid-cols-2 gap-4 items-start">
-                            {/* Username */}
-                            <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center justify-between" style={{ height: '20px' }}>
-                                    <label className="text-xs text-gray-400">User name</label>
-                                    {mode === 'signup' && isCheckingUsername && <Loader2 className="w-3 h-3 animate-spin text-gray-500" />}
-                                    {mode === 'signup' && isUsernameAvailable === true && !isCheckingUsername && <Check className="w-3 h-3 text-green-500" />}
-                                </div>
-                                {mode === 'signup' ? (
-                                    <>
-                                        <input
-                                            value={username}
-                                            onChange={(e) => {
-                                                setUsername(e.target.value);
-                                                setUsernameError('');
-                                                setIsUsernameAvailable(null);
-                                            }}
-                                            placeholder="Enter your user name"
-                                            className={cn(
-                                                "w-full bg-[#111213] border rounded-xl text-white text-sm placeholder:text-gray-600 outline-none transition-colors px-5 py-7",
-                                                "border-white/20 focus:border-white/40",
-                                                isUsernameAvailable === false && "border-red-500/70",
-                                                isUsernameAvailable === true && "border-green-500/40"
+                                            {profileImage && (
+                                                <>
+                                                    <div className="my-1 border-t border-white/10" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { handleDeletePhoto(); setCameraMenuOpen(false); }}
+                                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-red-400/5 rounded-lg"
+                                                    >
+                                                        Delete Photo
+                                                    </button>
+                                                </>
                                             )}
-                                            style={{ height: '48px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                        />
-                                        {usernameError && <p className="text-[10px] text-red-400 mt-0.5">{usernameError}</p>}
+                                        </div>
                                     </>
-                                ) : (
-                                    <input
-                                        value={initialValues?.username ?? ''}
-                                        readOnly
-                                        tabIndex={-1}
-                                        className="w-full bg-white/3 border border-white/10 rounded-lg text-gray-500 cursor-not-allowed text-sm select-none outline-none px-5 py-7"
-                                        style={{ height: '48px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                    />
                                 )}
                             </div>
+                        </div>
 
-                            {/* Location */}
-                            <FormField
-                                control={form.control}
-                                name="location"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col gap-1.5">
-                                        <label className="text-xs text-gray-400" style={{ height: '20px', display: 'flex', alignItems: 'center' }}>Location</label>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        {/* Name Input */}
+                        <div className="w-full">
+                            <label className="block text-xs text-gray-400 mb-2">Your name</label>
+                            <Form {...form}>
+                                <FormField
+                                    control={form.control}
+                                    name="fullName"
+                                    render={({ field }) => (
+                                        <FormItem>
                                             <FormControl>
-                                                <SelectTrigger
-                                                    className="bg-[#111213] border-white/20 rounded-lg text-white
-                                                                focus:ring-0 focus:border-white/40
-                                                                text-sm w-full px-5 py-7 h-12
-                                                                [&>svg]:text-white!
-                                                                [&>svg]:opacity-100!
-                                                                [&>svg]:w-5
-                                                                [&>svg]:h-5"
-                                                    style={{ border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                                >
-                                                    <SelectValue placeholder="Select Location" />
-                                                </SelectTrigger>
+                                                <Input
+                                                    {...field}
+                                                    className="h-14 bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 text-[16px] px-4"
+                                                    placeholder="No Name"
+                                                    style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                                />
                                             </FormControl>
-                                            <SelectContent
-                                                className="bg-[#1a1c24] border-white/10 text-white max-h-60"
-                                                position="popper"
-                                            >
-                                                {countryCodes.map(c => (
-                                                    <SelectItem key={c.code} value={c.name} className="focus:bg-white/10 focus:text-white cursor-pointer text-[16px]">
-                                                        {c.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                )}
-                            />
+                                            <FormMessage className="text-[10px]" />
+                                        </FormItem>
+                                    )}
+                                />
+                            </Form>
                         </div>
 
-                        {/* Bio */}
-                        <FormField
-                            control={form.control}
-                            name="bio"
-                            render={({ field }) => (
-                                <FormItem className="space-y-1.5">
-                                    <label className="text-xs text-gray-400">Bio</label>
-                                    <FormControl>
-                                        <div className="relative">
-                                            <Textarea
-                                                {...field}
-                                                value={field.value ?? ""}
-                                                className="bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 resize-y min-h-[100px] py-3 text-[16px]"
-                                                placeholder="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-                                                maxLength={100}
-                                                style={{ border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                            />
-                                            <span className="absolute bottom-2 right-3 text-[10px] text-gray-500">
-                                                {field.value?.length || 0}/100
-                                            </span>
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage className="text-[10px]" />
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* Submit Button */}
-                        <div className="flex gap-3 mt-8">
-                            <Button
-                                type="submit"
-                                disabled={isLoading}
-                                className="rounded-full bg-[#FF8800] h-12 px-18 text-sm font-bold text-black hover:bg-[#ff9922] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                            >
-                                {isLoading
-                                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</>
-                                    : submitLabel
-                                }
-                            </Button>
-
-                            {onCancel && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={onCancel}
-                                    disabled={isLoading}
-                                    className="rounded-full border-[#FF8800] h-12 px-18 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800] cursor-pointer"
-                                >
-                                    Cancel
-                                </Button>
-                            )}
-                        </div>
-
-                        <p className="text-xs text-gray-500 mt-4">
-                            By continuing, I agree to{' '}
-                            <span className="text-blue-500 cursor-pointer hover:underline">terms & conditions</span>
-                            {' '}&{' '}
-                            <span className="text-blue-500 cursor-pointer hover:underline">privacy policy</span>
+                        <p className="text-xs text-gray-600 text-center leading-relaxed">
+                            You can edit your profile picture or upload a new one (JPG or PNG)
                         </p>
-                    </form>
-                </Form>
+                    </div>
+
+                    {/* Right Column - Form Fields */}
+                    <div className="flex flex-col flex-1 w-full justify-start px-0 md:px-8 py-6 md:py-4 min-w-0">
+                        <h2 className={cn("text-3xl md:text-5xl font-bold text-white tracking-tight mb-1 text-center md:text-left", mode === 'edit' && "hidden md:block")}>{title}</h2>
+                        <p className={cn("text-gray-400 text-sm mb-5 md:mb-7 text-center md:text-left", mode === 'edit' && "hidden md:block")}>{subtitle}</p>
+
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+
+                                {/* Username & Location Row */}
+                                <div className="grid grid-cols-2 gap-4 items-start">
+                                    {/* Username */}
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex items-center justify-between" style={{ height: '20px' }}>
+                                            <label className="text-xs text-gray-400">User name</label>
+                                            {mode === 'signup' && isCheckingUsername && <Loader2 className="w-3 h-3 animate-spin text-gray-500" />}
+                                            {mode === 'signup' && isUsernameAvailable === true && !isCheckingUsername && <Check className="w-3 h-3 text-green-500" />}
+                                        </div>
+                                        {mode === 'signup' ? (
+                                            <>
+                                                <input
+                                                    value={username}
+                                                    onChange={(e) => {
+                                                        setUsername(e.target.value);
+                                                        setUsernameError('');
+                                                        setIsUsernameAvailable(null);
+                                                    }}
+                                                    placeholder="Enter your user name"
+                                                    className={cn(
+                                                        "w-full bg-[#111213] border rounded-xl text-white text-sm placeholder:text-gray-600 outline-none transition-colors px-4",
+                                                        "border-white/20 focus:border-white/40",
+                                                        isUsernameAvailable === false && "border-red-500/70",
+                                                        isUsernameAvailable === true && "border-green-500/40"
+                                                    )}
+                                                    style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                                />
+                                                <div className="h-4 flex items-center">{usernameError && <p className="text-[10px] text-red-400">{usernameError}</p>}</div>
+                                            </>
+                                        ) : (
+                                            <input
+                                                value={initialValues?.username ?? ''}
+                                                readOnly tabIndex={-1}
+                                                className="w-full bg-white/3 border border-white/10 rounded-lg text-gray-500 cursor-not-allowed text-sm select-none outline-none px-4"
+                                                style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Location */}
+                                    <FormField
+                                        control={form.control}
+                                        name="location"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-col gap-1.5">
+                                                <label
+                                                    className="text-xs text-gray-400"
+                                                    style={{ height: '20px', display: 'flex', alignItems: 'center' }}
+                                                >
+                                                    Location
+                                                </label>
+
+                                                {/* Mobile */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setLocationDrawerOpen(true)}
+                                                    className="md:hidden flex items-center justify-between w-full px-4 bg-[#111213] rounded-lg text-white text-sm transition-colors hover:bg-[#1a1c24] focus:outline-none"
+                                                    style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                                >
+                                                    <span className={cn('truncate', !field.value && 'text-gray-600')}>
+                                                        {field.value || 'Select Location'}
+                                                    </span>
+                                                    <ChevronDown className="w-5 h-5 text-white shrink-0 ml-2" />
+                                                </button>
+
+                                                {/* Desktop */}
+                                                <Select
+                                                    onValueChange={field.onChange}
+                                                    defaultValue={field.value}
+                                                    value={field.value}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger
+                                                            className="hidden md:flex bg-[#111213] border-white/20 rounded-lg text-white
+                                                                        focus:ring-0 focus:border-white/40 text-sm w-full px-4
+                                                                        [&>svg]:text-white! [&>svg]:opacity-100! [&>svg]:w-5 [&>svg]:h-5"
+                                                            style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                                        >
+                                                            <SelectValue placeholder="Select Location" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent
+                                                        className="bg-[#1a1c24] border-white/10 text-white max-h-60 z-300"
+                                                        position="popper"
+                                                        sideOffset={4}
+                                                    >
+                                                        {countryCodes.map(c => (
+                                                            <SelectItem
+                                                                key={c.code}
+                                                                value={c.name}
+                                                                className="focus:bg-white/10 focus:text-white cursor-pointer text-sm"
+                                                            >
+                                                                {c.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+
+                                                <FormMessage className="text-[10px]" />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Bio */}
+                                <FormField
+                                    control={form.control}
+                                    name="bio"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-1.5">
+                                            <label className="text-xs text-gray-400">Bio</label>
+                                            <FormControl>
+                                                <div className="relative">
+                                                    <Textarea
+                                                        {...field}
+                                                        value={field.value ?? ""}
+                                                        className="bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 resize-y min-h-25 py-3 text-[16px]"
+                                                        placeholder="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                                                        maxLength={100}
+                                                        style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
+                                                    />
+                                                    <span className="absolute bottom-2 right-3 text-[10px] text-gray-500">
+                                                        {field.value?.length || 0}/100
+                                                    </span>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage className="text-[10px]" />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                {/* Submit Button */}
+                                <div className="flex flex-col md:flex-row gap-3 md:gap-4 mt-6 md:mt-8 w-full">
+                                    <Button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="rounded-full bg-[#FF8800] h-12 w-full md:w-auto md:px-18 text-sm font-bold text-black hover:bg-[#ff9922] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                                    >
+                                        {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : submitLabel}
+                                    </Button>
+                                    {onCancel && (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={onCancel}
+                                            disabled={isLoading}
+                                            className="rounded-full border-[#FF8800] h-12 w-full md:w-auto md:px-18 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800] cursor-pointer"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    )}
+                                </div>
+
+                                <p className="text-[11px] md:text-xs text-center md:text-left text-gray-500 mt-6 md:mt-4">
+                                    by logging in you agree to our <br className="md:hidden" />
+                                    <span className="text-blue-500 cursor-pointer hover:underline">terms & conditions</span>{' '}&{' '}
+                                    <span className="text-blue-500 cursor-pointer hover:underline">privacy policy</span>
+                                </p>
+                            </form>
+                        </Form>
+                    </div>
+
+                </div>
             </div>
-
-
         </div>
     );
 };
 
 
-
-// --- MAIN EXPORT ---
 export const SignUpModal = () => {
     const { isOpen, currentStep, closeModal, openModal, setStep, isAdult, identifier, method, countryCode } = useSignUpStore();
     const { isNewUser, isAuthenticated, isHydrated } = useAuthStore();
     const location = useLocation();
     const isLiveStream = location.pathname.startsWith('/live');
+
+    const didRecoverRef = useRef(false);
+    useEffect(() => {
+        if (!isHydrated) return;
+        if (didRecoverRef.current) return;
+        didRecoverRef.current = true;
+
+        switch (currentStep) {
+            case 'otp':
+                // OTP code is dead after a refresh — go back to input
+                setStep('input');
+                break;
+
+            case 'age':
+            case 'details':
+                if (!isAuthenticated) {
+                    setStep('welcome');
+                }
+                break;
+            default:
+                break;
+        }
+    }, [isHydrated]);
 
     useEffect(() => {
         if (isHydrated && isAuthenticated && isNewUser && !isOpen) {
@@ -1104,7 +1395,13 @@ export const SignUpModal = () => {
         }
     }, [isHydrated, isAuthenticated, isNewUser]);
 
-    if (!isOpen) return null;
+    useEffect(() => {
+        if (!isOpen) return;
+        window.history.pushState({ modal: true }, '');
+        const handlePopState = () => closeModal();
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [isOpen]);
 
     const handleClose = () => {
         if (isAuthenticated && isNewUser) return;
@@ -1115,8 +1412,10 @@ export const SignUpModal = () => {
         ? `${countryCode} ${identifier}`
         : identifier;
 
+    if (!isOpen) return null;
+
     return (
-        <AuthModalBackdrop onClose={handleClose} size={currentStep === 'details' ? 'large' : 'default'}>
+        <AuthModalBackdrop onClose={handleClose} size={currentStep === 'details' ? 'large' : 'default'} currentStep={currentStep}>
             {currentStep === 'welcome' && <StepWelcome />}
             {currentStep === 'input' && <StepInput isLiveStream={isLiveStream} />}
             {currentStep === 'otp' && <StepOTP isLiveStream={isLiveStream} />}

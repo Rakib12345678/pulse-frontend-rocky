@@ -30,7 +30,7 @@ export const GoLiveButton: React.FC = () => {
     };
 
     return (
-        <div className="mb-10 md:mb-0 fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+        <div className="hidden md:block mb-10 md:mb-0 fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
             <Button
                 onClick={handleGoLiveClick}
                 className="whitespace-nowrap px-8 py-6 rounded-full bg-[#FF8800] text-black text-lg font-bold hover:bg-[#ff9922] transition-all shadow-[0_0_30px_rgba(255,136,0,0.5)] cursor-pointer hover:text-black active:scale-95 flex items-center gap-2"

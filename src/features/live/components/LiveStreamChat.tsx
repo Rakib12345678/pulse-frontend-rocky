@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Lock, Heart, SendHorizonal } from 'lucide-react';
+import { Lock, Heart, SendHorizonal, Share2 } from 'lucide-react';
+import { useJoinRequestStore } from '../stores/joinRequestStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import {
@@ -10,11 +11,16 @@ import {
 import { Channel as StreamChannel } from 'stream-chat';
 import { useLiveStreamContext } from './LiveStreamLayout';
 import { useUserProfileStore } from '../stores/userProfileStore';
+import { useCallStateHooks } from '@stream-io/video-react-sdk';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
+import { StreamerInfoOverlay } from './StreamerInfoOverlay';
 
 export const LiveStreamChat: React.FC = () => {
     const { client: chatClient } = useChatContext();
     const { call, isChatVisible, isViewer } = useLiveStreamContext();
     const { user } = useAuthStore();
+    const isMobile = useIsMobile();
 
     if (!isChatVisible) return null;
 
@@ -23,13 +29,20 @@ export const LiveStreamChat: React.FC = () => {
     // Use the same ID as the call for the chat channel
     const channel = chatClient.channel('livestream', call.id);
 
+    // On mobile, shift chat up to make room for bottom bar (viewer bar ~80px or host invite ~72px)
+    const bottomClass = isMobile ? 'bottom-[100px]' : 'bottom-10';
+
     return (
         <Channel key={chatClient.userID || 'anonymous'} channel={channel}>
-            <div className="absolute bottom-10 left-4 right-4 sm:left-10 sm:right-auto sm:w-80 max-h-[400px] flex flex-col z-20">
+            <div className={`absolute ${bottomClass} left-4 right-4 sm:left-10 sm:right-auto sm:w-80 max-h-[400px] flex flex-col z-20`}>
                 <LiveStreamMessageList />
                 <LiveStreamMessageInput />
                 <JoinMessageSender channel={channel} isViewer={isViewer} userId={user?.id} />
             </div>
+            {/* Viewer: bottom bar with host info + Join Stream */}
+            {isViewer && <ViewerBottomBar />}
+            {/* Host: Invite Friends button */}
+            {!isViewer && <HostInviteBar />}
         </Channel>
     );
 };
@@ -244,3 +257,160 @@ const JoinMessageSender: React.FC<{ channel: StreamChannel; isViewer: boolean; u
     return null;
 };
 
+/** Bottom bar showing host info + Follow + Join Stream for viewers */
+const ViewerBottomBar: React.FC = () => {
+    const isMobile = useIsMobile();
+    const { useCallCreatedBy } = useCallStateHooks();
+    const createdBy = useCallCreatedBy();
+    const { call } = useLiveStreamContext();
+    const { user } = useAuthStore();
+
+    const { requestStatus, setRequestStatus } = useJoinRequestStore();
+
+    // Listen for join-response from host
+    useEffect(() => {
+        if (!call || !user) return;
+        const unsubscribe = call.on('custom', (event: any) => {
+            const customData = event?.custom;
+            if (customData?.type === 'join-response' && customData?.userId === String(user.id)) {
+                console.log('[ViewerBottomBar] Got join response:', customData);
+                setRequestStatus(customData.accepted ? 'approved' : 'declined');
+                if (customData.accepted) {
+                    toast.success('Host accepted your join request!');
+                    (async () => {
+                        try {
+                            await call.camera.enable();
+                            await call.microphone.enable();
+                            console.log('[ViewerBottomBar] Camera & mic enabled — now a co-host');
+                        } catch (err) {
+                            console.error('[ViewerBottomBar] Failed to enable camera/mic:', err);
+                        }
+                    })();
+                } else {
+                    toast.error('Host declined your join request');
+                    setTimeout(() => setRequestStatus('idle'), 3000);
+                }
+            }
+            // Handle being kicked by the host
+            if (customData?.type === 'kicked' && customData?.userId === String(user.id)) {
+                console.log('[ViewerBottomBar] Kicked by host');
+                toast.error('You have been removed from the stream');
+                (async () => {
+                    try {
+                        await call.camera.disable();
+                        await call.microphone.disable();
+                    } catch (err) {
+                        console.error('[ViewerBottomBar] Failed to disable camera/mic:', err);
+                    }
+                })();
+                setRequestStatus('idle');
+            }
+        });
+        return () => { unsubscribe(); };
+    }, [call, user, setRequestStatus]);
+
+    if (!createdBy) return null;
+
+    const hostName = createdBy.name || createdBy.id || 'Host';
+    const hostImage = createdBy.image as string | undefined;
+
+    const handleJoinRequest = async () => {
+        if (requestStatus !== 'idle' || !call || !user) return;
+        try {
+            console.log('[JoinStream] Sending custom join-request event...');
+            setRequestStatus('pending');
+            await call.sendCustomEvent({
+                type: 'join-request',
+                userId: String(user.id),
+                userName: user.username || user.fullName || String(user.id),
+                userImage: user.profileImage,
+            });
+            console.log('[JoinStream] Custom event sent successfully');
+        } catch (err) {
+            console.error('[JoinStream] Failed to send join request:', err);
+            setRequestStatus('idle');
+        }
+    };
+
+    const joinButton = requestStatus === 'approved' ? (
+        <span className={`rounded-full text-sm font-bold text-green-400 bg-green-400/10 shrink-0 ${isMobile ? 'px-4 py-3' : 'px-8 py-3 rounded-full'}`}>
+            Joined
+        </span>
+    ) : (
+        <button
+            onClick={handleJoinRequest}
+            disabled={requestStatus === 'pending'}
+            className={`rounded-full text-sm font-bold transition-all shadow-md shrink-0 ${isMobile ? 'px-4 py-3' : 'px-8 py-3 rounded-full'} ${requestStatus === 'pending'
+                ? 'bg-white/10 text-white/40 cursor-default'
+                : 'bg-[#FF8800] text-black hover:bg-[#ff9922] active:scale-95'
+                }`}
+        >
+            {requestStatus === 'pending' ? 'Requested' : 'Join Stream'}
+        </button>
+    );
+
+    /* ===== MOBILE: streamer card + Join Stream ===== */
+    if (isMobile) {
+        return (
+            <div className="absolute bottom-0 left-0 right-0 z-30 px-1 pb-4 pt-2 w-full">
+                <div className="flex items-center gap-0.5 w-full">
+                    <StreamerInfoOverlay
+                        streamerName={hostName}
+                        streamerImage={hostImage || undefined}
+                        className="flex-1 bg-[#1a1d27] min-w-0"
+                    />
+                    {joinButton}
+                </div>
+            </div>
+        );
+    }
+
+    /* ===== DESKTOP: Join Stream button in bottom-right ===== */
+    return (
+        <div className="absolute bottom-10 right-10 z-30">
+            {joinButton}
+        </div>
+    );
+};
+
+/** Host bottom bar with Invite Friends button */
+const HostInviteBar: React.FC = () => {
+    const isMobile = useIsMobile();
+
+    const handleInvite = () => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url);
+        if (navigator.share) {
+            navigator.share({ title: 'Join my live stream!', url }).catch(() => { });
+        } else {
+            toast.success('Stream link copied!');
+        }
+    };
+
+    if (isMobile) {
+        return (
+            <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-4 pt-2">
+                <button
+                    onClick={handleInvite}
+                    className="w-full h-14 rounded-full bg-[#FF8800] text-black font-bold text-base flex items-center justify-center gap-2 transition-all hover:bg-[#ff9922] active:scale-[0.98] shadow-lg shadow-[#FF8800]/20"
+                >
+                    <Share2 className="w-5 h-5" />
+                    Invite Friends
+                </button>
+            </div>
+        );
+    }
+
+    /* Desktop: bottom-right corner, same position as viewer's Join Stream */
+    return (
+        <div className="absolute bottom-10 right-10 z-30">
+            <button
+                onClick={handleInvite}
+                className="px-8 py-3 rounded-full bg-[#FF8800] text-black font-bold text-sm flex items-center gap-2 transition-all hover:bg-[#ff9922] active:scale-95 shadow-md"
+            >
+                <Share2 className="w-4 h-4" />
+                Invite Friends
+            </button>
+        </div>
+    );
+};

@@ -16,7 +16,7 @@ interface SignUpState {
     method: 'phone' | 'email';
     countryCode: string;
     identifier: string;
-    isAdult: boolean; 
+    isAdult: boolean;
     googleIdToken: string | null;
     onAgeVerified?: () => void;
 
@@ -48,7 +48,10 @@ export const useSignUpStore = create<SignUpState>()(
             onAgeVerified: undefined,
 
             openModal: () => set({ isOpen: true }),
-            closeModal: () => set({ isOpen: false }),
+            closeModal: () => set({
+                isOpen: false,
+                currentStep: 'welcome',
+            }),
             setStep: (step) => set({ currentStep: step }),
             setMode: (mode) => set({ mode }),
             setMethod: (method) => set({ method }),
@@ -72,8 +75,15 @@ export const useSignUpStore = create<SignUpState>()(
         {
             name: 'signup-storage',
             partialize: (state) => ({
+                isOpen: state.isOpen,
                 currentStep: state.currentStep,
             }),
+            // On rehydration: if modal was not open, reset step to welcome
+            onRehydrateStorage: () => (state) => {
+                if (state && !state.isOpen) {
+                    state.currentStep = 'welcome';
+                }
+            },
         }
     )
 );

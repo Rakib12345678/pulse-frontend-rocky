@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Users, Eye, EyeOff, ArrowLeft, ChevronLeft, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useGoLiveStore } from '../stores/goLiveStore';
 import { liveService } from '../services/live.service';
@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useLiveStreamContext } from './LiveStreamLayout';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import { ParticipantsDialog } from './ParticipantsDialog';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
@@ -15,16 +16,16 @@ export const LiveStreamHeader: React.FC = () => {
     const { streamData, setEndingStream } = useGoLiveStore();
     const { isChatVisible, setChatVisible, call } = useLiveStreamContext();
     const navigate = useNavigate();
-    const { useCallSession, useParticipantCount } = useCallStateHooks();
+    const { useCallSession, useParticipantCount, useCallCreatedBy } = useCallStateHooks();
     const session = useCallSession();
     const participantCount = useParticipantCount();
+    const createdBy = useCallCreatedBy();
+    const isMobile = useIsMobile();
 
     // Timer state
     const [timeLeft, setTimeLeft] = React.useState<string>('');
     const [hasShownAlert, setHasShownAlert] = React.useState(false);
     const [isUrgent, setIsUrgent] = React.useState(false);
-
-
 
     // Auto-end stream ref
     const autoEndTriggered = React.useRef(false);
@@ -47,7 +48,11 @@ export const LiveStreamHeader: React.FC = () => {
                 autoEndTriggered.current = true;
                 try {
                     await liveService.endLiveStream(streamData.callId);
-                    if (call) await call.endCall();
+                    if (call) {
+                        await call.camera.disable();
+                        await call.microphone.disable();
+                        await call.endCall();
+                    }
                     toast.success('Live stream ended automatically due to time limit');
                     setEndingStream(true);
                     navigate({ to: '/for-you' });
@@ -63,7 +68,6 @@ export const LiveStreamHeader: React.FC = () => {
                 return;
             }
 
-            // check for 2 minute warning (120000 ms)
             if (diff <= 120000 && diff > 119000 && !hasShownAlert) {
                 toast.warning('2 minutes remaining in session', {
                     duration: 5000,
@@ -72,7 +76,7 @@ export const LiveStreamHeader: React.FC = () => {
                 setHasShownAlert(true);
             }
 
-            if (diff <= 30000) { // 30 seconds
+            if (diff <= 30000) {
                 setIsUrgent(true);
             }
 
@@ -81,9 +85,8 @@ export const LiveStreamHeader: React.FC = () => {
             setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
         };
 
-        checkTime(); // Initial check
+        checkTime();
         const interval = setInterval(checkTime, 1000);
-
         return () => clearInterval(interval);
     }, [session, hasShownAlert, streamData, navigate, setEndingStream]);
 
@@ -103,10 +106,13 @@ export const LiveStreamHeader: React.FC = () => {
 
     const handleEndLive = async () => {
         if (!streamData) return;
-
         try {
             await liveService.endLiveStream(streamData.callId);
-            if (call) await call.endCall();
+            if (call) {
+                await call.camera.disable();
+                await call.microphone.disable();
+                await call.endCall();
+            }
             setEndingStream(true);
             navigate({ to: '/for-you' });
         } catch (error) {
@@ -115,10 +121,94 @@ export const LiveStreamHeader: React.FC = () => {
         }
     };
 
+    const isHost = !!streamData;
+    const hostName = createdBy?.name || createdBy?.id || 'Host';
+
+    /* ========== MOBILE HEADER ========== */
+    if (isMobile) {
+        return (
+            <>
+                {/* Top bar */}
+                <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 pt-5 pb-3 bg-linear-to-b from-black/60 to-transparent">
+                    <div className="flex items-center gap-2">
+                        {isHost ? (
+                            /* Host: red End Live with back icon */
+                            <button
+                                onClick={handleEndLive}
+                                className="flex items-center gap-1 text-red-500 font-bold text-base"
+                            >
+                                <ChevronLeft className="w-6 h-6" />
+                                <span>End Live</span>
+                            </button>
+                        ) : (
+                            /* Viewer: back + host username */
+                            <>
+                                <button
+                                    onClick={handleLeaveStream}
+                                    className="text-white"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+                                <span className="text-white font-bold text-base truncate max-w-[200px]">
+                                    {hostName}
+                                </span>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Center: timer */}
+                    {timeLeft && (
+                        <div className="absolute left-1/2 -translate-x-1/2">
+                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold tracking-wider backdrop-blur-md border transition-colors ${isUrgent
+                                ? "bg-red-500/20 border-red-500 text-red-100 shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse"
+                                : "bg-white/10 border-white/10 text-white"
+                                }`}>
+                                <span>{timeLeft}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Right side: "..." menu for viewer */}
+                    <div className="flex items-center gap-2">
+                        {!isHost && (
+                            <button className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10">
+                                <MoreHorizontal className="w-5 h-5 text-white" />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Left side buttons (below header): eye + participants */}
+                <div className="absolute top-24 left-4 z-20 flex flex-col gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setChatVisible(!isChatVisible)}
+                        className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
+                        title={isChatVisible ? "Hide Chat" : "Show Chat"}
+                    >
+                        {isChatVisible ? <Eye className="w-4 h-4 text-white/70" /> : <EyeOff className="w-4 h-4 text-white/70" />}
+                    </button>
+
+                    {isHost && (
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all cursor-pointer">
+                                    <Users className="w-4 h-4 text-white/70" />
+                                </button>
+                            </DialogTrigger>
+                            <ParticipantsDialog />
+                        </Dialog>
+                    )}
+                </div>
+            </>
+        );
+    }
+
+    /* ========== DESKTOP HEADER ========== */
     return (
         <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 bg-linear-to-b from-black/60 to-transparent">
             <div className="flex items-center gap-4">
-                {streamData ? (
+                {isHost ? (
                     <Button
                         onClick={handleEndLive}
                         className="bg-[#FF8800] hover:bg-[#FF8800]/90 text-black font-bold px-6 py-2 rounded-full h-11 transition-all hover:scale-105 active:scale-95"
@@ -158,7 +248,7 @@ export const LiveStreamHeader: React.FC = () => {
                     </div>
                 )}
 
-                {streamData && (
+                {isHost && (
                     <Dialog>
                         <DialogTrigger asChild>
                             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition-all">

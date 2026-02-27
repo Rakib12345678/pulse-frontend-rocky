@@ -11,9 +11,10 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { cn } from '@/lib/utils';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 
-import Logo from "@/assets/Logo.svg";
+import Logo from "@/assets/Logo.png";
 import LogoText from "@/assets/LogoText.svg";
 import { LogoutModal } from '../internal/ConfirmModal';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavLinkProps {
   to: string;
@@ -49,24 +50,28 @@ export const Navbar: React.FC = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
-  useEffect(() => { setHasMounted(true); }, []);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const isMobile = useIsMobile();
 
-  const { openModal: openSignUpModal, setStep: setSignUpStep, setMode: setSignUpMode } = useSignUpStore();
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  const { openModal, setStep, setMode, isOpen: isModalOpen, currentStep } = useSignUpStore();
+
+  const shouldHide = isMobile && isModalOpen && currentStep !== 'welcome';
 
   const handleSignUpClick = () => {
-    setSignUpMode('signup');
-    setSignUpStep('welcome');
-    openSignUpModal();
+    setMode('signup');
+    setStep('welcome');
+    openModal();
   };
 
   const handleLoginClick = () => {
-    setSignUpMode('login');
-    setSignUpStep('input');
-    openSignUpModal();
+    setMode('login');
+    setStep('input');
+    openModal();
   };
-
-
 
   const handleLogout = () => {
     clearAuth();
@@ -82,6 +87,15 @@ export const Navbar: React.FC = () => {
     navigate({ to: '/profile/setting' });
   };
 
+  const isLoggedIn = isAuthenticated && !!accessToken;
+  const { pathname } = useLocation();
+
+  if (shouldHide) return null;
+
+  if ((pathname === '/profile/setting' && isMobile) || pathname.startsWith('/live')) {
+    return null;
+  }
+
   return (
     <>
       <LogoutModal
@@ -89,16 +103,16 @@ export const Navbar: React.FC = () => {
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutConfirm(false)}
       />
+
       <header className="sticky top-0 z-50 w-full bg-[#0f1117] border-b border-white/5">
-        <div className="flex h-[72px] w-full items-center justify-between px-4 lg:px-8">
+        <div className="flex h-18 w-full items-center justify-between px-4 lg:px-8">
 
           {/* ================= LEFT SECTION: Logo ================= */}
           <div className="flex items-center shrink-0">
             <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-              <div className="flex items-center gap-2">
-                <img src={LogoText} alt="PulseLive" className="hidden md:block h-20 w-36" />
-                <img src={Logo} alt="PulseLive" className="block md:hidden h-9 w-9" />
-              </div>
+              <img src={LogoText} alt="PulseLive" className="hidden md:block h-20 w-36" />
+              <img src={Logo} alt="PulseLive" className="block md:hidden h-9 w-9" />
+              <span className="block md:hidden text-white font-bold text-lg">PulseLive</span>
             </Link>
           </div>
 
@@ -110,13 +124,13 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* ================= RIGHT SECTION: Auth & Profile ================= */}
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="hidden md:flex items-center gap-4 shrink-0">
 
             {/* Wait for client hydration before rendering auth UI */}
             {!hasMounted ? (
-              <div className="w-[180px]" /> /* Placeholder to prevent layout shift */
-            ) : !isAuthenticated || !accessToken ? (
-              <div className="flex items-center gap-3">
+              <div className="hidden md:block w-45" /> /* Placeholder to prevent layout shift */
+            ) : !isLoggedIn ? (
+              <div className="hidden md:flex items-center gap-3">
                 <Button
                   onClick={handleSignUpClick}
                   variant="ghost"
@@ -205,7 +219,7 @@ export const Navbar: React.FC = () => {
                               setIsDropdownOpen(false);
                               setShowLogoutConfirm(true);
                             }}
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer disabled:opacity-60"
+                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                           >
                             <LogOut className="h-4 w-4" />
                             Log Out

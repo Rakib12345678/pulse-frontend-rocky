@@ -5,7 +5,9 @@ import { LiveStreamVideoPlayer } from '@/features/live/components/LiveStreamVide
 import { LiveStreamChat } from '@/features/live/components/LiveStreamChat'
 import { LiveStreamControls } from '@/features/live/components/LiveStreamControls'
 import { useGoLiveStore } from '@/features/live/stores/goLiveStore'
+import { JoinRequestPopup, JoinDeclineBanner, ViewerPendingRequestPopup } from '@/features/live/components/JoinRequestPopup'
 import { useEffect } from 'react'
+import { liveService } from '@/features/live/services/live.service'
 import {
   Dialog,
   DialogContent,
@@ -24,11 +26,19 @@ export const Route = createFileRoute('/_main/live/$id')({
 function LiveStreamContent() {
   const { isViewer } = useLiveStreamContext()
 
-
   return (
     <>
       <LiveStreamHeader />
       <LiveStreamVideoPlayer />
+      {/* Host: show join request popup (listens for GetStream permission_request events) */}
+      {!isViewer && <JoinRequestPopup />}
+      {/* Viewer: show pending popup and decline notification */}
+      {isViewer && (
+        <>
+          <ViewerPendingRequestPopup />
+          <JoinDeclineBanner />
+        </>
+      )}
       <LiveStreamChat />
       <LiveStreamControls isViewer={isViewer} />
     </>
@@ -54,6 +64,20 @@ function LiveStreamComponent() {
     closeModal()
   }, [closeModal])
 
+  /** End stream properly before leaving via blocker */
+  const handleLeaveConfirm = async () => {
+    const { streamData, setEndingStream } = useGoLiveStore.getState();
+    if (streamData) {
+      try {
+        await liveService.endLiveStream(streamData.callId);
+      } catch (e) {
+        console.error('Failed to end stream on leave:', e);
+      }
+      setEndingStream(true);
+    }
+    proceed?.();
+  };
+
   return (
     <>
       <LiveStreamLayout callId={id}>
@@ -78,7 +102,7 @@ function LiveStreamComponent() {
               Stay
             </Button>
             <Button
-              onClick={() => proceed?.()}
+              onClick={handleLeaveConfirm}
               className="flex-1 bg-red-500 hover:bg-red-600 text-white"
             >
               Leave Stream

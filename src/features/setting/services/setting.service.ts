@@ -13,6 +13,7 @@ export const useBlockedUsers = () => {
     queryKey: ['blockedUsers'],
     queryFn: fetchBlockedUsers,
     staleTime: 2 * 60 * 1000,
+    retry: false,
   });
 };
 

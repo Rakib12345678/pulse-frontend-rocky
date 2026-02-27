@@ -56,8 +56,12 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
         fetchProfile();
     }, [streamerName, currentUser]); // Re-fetch if user logs in to get correct follow status
 
-    const handleFollowToggle = async (e: React.MouseEvent) => {
+    const handleFollowToggle = async (e: React.MouseEvent | React.TouchEvent) => {
         e.stopPropagation();
+        // Prevent default for touch events to avoid double-firing with click
+        if (e.type === 'touchend' && e.cancelable) {
+            e.preventDefault();
+        }
 
         if (!currentUser) {
             setMode('login');
@@ -73,7 +77,6 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
             if (isFollowing) {
                 await userService.unfollowUser(profile.id);
                 setIsFollowing(false);
-                // Optionally decrement count locally or refetch
                 toast.success(`Unfollowed ${streamerName}`);
             } else {
                 await userService.followUser(profile.id);
@@ -87,7 +90,7 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
         }
     };
 
-    const handleProfileClick = (e: React.MouseEvent) => {
+    const handleProfileClick = (e: React.MouseEvent | React.TouchEvent) => {
         e.stopPropagation();
         openProfileModal(streamerName);
     };
@@ -95,10 +98,11 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
     if (!streamerName) return null;
 
     return (
-        <div className={`flex items-center gap-3 bg-[#1A1A1A]/95 backdrop-blur-sm px-3 py-2 pr-3 rounded-full border border-white/5 ${className}`}>
+        <div className={`flex items-center gap-3 bg-[#1A1A1A]/95 backdrop-blur-sm px-3 py-2 pr-3 rounded-full border border-white/5 max-w-full ${className}`}>
             <div
-                className="relative cursor-pointer group"
+                className="relative cursor-pointer group shrink-0"
                 onClick={handleProfileClick}
+                onTouchEnd={handleProfileClick}
             >
                 <Avatar className="h-10 w-10 border-2 border-[#FF4500]">
                     <AvatarImage src={profile?.profileImage || streamerImage} className="object-cover" />
@@ -106,14 +110,15 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
                 </Avatar>
             </div>
 
-            <div className="flex flex-col mr-2">
+            <div className="flex flex-col mr-2 min-w-0 flex-1">
                 <span
-                    className="text-white font-bold text-sm hover:underline cursor-pointer"
+                    className="text-white font-bold text-sm hover:underline cursor-pointer truncate"
                     onClick={handleProfileClick}
+                    onTouchEnd={handleProfileClick}
                 >
                     {streamerName.startsWith('@') ? streamerName : `@${streamerName}`}
                 </span>
-                <span className="text-white/60 text-xs text-left">
+                <span className="text-white/60 text-xs text-left truncate">
                     {followerCount} Followers
                 </span>
             </div>
@@ -122,15 +127,16 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
             {currentUser?.username !== (profile?.username || streamerName.replace('@', '')) && (
                 <Button
                     size="sm"
-                    className={`ml-auto h-8 px-6 rounded-full transition-all text-xs font-semibold ${isFollowing
+                    className={`ml-auto shrink-0 h-8 px-6 rounded-full transition-all text-xs font-semibold ${isFollowing
                         ? "bg-[#FF8800] hover:bg-[#FF5722] text-white border-none"
                         : "bg-[#FF8800] hover:bg-[#FF5722] text-white"
                         }`}
                     onClick={handleFollowToggle}
+                    onTouchEnd={handleFollowToggle}
                     disabled={isLoading}
                 >
                     {isLoading ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
+                        <Loader2 className="h-2 w-2 animate-spin" />
                     ) : isFollowing ? (
                         "Following"
                     ) : (

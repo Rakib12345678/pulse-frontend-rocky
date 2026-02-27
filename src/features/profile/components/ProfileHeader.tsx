@@ -141,9 +141,9 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         onCancel={() => setShowReportModal(false)}
       />
 
-      <div className="bg-[#111213] flex flex-col rounded-2xl p-14 border-2 border-[#1D1F20] mb-15">
-        <div className="flex flex-col sm:flex-row gap-8 justify-between items-start md:items-center mb-10">
-          <div className="flex flex-row gap-6 items-center">
+      <div className="bg-[#111213] flex flex-col rounded-2xl p-6 md:p-14 border-x-0 border-y-2 md:border-2 border-[#1D1F20] mb-8 md:mb-15">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 justify-between items-center mb-8 md:mb-10">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center text-center md:text-left">
             <div className="relative shrink-0">
               <div
                 className={`w-32 h-32 rounded-full p-1 ${isLive ? 'animate-live-ring' : ''}`}
@@ -179,14 +179,14 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
               )}
             </div>
 
-            <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl md:text-4xl font-bold text-white mb-1">
+            <div className="flex flex-col items-center md:items-start w-full mt-2 md:mt-0">
+              <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+                <h1 className="text-2xl md:text-4xl font-bold text-white mb-1">
                   {user.fullName || user.username}
                 </h1>
               </div>
 
-              <div className="flex items-center gap-4 text-[#494E50] text-sm mb-3">
+              <div className="flex items-center gap-4 text-[#494E50] text-sm mb-3 justify-center md:justify-start w-full">
                 <span className="font-medium">@{user.username}</span>
                 {user.location && (
                   <div className="flex items-center gap-1">
@@ -196,12 +196,12 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 )}
               </div>
               {user.bio && (
-                <p className="text-zinc-300 text-base max-w-lg leading-relaxed">{user.bio}</p>
+                <p className="text-zinc-300 text-sm md:text-base max-w-lg leading-relaxed text-center md:text-left">{user.bio}</p>
               )}
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 w-full md:w-auto">
+          <div className="flex flex-col gap-3 w-full md:w-auto mt-4 md:mt-0">
             {isOwnProfile ? (
               <>
                 <button
@@ -210,10 +210,10 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 >
                   Go Live
                 </button>
-                <div className="flex gap-3">
+                <div className="flex gap-3 w-full md:w-auto">
                   <button
                     onClick={() => setEditProfileOpen(true)}
-                    className="flex-1 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
+                    className="flex-1 md:flex-none md:w-48 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 md:py-3 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
                   >
                     Edit Profile
                   </button>
@@ -260,10 +260,10 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                     : (isPending ? 'Please wait...' : user.followedByMe ? 'Unfollow' : 'Follow')
                   }
                 </button>
-                <div className="flex gap-3">
+                <div className="flex gap-3 w-full md:w-auto">
                   <button
                     onClick={handleShare}
-                    className="flex-1 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
+                    className="flex-1 md:flex-none md:w-48 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 md:py-3 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
                   >
                     Share Profile
                   </button>
@@ -287,7 +287,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                           </button>
                           <div className="h-px bg-zinc-800 mx-2" />
                           <button
-                            onClick={() => { setShowReportModal(true); setActionMenuOpen(false); }}
+                            // onClick={() => { setShowReportModal(true); setActionMenuOpen(false); }}
                             className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
                           >
                             Report User
@@ -302,12 +302,12 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
           </div>
         </div>
 
-        <div className="bg-[#1D1F20] rounded-4xl py-3 px-10 md:px-20 border border-zinc-800/40 shadow-2xl">
-          <div className="flex justify-between items-center max-w-2xl">
+        <div className="bg-[#1D1F20] rounded-3xl md:rounded-4xl py-4 md:py-3 px-6 md:px-20 border border-zinc-800/40 shadow-2xl w-full">
+          <div className="flex justify-between items-center w-full">
             {stats.map((stat, i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5">
-                <span className="text-[#494E50] text-xs font-bold tracking-widest">{stat.label}</span>
-                <span className="text-[#FFE2A5] text-3xl md:text-4xl font-extrabold tracking-tight">{stat.value}</span>
+              <div key={i} className="flex flex-col items-center gap-1 md:gap-1.5 flex-1">
+                <span className="text-[#494E50] text-[10px] md:text-xs font-bold tracking-widest">{stat.label}</span>
+                <span className="text-[#FFE2A5] text-xl md:text-4xl font-extrabold tracking-tight">{stat.value}</span>
               </div>
             ))}
           </div>

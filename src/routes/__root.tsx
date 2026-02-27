@@ -39,8 +39,14 @@ function RootComponent() {
         <meta charSet="utf-8" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-visual"
         />
+        {/* iOS Safari */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Pulse Live" />
+        <meta name="theme-color" content="#0f1117" />
+        <meta name="format-detection" content="telephone=no" />
         {/* <meta name="referrer" content="no-referrer" /> */}
         <title>Pulse Live</title>
 
@@ -48,7 +54,7 @@ function RootComponent() {
         <link rel="stylesheet" href={appCss} />
       </head>
 
-      <body className="min-h-screen bg-background text-foreground">
+      <body className="min-h-screen bg-[#0f1117] text-foreground overscroll-none" style={{ WebkitTextSizeAdjust: '100%', WebkitTapHighlightColor: 'transparent', touchAction: 'pan-x pan-y' }}>
         <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ""}>
           <Outlet />
           <Toaster />

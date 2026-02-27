@@ -14,6 +14,7 @@ export interface UserProfile {
     postCount: number;
     createdAt: string;
     followedByMe: boolean;
+    blockedByMe: boolean;
 }
 
 export const userService = {
@@ -27,5 +28,13 @@ export const userService = {
 
     unfollowUser: async (targetUserId: number) => {
         return api.post('/users/unfollow', { targetUserId, follow: true });
+    },
+
+    blockUser: async (targetUserId: number) => {
+        return api.post('/users/block', { targetUserId, block: true });
+    },
+
+    unblockUser: async (targetUserId: number) => {
+        return api.post('/users/unblock', { targetUserId, block: false });
     }
 };

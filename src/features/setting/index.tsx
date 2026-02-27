@@ -12,7 +12,7 @@ export const Settings = () => {
                     background: '#161616',
                     boxShadow: '0 8px 64px 0 rgba(0,0,0,0.6)',
                 }}
-            >         
+            >
                 <div
                     className="pointer-events-none absolute rounded-full"
                     style={{

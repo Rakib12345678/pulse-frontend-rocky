@@ -37,46 +37,44 @@ export const ProfileMediaSection = ({
         <div className="flex w-full">
           <div
             onClick={() => onTabChange('moments')}
-            className="flex-1 flex justify-center items-center py-5 cursor-pointer relative"
+            className="flex-1 flex justify-center items-center py-4 md:py-5 cursor-pointer relative"
           >
             <div
-              className={`flex items-center gap-3 transition-colors ${
-                isMoments ? 'text-[#FF7700]' : 'text-zinc-500 hover:text-zinc-300'
-              }`}
+              className={`flex items-center gap-2 md:gap-3 transition-colors ${isMoments ? 'text-[#FF7700]' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
             >
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="text-lg font-medium">Moments</span>
+              <LayoutDashboard className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="text-base md:text-lg font-medium">Moments</span>
             </div>
             {isMoments && (
-              <div className="absolute bottom-0 left-10 right-10 h-0.5 bg-[#FF7700] shadow-[0_0_10px_rgba(249,115,22,0.3)]" />
+              <div className="absolute bottom-0 left-4 md:left-10 right-4 md:right-10 h-0.5 bg-[#FF7700] shadow-[0_0_10px_rgba(249,115,22,0.3)]" />
             )}
           </div>
 
           <div
             onClick={() => onTabChange('pastLive')}
-            className="flex-1 flex justify-center items-center py-5 cursor-pointer relative"
+            className="flex-1 flex justify-center items-center py-4 md:py-5 cursor-pointer relative"
           >
             <div
-              className={`flex items-center gap-3 transition-colors ${
-                !isMoments ? 'text-[#FF7700]' : 'text-zinc-500 hover:text-zinc-300'
-              }`}
+              className={`flex items-center gap-2 md:gap-3 transition-colors ${!isMoments ? 'text-[#FF7700]' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
             >
-              <Video className="w-5 h-5" />
-              <span className="text-lg font-medium">Past Live</span>
+              <Video className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="text-base md:text-lg font-medium">Past Live</span>
             </div>
             {!isMoments && (
-              <div className="absolute bottom-0 left-10 right-10 h-0.5 bg-[#FF7700] shadow-[0_0_10px_rgba(249,115,22,0.3)]" />
+              <div className="absolute bottom-0 left-4 md:left-10 right-4 md:right-10 h-0.5 bg-[#FF7700] shadow-[0_0_10px_rgba(249,115,22,0.3)]" />
             )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 pb-20">
+      <div className="w-full max-w-7xl mx-auto px-1 md:px-6 pb-20">
         {/* LOADING STATE */}
         {isLoading && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="aspect-[3/4.5] bg-zinc-900 rounded-3xl animate-pulse" />
+              <div key={i} className="aspect-[3/4.5] bg-zinc-900 rounded-xl md:rounded-3xl animate-pulse" />
             ))}
           </div>
         )}
@@ -96,35 +94,37 @@ export const ProfileMediaSection = ({
                 isMoments
                   ? 'Explore Live Stream'
                   : isOwnProfile
-                  ? 'Go Live'
-                  : undefined
+                    ? 'Go Live'
+                    : undefined
               }
               onAction={
                 isMoments
                   ? () => { window.location.href = '/for-you'; }
                   : isOwnProfile
-                  ? onGoLive
-                  : undefined
+                    ? onGoLive
+                    : undefined
               }
             />
           </div>
         )}
 
         {!isLoading && data && data.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
             {data.map((item: LiveStream) => (
-              <LiveCard
-                key={item.id}
-                callId={item.id}
-                thumbnailUrl={item.thumbnail}
-                avatarUrl={item.avatar}
-                streamerName={item.username}
-                viewerCount={item.views}
-                followersCount=""
-                category=""
-                title={item.displayName}
-                isLive={isMoments ? false : (item.isLive ?? false)}
-              />
+              <div className="rounded-xl md:rounded-3xl overflow-hidden aspect-[3/4.5]">
+                <LiveCard
+                  key={item.id}
+                  callId={item.id}
+                  thumbnailUrl={item.thumbnail}
+                  avatarUrl={item.avatar}
+                  streamerName={item.username}
+                  viewerCount={item.views}
+                  followersCount=""
+                  category=""
+                  title={item.displayName}
+                  isLive={isMoments ? false : (item.isLive ?? false)}
+                />
+              </div>
             ))}
           </div>
         )}

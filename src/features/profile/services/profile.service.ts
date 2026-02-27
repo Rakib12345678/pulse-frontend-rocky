@@ -44,6 +44,8 @@ export const useCurrentUser = () => {
     queryKey: ['currentUser'],
     queryFn: fetchCurrentUser,
     staleTime: 5 * 60 * 1000,
+    retry: false,
+    
   });
 };
 
@@ -54,6 +56,7 @@ export const useUserProfile = (userId?: number) => {
     queryFn: () => fetchUserProfile(userId!),
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 };
 
@@ -64,6 +67,7 @@ export const useUserByUsername = (username?: string) => {
     queryFn: () => fetchUserByUsername(username!),
     enabled: !!username,
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 };
 
@@ -73,6 +77,7 @@ export const usePastLiveStreams = (userId?: number) => {
     queryFn: () => fetchPastLiveStreams(userId!),
     enabled: !!userId,
     staleTime: 2 * 60 * 1000,
+    retry: false,
   });
 };
 
@@ -82,6 +87,7 @@ export const useMoments = (userId?: number) => {
     queryFn: () => fetchMoments(userId!),
     enabled: !!userId,
     staleTime: 2 * 60 * 1000,
+    retry: false,
   });
 };
 
@@ -92,6 +98,7 @@ export const useUserLiveStatus = (username?: string, enabled = true) => {
     enabled: !!username && enabled,
     refetchInterval: 30 * 1000,
     staleTime: 20 * 1000,
+    retry: false,
   });
 };
 

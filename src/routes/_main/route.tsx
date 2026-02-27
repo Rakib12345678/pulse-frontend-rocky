@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { MobileFooter } from '@/components/layout/mobile-footer'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/features/auth/stores/authStore'
+import { AppBackground } from '@/components/internal/AppBackground'
 
 export const Route = createFileRoute('/_main')({
     head: () => ({
@@ -58,16 +59,18 @@ function MainLayout() {
     if (!isHydrated) {
         return <div className="flex h-screen w-full items-center justify-center bg-[#0f1117] text-white">
             <div className="flex flex-col items-center gap-4">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#FF8800]"></div>
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#FF8800]/30 border-t-[#FF8800]"></div>
             </div>
         </div>
     }
 
     return (
-        <div className="flex min-h-screen flex-col bg-[#0f1117] text-white overflow-x-hidden">
+        <div className="flex min-h-screen flex-col text-white overflow-x-hidden">
             <Navbar />
             <main className="flex-1 pb-16 md:pb-0">
-                <Outlet />
+                <AppBackground>
+                     <Outlet />
+                </AppBackground>
             </main>
             <MobileFooter />
         </div>

@@ -32,8 +32,8 @@ export const ForYouPage: React.FC = () => {
     };
 
     return (
-        <div className="p-6 pb-24">
-            <div className="flex items-center justify-between mb-8">
+        <div className="p-4 md:p-6 pb-24">
+            <div className="hidden md:flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold text-white">Creators</h1>
                 <div className="flex items-center gap-2">
                     <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
@@ -50,6 +50,14 @@ export const ForYouPage: React.FC = () => {
                         <div className="w-10" />
                     )}
                 </div>
+            </div>
+
+            <div className="md:hidden mb-4">
+                <TabSwitcher
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    className="w-full"
+                />
             </div>
 
             {activeTab === 'following' && !isAuthenticated ? (

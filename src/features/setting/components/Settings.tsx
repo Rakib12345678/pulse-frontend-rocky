@@ -33,7 +33,7 @@ export const SettingsPage = () => {
     const isAgeVerified = user?.eighteenPlus ?? false;
 
     const handleAgeVerification = () => {
-        setOnAgeVerified(() => {});
+        setOnAgeVerified(() => { });
         setStep('age');
         openModal();
     };
@@ -130,43 +130,70 @@ export const SettingsPage = () => {
             />
 
             {/* ----- Page ----- */}
-            <div className="text-white">
-                <div className="mx-auto px-10 py-10 gap-8">
+            {/* Mobile: fullscreen overlay | Desktop: normal page flow (original layout) */}
+            <div className="fixed inset-0 z-40 bg-[#161616] overflow-y-auto overflow-x-hidden md:static md:z-auto md:bg-transparent md:overflow-visible text-white">
+
+                {/* Mobile-only glow blobs */}
+                <div
+                    className="pointer-events-none md:hidden absolute rounded-full"
+                    style={{
+                        width: 169,
+                        height: 220,
+                        top: -108,
+                        right: -92,
+                        background: '#FF7700',
+                        filter: 'blur(100px)',
+                        transform: 'translate3d(0,0,0)',
+                    }}
+                />
+                <div
+                    className="pointer-events-none md:hidden absolute rounded-full"
+                    style={{
+                        width: 220,
+                        height: 220,
+                        bottom: -110,
+                        left: -110,
+                        background: '#3E2AB5',
+                        filter: 'blur(120px)',
+                        transform: 'translate3d(0,0,0)',
+                    }}
+                />
+                <div className="mx-auto px-5 py-6 md:px-10 md:py-10 gap-8">
 
                     {/* Header */}
-                    <div className="flex items-center gap-4 mb-12">
+                    <div className="flex items-center gap-4 mb-8 md:mb-12">
                         <button
                             onClick={() => navigate({ to: "/profile" })}
-                            className="w-9 h-9 rounded-full bg-[#1D1F20] flex items-center justify-center hover:bg-[#252830] transition-colors cursor-pointer"
+                            className="w-10 h-10 md:w-9 md:h-9 rounded-full bg-[#1D1F20] flex items-center justify-center hover:bg-[#252830] transition-colors cursor-pointer shrink-0"
                         >
-                            <ChevronLeft className="w-5 h-5 text-white" />
+                            <ChevronLeft className="w-6 h-6 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                         </button>
-                        <h1 className="text-2xl font-bold text-white">Settings</h1>
+                        <h1 className="text-xl md:text-2xl font-bold text-white">Settings</h1>
                     </div>
 
                     {/* Age Verification */}
-                    <div className="flex items-center justify-between py-8 border-b border-t border-white/5">
-                        <span style={{ fontFamily: "'Public Sans', sans-serif", fontWeight: 600, fontSize: 24, lineHeight: "40px" }} className="text-white">Age Verification</span>
+                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-t border-white/5">
+                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Age Verification</span>
                         {isAgeVerified ? (
-                            <div className="flex items-center gap-2 bg-[#1D1F20] border border-white/10 rounded-full px-8 py-2">
+                            <div className="flex items-center gap-2 bg-[#1D1F20] border border-white/10 rounded-full px-4 py-2 md:px-8 md:py-2.5 min-w-[130px] md:min-w-[160px] justify-center">
                                 <ShieldCheck className="w-4 h-4 text-green-400" />
-                                <span className="text-sm font-semibold text-green-400">18+ Verified</span>
+                                <span className="text-xs md:text-sm font-semibold text-green-400">18+ Verified</span>
                             </div>
                         ) : (
                             <button
                                 onClick={handleAgeVerification}
-                                className="flex items-center gap-2 bg-[#1D1F20] border border-white/10 rounded-full px-8 py-2 hover:bg-[#252830] transition-colors"
+                                className="flex items-center gap-2 bg-[#1D1F20] border border-white/10 rounded-full px-4 py-2 md:px-8 md:py-2.5 min-w-[130px] md:min-w-[160px] justify-center hover:bg-[#252830] transition-colors"
                             >
                                 <Clock className="w-4 h-4 text-[#FF0000]" />
-                                <span className="text-sm font-semibold text-[#FF0000]">Pending</span>
+                                <span className="text-xs md:text-sm font-semibold text-[#FF0000]">Pending</span>
                             </button>
                         )}
                     </div>
 
                     {/* Blocked Users */}
-                    <div className="py-8 border-b border-white/5">
+                    <div className="py-6 md:py-8 border-b border-white/5">
                         <div className="flex items-center justify-between mb-4">
-                            <span style={{ fontFamily: "'Public Sans', sans-serif", fontWeight: 600, fontSize: 24, lineHeight: "40px" }} className="text-white">Blocked Users</span>
+                            <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Blocked Users</span>
                             {blockedUsers.length > 0 && (
                                 <span className="text-gray-500 text-sm">({blockedUsers.length} Users)</span>
                             )}
@@ -218,11 +245,11 @@ export const SettingsPage = () => {
                     </div>
 
                     {/* Delete Account */}
-                    <div className="flex items-center justify-between py-8 border-b border-white/5">
-                        <span style={{ fontFamily: "'Public Sans', sans-serif", fontWeight: 600, fontSize: 24, lineHeight: "40px" }} className="text-white">Delete Account</span>
+                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5">
+                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Delete Account</span>
                         <button
                             onClick={() => setShowDeleteModal(true)}
-                            className="flex items-center gap-2 border-2 border-red-500 text-red-500 rounded-full px-13 py-2.5 text-sm font-bold hover:bg-red-500/10 transition-colors cursor-pointer"
+                            className="flex items-center gap-2 border-2 border-red-500 text-red-500 rounded-full px-4 py-2 md:px-8 md:py-2.5 text-xs md:text-sm font-bold min-w-[130px] md:min-w-[160px] justify-center hover:bg-red-500/10 transition-colors cursor-pointer"
                         >
                             <Trash2 className="w-4 h-4" />
                             Delete
@@ -230,11 +257,11 @@ export const SettingsPage = () => {
                     </div>
 
                     {/* Log out */}
-                    <div className="flex items-center justify-between py-8">
-                        <span style={{ fontFamily: "'Public Sans', sans-serif", fontWeight: 600, fontSize: 24, lineHeight: "40px" }} className="text-white">Log out</span>
+                    <div className="flex items-center justify-between py-6 md:py-8">
+                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Log out</span>
                         <button
                             onClick={() => setShowLogoutConfirm(true)}
-                            className="flex items-center gap-2 border-2 border-[#FF7700] text-[#FF7700] rounded-full px-12 py-2.5 text-sm font-bold hover:bg-[#FF7700]/10 transition-colors cursor-pointer"
+                            className="flex items-center gap-2 border-2 border-[#FF7700] text-[#FF7700] rounded-full px-4 py-2 md:px-8 md:py-2.5 text-xs md:text-sm font-bold min-w-[130px] md:min-w-[160px] justify-center hover:bg-[#FF7700]/10 transition-colors cursor-pointer"
                         >
                             <LogOut className="w-4 h-4" />
                             Log out

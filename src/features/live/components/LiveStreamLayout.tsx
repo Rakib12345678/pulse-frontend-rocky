@@ -4,6 +4,8 @@ import {
     StreamVideoClient,
     Call,
     StreamCall,
+    useCallStateHooks,
+    hasVideo,
 } from '@stream-io/video-react-sdk';
 import { StreamChat } from 'stream-chat';
 import { Chat } from 'stream-chat-react';
@@ -19,6 +21,8 @@ import { FloatingHearts } from './FloatingHearts';
 const apiKey = import.meta.env.VITE_STREAM_API_KEY || 'placeholder_key';
 
 import { UserProfileModal } from './UserProfileModal';
+import { useUserProfileStore } from '../stores/userProfileStore';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Context for sharing viewer state with child components
 interface LiveStreamContextValue {
@@ -44,6 +48,96 @@ interface LiveStreamLayoutProps {
     callId?: string;
 }
 
+// Floating PiP video component — draggable, click to close profile
+const FloatingPiP: React.FC = () => {
+    const { useParticipants } = useCallStateHooks();
+    const participants = useParticipants();
+    const { setShowFullscreen } = useUserProfileStore();
+    const videoRef = React.useRef<HTMLVideoElement>(null);
+
+    const pipParticipant = participants.find((p) => hasVideo(p)) || participants[0];
+
+    // PiP dimensions (w-28 = 112px, h-44 = 176px)
+    const PIP_W = 112;
+    const PIP_H = 176;
+
+    // Attach the raw video stream — only update when stream actually changes
+    React.useEffect(() => {
+        if (!videoRef.current || !pipParticipant) return;
+        const stream = pipParticipant.videoStream;
+        if (stream && videoRef.current.srcObject !== stream) {
+            videoRef.current.srcObject = stream;
+        }
+    }, [pipParticipant?.videoStream]);
+
+    // Drag state
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const dragState = React.useRef({ isDragging: false, startX: 0, startY: 0, offsetX: 0, offsetY: 0, moved: false });
+    const [pos, setPos] = React.useState({ x: 16, y: 64 }); // default top-left (left:16, top:64)
+
+    const clamp = (x: number, y: number) => ({
+        x: Math.max(4, Math.min(x, window.innerWidth - PIP_W - 4)),
+        y: Math.max(4, Math.min(y, window.innerHeight - PIP_H - 4)),
+    });
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        dragState.current = { isDragging: true, startX: e.clientX - pos.x, startY: e.clientY - pos.y, offsetX: pos.x, offsetY: pos.y, moved: false };
+        (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!dragState.current.isDragging) return;
+        const rawX = e.clientX - dragState.current.startX;
+        const rawY = e.clientY - dragState.current.startY;
+        if (Math.abs(rawX - dragState.current.offsetX) > 4 || Math.abs(rawY - dragState.current.offsetY) > 4) {
+            dragState.current.moved = true;
+        }
+        setPos(clamp(rawX, rawY));
+    };
+
+    const handlePointerUp = () => {
+        const wasDragged = dragState.current.moved;
+        dragState.current.isDragging = false;
+        dragState.current.moved = false;
+        if (!wasDragged) {
+            // Tap without drag: exit fullscreen profile back to drawer (not close entirely)
+            setShowFullscreen(false);
+        }
+    };
+
+    if (!pipParticipant) return null;
+
+    return (
+        <div
+            ref={containerRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            style={{ left: pos.x, top: pos.y, touchAction: 'none' }}
+            className="fixed z-60 w-28 h-44 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border-2 border-white/10 cursor-grab active:cursor-grabbing select-none"
+        >
+            {hasVideo(pipParticipant) ? (
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="h-full w-full object-cover pointer-events-none"
+                />
+            ) : (
+                <div className="h-full w-full bg-neutral-900 flex items-center justify-center">
+                    <span className="text-white/60 text-xs">No video</span>
+                </div>
+            )}
+            {/* LIVE badge */}
+            <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-500 px-2 py-0.5 rounded-full pointer-events-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <span className="text-[10px] font-bold text-white uppercase">Live</span>
+            </div>
+        </div>
+    );
+};
+
 // Inner component that has access to useCallStateHooks
 const LiveStreamInner: React.FC<{
     children: React.ReactNode;
@@ -53,10 +147,15 @@ const LiveStreamInner: React.FC<{
     isChatVisible: boolean;
     setChatVisible: (visible: boolean) => void;
 }> = ({ children, isViewer, isGuest, call, isChatVisible, setChatVisible }) => {
+    const { showFullscreen } = useUserProfileStore();
+    const isMobile = useIsMobile();
+    const showPiP = isMobile && showFullscreen;
+
     return (
         <LiveStreamContext.Provider value={{ isViewer, isGuest, call, isChatVisible, setChatVisible }}>
-            <div className="relative h-screen w-full bg-[#0f1117] text-white overflow-hidden" data-viewer={isViewer}>
+            <div className="fixed inset-0 w-full bg-[#0f1117] text-white overflow-hidden" data-viewer={isViewer}>
                 {children}
+                {showPiP && <FloatingPiP />}
                 <UserProfileModal />
             </div>
         </LiveStreamContext.Provider>
