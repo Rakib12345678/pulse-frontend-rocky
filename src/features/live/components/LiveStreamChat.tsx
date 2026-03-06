@@ -15,16 +15,48 @@ import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { StreamerInfoOverlay } from './StreamerInfoOverlay';
+import { liveService } from '../services/live.service';
 
 export const LiveStreamChat: React.FC = () => {
     const { client: chatClient } = useChatContext();
     const { call, isChatVisible, isViewer } = useLiveStreamContext();
     const { user } = useAuthStore();
     const isMobile = useIsMobile();
+    const { useParticipants } = useCallStateHooks();
+    const participants = useParticipants();
 
     if (!isChatVisible) return null;
 
     if (!call || !chatClient) return null;
+
+    // Trigger participant sync exactly once, 25 seconds after going live (for host only)
+    useEffect(() => {
+        if (isViewer || !call) return;
+
+        const timer = setTimeout(async () => {
+            try {
+                // Extract only co-hosts and map to expected backend format
+                const cohostsList = participants
+                    .filter((p: any) => !p.isLocalParticipant && !p.roles?.includes('host') && !p.roles?.includes('admin') && (
+                        p.roles?.includes('co_host') ||
+                        p.capabilities?.includes('send-audio') ||
+                        p.capabilities?.includes('send-video')
+                    ))
+                    .map((p: any) => ({
+                        username: p.name || `user_${p.userId}`,
+                        profileImage: (p.image as string),
+                        status: 'ACTIVE'
+                    }));
+
+                console.log('[LiveStreamChat] Syncing participants after 10s delay. Cohosts count:', cohostsList.length);
+                await liveService.syncParticipants(call.id, cohostsList);
+            } catch (error) {
+                console.error('[LiveStreamChat] Failed to sync participants:', error);
+            }
+        }, 10000);
+
+        return () => clearTimeout(timer);
+    }, [isViewer, call?.id, participants]);
 
     // Use the same ID as the call for the chat channel
     const channel = chatClient.channel('livestream', call.id);

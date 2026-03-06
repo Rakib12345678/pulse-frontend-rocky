@@ -27,6 +27,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useNavigate } from '@tanstack/react-router';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useLiveStreamContext } from './LiveStreamLayout';
 
 export const UserProfileModal: React.FC = () => {
     const { isOpen, username: targetUsername, closeModal, showFullscreen, setShowFullscreen } = useUserProfileStore();
@@ -34,6 +35,7 @@ export const UserProfileModal: React.FC = () => {
     const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
     const navigate = useNavigate();
     const isMobile = useIsMobile();
+    const { call, isViewer } = useLiveStreamContext();
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -131,6 +133,25 @@ export const UserProfileModal: React.FC = () => {
                 setProfile(prev => prev ? ({ ...prev, blockedByMe: true }) : null);
                 setIsBlockDrawerOpen(false);
                 toast.success(`Blocked @${profile.username}`);
+
+                // If we're the host in an active stream, kick the blocked user immediately
+                if (call && !isViewer) {
+                    // Revoke publisher permissions (only applies to co-hosts — 404 is expected for regular viewers)
+                    try {
+                        await call.updateUserPermissions({
+                            user_id: profile.username,
+                            revoke_permissions: ['send-audio', 'send-video'],
+                        });
+                    } catch (e) {
+                        // 404 = viewer had no publisher permissions — that's fine, continue
+                    }
+                    // Always send kicked event so the user's client navigates away
+                    try {
+                        await call.sendCustomEvent({ type: 'kicked', userId: profile.username });
+                    } catch (e) {
+                        // ignore
+                    }
+                }
             }
         } catch (error) {
             toast.error("Failed to update block status");

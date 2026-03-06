@@ -14,24 +14,6 @@ const BackgroundDecor = () => (
     </div>
 )
 
-// const UserPill = () => (
-//     <div className="flex w-fit shrink-0 mx-auto items-center gap-3 rounded-full bg-[#1a1a1a] border border-white/10 px-3 py-1.5 pr-5 mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-//         <div className="flex -space-x-3">
-//             {[1, 2, 3, 4].map((i) => (
-//                 <img
-//                     key={i}
-//                     src={`https://picsum.photos/seed/${i + 88}/100`}
-//                     alt="User"
-//                     className="h-8 w-8 rounded-full border-2 border-[#1a1a1a]"
-//                 />
-//             ))}
-//         </div>
-//         <span className="text-xs font-medium text-gray-300">
-//             10+ Million users
-//         </span>
-//     </div>
-// )
-
 interface LandingPageServerProps {
     children: React.ReactNode
 }
@@ -50,64 +32,62 @@ export function LandingPageServer({ children }: LandingPageServerProps) {
     }
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#0f1117] font-sans text-white selection:bg-pink-500/30">
+        // overflow-y-auto   = vertical scroll works normally when content is tall
+        <div
+            className="relative h-full w-full overflow-x-hidden overflow-y-auto bg-[#0f1117] font-sans text-white selection:bg-pink-500/30 [&::-webkit-scrollbar]:hidden"
+            style={{ overscrollBehavior: 'contain' }}
+        >
             <BackgroundDecor />
 
-            {/* MAIN CONTAINER */}
-            <div className="relative z-10 flex min-h-screen flex-col pt-12">
-                {/* Background Orbits */}
-                <div className="pointer-events-none absolute left-1/2 top-0 z-0 -translate-x-1/2 opacity-20">
-                    {[
-                        { size: 600, duration: 20 },
-                        { size: 900, duration: 35, reverse: true },
-                        { size: 1200, duration: 50 },
-                    ].map((orbit) => (
-                        <div
-                            key={orbit.size}
-                            className="orbit-container"
-                            style={{
-                                width: orbit.size,
-                                height: orbit.size,
-                                animationDuration: `${orbit.duration}s`,
-                                animationName: orbit.reverse ? 'orbit-rotate-reverse' : 'orbit-rotate',
-                            }}
-                        >
-                            <div className={`orbit-trail ${orbit.reverse ? 'orbit-trail-reverse' : 'orbit-trail-normal'}`} />
-                            <div className="planet" />
-                        </div>
-                    ))}
-                </div>
-
-                {/* HERO */}
-                <div className="container mx-auto flex flex-col items-center px-4 pb-12 text-center">
-                    {/* <UserPill /> */}
-                    <h1 className="mb-6 max-w-4xl text-5xl font-extrabold tracking-tight sm:text-7xl leading-[1.1]">
-                        The Ultimate Platform for <br />
-                        <span className="bg-linear-to-r from-white via-gray-200 to-gray-500 bg-clip-text text-transparent">
-                            Live Interaction
-                        </span>
-                    </h1>
-
-                    <p className="mb-10 max-w-2xl text-lg text-gray-400 leading-relaxed">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. In posuere
-                        odio vel cursus aliquam. Maecenas et placerat odio. Integer lorem
-                        tortor, semper at enim sed.
-                    </p>
-
-                    <Button
-                        onClick={handleInteractNow}
-                        size="lg"
-                        className="h-14 rounded-full bg-linear-to-r from-indigo-600 to-pink-600 px-10 text-base font-bold text-white shadow-[0_0_20px_rgba(219,39,119,0.3)] transition-all"
+            {/* Background Orbits */}
+            <div className="pointer-events-none absolute left-1/2 top-0 z-0 -translate-x-1/2 opacity-20">
+                {[
+                    { size: 600, duration: 20 },
+                    { size: 900, duration: 35, reverse: true },
+                    { size: 1200, duration: 50 },
+                ].map((orbit) => (
+                    <div
+                        key={orbit.size}
+                        className="orbit-container"
+                        style={{
+                            width: orbit.size,
+                            height: orbit.size,
+                            animationDuration: `${orbit.duration}s`,
+                            animationName: (orbit as any).reverse ? 'orbit-rotate-reverse' : 'orbit-rotate',
+                        }}
                     >
-                        <Plus className="mr-2 h-5 w-5" />
-                        Interact Now
-                    </Button>
-                </div>
+                        <div className={`orbit-trail ${(orbit as any).reverse ? 'orbit-trail-reverse' : 'orbit-trail-normal'}`} />
+                        <div className="planet" />
+                    </div>
+                ))}
+            </div>
 
-                {/* DYNAMIC RAIL CONTENT (Passed as children) */}
-                <div className="mt-8 w-full pb-20">
-                    {children}
-                </div>
+            {/* HERO */}
+            <div className="relative z-10 flex flex-col items-center px-4 pt-12 pb-10 text-center">
+                <h1 className="mb-6 max-w-4xl text-5xl font-extrabold tracking-tight sm:text-7xl leading-[1.1]">
+                    The Ultimate Platform for <br />
+                    <span className="bg-linear-to-r from-white via-gray-200 to-gray-500 bg-clip-text text-transparent">
+                        Live Interaction
+                    </span>
+                </h1>
+
+                <p className="mb-10 max-w-2xl text-lg text-gray-400 leading-relaxed">
+                    Host, stream, and connect in real time with clear video, instant chat, and seamless engagement tools designed for modern experiences.
+                </p>
+
+                <Button
+                    onClick={handleInteractNow}
+                    size="lg"
+                    className="h-14 rounded-full bg-linear-to-r from-indigo-600 to-pink-600 px-10 text-base font-bold text-white shadow-[0_0_20px_rgba(219,39,119,0.3)] transition-all"
+                >
+                    <Plus className="mr-2 h-5 w-5" />
+                    Interact Now
+                </Button>
+            </div>
+
+            {/* DYNAMIC RAIL CONTENT (Passed as children) */}
+            <div className="relative z-10 w-full overflow-hidden pb-20">
+                {children}
             </div>
         </div>
     )

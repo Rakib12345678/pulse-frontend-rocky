@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useJoinRequestStore } from '../stores/joinRequestStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { liveService } from '../services/live.service';
 
 interface JoinRequest {
     userId: string;
@@ -56,6 +57,7 @@ export const JoinRequestPopup: React.FC = () => {
     const handleApprove = async (request: JoinRequest) => {
         try {
             console.log('[JoinRequestPopup] Approving:', request.userId);
+            // Grant permissions and assign the co-host role so they are recognized by all viewers
             await call.updateUserPermissions({
                 user_id: request.userId,
                 grant_permissions: [
@@ -63,10 +65,22 @@ export const JoinRequestPopup: React.FC = () => {
                     OwnCapability.SEND_VIDEO,
                 ],
             });
+            // Also explicitly upgrade their role to 'co-host'
+            await call.updateCallMembers({
+                update_members: [{ user_id: request.userId, role: 'co_host' }],
+            });
+
             // Notify the viewer they were accepted
+
             await call.sendCustomEvent({
                 type: 'join-response', userId: request.userId, accepted: true,
             });
+
+            // Add co-host to the backend
+            if (call.id) {
+                await liveService.addCoHost(call.id, request.userName);
+            }
+
             console.log('[JoinRequestPopup] Approved successfully');
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to grant permissions:', err);

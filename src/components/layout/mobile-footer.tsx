@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
-import LiveVideo from '@/assets/Live.png';
+import LiveVideo from '@/assets/Live.svg';
 import { cn } from '@/lib/utils';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
 import ForYouSvg from '@/assets/ForYouOutline.svg';
@@ -68,9 +68,13 @@ export const MobileFooter: React.FC = () => {
     const { isAuthenticated, accessToken } = useAuthStore();
     const { openModal, setStep, setMode, isOpen: isModalOpen, currentStep } = useSignUpStore();
 
-    const isLoggedIn = isAuthenticated && !!accessToken;
+    const isChatWindowOpen = false; // overlay handles coverage via z-index
 
-    if ((isModalOpen && currentStep !== 'welcome') || pathname.startsWith('/live')) return null;
+    const isLoggedIn = isAuthenticated && !!accessToken;
+    
+    if ((isModalOpen && currentStep !== 'welcome') || pathname.startsWith('/live') || isChatWindowOpen) {
+        return null;
+    }
 
     const handleProfileClick = () => {
         if (!isLoggedIn) {
@@ -83,7 +87,6 @@ export const MobileFooter: React.FC = () => {
     const activeFilter = 'brightness(0) saturate(100%) invert(54%) sepia(93%) saturate(748%) hue-rotate(357deg) brightness(101%) contrast(101%)';
 
     return (
-        // z-[300] keeps footer above the welcome floating card (z-[200])
         <nav className="fixed bottom-0 left-0 right-0 z-300 h-18 w-full border-t border-white/6 bg-[#111213] backdrop-blur-xl md:hidden">
             {/* iOS home indicator */}
             <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-white/20" />

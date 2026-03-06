@@ -25,6 +25,7 @@ export interface FeedStreamItem {
     followerCount: number;
     createdAt: string;
     isLive: boolean;
+    cohosts?: { username: string; profileImage: string; status: string }[];
 }
 
 export interface StreamFeedResponse {
@@ -99,7 +100,6 @@ export const liveService = {
         }
     },
 
-    // Join a stream as a viewer
     joinStream: async (callId: string): Promise<JoinStreamResponse> => {
         try {
             const response = await api.post('/stream/join', null, {
@@ -108,6 +108,37 @@ export const liveService = {
             return response.data;
         } catch (error) {
             console.error('Failed to join stream:', error);
+            throw error;
+        }
+    },
+
+    // Add a co-host to the stream
+    addCoHost: async (callId: string, username: string): Promise<void> => {
+        try {
+            await api.post('/stream/cohost/add', { callId, username, add: true });
+        } catch (error) {
+            console.error('Failed to add co-host:', error);
+            throw error;
+        }
+    },
+
+    // Remove a co-host from the stream
+    removeCoHost: async (callId: string, username: string): Promise<void> => {
+        try {
+            await api.post('/stream/cohost/leave', { callId, username, add: true });
+        } catch (error) {
+            console.error('Failed to remove co-host:', error);
+            throw error;
+        }
+    },
+
+
+    // Sync participants
+    syncParticipants: async (callId: string, cohosts: { username: string; profileImage: string; status: string }[]): Promise<void> => {
+        try {
+            await api.post('/stream/sync-participants', { cohosts }, { params: { callId } });
+        } catch (error) {
+            console.error('Failed to sync participants:', error);
             throw error;
         }
     }

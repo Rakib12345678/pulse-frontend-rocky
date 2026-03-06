@@ -13,6 +13,7 @@ interface LiveCardProps {
   title?: string;
   isLive?: boolean;
   collaboratorAvatarUrl?: string;
+  cohosts?: { username: string; profileImage: string; status: string }[];
 }
 
 export const LiveCard: React.FC<LiveCardProps> = ({
@@ -25,6 +26,7 @@ export const LiveCard: React.FC<LiveCardProps> = ({
   category,
   isLive = false,
   collaboratorAvatarUrl,
+  cohosts,
 }) => {
   return (
     <Link
@@ -48,8 +50,27 @@ export const LiveCard: React.FC<LiveCardProps> = ({
         <span>{viewerCount}</span>
       </div>
 
-      {/* Top Right: Collaborator */}
-      {collaboratorAvatarUrl && (
+      {/* Top Right: Collaborator / Cohosts */}
+      {cohosts && cohosts.length > 0 ? (
+        <div className="absolute right-3 top-3 z-10 flex -space-x-3 items-center">
+          {cohosts.map((cohost, idx) => (
+            <div
+              key={idx}
+              className="relative transition-transform duration-300 hover:scale-110 hover:z-20"
+              style={{ zIndex: cohosts.length - idx }}
+            >
+              <img
+                src={cohost.profileImage || `https://i.pravatar.cc/150?u=${cohost.username}`}
+                alt={cohost.username}
+                className="h-9 w-9 rounded-full border-2 border-white object-cover bg-zinc-800"
+              />
+              <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFE9C0] ring-1 ring-white">
+                <Heart className="h-2.5 w-2.5 fill-[#8B5E3C] text-[#8B5E3C]" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : collaboratorAvatarUrl ? (
         <div className="absolute right-3 top-3 z-10">
           <div className="relative">
             <img
@@ -62,7 +83,7 @@ export const LiveCard: React.FC<LiveCardProps> = ({
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Bottom Info Section */}
       <div className="absolute bottom-0 left-0 right-0 p-3">

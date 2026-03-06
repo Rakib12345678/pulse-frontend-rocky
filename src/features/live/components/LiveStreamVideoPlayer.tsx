@@ -1,13 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { useCallStateHooks, ParticipantView, hasVideo, hasAudio } from '@stream-io/video-react-sdk';
+import { useCallStateHooks, ParticipantView, hasVideo, hasAudio, OwnCapability } from '@stream-io/video-react-sdk';
 import { useLiveStreamContext } from './LiveStreamLayout';
 import { useNavigate } from '@tanstack/react-router';
 import { StreamerInfoOverlay } from './StreamerInfoOverlay';
-import { MicOff, VideoOff, PhoneOff, Mic } from 'lucide-react';
+import { MicOff, VideoOff, PhoneOff, Mic, Pin } from 'lucide-react';
 import { useGoLiveStore } from '../stores/goLiveStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserProfileStore } from '../stores/userProfileStore';
+import { liveService } from '../services/live.service';
+import kick from '@/assets/kick.svg'
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
@@ -17,14 +19,26 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     const isMobile = useIsMobile();
     const { openModal: openProfileModal } = useUserProfileStore();
 
+    // Confirmation modal state for kicking a co-host
+    const [confirmKick, setConfirmKick] = useState<{ userId: string; userName: string } | null>(null);
+
+
     // Get the call creator ID to always show the host
     const creatorId = call?.state.createdBy?.id;
 
-    // Filter participants: show host always, others only if publishing
-    const activeParticipants = participants.filter((p) => {
+    // Filter participants: show host always, others only if they are co-hosts and actively connected
+    const activeParticipants = participants.filter((p: any) => {
+        // Exclude users who are offline or have left
+        if (p.connectionQuality === 'offline' || !p.sessionId) return false;
+
         if (p.isLocalParticipant && !isViewer) return true;
         if (creatorId && p.userId === creatorId) return true;
-        return p.publishedTracks?.length > 0;
+
+        // A user is a co-host if they have the role OR they have publishing capabilities
+        const isCoHostRole = p.roles?.includes('co_host') || p.roles?.includes('admin') || p.roles?.includes('host');
+        const hasCapabilities = p.capabilities?.includes('send-audio') || p.capabilities?.includes('send-video');
+
+        return isCoHostRole || hasCapabilities || p.publishedTracks?.length > 0;
     });
 
     // Sort: host (creator or local) first, then co-hosts
@@ -91,22 +105,45 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         if (!call) return;
         try {
             console.log('[Kick] Revoking permissions for:', userId);
+            // Revoke publisher permissions
             await call.updateUserPermissions({
                 user_id: userId,
                 revoke_permissions: [
-                    'send-audio',
-                    'send-video',
+                    OwnCapability.SEND_AUDIO,
+                    OwnCapability.SEND_VIDEO,
                 ],
+            });
+            // Revoke the exact 'co_host' role
+            await call.updateCallMembers({
+                update_members: [{ user_id: userId, role: 'user' }],
             });
             // Notify the co-host they were kicked
             await call.sendCustomEvent({
                 type: 'kicked',
                 userId,
             });
+
+            // Hit the leave endpoint here
+            if (call.id) {
+                await liveService.removeCoHost(call.id, userName);
+            }
+
             toast.success(`Removed @${userName} from stream`);
         } catch (err) {
             console.error('[Kick] Failed to kick co-host:', err);
             toast.error('Failed to remove co-host');
+        }
+    };
+
+    /** Mute a co-host's audio — only the co-host can unmute themselves */
+    const handleMuteCoHost = async (userId: string, userName: string) => {
+        if (!call || isViewer) return;
+        try {
+            await call.muteUser(userId, 'audio');
+            toast.success(`Muted @${userName}`);
+        } catch (err) {
+            console.error('[Mute] Failed to mute co-host:', err);
+            toast.error('Failed to mute co-host');
         }
     };
 
@@ -151,7 +188,14 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     </div>
                 )}
 
-                {/* Pin badge for host */}
+                {/* Pin icon — shown when co-hosts are present */}
+                {coHosts.length > 0 && (
+                    <div className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-[#F5C842] flex items-center justify-center shadow-lg">
+                        <Pin className="w-4 h-4 text-black fill-black" />
+                    </div>
+                )}
+
+                {/* Name badge for host */}
                 {isChatVisible && (
                     <div className="absolute bottom-4 left-4 right-4">
                         {isViewer && !isMobile ? (
@@ -206,7 +250,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                 {/* Disconnect badge — top left */}
                 {!isViewer && (
                     <button
-                        onClick={() => handleKickCoHost(p.userId, p.name || p.userId)}
+                        onClick={() => setConfirmKick({ userId: p.userId, userName: p.name || p.userId })}
                         className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shadow-lg border border-red-400/50 hover:bg-red-600 transition-colors cursor-pointer"
                         title="Remove from stream"
                     >
@@ -215,16 +259,27 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                 )}
 
                 {/* Mic status badge — top right */}
-                <div className={`absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-lg border ${participantHasAudio
-                    ? 'bg-white/10 backdrop-blur-md border-white/10'
-                    : 'bg-red-500/80 border-red-400/50'
-                    }`}>
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isViewer && participantHasAudio) {
+                            handleMuteCoHost(p.userId, p.name || 'Guest');
+                        }
+                    }}
+                    disabled={isViewer || !participantHasAudio}
+                    title={!isViewer && participantHasAudio ? 'Mute co-host' : ''}
+                    className={`absolute top-2 right-2 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-lg border outline-none ${!isViewer && participantHasAudio ? 'cursor-pointer hover:bg-white/20' : ''
+                        } ${participantHasAudio
+                            ? 'bg-white/10 backdrop-blur-md border-white/10'
+                            : 'bg-red-500/80 border-red-400/50'
+                        }`}
+                >
                     {participantHasAudio ? (
                         <Mic className="w-3.5 h-3.5 text-white/70" />
                     ) : (
                         <MicOff className="w-3.5 h-3.5 text-white" />
                     )}
-                </div>
+                </button>
             </div>
         );
     };
@@ -251,6 +306,14 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     <div className="absolute top-20 right-3 z-10 flex flex-col gap-3">
                         {coHosts.map((p) => renderCoHostCard(p))}
                     </div>
+                )}
+
+                {/* Kick confirmation modal */}
+                {confirmKick && (
+                    <RemoveCoHostModal
+                        onConfirm={() => { handleKickCoHost(confirmKick.userId, confirmKick.userName); setConfirmKick(null); }}
+                        onCancel={() => setConfirmKick(null)}
+                    />
                 )}
             </div>
         );
@@ -298,16 +361,27 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                                     {/* Disconnect badge — top left */}
                                     {!isViewer && (
                                         <button
-                                            onClick={() => handleKickCoHost(p.userId, p.name || p.userId)}
+                                            onClick={() => setConfirmKick({ userId: p.userId, userName: p.name || p.userId })}
                                             className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center shadow-lg border border-red-400/50 hover:bg-red-600 transition-colors cursor-pointer"
                                         >
                                             <PhoneOff className="w-4 h-4 text-white" />
                                         </button>
                                     )}
                                     {/* Mic badge — top right */}
-                                    <div className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-lg border ${participantHasAudio ? 'bg-white/10 backdrop-blur-md border-white/10' : 'bg-red-500/80 border-red-400/50'}`}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (!isViewer && participantHasAudio) {
+                                                handleMuteCoHost(p.userId, p.name || 'Guest');
+                                            }
+                                        }}
+                                        disabled={isViewer || !participantHasAudio}
+                                        title={!isViewer && participantHasAudio ? 'Mute co-host' : ''}
+                                        className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-lg border outline-none ${!isViewer && participantHasAudio ? 'cursor-pointer hover:bg-white/20' : ''
+                                            } ${participantHasAudio ? 'bg-white/10 backdrop-blur-md border-white/10' : 'bg-red-500/80 border-red-400/50'}`}
+                                    >
                                         {participantHasAudio ? <Mic className="w-4 h-4 text-white/70" /> : <MicOff className="w-4 h-4 text-white" />}
-                                    </div>
+                                    </button>
                                     {/* Name badge */}
                                     {isChatVisible && (
                                         <div className="absolute bottom-4 left-4">
@@ -321,6 +395,14 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                         })()}
                     </div>
                 </div>
+
+                {/* Kick confirmation modal */}
+                {confirmKick && (
+                    <RemoveCoHostModal
+                        onConfirm={() => { handleKickCoHost(confirmKick!.userId, confirmKick!.userName); setConfirmKick(null); }}
+                        onCancel={() => setConfirmKick(null)}
+                    />
+                )}
             </div>
         );
     }
@@ -336,6 +418,41 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     {coHosts.map((p) => renderCoHostCard(p))}
                 </div>
             </div>
+            {confirmKick && (
+                <RemoveCoHostModal
+                    onConfirm={() => { handleKickCoHost(confirmKick!.userId, confirmKick!.userName); setConfirmKick(null); }}
+                    onCancel={() => setConfirmKick(null)}
+                />
+            )}
         </div>
     );
 };
+
+/** Confirmation modal before kicking a co-host from the stream */
+const RemoveCoHostModal: React.FC<{
+    onConfirm: () => void;
+    onCancel: () => void;
+}> = ({ onConfirm, onCancel }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+        <div className="bg-[#1c1c1e] rounded-3xl p-8 w-full max-w-sm flex flex-col items-center gap-5 shadow-2xl">
+            <img src={kick} alt="kick" className="w-12 h-12" />
+            <p className="text-white text-xl font-semibold text-center leading-snug">
+                Do you want to remove the user from the live stream?
+            </p>
+            <div className="flex gap-3 w-full mt-1">
+                <button
+                    onClick={onConfirm}
+                    className="flex-1 py-3.5 rounded-full bg-[#FF8800] text-black font-semibold text-base hover:bg-[#ff9a22] active:scale-95 transition-all"
+                >
+                    Yes! Remove
+                </button>
+                <button
+                    onClick={onCancel}
+                    className="flex-1 py-3.5 rounded-full border-2 border-[#FF8800] text-[#FF8800] font-semibold text-base hover:bg-[#FF8800]/10 active:scale-95 transition-all"
+                >
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+);

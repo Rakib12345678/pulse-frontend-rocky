@@ -44,7 +44,7 @@
 }
 
 :root {
-   --brand: oklch(66.5% 0.1804 47.04);
+  --brand: oklch(66.5% 0.1804 47.04);
   --brand-foreground: oklch(75.77% 0.159 55.91);
   --radius: 0.65rem;
   --background: oklch(1 0 0);
@@ -81,7 +81,7 @@
 }
 
 .dark {
-   --brand: oklch(66.5% 0.1804 47.04);
+  --brand: oklch(66.5% 0.1804 47.04);
   --brand-foreground: oklch(75.77% 0.159 55.91);
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
@@ -121,10 +121,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   html {
     @apply bg-background;
     overscroll-behavior-y: none;
   }
+
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
@@ -134,7 +136,8 @@
 }
 
 /* Ensure consistent font rendering across different DPI levels */
-@media (-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 144dpi) {
+@media (-webkit-min-device-pixel-ratio: 1.5),
+(min-resolution: 144dpi) {
   body {
     -webkit-font-smoothing: subpixel-antialiased;
   }
@@ -148,13 +151,14 @@
 
 /* Fix for right-side inset variant support */
 @media (min-width: 768px) {
+
   /* Right sidebar inset variant - margin adjustments */
-  [data-side="right"][data-variant="inset"] ~ [data-slot="sidebar-inset"] {
+  [data-side="right"][data-variant="inset"]~[data-slot="sidebar-inset"] {
     margin-right: 0 !important;
   }
 
   /* Right sidebar inset variant - collapsed state margin */
-  [data-side="right"][data-variant="inset"][data-state="collapsed"] ~ [data-slot="sidebar-inset"] {
+  [data-side="right"][data-variant="inset"][data-state="collapsed"]~[data-slot="sidebar-inset"] {
     margin-right: 0.5rem !important;
   }
 }
@@ -169,8 +173,10 @@ html {
   0% {
     transform: translateX(0);
   }
+
   100% {
-    transform: translateX(-144rem); /* 12 items * 12rem = 144rem */
+    transform: translateX(-144rem);
+    /* 12 items * 12rem = 144rem */
   }
 }
 
@@ -187,6 +193,7 @@ html {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -199,9 +206,11 @@ html {
     0% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-10px);
     }
+
     100% {
       transform: translateY(0px);
     }

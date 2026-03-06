@@ -151,7 +151,10 @@ const LiveStreamInner: React.FC<{
     const isMobile = useIsMobile();
     const showPiP = isMobile && showFullscreen;
 
+    // Participant sync is now handled in LiveStreamChat.tsx 25 seconds after the stream starts
+
     return (
+
         <LiveStreamContext.Provider value={{ isViewer, isGuest, call, isChatVisible, setChatVisible }}>
             <div className="fixed inset-0 w-full bg-[#0f1117] text-white overflow-hidden" data-viewer={isViewer}>
                 {children}
