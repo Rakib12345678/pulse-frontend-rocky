@@ -1,5 +1,11 @@
 {
   "buildCommand": "pnpm build",
   "outputDirectory": ".vercel/output",
-  "installCommand": "pnpm install"
+  "installCommand": "pnpm install",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "testing": true
+    }
+  }
 }
