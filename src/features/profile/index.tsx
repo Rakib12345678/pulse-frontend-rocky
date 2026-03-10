@@ -32,7 +32,7 @@ export const ProfilePage = () => {
 
   if (isCurrentUserLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="h-[calc(100vh-73px)] bg-black flex items-center justify-center overflow-hidden">
         <div className="w-12 h-12 border-4 border-[#FF7700] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -82,7 +82,7 @@ export const ProfilePage = () => {
     'User';
 
   return (
-    <div className="bg-black min-h-screen">
+    <div className="bg-transparent h-[calc(100vh-73px)] overflow-y-auto scrollbar-hide">
       <div className="max-w-7xl mx-auto px-4 sm:px-10 py-8">
         <ProfileHeader
           user={displayUser}

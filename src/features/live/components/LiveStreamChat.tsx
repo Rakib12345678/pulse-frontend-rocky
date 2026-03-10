@@ -24,29 +24,57 @@ export const LiveStreamChat: React.FC = () => {
     const isMobile = useIsMobile();
     const { useParticipants } = useCallStateHooks();
     const participants = useParticipants();
-
-    if (!isChatVisible) return null;
-
-    if (!call || !chatClient) return null;
+    const knownCohostsRef = useRef<Record<string, { username: string; profileImage: string; status: string }>>({});
+    const initCohostsRef = useRef(false);
 
     // Trigger participant sync exactly once, 25 seconds after going live (for host only)
     useEffect(() => {
         if (isViewer || !call) return;
 
+        // Initialize memory from sessionStorage to survive page refresh
+        if (!initCohostsRef.current) {
+            try {
+                const saved = sessionStorage.getItem(`pulse_cohosts_${call.id}`);
+                if (saved) knownCohostsRef.current = JSON.parse(saved);
+            } catch (e) {
+                console.error('[LiveStreamChat] Failed to restore cohosts from session', e);
+            }
+            initCohostsRef.current = true;
+        }
+
         const timer = setTimeout(async () => {
             try {
-                // Extract only co-hosts and map to expected backend format
-                const cohostsList = participants
+                // Extract only active co-hosts from the current participants pool
+                const currentActiveCohosts = participants
                     .filter((p: any) => !p.isLocalParticipant && !p.roles?.includes('host') && !p.roles?.includes('admin') && (
                         p.roles?.includes('co_host') ||
                         p.capabilities?.includes('send-audio') ||
                         p.capabilities?.includes('send-video')
-                    ))
-                    .map((p: any) => ({
-                        username: p.name || `user_${p.userId}`,
+                    ));
+
+                const activeUsernames = new Set(currentActiveCohosts.map((p: any) => p.name || `user_${p.userId}`));
+
+                // Mark currently active as ACTIVE
+                currentActiveCohosts.forEach((p: any) => {
+                    const username = p.name || `user_${p.userId}`;
+                    knownCohostsRef.current[username] = {
+                        username,
                         profileImage: (p.image as string),
                         status: 'ACTIVE'
-                    }));
+                    };
+                });
+
+                // Mark previously known cohosts that are no longer active as INACTIVE
+                Object.keys(knownCohostsRef.current).forEach((username) => {
+                    if (!activeUsernames.has(username)) {
+                        knownCohostsRef.current[username].status = 'INACTIVE';
+                    }
+                });
+
+                // Persist to session storage
+                sessionStorage.setItem(`pulse_cohosts_${call.id}`, JSON.stringify(knownCohostsRef.current));
+
+                const cohostsList = Object.values(knownCohostsRef.current);
 
                 console.log('[LiveStreamChat] Syncing participants after 10s delay. Cohosts count:', cohostsList.length);
                 await liveService.syncParticipants(call.id, cohostsList);
@@ -57,6 +85,10 @@ export const LiveStreamChat: React.FC = () => {
 
         return () => clearTimeout(timer);
     }, [isViewer, call?.id, participants]);
+
+    if (!isChatVisible) return null;
+
+    if (!call || !chatClient) return null;
 
     // Use the same ID as the call for the chat channel
     const channel = chatClient.channel('livestream', call.id);

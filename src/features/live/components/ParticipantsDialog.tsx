@@ -36,7 +36,7 @@ export const ParticipantsDialog: React.FC = () => {
                         let roleLabel = 'Viewer';
                         if (isCreator) roleLabel = isMe ? 'Host / You' : 'Host';
                         else if (isCoHost) roleLabel = isMe ? 'Co-Host / You' : 'Co-Host';
-                        else if (isMe) roleLabel = 'Viewer / You';
+                        else if (isMe) roleLabel = 'You';
 
                         return (
                             <div

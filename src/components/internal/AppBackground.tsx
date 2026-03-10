@@ -78,9 +78,9 @@ const FadingRings: React.FC = () => {
         style={{ top: '28vh', width: 0, height: 0 }}
       >
         {[
-          { w: '75vw',  t: '-37.5vw', l: '-37.5vw', o: 0.35 },
-          { w: '140vw', t: '-70vw',   l: '-70vw',   o: 0.28 },
-          { w: '220vw', t: '-110vw',  l: '-110vw',  o: 0.22 },
+          { w: '75vw', t: '-37.5vw', l: '-37.5vw', o: 0.35 },
+          { w: '140vw', t: '-70vw', l: '-70vw', o: 0.28 },
+          { w: '220vw', t: '-110vw', l: '-110vw', o: 0.22 },
         ].map(({ w, t, l, o }, i) => (
           <div
             key={i}
@@ -140,7 +140,7 @@ export const AppBackground: React.FC<AppBackgroundProps> = ({ children, classNam
     <FadingRings />
     <div className="absolute inset-0 mix-blend-overlay pointer-events-none" style={{ backgroundImage: `url(${background})`, backgroundRepeat: 'repeat', backgroundSize: '300px 300px' }} />
     {children && (
-      <div className="relative z-10 h-full">
+      <div className="relative z-10 h-full overflow-y-auto">
         {children}
       </div>
     )}

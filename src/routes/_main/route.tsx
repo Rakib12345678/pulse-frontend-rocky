@@ -27,7 +27,7 @@ function MainLayout() {
     // Detect if we're on the landing page (index route "/"")
     const matchRoute = useMatchRoute()
     const isLandingPage = !!matchRoute({ to: '/' })
-    const isChatsPage   = !!matchRoute({ to: '/chats', fuzzy: true })
+    const isChatsPage = !!matchRoute({ to: '/chats', fuzzy: true })
 
     useEffect(() => {
         if (isHydrated && !accessToken && refreshToken) {
@@ -55,7 +55,7 @@ function MainLayout() {
         <div className="h-screen flex flex-col overflow-hidden">
             <Navbar />
             {/* <main className="flex-1 min-h-0 overflow-hidden"> */}
-            <main className="flex-1 min-h-0 w-full overflow-hidden flex flex-col">
+            <main className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col">
                 {content}
             </main>
             <MobileFooter />

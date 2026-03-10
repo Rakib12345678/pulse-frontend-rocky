@@ -124,11 +124,11 @@ export const JoinRequestPopup: React.FC = () => {
                             </Avatar>
                             <div className="flex flex-wrap items-center gap-x-2">
                                 <span className="text-[#a0a0a0] text-[17px]">@{request.userName}</span>
-                                <span className="text-white text-[17px] font-medium">want to join with you</span>
+                                <span className="text-white text-[17px] font-medium">wants to join you</span>
                             </div>
                         </div>
                         <p className="text-white text-[17px] font-medium">
-                            with this live stream
+                            on this live stream
                         </p>
                     </div>
 
@@ -252,7 +252,7 @@ export const ViewerPendingRequestPopup: React.FC = () => {
                     </div>
                 </div>
                 <p className="text-white text-base mt-4 font-normal">
-                    Request with this stream
+                    Request for this stream
                 </p>
             </div>
         </div>

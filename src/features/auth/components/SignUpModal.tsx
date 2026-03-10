@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-    ChevronDown, Check, Pencil,
+    ChevronDown, Check,
     Search, Loader2,
     Mail, Phone,
     Camera,
@@ -22,11 +22,13 @@ import { countryCodes } from '@/lib/countries';
 import Logo from "@/assets/Logo.svg";
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AuthModalBackdrop } from './AuthModalBackdrop';
+import { inputSchema, InputFormData } from '@/features/auth/services/auth.schema';
 
 // --- UI COMPONENTS ---
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+
 import {
     Select,
     SelectContent,
@@ -113,6 +115,7 @@ const CountryDrawer: React.FC<CountryDrawerProps> = ({
                         <input
                             className="flex-1 bg-transparent border-none text-white focus:outline-none placeholder:text-gray-600"
                             placeholder="Search country..."
+                            spellCheck={false}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                             style={{ fontSize: '16px' }}
@@ -137,7 +140,7 @@ const CountryDrawer: React.FC<CountryDrawerProps> = ({
                                 onClick={() => handleSelect(c)}
                                 className={cn(
                                     'w-full flex items-center justify-between px-4 py-3 rounded-xl text-left transition-colors',
-                                    isSelected ? 'bg-[#FF8800]/10' : 'hover:bg-white/5'
+                                    isSelected ? 'bg-[#FF7700]/10' : 'hover:bg-white/5'
                                 )}
                             >
                                 <div className="flex items-center gap-3 overflow-hidden">
@@ -146,11 +149,11 @@ const CountryDrawer: React.FC<CountryDrawerProps> = ({
                                             {c.dial_code}
                                         </span>
                                     )}
-                                    <span className={cn('text-sm truncate', isSelected ? 'text-[#FF8800] font-semibold' : 'text-gray-200')}>
+                                    <span className={cn('text-sm truncate', isSelected ? 'text-[#FF7700] font-semibold' : 'text-gray-200')}>
                                         {c.name}
                                     </span>
                                 </div>
-                                {isSelected && <Check className="w-4 h-4 text-[#FF8800] shrink-0" />}
+                                {isSelected && <Check className="w-4 h-4 text-[#FF7700] shrink-0" />}
                             </button>
                         );
                     })}
@@ -173,10 +176,8 @@ const MobilePageHeader: React.FC<MobilePageHeaderProps> = ({
     title = 'Profile',
     showBack = false,
     onBack,
-    onClose,
-    showClose = true,
 }) => (
-    <div className="flex md:hidden items-center justify-between px-4 h-18 shrink-0 w-full bg-[#111213] border-b border-[#1D1F20] sticky top-0 z-10">
+    <div className="flex md:hidden items-center justify-between px-4 h-14 shrink-0 w-full bg-[#111213] border-b border-[#1D1F20] sticky top-0 z-10">
         <div className="flex items-center gap-3">
             {showBack ? (
                 <button
@@ -189,16 +190,6 @@ const MobilePageHeader: React.FC<MobilePageHeaderProps> = ({
                 <img src={Logo} alt="PulseLive" className="w-8 h-8 rounded-lg" />
             )}
             <span className="text-white font-bold text-lg">{title}</span>
-        </div>
-        <div className="flex items-center gap-2">
-            {showClose && (
-                <button
-                    onClick={onClose}
-                    className="p-1 -mr-1 flex items-center justify-center cursor-pointer text-white hover:bg-white/10 rounded-full transition-colors"
-                >
-                    <X className="w-6 h-6" />
-                </button>
-            )}
         </div>
     </div>
 );
@@ -244,20 +235,22 @@ const StepWrapper = ({
                     showClose={!(isAuthenticated && isNewUser)}
                 />
             )}
-            <div className="flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar flex flex-col mt-4">
-                <div className="flex flex-col items-center justify-center p-6 md:p-8 pt-4 md:pt-6 w-full max-w-125 mx-auto text-center flex-1">
-                    <div className="flex flex-col items-center gap-3 shrink-0 mb-5 md:mb-6">
-                        <img src={Logo} alt="PulseLive" className="h-16 w-16 md:h-20 md:w-20" />
+            <div className="flex-1 overflow-y-auto md:overflow-hidden flex flex-col [&::-webkit-scrollbar]:hidden md:mt-4">
+                <div className="flex flex-col items-center justify-start md:justify-center
+                                px-5 pt-5 pb-6 md:p-8 md:pt-6
+                                w-full max-w-125 mx-auto text-center flex-1">
+                    <div className="flex flex-col items-center gap-1 md:gap-3 shrink-0 mb-4 md:mb-6">
+                        <img src={Logo} alt="PulseLive" className="h-15 w-15 md:h-20 md:w-20 mb-4" />
                         <div>
-                            <h2 className="text-4xl font-bold text-white tracking-tight">{title}</h2>
+                            <h2 className="text-4xl md:text-4xl font-bold text-white tracking-tight">{title}</h2>
                             {subtitle && (
-                                <p className="text-gray-400 font-normal text-sm md:text-lg leading-relaxed tracking-normal mt-3">
+                                <p className="text-gray-400 font-normal text-xs md:text-lg leading-relaxed tracking-normal mt-1 md:mt-2">
                                     {subtitle}
                                 </p>
                             )}
                         </div>
                     </div>
-                    <div className="w-full flex flex-col items-center flex-1 gap-4">
+                    <div className="w-full flex flex-col items-center gap-4 md:gap-4">
                         {children}
                     </div>
                 </div>
@@ -279,12 +272,14 @@ const StepWelcome = () => {
             <div className="mt-8 w-full flex flex-col items-center m-auto">
                 <Button
                     onClick={() => setStep('input')}
-                    className="w-52 rounded-full bg-[#FF8800] py-6 text-base font-bold text-black hover:bg-[#ff9922] transition-transform active:scale-95"
+                    className="w-52 rounded-full bg-[#FF7700] py-6 text-base font-bold text-black hover:bg-[#ff9922] transition-transform active:scale-95"
                 >
                     Get Started →
                 </Button>
-                <p className="mt-16 text-md text-muted-foreground/60 px-4 max-w-md mx-auto leading-relaxed">
-                    By continuing, you agree to our Terms of Service and Privacy Policy
+                <p className="mt-16 text-xs text-gray-500 px-4 text-center max-w-md mx-auto leading-relaxed">
+                    By continuing, you agree to our{' '}
+                    <span className="text-blue-500 cursor-pointer">Terms of Service</span> and{' '}
+                    <span className="text-blue-500 cursor-pointer">Privacy Policy</span>
                 </p>
             </div>
         </StepWrapper>
@@ -292,18 +287,11 @@ const StepWelcome = () => {
 };
 
 // --- 2. INPUT STEP ---
-const inputSchema = z.object({
-    identifier: z.string().min(3, "Field is required"),
-});
-type InputFormData = z.infer<typeof inputSchema>;
-
 const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
     const { setStep, method, setMethod, setIdentifier, countryCode, setCountryCode, mode } = useSignUpStore();
     const [isLoading, setIsLoading] = useState(false);
 
-    // Mobile drawer state
     const [drawerOpen, setDrawerOpen] = useState(false);
-    // Desktop dropdown state
     const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
     const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
 
@@ -313,7 +301,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
 
     const form = useForm<InputFormData>({
         resolver: zodResolver(inputSchema),
-        defaultValues: { identifier: storeIdentifier },
+        defaultValues: { identifier: storeIdentifier, method: method },
         mode: 'onChange'
     });
 
@@ -325,6 +313,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
     useEffect(() => {
         if (prevMethod.current !== method) {
             form.setValue('identifier', '', { shouldValidate: false });
+            form.setValue('method', method, { shouldValidate: false });
             setIdentifier('');
             prevMethod.current = method;
         }
@@ -361,7 +350,6 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
             mobileHeaderTitle="Profile"
             showMobileHeader={true}
         >
-            {/* ── Mobile-only: Country Code Drawer ── */}
             <div className="md:hidden">
                 <CountryDrawer
                     open={drawerOpen}
@@ -374,7 +362,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
             </div>
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6 md:space-y-6">
                     <div className="text-left relative w-full">
                         <label className="block text-sm text-gray-400 mb-2 ml-1">
                             {method === 'phone' ? 'Phone number' : 'Email Address'}
@@ -382,18 +370,18 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         <div className="flex gap-3 w-full">
                             {method === 'phone' && (
                                 <>
-                                    {/* ── Mobile → opens Drawer ── */}
+                                    {/* Mobile → opens Drawer */}
                                     <Button
                                         type="button"
                                         variant="outline"
                                         onClick={() => setDrawerOpen(true)}
-                                        className="md:hidden flex items-center justify-between h-14 min-w-25 bg-transparent border-white/20 rounded-xl text-white hover:bg-white/5 hover:text-white hover:border-white/40 transition-all"
+                                        className="md:hidden flex items-center justify-between h-12 min-w-25 bg-transparent border-white/20 rounded-xl text-white hover:bg-white/5 hover:text-white hover:border-white/40 transition-all"
                                     >
                                         <span className="text-base font-medium">{countryCode}</span>
                                         <ChevronDown className="w-4 h-4 text-gray-500 ml-2 opacity-70" />
                                     </Button>
 
-                                    {/* ── Desktop → opens DropdownMenu ── */}
+                                    {/* Desktop → opens DropdownMenu */}
                                     <div className="hidden md:block relative">
                                         <DropdownMenu
                                             open={desktopDropdownOpen}
@@ -423,6 +411,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                                                         <input
                                                             className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-600"
                                                             placeholder="Search country..."
+                                                            spellCheck={false}
                                                             value={desktopSearchQuery}
                                                             onChange={(e) => setDesktopSearchQuery(e.target.value)}
                                                             onKeyDown={(e) => e.stopPropagation()}
@@ -448,7 +437,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                                                                 <span className="truncate font-medium">{c.name}</span>
                                                             </div>
                                                             {countryCode === c.dial_code && (
-                                                                <Check className="w-4 h-4 text-[#FF8800]" />
+                                                                <Check className="w-4 h-4 text-[#FF7700]" />
                                                             )}
                                                         </DropdownMenuItem>
                                                     ))}
@@ -473,8 +462,9 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                                             <Input
                                                 {...field}
                                                 type={method === 'phone' ? 'tel' : 'email'}
+                                                spellCheck={false}
                                                 placeholder={method === 'phone' ? "Enter mobile number here..." : "Enter email address here..."}
-                                                className="h-14 bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-white/40 shadow-none"
+                                                className="h-12 md:h-14 bg-transparent border-white/20 rounded-xl text-white placeholder:text-gray-600 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-white/40 shadow-none"
                                             />
                                         </FormControl>
                                         <FormMessage className="text-xs text-red-400" />
@@ -484,11 +474,11 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         </div>
                     </div>
 
-                    <div className="flex gap-4 pt-2 w-full">
+                    <div className="flex gap-3 w-full">
                         <Button
                             type="submit"
                             disabled={isLoading || !form.formState.isValid}
-                            className="flex-1 rounded-full bg-[#1a1c24] hover:bg-[#252833] py-6 text-sm font-medium text-gray-200 transition-all border border-white/5"
+                            className="flex-1 rounded-full bg-[#1a1c24] hover:bg-[#252833] py-3 md:py-6 text-sm font-medium text-gray-200 transition-all border border-white/5"
                         >
                             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             {isLoading ? 'Sending...' : 'Verify'}
@@ -498,7 +488,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                             variant="outline"
                             onClick={closeModal}
                             disabled={isLoading}
-                            className="flex-1 rounded-full border-[#FF8800] py-6 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 hover:text-[#FF8800] bg-transparent transition-all"
+                            className="flex-1 rounded-full border-[#FF7700] py-3 md:py-6 text-sm font-bold text-[#FF7700] hover:bg-[#FF7700]/10 hover:text-[#FF7700] bg-transparent transition-all"
                         >
                             Cancel
                         </Button>
@@ -506,7 +496,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 </form>
             </Form>
 
-            <div className="pt-6 w-full flex justify-center mb-4">
+            <div className="py-1 md:pt-6 md:mb-4 w-full flex justify-center">
                 <div className="flex items-center w-full max-w-60">
                     <div className="flex-1 h-px bg-white/10" />
                     <span className="px-3 text-xs text-gray-500">or</span>
@@ -514,47 +504,44 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 </div>
             </div>
 
-            <div className="flex flex-row gap-4 items-center justify-center w-full">
-                <Button
-                    variant="outline"
+            <div className="flex flex-col md:flex-row gap-2 items-center">
+                <button
                     type="button"
                     onClick={() => setMethod(method === 'phone' ? 'email' : 'phone')}
-                    className="flex items-center gap-2 rounded-full border-white/20 text-white bg-transparent hover:bg-white/5 hover:text-white px-5 py-2.5 text-sm"
+                    className="flex items-center justify-center gap-2 w-50 h-9 rounded-full bg-[#131314] hover:bg-[#1e1e1e] border border-white/10 text-white transition-colors text-sm font-medium tracking-wide"
                 >
-                    {method === 'phone' ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
-                    {/* Mobile: short label */}
-                    <span className="md:hidden">
-                        {method === 'phone' ? 'Email' : 'Phone'}
-                    </span>
-                    {/* Desktop/tablet: full label */}
-                    <span className="hidden md:inline">
+                    {method === 'phone'
+                        ? <Mail className="w-4 h-4 shrink-0 text-white/80" />
+                        : <Phone className="w-4 h-4 shrink-0 text-white/80" />}
+                    <span className="text-[#e3e3e3]">
                         {mode === 'login'
                             ? (method === 'phone' ? 'Login with Email' : 'Login with Phone')
-                            : (method === 'phone' ? 'Signup with Email' : 'Signup with Phone')
-                        }
+                            : (method === 'phone' ? 'Signup with Email' : 'Signup with Phone')}
                     </span>
-                </Button>
+                </button>
 
-                <GoogleLogin
-                    onSuccess={(credentialResponse) => {
-                        if (credentialResponse.credential) {
-                            authenticate({
-                                url: '/auth/google',
-                                payload: { idToken: credentialResponse.credential },
-                                redirect: !isLiveStream
-                            });
-                        }
-                    }}
-                    onError={() => toast.error("Google Signup Failed")}
-                    theme="filled_black"
-                    shape="pill"
-                    size="medium"
-                    text={mode === 'login' ? 'continue_with' : 'signup_with'}
-                    width="140"
-                />
+                <div className="flex justify-center mt-1 md:mt-0">
+                    <GoogleLogin
+                        onSuccess={(credentialResponse) => {
+                            if (credentialResponse.credential) {
+                                authenticate({
+                                    url: '/auth/google',
+                                    payload: { idToken: credentialResponse.credential },
+                                    redirect: !isLiveStream
+                                });
+                            }
+                        }}
+                        onError={() => toast.error("Google Signup Failed")}
+                        theme="filled_black"
+                        shape="pill"
+                        size="medium"
+                        text={mode === 'login' ? 'continue_with' : 'signup_with'}
+                        width="200"
+                    />
+                </div>
             </div>
 
-            <p className="md:hidden mt-8 text-xs text-gray-500 px-4 text-center mb-4">
+            <p className="md:hidden text-xs text-gray-500 px-4 text-center">
                 By continuing, you agree to our{' '}
                 <span className="text-blue-500 cursor-pointer">Terms of Service</span> and{' '}
                 <span className="text-blue-500 cursor-pointer">Privacy Policy</span>
@@ -619,9 +606,7 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
             payload,
             redirect: !isLiveStream
         }, {
-            onSuccess: () => {
-                setStep('age');
-            },
+            onSuccess: () => { setStep('age'); },
             onError: () => {
                 setError("Wrong OTP. Please try again");
                 setOtp(['', '', '', '', '', '']);
@@ -649,59 +634,88 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
             mobileHeaderTitle="Profile"
             showMobileHeader={true}
         >
-            <div className="mb-4 md:mb-5">
-                <p className="text-gray-400 text-lg flex items-center justify-center gap-2 flex-wrap">
-                    OTP has sent to
-                    <span className="text-white font-semibold text-xl">
+            <div className="text-center mb-5">
+                <p className="text-gray-400 text-base flex items-center justify-center gap-1.5 flex-wrap">
+                    OTP has been sent to
+                    <span className="text-white font-semibold">
                         {method === 'phone' ? `${countryCode}-${identifier}` : identifier}
                     </span>
-                    <button onClick={() => setStep('input')} className="text-blue-500 hover:text-blue-400 cursor-pointer ml-1">
-                        <Pencil className="w-4 h-4" />
-                    </button>
                 </p>
-            </div>
-
-            <div className="flex gap-3 justify-center">
-                {otp.map((digit, i) => (
-                    <Input
-                        key={i}
-                        ref={(el) => { if (el) inputRefs.current[i] = el; }}
-                        type="text"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleChange(i, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(i, e)}
-                        onPaste={handlePaste}
-                        disabled={isLoading}
-                        className={cn(
-                            "w-12 h-14 md:w-14 md:h-16 text-center text-xl md:text-2xl font-normal text-white transition-all bg-transparent rounded-xl",
-                            error ? "border-red-500 text-red-500 focus-visible:ring-0" : "border-white/20 focus-visible:ring-0 focus-visible:border-white/50"
-                        )}
-                    />
-                ))}
-            </div>
-
-            <div className="h-5 flex items-center justify-center">{error && <p className="text-red-500 text-sm">{error}</p>}</div>
-
-            <div className="mb-4 md:mb-5 text-sm text-gray-400">
-                An OTP has been sent on your {method === 'email' ? 'email' : 'number'} <br />
-                in <span className="text-white font-mono">
-                    {resendCooldown < 10 ? `0${resendCooldown}` : resendCooldown} sec
-                </span>{' '}
                 <button
-                    onClick={handleResend}
-                    disabled={resendCooldown > 0 || isLoading}
-                    className="text-blue-500 hover:text-blue-400 disabled:text-gray-600 disabled:cursor-not-allowed ml-1"
+                    onClick={() => setStep('input')}
+                    className="mt-1 text-sm font-medium text-blue-500 hover:text-blue-400 transition-colors cursor-pointer"
                 >
-                    Resend OTP
+                    {method === 'email' ? 'Change Email' : 'Change Number'}
                 </button>
+            </div>
+
+            <div className="flex flex-col items-center gap-1 md:gap-2">
+                <div className="flex gap-2 md:gap-2.5 justify-center">
+                    {otp.map((digit, i) => (
+                        <input
+                            key={i}
+                            ref={(el) => { if (el) inputRefs.current[i] = el; }}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="\d*"
+                            maxLength={1}
+                            value={digit}
+                            spellCheck={false}
+                            onChange={(e) => handleChange(i, e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(i, e)}
+                            onPaste={handlePaste}
+                            disabled={isLoading}
+                            className={cn(
+                                "w-11 h-12 md:w-14 md:h-16 text-center text-xl md:text-2xl font-normal text-white transition-all bg-transparent rounded-xl border",
+                                error
+                                    ? "border-red-500 text-red-500 focus-visible:ring-0"
+                                    : "border-white/20 focus-visible:ring-0 focus-visible:border-white/50"
+                            )}
+                        />
+                    ))}
+                </div>
+
+                {/* Error OR sent-on hint */}
+                <div className="h-4 flex items-center justify-center mb-4">
+                    {error
+                        ? <p className="text-red-500 text-xs">{error}</p>
+                        : resendCooldown > 0 && (
+                            <p className="text-gray-500 text-xs">
+                                An OTP has been sent on your {method === 'email' ? 'email' : 'number'}
+                            </p>
+                        )
+                    }
+                </div>
+
+                {/* Timer / Resend */}
+                <div className="h-6 flex items-center justify-center text-sm text-gray-400 mb-2">
+                    {resendCooldown > 0 ? (
+                        <span>
+                            Resend in{' '}
+                            <span className="inline-flex items-baseline gap-0.5">
+                                <span className="text-white font-mono">
+                                    {resendCooldown < 10 ? `0${resendCooldown}` : resendCooldown}
+                                </span>
+                                <span className="text-gray-400">sec</span>
+                            </span>
+                        </span>
+                    ) : (
+                        <button
+                            onClick={handleResend}
+                            disabled={isLoading}
+                            className="text-blue-500 hover:text-blue-400 disabled:text-gray-600 disabled:cursor-not-allowed font-medium"
+                        >
+                            Resend OTP
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="flex gap-4 w-full">
                 <Button
                     onClick={handleSubmit}
                     disabled={otp.some(d => !d) || isLoading}
-                    className="flex-1 rounded-full bg-[#FF8800] py-6 text-sm font-bold text-black hover:bg-[#ff9922] transition-transform active:scale-95 disabled:bg-white/10 disabled:text-gray-500"
+                    className="flex-1 rounded-full bg-[#FF7700] py-6 text-sm font-bold text-black hover:bg-[#ff9922] transition-transform active:scale-95 disabled:bg-white/10 disabled:text-gray-500"
                 >
                     {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     {isLoading ? 'Verifying...' : 'Verify OTP'}
@@ -710,13 +724,13 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                     variant="outline"
                     onClick={() => setStep('input')}
                     disabled={isLoading}
-                    className="flex-1 rounded-full border-[#FF8800] py-6 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800]"
+                    className="flex-1 rounded-full border-[#FF7700] py-6 text-sm font-bold text-[#FF7700] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800]"
                 >
                     Cancel
                 </Button>
             </div>
 
-            <p className="mt-5 md:mt-6 text-xs text-gray-500">
+            <p className="text-xs text-gray-500 text-center">
                 by logging in you agree to our{' '}
                 <span className="text-blue-500 cursor-pointer">terms & conditions</span> &{' '}
                 <span className="text-blue-500 cursor-pointer">privacy policy</span>
@@ -735,10 +749,8 @@ const StepAge = () => {
         setIsLoading(true);
         try {
             if (isAdult) {
-                // Update age consent via PUT endpoint only if 18+
                 await authService.updateAgeConsent(true);
             }
-            // Update local auth store so the user state is fresh
             useAuthStore.getState().updateUser({ eighteenPlus: isAdult });
             if (isAdult) {
                 if (onAgeVerified) {
@@ -746,17 +758,13 @@ const StepAge = () => {
                     closeModal();
                     reset();
                 } else {
-                    // Default flow for signup: continue to profile details
                     setStep('details');
                 }
             } else {
-                // If they say no, skip PUT request and move to next step automatically
                 if (onAgeVerified) {
-                    // If user was trying to go live, they can't. Close modal.
                     closeModal();
                     reset();
                 } else {
-                    // In signup flow, just move to details
                     setStep('details');
                 }
             }
@@ -786,7 +794,7 @@ const StepAge = () => {
                 <Button
                     onClick={() => handleAgeSelection(true)}
                     disabled={isLoading}
-                    className="w-full rounded-full bg-[#FF8800] py-6 text-sm font-bold text-black hover:bg-[#ff9922]"
+                    className="w-full rounded-full bg-[#FF7700] py-6 text-sm font-bold text-black hover:bg-[#ff9922]"
                 >
                     {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     Yes, I agree let me in
@@ -795,7 +803,7 @@ const StepAge = () => {
                     variant="outline"
                     onClick={() => handleAgeSelection(false)}
                     disabled={isLoading}
-                    className="w-full rounded-full border-[#FF8800] py-6 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800]"
+                    className="w-full rounded-full border-[#FF7700] py-6 text-sm font-bold text-[#FF7700] hover:bg-[#FF7700]/10 bg-transparent hover:text-[#FF7700]"
                 >
                     Disagree, I am under 18
                 </Button>
@@ -823,19 +831,13 @@ const generateAvatarFile = async (name: string): Promise<File> => {
     canvas.height = 400;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Could not get canvas context');
-
-    // Make it rounded
     ctx.beginPath();
     ctx.arc(200, 200, 200, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
-
-    // Background
-    const colors = ['#FF8800', '#FF5500', '#FFAA00', '#FF3300', '#FFCC00'];
+    const colors = ['#FF7700', '#FF5500', '#FFAA00', '#FF3300', '#FFCC00'];
     ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
     ctx.fillRect(0, 0, 400, 400);
-
-    // Text
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 200px Arial';
     ctx.textAlign = 'center';
@@ -886,7 +888,6 @@ export const StepDetails = ({
     const [profileImageKey, setProfileImageKey] = useState<string | null>(initialValues?.profileImage ?? null);
     const [isUploading, setIsUploading] = useState(false);
     const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
-    // Mobile drawer (location)
     const [locationDrawerOpen, setLocationDrawerOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -895,25 +896,15 @@ export const StepDetails = ({
         defaultValues: {
             fullName: initialValues?.fullName ?? "",
             location: initialValues?.location ?? "India",
-            bio: initialValues?.bio ?? "",
+            bio: initialValues?.bio ?? ""
         },
         mode: 'onChange'
     });
 
-    // Username Availability Check with Debounce
     useEffect(() => {
         if (mode !== 'signup') return;
-        if (!username || username.length < 3) {
-            setIsUsernameAvailable(null);
-            return;
-        }
-
-        // Don't check availability if username contains spaces
-        if (/\s/.test(username)) {
-            setIsUsernameAvailable(false);
-            setUsernameError('Spaces are not allowed');
-            return;
-        }
+        if (!username || username.length < 3) { setIsUsernameAvailable(null); return; }
+        if (/\s/.test(username)) { setIsUsernameAvailable(false); setUsernameError('Spaces are not allowed'); return; }
         const timer = setTimeout(async () => {
             setIsCheckingUsername(true);
             try {
@@ -932,14 +923,8 @@ export const StepDetails = ({
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (!['image/jpeg', 'image/png'].includes(file.type)) {
-            toast.error("Please upload a JPEG or PNG image only");
-            return;
-        }
-        if (file.size > 2 * 1024 * 1024) {
-            toast.error("Image size must be less than 2MB");
-            return;
-        }
+        if (!['image/jpeg', 'image/png'].includes(file.type)) { toast.error("Please upload a JPEG or PNG image only"); return; }
+        if (file.size > 2 * 1024 * 1024) { toast.error("Image size must be less than 2MB"); return; }
         setIsUploading(true);
         try {
             const extension = file.name.split('.').pop() || 'png';
@@ -972,17 +957,12 @@ export const StepDetails = ({
 
     const onSubmit = async (data: DetailsFormData) => {
         if (mode === 'signup') {
-            if (username.length < 3) {
-                setUsernameError('Min 3 chars');
-                return;
-            }
+            if (username.length < 3) { setUsernameError('Min 3 chars'); return; }
             if (isUsernameAvailable === false) return;
         }
         setIsLoading(true);
         try {
             let currentProfileImageKey = profileImageKey;
-
-            // Avatar generation logic
             if (!currentProfileImageKey) {
                 try {
                     const file = await generateAvatarFile(data.fullName);
@@ -991,11 +971,9 @@ export const StepDetails = ({
                     currentProfileImageKey = fullUrl;
                 } catch (err) {
                     console.error("Failed to generate/upload default avatar", err);
-                    // Fallback if generation/upload fails
                     currentProfileImageKey = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=random`;
                 }
             }
-            // --- UPDATED MUTATION CALL ---
             await updateProfileMutation({
                 data: {
                     ...data,
@@ -1011,9 +989,7 @@ export const StepDetails = ({
                 onSuccess?.();
                 store.closeModal();
                 store.reset();
-                if (!isLiveStream) {
-                    navigate({ to: '/for-you' });
-                }
+                if (!isLiveStream) { navigate({ to: '/for-you' }); }
             } else {
                 toast.success("Profile updated successfully!");
                 onSuccess?.();
@@ -1040,10 +1016,7 @@ export const StepDetails = ({
     const locationValue = form.watch('location');
 
     return (
-
         <div className="flex flex-col h-full w-full">
-
-            {/* -- Location Drawer -- */}
             <div className="md:hidden">
                 <CountryDrawer
                     open={locationDrawerOpen}
@@ -1054,23 +1027,16 @@ export const StepDetails = ({
                     title="Select Location"
                 />
             </div>
-
-            {/* mobile header */}
             <MobilePageHeader
                 title={mode === 'edit' ? 'Edit Profile' : 'Complete Your Profile'}
                 showBack={true}
                 onBack={mode === 'edit' ? onCancel : () => store.setStep('age')}
                 showClose={false}
             />
-
-            {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar flex flex-col">
                 <div className="flex flex-col md:flex-row w-full items-start p-4 md:p-5 h-full">
-
-                    {/* ── Left Card ── */}
-                    <div className="flex flex-col items-center gap-6 md:gap-8 bg-[#1D1F20] rounded-xl py-8 md:py-16.5 px-6 md:px-8 w-full md:w-97.5 h-129 shrink-0 border border-white/5">
-
-                        {/* Verified identifier pill */}
+                    {/* Left Card */}
+                    <div className="flex flex-col items-center gap-6 md:gap-8 bg-[#1D1F20] rounded-xl py-8 md:py-16.5 px-6 md:px-8 w-full md:w-97.5 shrink-0 border border-white/5">
                         {identifierPill && (
                             <div className="w-full rounded-lg border border-blue-500/50 bg-transparent h-14 px-5 py-7 flex justify-between items-center gap-8">
                                 <span className="text-gray-300 text-[16px] truncate">{identifierPill}</span>
@@ -1079,19 +1045,9 @@ export const StepDetails = ({
                                 </div>
                             </div>
                         )}
-
-                        {/* Avatar with gradient ring */}
                         <div className="relative mt-1">
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept="image/jpeg,image/png"
-                                onChange={handleFileChange}
-                            />
-                            <div className="size-33 rounded-full p-0.75"
-                                style={{ background: 'linear-gradient(135deg, #6366f1 0%, #3b3bd6 50%, #ef4444 100%)' }}
-                            >
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png" onChange={handleFileChange} />
+                            <div className="size-33 rounded-full p-0.75" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #3b3bd6 50%, #ef4444 100%)' }}>
                                 <div className="w-full h-full rounded-full bg-[#1c1e27] p-0.5">
                                     <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center text-4xl font-bold text-white">
                                         {profileImage ? (
@@ -1108,38 +1064,20 @@ export const StepDetails = ({
                                 </div>
                             )}
                             <div className="absolute bottom-0.5 right-0.5">
-                                <button
-                                    type="button"
-                                    disabled={isUploading}
-                                    onClick={() => setCameraMenuOpen(o => !o)}
-                                    className="bg-white rounded-full p-1.5 cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center border-2 border-[#1D1F20]"
-                                >
+                                <button type="button" disabled={isUploading} onClick={() => setCameraMenuOpen(o => !o)} className="bg-white rounded-full p-1.5 cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center border-2 border-[#1D1F20]">
                                     <Camera className="w-4 h-4 text-black" />
                                 </button>
                                 {cameraMenuOpen && (
                                     <>
-                                        <div
-                                            className="fixed inset-0 z-40"
-                                            style={{ background: 'transparent' }}
-                                            onClick={() => setCameraMenuOpen(false)}
-                                        />
+                                        <div className="fixed inset-0 z-40" style={{ background: 'transparent' }} onClick={() => setCameraMenuOpen(false)} />
                                         <div className="absolute bottom-full -right-20 mb-2 z-50 min-w-32.5 bg-[#1a1c24] border border-white/10 rounded-xl p-1 shadow-2xl">
-                                            <button
-                                                type="button"
-                                                onClick={() => { fileInputRef.current?.click(); setCameraMenuOpen(false); }}
-                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-white/5 rounded-lg"
-                                            >
+                                            <button type="button" onClick={() => { fileInputRef.current?.click(); setCameraMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-white/5 rounded-lg">
                                                 {profileImage ? 'Change Photo' : 'Add Photo'}
                                             </button>
-
                                             {profileImage && (
                                                 <>
                                                     <div className="my-1 border-t border-white/10" />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { handleDeletePhoto(); setCameraMenuOpen(false); }}
-                                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-red-400/5 rounded-lg"
-                                                    >
+                                                    <button type="button" onClick={() => { handleDeletePhoto(); setCameraMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-red-400/5 rounded-lg">
                                                         Delete Photo
                                                     </button>
                                                 </>
@@ -1149,47 +1087,31 @@ export const StepDetails = ({
                                 )}
                             </div>
                         </div>
-
-                        {/* Name Input */}
                         <div className="w-full">
                             <label className="block text-xs text-gray-400 mb-2">Your name</label>
                             <Form {...form}>
-                                <FormField
-                                    control={form.control}
-                                    name="fullName"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    className="h-14 bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 text-[16px] px-4"
-                                                    placeholder="No Name"
-                                                    style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                                />
-                                            </FormControl>
-                                            <FormMessage className="text-[10px]" />
-                                        </FormItem>
-                                    )}
-                                />
+                                <FormField control={form.control} name="fullName" render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input {...field} className="h-14 bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 text-[16px] px-4" placeholder="No Name" spellCheck={false} style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }} />
+                                        </FormControl>
+                                        <FormMessage className="text-[10px]" />
+                                    </FormItem>
+                                )} />
                             </Form>
                         </div>
-
                         <p className="text-xs text-gray-600 text-center leading-relaxed">
                             You can edit your profile picture or upload a new one (JPG or PNG)
                         </p>
                     </div>
 
-                    {/* Right Column - Form Fields */}
+                    {/* Right Column */}
                     <div className="flex flex-col flex-1 w-full justify-start px-0 md:px-8 py-6 md:py-4 min-w-0">
                         <h2 className={cn("text-3xl md:text-5xl font-bold text-white tracking-tight mb-1 text-center md:text-left", mode === 'edit' && "hidden md:block")}>{title}</h2>
                         <p className={cn("text-gray-400 text-sm mb-5 md:mb-7 text-center md:text-left", mode === 'edit' && "hidden md:block")}>{subtitle}</p>
-
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-
-                                {/* Username & Location Row */}
                                 <div className="grid grid-cols-2 gap-4 items-start">
-                                    {/* Username */}
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex items-center justify-between" style={{ height: '20px' }}>
                                             <label className="text-xs text-gray-400">User name</label>
@@ -1198,148 +1120,60 @@ export const StepDetails = ({
                                         </div>
                                         {mode === 'signup' ? (
                                             <>
-                                                <input
-                                                    value={username}
-                                                    onChange={(e) => {
-                                                        setUsername(e.target.value);
-                                                        setUsernameError('');
-                                                        setIsUsernameAvailable(null);
-                                                    }}
-                                                    placeholder="Enter your user name"
-                                                    className={cn(
-                                                        "w-full bg-[#111213] border rounded-xl text-white text-sm placeholder:text-gray-600 outline-none transition-colors px-4",
-                                                        "border-white/20 focus:border-white/40",
-                                                        isUsernameAvailable === false && "border-red-500/70",
-                                                        isUsernameAvailable === true && "border-green-500/40"
-                                                    )}
-                                                    style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                                />
+                                                <input value={username} spellCheck={false} onChange={(e) => { setUsername(e.target.value); setUsernameError(''); setIsUsernameAvailable(null); }} placeholder="Enter your user name"
+                                                    className={cn("w-full bg-[#111213] border rounded-xl text-white text-sm placeholder:text-gray-600 outline-none transition-colors px-4", "border-white/20 focus:border-white/40", isUsernameAvailable === false && "border-red-500/70", isUsernameAvailable === true && "border-green-500/40")}
+                                                    style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }} />
                                                 <div className="h-4 flex items-center">{usernameError && <p className="text-[10px] text-red-400">{usernameError}</p>}</div>
                                             </>
                                         ) : (
-                                            <input
-                                                value={initialValues?.username ?? ''}
-                                                readOnly tabIndex={-1}
-                                                className="w-full bg-white/3 border border-white/10 rounded-lg text-gray-500 cursor-not-allowed text-sm select-none outline-none px-4"
-                                                style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                            />
+                                            <input value={initialValues?.username ?? ''} spellCheck={false} readOnly tabIndex={-1} className="w-full bg-white/3 border border-white/10 rounded-lg text-gray-500 cursor-not-allowed text-sm select-none outline-none px-4" style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }} />
                                         )}
                                     </div>
-
-                                    {/* Location */}
-                                    <FormField
-                                        control={form.control}
-                                        name="location"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-col gap-1.5">
-                                                <label
-                                                    className="text-xs text-gray-400"
-                                                    style={{ height: '20px', display: 'flex', alignItems: 'center' }}
-                                                >
-                                                    Location
-                                                </label>
-
-                                                {/* Mobile */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setLocationDrawerOpen(true)}
-                                                    className="md:hidden flex items-center justify-between w-full px-4 bg-[#111213] rounded-lg text-white text-sm transition-colors hover:bg-[#1a1c24] focus:outline-none"
-                                                    style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                                >
-                                                    <span className={cn('truncate', !field.value && 'text-gray-600')}>
-                                                        {field.value || 'Select Location'}
-                                                    </span>
-                                                    <ChevronDown className="w-5 h-5 text-white shrink-0 ml-2" />
-                                                </button>
-
-                                                {/* Desktop */}
-                                                <Select
-                                                    onValueChange={field.onChange}
-                                                    defaultValue={field.value}
-                                                    value={field.value}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger
-                                                            className="hidden md:flex bg-[#111213] border-white/20 rounded-lg text-white
-                                                                        focus:ring-0 focus:border-white/40 text-sm w-full px-4
-                                                                        [&>svg]:text-white! [&>svg]:opacity-100! [&>svg]:w-5 [&>svg]:h-5"
-                                                            style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                                        >
-                                                            <SelectValue placeholder="Select Location" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent
-                                                        className="bg-[#1a1c24] border-white/10 text-white max-h-60 z-300"
-                                                        position="popper"
-                                                        sideOffset={4}
-                                                    >
-                                                        {countryCodes.map(c => (
-                                                            <SelectItem
-                                                                key={c.code}
-                                                                value={c.name}
-                                                                className="focus:bg-white/10 focus:text-white cursor-pointer text-sm"
-                                                            >
-                                                                {c.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-
-                                                <FormMessage className="text-[10px]" />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                {/* Bio */}
-                                <FormField
-                                    control={form.control}
-                                    name="bio"
-                                    render={({ field }) => (
-                                        <FormItem className="space-y-1.5">
-                                            <label className="text-xs text-gray-400">Bio</label>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <Textarea
-                                                        {...field}
-                                                        value={field.value ?? ""}
-                                                        className="bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 resize-y min-h-25 py-3 text-[16px]"
-                                                        placeholder="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-                                                        maxLength={100}
-                                                        style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}
-                                                    />
-                                                    <span className="absolute bottom-2 right-3 text-[10px] text-gray-500">
-                                                        {field.value?.length || 0}/100
-                                                    </span>
-                                                </div>
-                                            </FormControl>
+                                    <FormField control={form.control} name="location" render={({ field }) => (
+                                        <FormItem className="flex flex-col gap-1.5">
+                                            <label className="text-xs text-gray-400" style={{ height: '20px', display: 'flex', alignItems: 'center' }}>Location</label>
+                                            <button type="button" onClick={() => setLocationDrawerOpen(true)} className="md:hidden flex items-center justify-between w-full px-4 bg-[#111213] rounded-lg text-white text-sm transition-colors hover:bg-[#1a1c24] focus:outline-none" style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}>
+                                                <span className={cn('truncate', !field.value && 'text-gray-600')}>{field.value || 'Select Location'}</span>
+                                                <ChevronDown className="w-5 h-5 text-white shrink-0 ml-2" />
+                                            </button>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger className="hidden md:flex bg-[#111213] border-white/20 rounded-lg text-white focus:ring-0 focus:border-white/40 text-sm w-full px-4 [&>svg]:text-white! [&>svg]:opacity-100! [&>svg]:w-5 [&>svg]:h-5" style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }}>
+                                                        <SelectValue placeholder="Select Location" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent className="bg-[#1a1c24] border-white/10 text-white max-h-60 z-300" position="popper" sideOffset={4}>
+                                                    {countryCodes.map(c => (
+                                                        <SelectItem key={c.code} value={c.name} className="focus:bg-white/10 focus:text-white cursor-pointer text-sm">{c.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage className="text-[10px]" />
                                         </FormItem>
-                                    )}
-                                />
-
-                                {/* Submit Button */}
+                                    )} />
+                                </div>
+                                <FormField control={form.control} name="bio" render={({ field }) => (
+                                    <FormItem className="space-y-1.5">
+                                        <label className="text-xs text-gray-400">Bio</label>
+                                        <FormControl>
+                                            <div className="relative">
+                                                <Textarea {...field} value={field.value ?? ""} spellCheck={false} className="bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 resize-y min-h-25 py-3 text-[16px]" placeholder="Lorem ipsum dolor sit amet, consectetur adipiscing elit." maxLength={100} style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }} />
+                                                <span className="absolute bottom-2 right-3 text-[10px] text-gray-500">{field.value?.length || 0}/100</span>
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage className="text-[10px]" />
+                                    </FormItem>
+                                )} />
                                 <div className="flex flex-col md:flex-row gap-3 md:gap-4 mt-6 md:mt-8 w-full">
-                                    <Button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="rounded-full bg-[#FF8800] h-12 w-full md:w-auto md:px-18 text-sm font-bold text-black hover:bg-[#ff9922] transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                                    >
+                                    <Button type="submit" disabled={isLoading} className="rounded-full bg-[#FF7700] h-12 w-full md:w-auto md:px-18 text-sm font-bold text-black hover:bg-[#ff9922] transition-all active:scale-95 disabled:opacity-50 cursor-pointer">
                                         {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : submitLabel}
                                     </Button>
                                     {onCancel && (
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={onCancel}
-                                            disabled={isLoading}
-                                            className="rounded-full border-[#FF8800] h-12 w-full md:w-auto md:px-18 text-sm font-bold text-[#FF8800] hover:bg-[#FF8800]/10 bg-transparent hover:text-[#FF8800] cursor-pointer"
-                                        >
+                                        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading} className="rounded-full border-[#FF7700] h-12 w-full md:w-auto md:px-18 text-sm font-bold text-[#FF7700] hover:bg-[#FF7700]/10 bg-transparent hover:text-[#FF7700] cursor-pointer">
                                             Cancel
                                         </Button>
                                     )}
                                 </div>
-
                                 <p className="text-[11px] md:text-xs text-center md:text-left text-gray-500 mt-6 md:mt-4">
                                     by logging in you agree to our <br className="md:hidden" />
                                     <span className="text-blue-500 cursor-pointer hover:underline">terms & conditions</span>{' '}&{' '}
@@ -1348,7 +1182,6 @@ export const StepDetails = ({
                             </form>
                         </Form>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -1364,36 +1197,40 @@ export const SignUpModal = () => {
 
     const didRecoverRef = useRef(false);
     useEffect(() => {
-        if (!isHydrated) return;
-        if (didRecoverRef.current) return;
+        if (!isHydrated || didRecoverRef.current) return;
         didRecoverRef.current = true;
-
         switch (currentStep) {
-            case 'otp':
-                // OTP code is dead after a refresh — go back to input
-                setStep('input');
-                break;
-
+            case 'otp': setStep('input'); break;
             case 'age':
-            case 'details':
-                if (!isAuthenticated) {
-                    setStep('welcome');
-                }
-                break;
-            default:
-                break;
+            case 'details': if (!isAuthenticated) { setStep('welcome'); } break;
+            default: break;
         }
     }, [isHydrated]);
 
     useEffect(() => {
         if (isHydrated && isAuthenticated && isNewUser && !isOpen) {
             const step = currentStep;
-            if (step === 'welcome' || step === 'input' || step === 'otp') {
-                setStep('age');
-            }
+            if (step === 'welcome' || step === 'input' || step === 'otp') { setStep('age'); }
             openModal();
         }
     }, [isHydrated, isAuthenticated, isNewUser]);
+
+    // iOS-safe scroll lock
+    useEffect(() => {
+        if (!isOpen) return;
+        const scrollY = window.scrollY;
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollY}px`;
+        document.body.style.width = '100%';
+        return () => {
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            window.scrollTo(0, scrollY);
+        };
+    }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen) return;

@@ -186,7 +186,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 </h1>
               </div>
 
-              <div className="flex items-center gap-4 text-[#494E50] text-sm mb-3 justify-center md:justify-start w-full">
+              <div className="flex items-center gap-4 text-[#494E50] text-sm justify-center md:justify-start w-full">
                 <span className="font-medium">@{user.username}</span>
                 {user.location && (
                   <div className="flex items-center gap-1">
@@ -196,12 +196,12 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 )}
               </div>
               {user.bio && (
-                <p className="text-zinc-300 text-sm md:text-base max-w-lg leading-relaxed text-center md:text-left">{user.bio}</p>
+                <p className="text-zinc-300 text-sm md:text-base max-w-lg leading-relaxed text-center md:text-left mt-3">{user.bio}</p>
               )}
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 w-full md:w-auto mt-4 md:mt-0">
+          <div className="flex flex-col gap-3 w-full md:w-auto md:mt-0">
             {isOwnProfile ? (
               <>
                 <button
@@ -227,17 +227,17 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                     {settingsOpen && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
-                        <div className="absolute -right-15 bottom-full w-30 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+                        <div className="absolute right-0 bottom-full w-36 mb-2 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
                           <button
                             onClick={() => { setSettingsOpen(false); navigate({ to: '/profile/setting' }); }}
-                            className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+                            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
                           >
                             Settings
                           </button>
                           <div className="h-px bg-zinc-800 mx-2" />
                           <button
                             onClick={() => { setSettingsOpen(false); handleShare(); }}
-                            className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+                            className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
                           >
                             Share Profile
                           </button>

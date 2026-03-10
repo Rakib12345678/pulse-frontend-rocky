@@ -116,6 +116,27 @@
   --sidebar-ring: oklch(0.408 0.123 38.172);
 }
 
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px #111213 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: white !important;
+}
+
+input, textarea {
+  color: white !important;
+  caret-color: white !important;
+  text-decoration: none !important;
+  
+}
+::selection {
+  background: #FF8800;
+  color: #ffffff;
+}
 
 @layer base {
   * {
