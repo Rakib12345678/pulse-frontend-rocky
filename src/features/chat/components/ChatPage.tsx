@@ -7,15 +7,17 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
 import { chatService } from '../services/chat.service';
+import { SESSION_ACTIVE_KEY } from '@/features/chat/utils/chatConstants';
 import type { Conversation } from '../types/chat.types';
 import background from '@/assets/background.png';
 
-// ------ Opaque session key ------
-const SESSION_KEY = 'chat_active';
+// Session helpers
 
-const saveSession  = (id: string) => sessionStorage.setItem(SESSION_KEY, id);
-const loadSession  = (): string | null => sessionStorage.getItem(SESSION_KEY);
-const clearSession = () => sessionStorage.removeItem(SESSION_KEY);
+const saveSession  = (id: string) => sessionStorage.setItem(SESSION_ACTIVE_KEY, id);
+const loadSession  = (): string | null => sessionStorage.getItem(SESSION_ACTIVE_KEY);
+const clearSession = () => sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+
+// ChatPage
 
 interface ChatPageProps {
     onClose?: () => void;
@@ -67,8 +69,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     const lastKnownConvRef   = useRef<Conversation | null>(null);
     const prevLocalConvIdRef = useRef<string | null>(null);
     if (prevLocalConvIdRef.current !== localConvId) {
-        prevLocalConvIdRef.current  = localConvId;
-        lastKnownConvRef.current    = null;
+        prevLocalConvIdRef.current = localConvId;
+        lastKnownConvRef.current   = null;
     }
 
     const foundInList = conversations.find(c => c.id === localConvId) ?? null;
@@ -101,13 +103,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     };
 
     const modalBg: React.CSSProperties = {
-        backgroundColor: '#0d0a09',
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.82), rgba(0,0,0,0.82)), url(${background})`,
+        backgroundColor:  '#0d0a09',
+        backgroundImage:  `linear-gradient(rgba(0,0,0,0.82), rgba(0,0,0,0.82)), url(${background})`,
         backgroundRepeat: 'repeat',
-        backgroundSize: '300px 300px',
+        backgroundSize:   '300px 300px',
     };
 
-    // Modal mode 
+    // Modal mode
     if (asModal) {
         return (
             <div className="fixed inset-0 z-300 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4">
@@ -145,7 +147,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         );
     }
 
-    // ------- Full page mode --------
+    // Full page mode
     return (
         <div className="w-full flex-1 min-h-0 overflow-hidden flex flex-col">
 
@@ -166,7 +168,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                         />
                     </div>
                 </div>
-                {/* mobile footer */}
                 {!mobileShowList && (
                     <div className="fixed inset-0 z-350 flex flex-col bg-[#0d0d0d] md:hidden">
                         <ChatWindow
@@ -180,10 +181,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({
             </div>
 
             {/* DESKTOP */}
-            <div className="hidden md:flex flex-1 min-h-0 gap-4 px-6 pt-6 pb-0 pl-14 lg:pl-16 pr-6 lg:pr-8">
-
+            <div className="hidden md:flex flex-1 min-h-0 pb-0 pl-14 lg:pl-16">
                 <div
-                    className="flex flex-col shrink-0 w-90 lg:w-97 xl:w-112.5 rounded-t-2xl overflow-hidden -mb-1px pb-6"
+                    className="flex flex-col shrink-0 w-90 lg:w-97 xl:w-112.5 overflow-hidden -mb-1px pb-6"
                     style={{ background: '#111213' }}
                 >
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-5 py-5">
@@ -198,7 +198,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                     </div>
                 </div>
 
-                <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden rounded-t-2xl -mb-1px">
+                <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden -mb-1px">
                     <ChatWindow
                         conversation={activeConversation}
                         isLoadingConversation={isLoadingConversation}

@@ -1,5 +1,9 @@
 import { StreamChat } from 'stream-chat';
-import { saveStreamCredentials, clearStreamCredentials } from './streamCredentials';
+import {
+    saveStreamCredentials,
+    clearStreamCredentials,
+} from './streamCredentials';
+import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 
 let clientInstance: StreamChat | null = null;
 
@@ -16,28 +20,48 @@ export const isStreamConnected = (): boolean => {
 };
 
 export const connectStreamUser = async (
-    userId:   string,
+    userId: string,
     userName: string,
-    avatar:   string,
-    apiKey:   string,
-    token:    string,
+    avatar: string,
+    apiKey: string,
+    token: string,
     fullName?: string,
 ): Promise<void> => {
     const client = getStreamClient(apiKey);
+    const absoluteAvatar = toAbsoluteUrl(avatar);
+
     if (client.userID === userId) return;
     if (client.userID) await client.disconnectUser();
 
     await client.connectUser(
         {
-            id:    userId,
-            name:  userName,
-            image: avatar,
+            id: userId,
+            name: userName,
+            image: absoluteAvatar,
             ...({ fullName: fullName ?? userName } as Record<string, unknown>),
         },
         token,
     );
 
-    saveStreamCredentials({ apiKey, token, userId, userName, avatar, fullName });
+    try {
+        await client.upsertUser({
+            id: userId,
+            name: userName,
+            image: absoluteAvatar,
+            fullName: fullName ?? userName,
+        } as any);
+    } catch (err) {
+        console.warn('[StreamClient] upsertUser failed:', err);
+    }
+
+    saveStreamCredentials({
+        apiKey,
+        token,
+        userId,
+        userName,
+        avatar: absoluteAvatar,
+        fullName,
+    });
 };
 
 export const disconnectStreamUser = async (): Promise<void> => {

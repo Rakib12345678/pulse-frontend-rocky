@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronDown, Loader2, Smile, Trash2, WifiOff, Languages, Copy, Forward, UserCircle2, Search, X } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { ChevronLeft, ChevronDown, Loader2, Smile, Trash2, WifiOff, Copy, Forward, UserCircle2, Search } from 'lucide-react';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useMessages, useSendMessage, useMarkAsRead, useDeleteMessage, chatKeys } from '../hooks/useChat';
+import api from '@/lib/api';
+import { useMessages, useSendMessage, useMarkAsRead, useDeleteMessage } from '../hooks/useChat';
 import { TickIcon } from './ChatSidebar';
 import { getStreamClient } from '../stream/streamClient';
 import type { Conversation, Message } from '../types/chat.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useOnlineStatus } from '@/features/chat/hooks/useOnlineStatus';
+import { TRANSLATE_KEY } from '@/features/chat/utils/chatConstants';
+import { Switch } from '@/components/ui/switch';
 
 import chatGroup from '@/assets/chatGroup.svg';
 import sendIcon from '@/assets/Send.svg';
@@ -43,12 +45,9 @@ const Avatar = ({
     );
 };
 
-
-// Capitalize
 const capitalizeName = (name: string): string =>
     name.replace(/\b\w/g, c => c.toUpperCase());
 
-// Forward Modal
 interface StreamUser { id: string; name?: string; image?: string; fullName?: string; }
 
 const ForwardModal = ({
@@ -62,14 +61,13 @@ const ForwardModal = ({
     onForwardSuccess: (name: string) => void;
     onForwardError: () => void;
 }) => {
-    const [query, setQuery]       = useState('');
-    const [results, setResults]   = useState<StreamUser[]>([]);
-    const [searching, setSearch]  = useState(false);
-    const [sent, setSent]         = useState<string | null>(null);
-    const debounceRef             = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const backdropRef             = useRef<HTMLDivElement>(null);
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState<StreamUser[]>([]);
+    const [searching, setSearch] = useState(false);
+    const [sent, setSent] = useState<string | null>(null);
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const backdropRef = useRef<HTMLDivElement>(null);
 
-    // Search Stream by username (name field)
     useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         if (!query.trim()) { setResults([]); return; }
@@ -78,23 +76,19 @@ const ForwardModal = ({
             try {
                 const client = getStreamClient();
                 const myId   = client.userID;
-                const q      = query.trim();
-
                 const resp = await client.queryUsers(
-                    { name: { $autocomplete: q } },
+                    { name: { $autocomplete: query.trim() } },
                     { name: 1 },
                     { limit: 20 },
                 );
-
                 const mapped: StreamUser[] = resp.users
                     .filter(u => u.id !== myId)
                     .map(u => ({
                         id:       u.id,
                         name:     (u as any).fullName || u.name || u.id,
                         fullName: (u as any).fullName || '',
-                        image:    (u as any).image || '',
+                        image: (u as any).image || '',
                     } as StreamUser));
-
                 setResults(mapped);
             } catch { setResults([]); }
             finally { setSearch(false); }
@@ -107,7 +101,7 @@ const ForwardModal = ({
             const client  = getStreamClient();
             const channel = client.channel('messaging', { members: [client.userID!, user.id] });
             await channel.create();
-            await channel.sendMessage({ text: message.text });
+            await channel.sendMessage({ text: message.originalText ?? message.text });
             const name = user.name || user.id;
             setSent(name);
             setTimeout(() => {
@@ -123,21 +117,18 @@ const ForwardModal = ({
     return (
         <div
             ref={backdropRef}
-            onClick={(e) => { if (e.target === backdropRef.current) onClose(); }}
+            onClick={e => { if (e.target === backdropRef.current) onClose(); }}
             className="fixed inset-0 z-600 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
         >
-            <div className="relative w-full max-w-115 bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-md bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-orange-900/20 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative z-10 px-10 pt-5 pb-4 flex flex-col gap-10">
-                    {/* Header */}
+                <div className="relative z-10 px-10 pt-5 pb-4 flex flex-col gap-6">
                     <div className="flex items-center justify-center">
                         <h2 className="text-white font-semibold text-base">Forward Message</h2>
                     </div>
-                    {/* Message preview */}
-                    <div className="px-3 py-0">
-                        <p className="text-white text-sm leading-relaxed line-clamp-2">{message.text}</p>
-                    </div>
-                    {/* Search */}
+                    <p className="text-white text-sm leading-relaxed line-clamp-2">
+                        {message.originalText ?? message.text}
+                    </p>
                     <div className="flex items-center gap-2 px-4 h-11 border border-white/15 rounded-full bg-white/3 focus-within:border-white/30 transition-colors">
                         <input
                             autoFocus
@@ -152,11 +143,8 @@ const ForwardModal = ({
                             : <Search className="w-4 h-4 text-gray-500 shrink-0" />
                         }
                     </div>
-                    {/* Results */}
-                    <div className="flex flex-col gap-0.5 max-h-70 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-                        {sent && (
-                            <p className="text-center text-green-400 text-sm py-4">✓ Forwarded to {sent}</p>
-                        )}
+                    <div className="flex flex-col gap-0.5 max-h-60 overflow-y-auto [&::-webkit-scrollbar]:hidden">
+                        {sent && <p className="text-center text-green-400 text-sm py-4">✓ Forwarded to {sent}</p>}
                         {!sent && results.length === 0 && query.trim() && !searching && (
                             <p className="text-center text-gray-500 text-sm py-4">No users found</p>
                         )}
@@ -165,14 +153,10 @@ const ForwardModal = ({
                         )}
                         {!sent && results.map(user => {
                             const displayName = capitalizeName((user as any).fullName || user.name || user.id);
-                            const avatar      = (user as any).image || '';
                             return (
-                                <button
-                                    key={user.id}
-                                    onClick={() => handleForwardTo(user)}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left"
-                                >
-                                    <Avatar src={avatar} alt={displayName} className="w-10 h-10" />
+                                <button key={user.id} onClick={() => handleForwardTo(user)}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left">
+                                    <Avatar src={(user as any).image || ''} alt={displayName} className="w-10 h-10" />
                                     <div className="flex flex-col min-w-0">
                                         <span className="text-white text-sm font-semibold truncate">{displayName}</span>
                                         <span className="text-[#FF7700] text-xs mt-0.5">Tap to forward</span>
@@ -187,6 +171,126 @@ const ForwardModal = ({
     );
 };
 
+// ChangeLanguageModal
+
+interface Language { code: string; name: string; }
+
+const ChangeLanguageModal = ({
+    onClose,
+    onSuccess,
+}: {
+    onClose: () => void;
+    onSuccess: () => void;
+}) => {
+    const { user, updateUser } = useAuthStore();
+
+    const [languages, setLanguages] = useState<Language[]>([]);
+    const [selected, setSelected]   = useState('');
+    const [loading, setLoading]     = useState(true);
+    const [saving, setSaving]       = useState(false);
+    const [fetchErr, setFetchErr]   = useState(false);
+    const backdropRef               = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setLoading(true);
+        api.get<Language[]>('/users/languages')
+            .then(res => {
+                const langs = res.data ?? [];
+                setLanguages(langs);
+                const currentCode = user?.preferredLanguage;
+                const match = currentCode && langs.find(l => l.code === currentCode);
+                setSelected(match ? match.code : langs[0]?.code ?? '');
+            })
+            .catch(() => setFetchErr(true))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const handleConfirm = async () => {
+        if (!selected) return;
+        setSaving(true);
+        try {
+            await api.put('/users/me/language', { languageCode: selected });
+            updateUser({ preferredLanguage: selected });
+            onSuccess();
+            onClose();
+        } catch {
+            toast.error('Failed to update language');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div
+            ref={backdropRef}
+            onClick={e => { if (e.target === backdropRef.current) onClose(); }}
+            className="fixed inset-0 z-600 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+        >
+            <div className="relative w-full max-w-md bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-orange-900/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="relative z-10 px-8 pt-7 pb-7 flex flex-col gap-6">
+                    <div className="flex items-center justify-center">
+                        <h2 className="text-white font-bold text-lg tracking-wide">Change Language</h2>
+                    </div>
+                    <p className="text-center text-gray-400 text-sm leading-relaxed">
+                        Select the language you want messages translated into.
+                    </p>
+                    {loading ? (
+                        <div className="flex justify-center py-4">
+                            <Loader2 className="w-5 h-5 animate-spin text-[#FF7700]" />
+                        </div>
+                    ) : fetchErr ? (
+                        <p className="text-center text-red-400 text-sm">Failed to load languages. Please try again.</p>
+                    ) : (
+                        <div className="relative">
+                            <select
+                                value={selected}
+                                onChange={e => setSelected(e.target.value)}
+                                className={cn(
+                                    'w-full h-12 pl-4 pr-10 rounded-full text-sm text-white',
+                                    'bg-transparent border border-white/20 focus:border-white/40 focus:outline-none',
+                                    'appearance-none cursor-pointer transition-colors',
+                                )}
+                            >
+                                {languages.map(lang => (
+                                    <option key={lang.code} value={lang.code} className="bg-[#1a1c23] text-white">
+                                        {lang.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                        </div>
+                    )}
+                    <div className="flex items-center gap-3 pt-1">
+                        <button
+                            onClick={handleConfirm}
+                            disabled={saving || loading || fetchErr || !selected}
+                            className={cn(
+                                'flex-1 h-11 rounded-full text-sm font-semibold transition-all active:scale-95 flex items-center justify-center gap-2',
+                                saving || loading || fetchErr || !selected
+                                    ? 'bg-[#FF7700]/50 text-black/60 cursor-not-allowed'
+                                    : 'bg-[#FF7700] text-black hover:bg-[#ff9922]',
+                            )}
+                        >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                            Change
+                        </button>
+                        <button
+                            onClick={onClose}
+                            disabled={saving}
+                            className="flex-1 h-11 rounded-full border border-[#FF7700] text-[#FF7700] text-sm font-semibold hover:bg-[#FF7700]/10 transition-all active:scale-95"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Helpers
+
 const formatMsgTime = (iso: string) =>
     new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -197,25 +301,25 @@ const safeDate = (iso: string): Date => {
 
 const getDateLabel = (iso: string): string => {
     const date = safeDate(iso), now = new Date();
-    const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const d = Math.round((today.getTime() - msgDay.getTime()) / 86_400_000);
     if (d === 0) return 'Today';
     if (d === 1) return 'Yesterday';
-    if (d < 7)  return date.toLocaleDateString([], { weekday: 'long' });
+    if (d < 7) return date.toLocaleDateString([], { weekday: 'long' });
     return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' });
 };
 
-const getDayKey = (iso: string) => new Date(iso).toISOString().slice(0, 10);
+const getDayKey = (iso: string) => safeDate(iso).toISOString().slice(0, 10);
 
 const formatLastSeen = (iso: string): string => {
     const date = new Date(iso), now = new Date();
     const s = Math.floor((now.getTime() - date.getTime()) / 1000);
-    if (s < 60)  return 'last seen just now';
+    if (s < 60) return 'last seen just now';
     const m = Math.floor(s / 60);
-    if (m < 60)  return `last seen ${m}m ago`;
+    if (m < 60) return `last seen ${m}m ago`;
     const h = Math.floor(m / 60);
-    if (h < 24)  return `last seen ${h}h ago`;
+    if (h < 24) return `last seen ${h}h ago`;
     const dd = Math.floor(h / 24);
     if (dd === 1) return 'last seen yesterday';
     return `last seen ${date.toLocaleDateString([], { day: '2-digit', month: 'short' })}`;
@@ -223,12 +327,20 @@ const formatLastSeen = (iso: string): string => {
 
 const useDraftPerConversation = (conversationId: string | null) => {
     const drafts = useRef<Record<string, string>>({});
-    const getDraft = React.useCallback(() => !conversationId ? '' : (drafts.current[conversationId] ?? ''), [conversationId]);
-    const setDraft = React.useCallback((v: string) => { if (conversationId) drafts.current[conversationId] = v; }, [conversationId]);
+    const getDraft = React.useCallback(
+        () => !conversationId ? '' : (drafts.current[conversationId] ?? ''),
+        [conversationId],
+    );
+    const setDraft = React.useCallback(
+        (v: string) => { if (conversationId) drafts.current[conversationId] = v; },
+        [conversationId],
+    );
     const [, rerender] = useState(0);
     useEffect(() => { rerender(n => n + 1); }, [conversationId]);
     return { getDraft, setDraft };
 };
+
+// DateSeparator
 
 const DateSeparator = ({ label }: { label: string }) => (
     <div className="flex items-center gap-3 my-2">
@@ -238,6 +350,7 @@ const DateSeparator = ({ label }: { label: string }) => (
     </div>
 );
 
+// MessageDropdown
 interface DropdownProps {
     isMe: boolean; onDelete?: () => void; onCopy: () => void; onForward: () => void; onClose: () => void;
     positionLeft?: boolean;
@@ -251,6 +364,7 @@ const MessageDropdown = ({ isMe, onDelete, onCopy, onForward, onClose, positionL
                 if (ref.current && !ref.current.contains(e.target as Node)) onClose();
             };
             document.addEventListener('mousedown', handler);
+            return () => document.removeEventListener('mousedown', handler);
         }, 50);
         return () => clearTimeout(t);
     }, [onClose]);
@@ -260,10 +374,6 @@ const MessageDropdown = ({ isMe, onDelete, onCopy, onForward, onClose, positionL
             'absolute top-8 z-50 min-w-40 bg-[#1e2029] border border-white/10 rounded-xl shadow-2xl overflow-hidden',
             positionLeft ? 'left-0' : 'right-0',
         )}>
-            <button onClick={() => { onForward(); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors">
-                <Forward className="w-4 h-4 shrink-0" /> Forward
-            </button>
             <button onClick={() => { onCopy(); onClose(); }}
                 className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors border-t border-white/8">
                 <Copy className="w-4 h-4 shrink-0" /> Copy
@@ -278,6 +388,8 @@ const MessageDropdown = ({ isMe, onDelete, onCopy, onForward, onClose, positionL
     );
 };
 
+// MessageBubble
+
 interface BubbleProps {
     message: Message; isMe: boolean;
     participantName: string;
@@ -287,7 +399,9 @@ interface BubbleProps {
     onForward: (msg: Message) => void;
 }
 
-const MessageBubble = ({ message, isMe, participantName, participantAvatar, myAvatar, onDelete, onCopy, onForward }: BubbleProps) => {
+const MessageBubble = ({
+    message, isMe, participantName, participantAvatar, myAvatar, onDelete, onCopy, onForward,
+}: BubbleProps) => {
     const [hovered, setHovered]       = useState(false);
     const [dropdownOpen, setDropdown] = useState(false);
     const longPressTimer              = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -300,21 +414,17 @@ const MessageBubble = ({ message, isMe, participantName, participantAvatar, myAv
 
     if (isMe) {
         return (
-            <div
-                className="flex items-start justify-end gap-2.5 ml-auto"
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={cancelLongPress}
-                onTouchMove={cancelLongPress}
-            >
+            <div className="flex items-start justify-end gap-2.5 ml-auto"
+                onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+                onTouchStart={handleTouchStart} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress}>
                 <div className="relative">
                     <div className={cn(
                         'max-w-[35vw] px-4 py-3 pr-8 sm:px-5 sm:py-3.5 sm:pr-9 rounded-2xl rounded-tr-sm break-words',
-                        'bg-[#2a2c35] text-white',
-                        isPending && 'opacity-50',
+                        'bg-[#2a2c35] text-white', isPending && 'opacity-50',
                     )}>
-                        <p className="text-[13px] sm:text-sm leading-[1.6]">{message.text}</p>
+                        <p className="text-[13px] sm:text-sm leading-[1.6]">
+                            {message.originalText ?? message.text}
+                        </p>
                         <div className="flex items-center gap-1 mt-1.5 justify-end">
                             <span className="text-[10px] text-gray-500">{formatMsgTime(message.time)}</span>
                             <TickIcon status={message.status} />
@@ -354,12 +464,13 @@ const MessageBubble = ({ message, isMe, participantName, participantAvatar, myAv
         >
             <Avatar src={participantAvatar} alt={participantName} className="w-8 h-8 sm:w-9 sm:h-9 mt-0.5" />
             <div className="flex flex-col gap-1 min-w-0">
-                <span className="text-[12px] font-semibold text-gray-300 leading-none">{capitalizeName(participantName)}</span>
+                <span className="text-[12px] font-semibold text-gray-300 leading-none">
+                    {capitalizeName(participantName)}
+                </span>
                 <div className="relative">
                     <div className={cn(
                         'max-w-[35vw] px-4 py-3 pr-8 sm:px-5 sm:py-3.5 sm:pr-9 rounded-2xl rounded-tl-sm break-words',
                         'bg-[#1a1c23] text-white',
-                        isPending && 'opacity-50',
                     )}>
                         <p className="text-[13px] sm:text-sm leading-[1.6]">{message.text}</p>
                         <div className="flex items-center gap-1 mt-1.5 justify-end">
@@ -423,6 +534,7 @@ const EmojiPickerPopup = ({ onSelect, onClose }: { onSelect: (e: string) => void
     );
 };
 
+// ChatWindow
 interface ChatWindowProps {
     conversation: Conversation | null;
     isLoadingConversation?: boolean;
@@ -436,57 +548,68 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     onBack,
     mobileFullscreen = false,
 }) => {
-    const { user }    = useAuthStore();
-    const isOnline    = useOnlineStatus();
+    const { user } = useAuthStore();
+    const myId = String(user?.id ?? '');
+    const isOnline = useOnlineStatus();
 
     const { getDraft, setDraft } = useDraftPerConversation(conversation?.id ?? null);
-    const [draftValue, setDraftValue]       = useState('');
-    const [translatedMsgs, setTranslated]   = useState<Record<string, string>>({});
-    const [forwardMsg, setForwardMsg]        = useState<Message | null>(null);
+    const [draftValue, setDraftValue] = useState('');
+    const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
 
-    useEffect(() => { setDraftValue(getDraft()); }, [conversation?.id]);
-    const handleDraftChange = (val: string) => { setDraftValue(val); setDraft(val); };
+    const [translateEnabled, setTranslate] = useState<boolean>(() => {
+        try { return localStorage.getItem(TRANSLATE_KEY(myId)) === 'true'; } catch { return false; }
+    });
 
+    const [showLangModal, setShowLangModal] = useState(false);
     const [showEmoji, setShowEmoji] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef       = useRef<HTMLInputElement>(null);
 
-    const { data: messagesData, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(conversation?.id ?? null);
-    const messages: Message[] = messagesData?.pages?.flatMap(p => p.messages) ?? [];
+    useEffect(() => { setDraftValue(getDraft()); }, [conversation?.id]);
+
+    useEffect(() => {
+        if (!conversation?.id) return;
+        const t = setTimeout(() => inputRef.current?.focus(), 100);
+        return () => clearTimeout(t);
+    }, [conversation?.id]);
+
+    const handleDraftChange = (val: string) => { setDraftValue(val); setDraft(val); };
+
+    const { data: messagesData, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+        useMessages(conversation?.id ?? null);
+    const messages: Message[] = (messagesData?.pages?.flatMap(p => p.messages) ?? [])
+        .filter(m => !!m.text?.trim());
 
     const { mutate: sendMessage,  isPending: isSending } = useSendMessage();
-    const { mutate: markAsRead }                          = useMarkAsRead();
-    const { mutate: deleteMessage }                       = useDeleteMessage();
+    const { mutate: markAsRead } = useMarkAsRead();
+    const { mutate: deleteMessage } = useDeleteMessage();
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages.length]);
 
     useEffect(() => {
-        if (conversation?.id && (conversation.unreadCount ?? 0) > 0) {
-            markAsRead(conversation.id);
-        }
+        if (conversation?.id && (conversation.unreadCount ?? 0) > 0) markAsRead(conversation.id);
     }, [conversation?.id, conversation?.unreadCount]);
 
     const handleSend = () => {
         const text = draftValue.trim();
-        if (!text || !conversation || isSending || !isOnline) return;
-
+        if (!text || !conversation || !isOnline) return;
         setDraftValue('');
         setDraft('');
         inputRef.current?.focus();
-
         sendMessage(
             {
                 conversationId: conversation.id,
-                targetUserId:   Number(conversation.participant.id),
-                text,
+                targetUserId: Number(conversation.participant.id),
+                text
             },
             {
                 onError: () => {
                     setDraftValue(text);
                     setDraft(text);
                     toast.error('Failed to send message');
+                    inputRef.current?.focus();
                 },
             },
         );
@@ -502,14 +625,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     };
 
     const handleCopy = (message: Message) => {
-        navigator.clipboard.writeText(message.text)
+        const isMyMessage = message.senderId === myId;
+        const textToCopy = isMyMessage
+            ? (message.originalText ?? message.text)
+            : message.text;
+        navigator.clipboard.writeText(textToCopy)
             .then(() => toast.success('Message copied'))
             .catch(() => toast.error('Failed to copy'));
     };
 
-    const handleForward = (message: Message) => {
-        setForwardMsg(message);
-    };
+    const handleToggleTranslate = () => setTranslate(v => {
+        const next = !v;
+        try { localStorage.setItem(TRANSLATE_KEY(myId), String(next)); } catch {}
+        return next;
+    });
 
     if (!conversation) {
         if (isLoadingConversation)
@@ -517,7 +646,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <div className="flex-1 flex flex-col items-center justify-center">
                     <Loader2 className="w-6 h-6 animate-spin text-[#FF7700]" />
                 </div>
-            );
+        );
         return (
             <div className="flex-1 flex flex-col overflow-hidden">
                 <ChatEmptyState />
@@ -525,12 +654,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         );
     }
 
-    const canSend = draftValue.trim().length > 0 && !isSending && isOnline;
+    const canSend = draftValue.trim().length > 0 && isOnline;
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative sm:pr-6 lg:pr-10">
+        <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden relative">
             {/* Header */}
-            <div className="shrink-0 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4">
+            <div className="shrink-0 w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 bg-[#111213] border-b border-white/8">
                 <button onClick={onBack} className="text-white mr-0.5 p-1 rounded-lg hover:bg-white/5 transition-colors md:hidden">
                     <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -554,54 +683,75 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                 : 'Offline'}
                     </p>
                 </div>
+
+                {/* ── Translate Chat toggle ── */}
+                <div className="flex flex-col items-center gap-1.5 shrink-0 mr-4 mr-15">
+                    <div className="flex items-center gap-10 px-3 sm:px-4 py-2 rounded-lg bg-white/8 border border-white/10">
+                        <span className="hidden sm:block text-[13px] text-gray-300 font-medium select-none whitespace-nowrap">
+                            Translate Chat
+                        </span>
+                        <Switch
+                            checked={translateEnabled}
+                            onCheckedChange={handleToggleTranslate}
+                            aria-label="Toggle translate chat"
+                            className="data-[state=checked]:bg-[#FF7700] data-[state=unchecked]:bg-white/20"
+                        />
+                    </div>
+                    {translateEnabled && (
+                        <button
+                            onClick={() => setShowLangModal(true)}
+                            className="text-[12px] text-[#4A9EFF] hover:text-[#7ab8ff] underline underline-offset-2 transition-colors font-medium leading-none cursor-pointer"
+                        >
+                            Change Language
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-none px-3 sm:px-6 py-4 sm:py-5 flex flex-col gap-3 sm:gap-4 [&::-webkit-scrollbar]:hidden bg-transparent">
-                {hasNextPage && (
-                    <div className="flex justify-center">
-                        <button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}
-                            className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-full border border-white/10">
-                            {isFetchingNextPage ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load older messages'}
-                        </button>
-                    </div>
-                )}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-none px-4 sm:px-20 py-4 sm:py-5 flex flex-col [&::-webkit-scrollbar]:hidden bg-transparent">
+                <div className="flex flex-col gap-3 sm:gap-4 mx-auto w-full">
+                    {hasNextPage && (
+                        <div className="flex justify-center">
+                            <button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}
+                                className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-full border border-white/10">
+                                {isFetchingNextPage ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load older messages'}
+                            </button>
+                        </div>
+                    )}
 
-                {isLoading ? (
-                    <div className="flex-1 flex items-center justify-center">
-                        <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
-                    </div>
-                ) : messages.length === 0 ? (
-                    <EmptyConversation participant={conversation.participant} />
-                ) : (() => {
-                    const items: React.ReactNode[] = [];
-                    let lastDayKey = '';
-                    messages.forEach(msg => {
-                        const dayKey = getDayKey(msg.time);
-                        if (dayKey !== lastDayKey) {
-                            items.push(<DateSeparator key={`sep-${dayKey}`} label={getDateLabel(msg.time)} />);
-                            lastDayKey = dayKey;
-                        }
-                        const isMe = msg.senderId === String(user?.id);
-                        const displayMsg = translatedMsgs[msg.id] ? { ...msg, text: translatedMsgs[msg.id] } : msg;
-                        items.push(
-                            <div key={msg.id} className="flex flex-col gap-0.5">
-                                <MessageBubble
-                                    message={displayMsg}
-                                    isMe={isMe}
-                                    participantName={conversation.participant.name}
-                                    participantAvatar={conversation.participant.avatar}
-                                    myAvatar={user?.profileImage}
-                                    onDelete={handleDelete}
-                                    onCopy={handleCopy}
-                                    onForward={handleForward}
-                                />
-                            </div>
-                        );
-                    });
-                    return items;
-                })()}
-                <div ref={messagesEndRef} />
+                    {isLoading ? (
+                        <div className="flex-1 flex items-center justify-center py-20">
+                            <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                        </div>
+                    ) : messages.length === 0 ? (
+                        <EmptyConversation participant={conversation.participant} />
+                    ) : (() => {
+                        const items: React.ReactNode[] = [];
+                        let lastDayKey = '';
+                        messages.forEach(msg => {
+                            const dayKey = getDayKey(msg.time);
+                            if (dayKey !== lastDayKey) {
+                                items.push(<DateSeparator key={`sep-${dayKey}`} label={getDateLabel(msg.time)} />);
+                                lastDayKey = dayKey;
+                            }
+                            const isMe = msg.senderId === myId;
+                            items.push(
+                                <div key={msg.id} className="flex flex-col gap-0.5">
+                                    <MessageBubble
+                                        message={msg} isMe={isMe}
+                                        participantName={conversation.participant.name}
+                                        participantAvatar={conversation.participant.avatar}
+                                        myAvatar={user?.profileImage}
+                                        onDelete={handleDelete} onCopy={handleCopy} onForward={setForwardMsg}
+                                    />
+                                </div>,
+                            );
+                        });
+                        return items;
+                    })()}
+                    <div ref={messagesEndRef} />
+                </div>
             </div>
 
             {showEmoji && (
@@ -611,21 +761,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 />
             )}
 
-            {/* No internet banner */}
             {!isOnline && (
                 <div className="shrink-0 flex items-center justify-center gap-2 bg-red-600 px-4 py-2.5">
                     <WifiOff className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span className="text-white text-xs font-semibold tracking-wide">No Internet Connection, Please check your internet Connection</span>
+                    <span className="text-white text-xs font-semibold tracking-wide">No Internet Connection</span>
                 </div>
             )}
 
-            {/* Input bar */}
             <div className={cn(
-                'shrink-0 px-3 sm:px-4 py-4 sm:py-5 flex items-center gap-2 sm:gap-3 md:mb-15',
+                'shrink-0 pl-4 pr-4 sm:pl-8 sm:pr-20 py-3 sm:py-4 flex items-center gap-2 sm:gap-3 border-t border-white/5 md:mb-15',
                 mobileFullscreen && 'pb-7 md:pb-5',
             )}>
                 <div className={cn(
-                    'flex-1 sm:max-w-[85%] flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 g-[#111213] border rounded-full transition-colors',
+                    'flex-1 flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
                     !isOnline
                         ? 'border-yellow-500/30 focus-within:border-yellow-500/50'
                         : 'border-white/15 focus-within:border-white/30',
@@ -636,9 +784,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         onChange={e => handleDraftChange(e.target.value)}
                         onKeyDown={handleKeyDown}
                         placeholder={isOnline ? 'Type Message Here...' : 'No connection...'}
-                        className="flex-1 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none"
+                        className="flex-1 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
                         style={{ fontSize: '16px' }}
-                        disabled={isSending}
                     />
                     <button
                         onClick={() => setShowEmoji(v => !v)}
@@ -648,29 +795,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     </button>
                 </div>
 
-                {/* Mobile send: circular icon button */}
-                <button
-                    onClick={handleSend}
-                    disabled={!canSend}
+                {/* Mobile send */}
+                <button onClick={handleSend} disabled={!canSend}
                     className={cn(
                         'sm:hidden w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95',
-                        canSend
-                            ? 'bg-[#FF7700] shadow-lg shadow-orange-500/30'
-                            : 'bg-[#111213] cursor-not-allowed opacity-50',
-                    )}
-                >
-                    {isSending
-                        ? <Loader2 className="w-5 h-5 animate-spin text-white" />
-                        : !isOnline
-                            ? <WifiOff className="w-5 h-5 text-white" />
-                            : <img src={sendIcon} alt="Send" className="w-5 h-5" />
-                    }
+                        canSend ? 'bg-[#FF7700] shadow-lg shadow-orange-500/30' : 'bg-[#111213] cursor-not-allowed opacity-50',
+                    )}>
+                    {isSending ? <Loader2 className="w-5 h-5 animate-spin text-white" />
+                        : !isOnline ? <WifiOff className="w-5 h-5 text-white" />
+                        : <img src={sendIcon} alt="Send" className="w-5 h-5" />}
                 </button>
 
                 {/* Desktop send */}
-                <button
-                    onClick={handleSend}
-                    disabled={!canSend}
+                <button onClick={handleSend} disabled={!canSend}
                     className={cn(
                         'hidden sm:flex h-12 w-[15%] px-10 rounded-full text-sm font-semibold transition-all items-center justify-center gap-2 shrink-0',
                         canSend
@@ -688,8 +825,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <ForwardModal
                     message={forwardMsg}
                     onClose={() => setForwardMsg(null)}
-                    onForwardSuccess={(name) => toast.success(`Forwarded to ${name}`)}
+                    onForwardSuccess={name => toast.success(`Forwarded to ${name}`)}
                     onForwardError={() => toast.error('Failed to forward message')}
+                />
+            )}
+            {showLangModal && (
+                <ChangeLanguageModal
+                    onClose={() => setShowLangModal(false)}
+                    onSuccess={() => toast.success('Language updated successfully')}
                 />
             )}
         </div>

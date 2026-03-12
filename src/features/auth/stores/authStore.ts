@@ -19,7 +19,8 @@ export interface User {
   location?: string;
   profileImage?: string;
   coins?: number;
-  followedByMe?: boolean
+  followedByMe?: boolean;
+  preferredLanguage?: string;
 }
 
 interface AuthState {

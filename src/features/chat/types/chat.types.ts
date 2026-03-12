@@ -4,7 +4,6 @@ export interface ChatUser {
     avatar: string;
 }
 
-// incoming message (no tick shown)
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | undefined;
 
 export interface Message {
@@ -12,6 +11,7 @@ export interface Message {
     conversationId: string;
     senderId: string;
     text: string;
+    originalText: string;
     time: string;
     status: MessageStatus;
 }
@@ -22,6 +22,8 @@ export interface Conversation {
     channelId: string;
     participant: ChatUser;
     lastMessage: string;
+    lastMessageOriginal: string;
+    lastMessageSenderId: string;
     lastMessageTime: string;
     unreadCount: number;
     lastMessageStatus?: MessageStatus;
@@ -31,14 +33,14 @@ export interface Conversation {
 
 export interface SendMessagePayload {
     conversationId: string;
-    targetUserId:   number;
+    targetUserId: number;
     text: string;
 }
 
 export interface DirectChatResponse {
-    chatApiKey:      string;
+    chatApiKey: string;
     chatChannelType: string;
-    chatChannelId:   string;
-    chatToken:       string;
-    targetUserId:    number;
+    chatChannelId: string;
+    chatToken: string;
+    targetUserId: number;
 }

@@ -6,8 +6,12 @@ import {
     loadStreamCredentials,
     saveStreamCredentials,
 } from '@/features/chat/stream/streamCredentials';
+import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 
-const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY ?? '';
+const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+if (!STREAM_API_KEY) {
+    throw new Error('[StreamInit] Missing VITE_STREAM_API_KEY — add it to your .env file');
+}
 
 interface TokenResponse {
     token: string;
@@ -22,46 +26,39 @@ export const useStreamInit = () => {
 
         const init = async () => {
             try {
-                const userId   = String(user.id);
+                const userId = String(user.id);
                 const fullName = user.fullName ?? '';
                 const userName = user.username ?? userId;
-                const avatar   = user.profileImage ?? '';
+                const avatar = toAbsoluteUrl(user.profileImage);
 
-                // ------ restore from sessionStorage -----
+                // ----- Restore from sessionStorage -------
                 const saved = loadStreamCredentials();
                 if (saved && saved.userId === userId) {
                     await connectStreamUser(
                         saved.userId,
                         saved.userName,
-                        saved.avatar,
+                        avatar,
                         saved.apiKey,
                         saved.token,
                         fullName,
                     );
-                    console.log('[StreamInit] Restored from session for', userId);
-                    return;
+                } else {
+                    // ---- Fetch token from backend -----
+                    const { data } = await api.get<TokenResponse>('/chat/token');
+
+                    await connectStreamUser(userId, userName, avatar, STREAM_API_KEY, data.token, fullName);
+
+                    saveStreamCredentials({
+                        apiKey: STREAM_API_KEY,
+                        token: data.token,
+                        userId,
+                        userName,
+                        avatar,
+                        fullName,
+                    });
                 }
 
-                // -------- Fetch token from backend ------
-                const { data } = await api.get<TokenResponse>('/chat/token');
-
-                const apiKey = saved?.apiKey ?? STREAM_API_KEY;
-                if (!apiKey) {
-                    console.error('[StreamInit] No Stream API key available. Set VITE_STREAM_API_KEY in .env');
-                    return;
-                }
-
-                await connectStreamUser(userId, userName, avatar, apiKey, data.token, fullName);
-
-                saveStreamCredentials({
-                    apiKey,
-                    token:    data.token,
-                    userId,
-                    userName,
-                    avatar,
-                    fullName,
-                });
-
+                // connectStreamUser already calls upsertUser internally — no need to repeat it here.
                 console.log('[StreamInit] Connected for', userId, '| fullName:', fullName);
 
             } catch (err) {

@@ -1,33 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export const useOnlineStatus = () => {
-    const [isOnline, setIsOnline] = useState(true);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
 
     useEffect(() => {
-        const checkOnline = async () => {
-            if (!navigator.onLine) { setIsOnline(false); return; }
-            try {
-                await fetch('https://www.gstatic.com/generate_204', {
-                    method: 'HEAD',
-                    cache: 'no-store',
-                    mode: 'no-cors',
-                    signal: AbortSignal.timeout(3000),
-                });
-                setIsOnline(true);
-            } catch {
-                setIsOnline(false);
-            }
-        };
+        const handleOnline  = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
 
-        checkOnline();
-        window.addEventListener('online', checkOnline);
-        window.addEventListener('offline', checkOnline);
-        const interval = setInterval(checkOnline, 10_000);
+        window.addEventListener('online',  handleOnline);
+        window.addEventListener('offline', handleOffline);
 
         return () => {
-            window.removeEventListener('online', checkOnline);
-            window.removeEventListener('offline', checkOnline);
-            clearInterval(interval);
+            window.removeEventListener('online',  handleOnline);
+            window.removeEventListener('offline', handleOffline);
         };
     }, []);
 

@@ -12,10 +12,16 @@ export const useChatSocket = (userId: string | number | undefined) => {
         if (!userId) return;
 
         let cleanupFns: (() => void)[] = [];
+        let cancelled = false;
 
         const subscribe = () => {
+            if (retryRef.current) {
+                clearTimeout(retryRef.current);
+                retryRef.current = null;
+            }
+            if (cancelled) return;
             if (!isStreamConnected()) {
-                retryRef.current = setTimeout(subscribe, 1000);
+                retryRef.current = setTimeout(subscribe, 1_000);
                 return;
             }
 
@@ -23,52 +29,49 @@ export const useChatSocket = (userId: string | number | undefined) => {
             const myId   = String(userId);
 
             const setMyMessageStatuses = (
-        cid: string,
-        newStatus: 'sent' | 'delivered' | 'read'
-    ) => {
-        const rank: Record<string, number> = { pending: 0, sent: 1, delivered: 2, read: 3 };
-        const targetRank = rank[newStatus];
+                cid: string,
+                newStatus: 'sent' | 'delivered' | 'read'
+            ) => {
+                const rank: Record<string, number> = { pending: 0, sent: 1, delivered: 2, read: 3 };
+                const targetRank = rank[newStatus];
 
-        // Update Chat Window (Infinite Query)
-        queryClient.setQueryData(chatKeys.messages(cid), (old: any) => {
-            if (!old || !old.pages) return old;
+                // Update Chat Window (Infinite Query)
+                queryClient.setQueryData(chatKeys.messages(cid), (old: any) => {
+                    if (!old || !old.pages) return old;
 
-            let hasChanged = false;
-            const updatedPages = old.pages.map((page: any) => {
-                const updatedMessages = (page.messages || []).map((m: any) => {
-                    if (m.senderId === myId) {
-                        const currentRank = rank[m.status] ?? 0;
-                        if (targetRank > currentRank) {
-                            hasChanged = true;
-                            return { ...m, status: newStatus };
-                        }
-                    }
-                    return m;
+                    let hasChanged = false;
+                    const updatedPages = old.pages.map((page: any) => {
+                        const updatedMessages = (page.messages || []).map((m: any) => {
+                            if (m.senderId === myId) {
+                                const currentRank = rank[m.status] ?? 0;
+                                if (targetRank > currentRank) {
+                                    hasChanged = true;
+                                    return { ...m, status: newStatus };
+                                }
+                            }
+                            return m;
+                        });
+                        return { ...page, messages: updatedMessages };
+                    });
+
+                    return hasChanged ? { ...old, pages: updatedPages } : old;
                 });
-                return { ...page, messages: updatedMessages };
-            });
 
-            return hasChanged ? { ...old, pages: updatedPages } : old;
-        });
+                // Update Sidebar (Conversations List)
+                queryClient.setQueryData(chatKeys.conversations(), (old: any[] | undefined) => {
+                    if (!old) return old;
+                    return old.map(c => {
+                        if (c.id !== cid) return c;
+                        const currentRank = rank[c.lastMessageStatus ?? 'sent'] ?? 0;
+                        if (targetRank > currentRank) {
+                            return { ...c, lastMessageStatus: newStatus };
+                        }
+                        return c;
+                    });
+                });
+            };
 
-        // Update Sidebar (Conversations List)
-        queryClient.setQueryData(chatKeys.conversations(), (old: any[] | undefined) => {
-            if (!old) return old;
-            return old.map(c => {
-                if (c.id !== cid) return c;
-                const currentRank = rank[c.lastMessageStatus ?? 'sent'] ?? 0;
-                if (targetRank > currentRank) {
-                    return { ...c, lastMessageStatus: newStatus };
-                }
-                return c;
-            });
-        });
-    };
-
-
-            queryClient.invalidateQueries({ queryKey: chatKeys.conversations() });
-
-            // New message
+            // ------- New message -----
             const { unsubscribe: unsubMsg } = client.on('message.new', event => {
                 const msg = event.message;
                 const cid = event.cid!;
@@ -78,12 +81,13 @@ export const useChatSocket = (userId: string | number | undefined) => {
                 const isMe     = senderId === myId;
 
                 const mapped: Message = {
-                    id:             msg.id,
+                    id: msg.id,
                     conversationId: cid,
                     senderId,
-                    text:           msg.text ?? '',
-                    time:           msg.created_at?.toString() ?? new Date().toISOString(),
-                    status:         isMe ? 'sent' : undefined,
+                    text: msg.text ?? '',
+                    originalText: (msg as any).original_text ?? msg.text ?? '',
+                    time: msg.created_at?.toString() ?? new Date().toISOString(),
+                    status: isMe ? 'sent' : undefined,
                 };
 
                 queryClient.setQueryData(chatKeys.messages(cid), (old: any) => {
@@ -91,7 +95,7 @@ export const useChatSocket = (userId: string | number | undefined) => {
                         queryClient.invalidateQueries({ queryKey: chatKeys.messages(cid) });
                         return old;
                     }
-                    const pages     = [...old.pages];
+                    const pages = [...old.pages];
                     const firstPage = { ...pages[0] };
 
                     if (isMe) {
@@ -102,7 +106,7 @@ export const useChatSocket = (userId: string | number | undefined) => {
                         );
                         firstPage.messages = hasOptimistic
                             ? firstPage.messages.map((m: Message) =>
-                                  m.id.startsWith('optimistic-') ? mapped : m,
+                                  m.id.startsWith('optimistic-') ? { ...mapped, senderId: m.senderId } : m,
                               )
                             : [...(firstPage.messages ?? []), mapped];
                     } else {
@@ -130,10 +134,12 @@ export const useChatSocket = (userId: string | number | undefined) => {
                             c.id === cid
                                 ? {
                                       ...c,
-                                      lastMessage:       mapped.text,
-                                      lastMessageTime:   mapped.time,
+                                      lastMessage: mapped.text,
+                                      lastMessageOriginal: mapped.originalText,
+                                      lastMessageSenderId: mapped.senderId,
+                                      lastMessageTime: mapped.time,
                                       lastMessageStatus: isMe ? 'sent' : c.lastMessageStatus,
-                                      unreadCount:       isMe ? c.unreadCount : (c.unreadCount ?? 0) + 1,
+                                      unreadCount: isMe ? c.unreadCount : (c.unreadCount ?? 0) + 1,
                                   }
                                 : c,
                         );
@@ -239,7 +245,11 @@ export const useChatSocket = (userId: string | number | undefined) => {
         subscribe();
 
         return () => {
-            if (retryRef.current) clearTimeout(retryRef.current);
+            cancelled = true;
+            if (retryRef.current) {
+                clearTimeout(retryRef.current);
+                retryRef.current = null;
+            }
             cleanupFns.forEach(fn => fn());
         };
     }, [userId, queryClient]);

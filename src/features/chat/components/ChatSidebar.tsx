@@ -2,12 +2,13 @@ import React from 'react';
 import { Loader2, WifiOff, SquarePen, X, UserCircle2, Pin, Trash2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getStreamClient } from '../stream/streamClient';
-import api from '@/lib/api';
 import { useStartDirectChat, chatKeys } from '../hooks/useChat';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Conversation, MessageStatus } from '../types/chat.types';
 import { useOnlineStatus } from '@/features/chat/hooks/useOnlineStatus';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { TRANSLATE_KEY, PINNED_STORAGE_KEY } from '@/features/chat/utils/chatConstants';
 import chatGroup from '@/assets/chatGroup.svg';
 import SearchIcon from '@/assets/Search.svg';
 
@@ -75,17 +76,17 @@ export const TickIcon = ({ status }: { status?: MessageStatus }) => {
 
 // Relative time
 const formatRelativeTime = (iso: string): string => {
-    const date  = new Date(iso);
-    const now   = new Date();
+    const date = new Date(iso);
+    const now = new Date();
     const diffS = Math.floor((now.getTime() - date.getTime()) / 1000);
-    if (diffS < 60)  return `${diffS}s ago`;
+    if (diffS < 60) return `${diffS}s ago`;
     const diffM = Math.floor(diffS / 60);
-    if (diffM < 60)  return `${diffM}m ago`;
+    if (diffM < 60) return `${diffM}m ago`;
     const diffH = Math.floor(diffM / 60);
-    if (diffH < 24)  return `${diffH}h ago`;
+    if (diffH < 24) return `${diffH}h ago`;
     const diffD = Math.floor(diffH / 24);
     if (diffD === 1) return 'Yesterday';
-    if (diffD < 7)   return date.toLocaleDateString([], { weekday: 'short' });
+    if (diffD < 7) return date.toLocaleDateString([], { weekday: 'short' });
     return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' });
 };
 
@@ -97,6 +98,12 @@ const useRelativeTicker = () => {
     }, []);
 };
 
+// Pinned helpers 
+const getPinned = (): string[] => {
+    try { return JSON.parse(sessionStorage.getItem(PINNED_STORAGE_KEY) ?? '[]'); } catch { return []; }
+};
+const setPinned = (ids: string[]) => sessionStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids));
+
 // NewChatModal
 interface StreamUser {
     id: string;
@@ -105,93 +112,79 @@ interface StreamUser {
     fullName?: string;
 }
 
-interface NewChatModalProps {
+const NewChatModal = ({
+    onClose,
+    onStartChat,
+    isStarting,
+}: {
     onClose: () => void;
     onStartChat: (user: StreamUser) => void;
     isStarting: boolean;
-}
-
-const NewChatModal = ({ onClose, onStartChat, isStarting }: NewChatModalProps) => {
-    const [query, setQuery]       = React.useState('');
-    const [results, setResults]   = React.useState<StreamUser[]>([]);
-    const [searching, setSearch]  = React.useState(false);
-    const debounceRef             = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // Close on backdrop click
+}) => {
+    const [query, setQuery] = React.useState('');
+    const [results, setResults] = React.useState<StreamUser[]>([]);
+    const [searching, setSearch] = React.useState(false);
+    const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const backdropRef = React.useRef<HTMLDivElement>(null);
-    const handleBackdrop = (e: React.MouseEvent) => {
-        if (e.target === backdropRef.current) onClose();
-    };
 
     React.useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         if (!query.trim()) { setResults([]); return; }
-
+        let stale = false;
         debounceRef.current = setTimeout(async () => {
             setSearch(true);
             try {
                 const client = getStreamClient();
-                const myId   = client.userID;
-                const q      = query.trim();
-
+                const myId = client.userID;
                 const resp = await client.queryUsers(
-                    { name: { $autocomplete: q } },
+                    { name: { $autocomplete: query.trim() } },
                     { name: 1 },
                     { limit: 20 },
                 );
-
-                const mapped: StreamUser[] = resp.users
-                    .filter(u => u.id !== myId)
-                    .map(u => ({
-                        id:       u.id,
-                        name:     (u as any).fullName || u.name || u.id,
+                if (!stale) setResults(
+                    resp.users.filter(u => u.id !== myId).map(u => ({
+                        id: u.id,
+                        name: (u as any).fullName || u.name || u.id,
                         fullName: (u as any).fullName || '',
-                        image:    (u as any).image || '',
-                    } as StreamUser));
-
-                setResults(mapped);
-            } catch {
-                setResults([]);
-            } finally {
-                setSearch(false);
-            }
+                        image: (u as any).image || '',
+                    })),
+                );
+            } catch { if (!stale) setResults([]); }
+            finally { if (!stale) setSearch(false); }
         }, 300);
-
-        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+        return () => { stale = true; if (debounceRef.current) clearTimeout(debounceRef.current); };
     }, [query]);
 
     return (
-            <div
-                ref={backdropRef}
-                onClick={handleBackdrop}
-                className="fixed inset-0 z-400 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
-            >
-                <div className="relative w-full max-w-125 bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden px-8">
-                    <div className="absolute top-0 right-0 w-48 h-48 bg-red-900/30 rounded-full blur-3xl pointer-events-none" />
+        <div
+            ref={backdropRef}
+            onClick={e => { if (e.target === backdropRef.current) onClose(); }}
+            className="fixed inset-0 z-400 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+        >
+            <div className="relative w-full max-w-125 bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden px-8">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-red-900/30 rounded-full blur-3xl pointer-events-none" />
 
-                        <div className="relative z-10 px-6 pt-6 pb-5 flex flex-col gap-10">
-                        {/* Title */}
-                        <div className="flex items-center justify-center">
-                            <h2 className="text-white font-semibold text-lg">New Chat</h2>
-                        </div>
+                <div className="relative z-10 px-6 pt-6 pb-5 flex flex-col gap-10">
+                    {/* Title */}
+                    <div className="flex items-center justify-center">
+                        <h2 className="text-white font-semibold text-lg">New Chat</h2>
+                    </div>
 
-                        {/* Search bar */}
-                        <div className="flex items-center gap-2 px-6 h-14 border border-white/15 rounded-full bg-white/3 focus-within:border-white/30 transition-colors">
-                            <input
-                                autoFocus
-                                className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-500"
-                                placeholder="Search Creator Name Here..."
-                                value={query}
-                                onChange={e => setQuery(e.target.value)}
-                                style={{ fontSize: '16px' }}
-                            />
-                            {searching
-                                ? <Loader2 className="w-4 h-4 text-gray-500 shrink-0 animate-spin" />:
-                                <img src={SearchIcon} className="w-4 h-4 shrink-0 brightness-0 invert" alt="Search" />
-                            }
-                        </div>
-
-                    {/* Results */}
+                    {/* Search bar */}
+                    <div className="flex items-center gap-2 px-6 h-14 border border-white/15 rounded-full bg-white/3 focus-within:border-white/30 transition-colors">
+                        <input
+                            autoFocus
+                            className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-500"
+                            placeholder="Search Creator Name Here..."
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            style={{ fontSize: '16px' }}
+                        />
+                        {searching
+                            ? <Loader2 className="w-4 h-4 text-gray-500 shrink-0 animate-spin" />
+                            : <img src={SearchIcon} className="w-4 h-4 shrink-0 brightness-0 invert" alt="Search" />
+                        }
+                    </div>
                     <div className="flex flex-col gap-1 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden">
                         {results.length === 0 && query.trim() && !searching && (
                             <p className="text-center text-gray-500 text-sm py-6">No users found</p>
@@ -201,7 +194,6 @@ const NewChatModal = ({ onClose, onStartChat, isStarting }: NewChatModalProps) =
                         )}
                         {results.map(user => {
                             const displayName = capitalizeName((user as any).fullName || user.name || user.id);
-                            const avatar      = (user as any).image || '';
                             return (
                                 <button
                                     key={user.id}
@@ -210,10 +202,9 @@ const NewChatModal = ({ onClose, onStartChat, isStarting }: NewChatModalProps) =
                                     className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 transition-colors text-left disabled:opacity-60"
                                 >
                                     <Avatar
-                                        src={avatar}
+                                        src={(user as any).image || ''}
                                         alt={displayName}
-                                        className="w-11 h-11"
-                                    />
+                                        className="w-11 h-11" />
                                     <div className="flex flex-col">
                                         <span className="text-white text-sm font-semibold">{displayName}</span>
                                         <span className="text-[#FF7700] text-xs font-medium mt-0.5">Tap to Chat</span>
@@ -230,10 +221,6 @@ const NewChatModal = ({ onClose, onStartChat, isStarting }: NewChatModalProps) =
 };
 
 
-// Pinned conversations (local session state)
-const PINNED_KEY = 'chat_pinned';
-const getPinned  = (): string[] => { try { return JSON.parse(sessionStorage.getItem(PINNED_KEY) ?? '[]'); } catch { return []; } };
-const setPinned  = (ids: string[]) => sessionStorage.setItem(PINNED_KEY, JSON.stringify(ids));
 
 // Confirm Delete Modal
 const ConfirmDeleteModal = ({
@@ -255,7 +242,8 @@ const ConfirmDeleteModal = ({
                 </div>
                 <h3 className="text-white font-semibold text-base">Delete Conversation</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                    Are you sure you want to delete your conversation with <span className="text-white font-medium">{name}</span>? This cannot be undone.
+                    Are you sure you want to delete your conversation with{' '}
+                    <span className="text-white font-medium">{name}</span>? This cannot be undone.
                 </p>
             </div>
             <div className="flex gap-3 mt-1">
@@ -305,14 +293,14 @@ const ConversationDropdown = ({
             className="absolute top-full left-2 mt-0.5 z-50 w-60 bg-[#1e2029] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
         >
             <button
-                onClick={(e) => { e.stopPropagation(); onPin(); onClose(); }}
+                onClick={e => { e.stopPropagation(); onPin(); onClose(); }}
                 className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors"
             >
                 <Pin className="w-4 h-4 shrink-0 text-gray-400" />
                 {isPinned ? 'Unpin' : 'Pin'}
             </button>
             <button
-                onClick={(e) => { e.stopPropagation(); onDelete(); onClose(); }}
+                onClick={e => { e.stopPropagation(); onDelete(); onClose(); }}
                 className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/8"
             >
                 <Trash2 className="w-4 h-4 shrink-0" />
@@ -324,99 +312,100 @@ const ConversationDropdown = ({
 
 // ChatListItem
 const ChatListItem = ({
-    conversation,
-    isActive,
-    isPinned,
-    onClick,
-    onDeleteRequest,
-    onPinToggle,
+    conversation, isActive, isPinned, myId, translateEnabled,
+    onClick, onDeleteRequest, onPinToggle,
 }: {
-    conversation:   Conversation;
-    isActive:       boolean;
-    isPinned:       boolean;
-    onClick:        () => void;
-    onDeleteRequest:(conv: Conversation) => void;
-    onPinToggle:    (conv: Conversation) => void;
+    conversation: Conversation;
+    isActive: boolean;
+    isPinned: boolean;
+    myId: string;
+    translateEnabled: boolean;
+    onClick: () => void;
+    onDeleteRequest: (conv: Conversation) => void;
+    onPinToggle: (conv: Conversation) => void;
 }) => {
-    const isPending    = conversation.lastMessageStatus === 'pending';
     const [open, setOpen] = React.useState(false);
+    const isMine = conversation.lastMessageSenderId === myId;
+    const preview = isMine
+        ? (conversation.lastMessageOriginal || conversation.lastMessage)
+        : (translateEnabled
+            ? conversation.lastMessage
+            : (conversation.lastMessageOriginal || conversation.lastMessage));
 
     return (
         <div
             className="relative"
-            onDoubleClick={(e) => { e.preventDefault(); setOpen(v => !v); }}
-            onContextMenu={(e) => { e.preventDefault(); setOpen(v => !v); }}
+            onDoubleClick={e => { e.preventDefault(); setOpen(v => !v); }}
+            onContextMenu={e => { e.preventDefault(); setOpen(v => !v); }}
         >
-        <button
-            onClick={onClick}
-            className={cn(
-                'w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left group',
-                isActive ? '' : 'hover:bg-white/5',
-            )}
-        >
-            <div className="relative shrink-0">
-                <Avatar
-                    src={conversation.participant.avatar}
-                    alt={capitalizeName(conversation.participant.name)}
-                    className="w-11 h-11 sm:w-12 sm:h-12"
-                />
-                {conversation.isOnline && (
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 ring-2 ring-[#111213]" />
+            <button
+                onClick={onClick}
+                className={cn(
+                    'w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left group',
+                    isActive ? '' : 'hover:bg-white/5',
                 )}
-            </div>
+            >
+                <div className="relative shrink-0">
+                    <Avatar
+                        src={conversation.participant.avatar}
+                        alt={capitalizeName(conversation.participant.name)}
+                        className="w-11 h-11 sm:w-12 sm:h-12"
+                    />
+                    {conversation.isOnline && (
+                        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 ring-2 ring-[#111213]" />
+                    )}
+                </div>
 
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-white text-sm font-semibold truncate">
-                        {capitalizeName(conversation.participant.name)}
-                        {isPinned && <Pin className="w-3 h-3 text-[#FF7700] shrink-0 rotate-45" />}
-                    </span>
-                    {conversation.unreadCount > 0 ? (
-                        <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-[#FF7700] flex items-center justify-center text-[10px] font-bold text-black">
-                            {conversation.unreadCount}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-1.5 text-white text-sm font-semibold truncate">
+                            {capitalizeName(conversation.participant.name)}
+                            {isPinned && <Pin className="w-3 h-3 text-[#FF7700] shrink-0 rotate-45" />}
                         </span>
-                    ) : isPending ? (
-                        <TickIcon status="pending" />
-                    ) : (
-                        <span className="shrink-0 text-[10px] text-gray-500">
-                            {formatRelativeTime(conversation.lastMessageTime)}
+                        {conversation.unreadCount > 0 ? (
+                            <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-[#FF7700] flex items-center justify-center text-[10px] font-bold text-black">
+                                {conversation.unreadCount}
+                            </span>
+                        ) : (
+                            <span className="shrink-0 text-[10px] text-gray-500">
+                                {formatRelativeTime(conversation.lastMessageTime)}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                        {conversation.lastMessageStatus && (
+                            <TickIcon status={conversation.lastMessageStatus} />
+                        )}
+                        <span className={cn(
+                            'text-xs truncate',
+                            conversation.lastMessageStatus === 'pending' ? 'text-yellow-400/70' : 'text-gray-400',
+                        )}>
+                            {preview}
                         </span>
-                    )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-1 mt-0.5">
-                    {conversation.lastMessageStatus && !isPending && conversation.unreadCount === 0 && (
-                        <TickIcon status={conversation.lastMessageStatus} />
-                    )}
-                    <span className={cn(
-                        'text-xs truncate',
-                        isPending ? 'text-yellow-400/70' : 'text-gray-400',
-                    )}>
-                        {conversation.lastMessage}
-                    </span>
-                </div>
-            </div>
-        </button>
-        {open && (
-            <ConversationDropdown
-                isPinned={isPinned}
-                onPin={() => onPinToggle(conversation)}
-                onDelete={() => { onDeleteRequest(conversation); setOpen(false); }}
-                onClose={() => setOpen(false)}
-            />
-        )}
+            </button>
+            {open && (
+                <ConversationDropdown
+                    isPinned={isPinned}
+                    onPin={() => onPinToggle(conversation)}
+                    onDelete={() => { onDeleteRequest(conversation); setOpen(false); }}
+                    onClose={() => setOpen(false)}
+                />
+            )}
         </div>
     );
 };
 
 // ChatSidebar
 interface ChatSidebarProps {
-    conversations:          Conversation[];
-    isLoading:              boolean;
-    activeConversationId:   string | null;
-    onSelect:               (conversation: Conversation) => void;
-    onClose?:               () => void;
+    conversations: Conversation[];
+    isLoading: boolean;
+    activeConversationId: string | null;
+    onSelect: (conversation: Conversation) => void;
+    onClose?: () => void;
     onConversationDeleted?: (conversationId: string) => void;
-    className?:             string;
+    className?: string;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
@@ -428,14 +417,34 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     onConversationDeleted,
     className,
 }) => {
-    const [searchQuery, setSearchQuery]           = React.useState('');
-    const [showNewChat, setShowNewChat]           = React.useState(false);
-    const [confirmDelete, setConfirmDelete]       = React.useState<Conversation | null>(null);
-    const [isDeleting, setIsDeleting]             = React.useState(false);
-    const [pinnedIds, setPinnedIds]               = React.useState<string[]>(() => getPinned());
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [showNewChat, setShowNewChat] = React.useState(false);
+    const [confirmDelete, setConfirmDelete] = React.useState<Conversation | null>(null);
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [pinnedIds, setPinnedIds] = React.useState<string[]>(() => getPinned());
 
     const isOnline = useOnlineStatus();
     useRelativeTicker();
+
+    const { user } = useAuthStore();
+    const myId = String(user?.id ?? '');
+    const translateStorageKey = TRANSLATE_KEY(myId);
+    const [translateEnabled, setTranslateEnabled] = React.useState<boolean>(() => {
+        try { return localStorage.getItem(translateStorageKey) === 'true'; } catch { return false; }
+    });
+
+    React.useEffect(() => {
+        if (!myId) return;
+        try { setTranslateEnabled(localStorage.getItem(translateStorageKey) === 'true'); } catch { }
+    }, [myId, translateStorageKey]);
+
+    React.useEffect(() => {
+        const handler = (e: StorageEvent) => {
+            if (e.key === translateStorageKey) setTranslateEnabled(e.newValue === 'true');
+        };
+        window.addEventListener('storage', handler);
+        return () => window.removeEventListener('storage', handler);
+    }, [translateStorageKey]);
 
     const queryClient = useQueryClient();
     const { mutate: startDirectChat, isPending: isStarting } = useStartDirectChat();
@@ -464,7 +473,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             const client     = getStreamClient();
             const [type, id] = conv.id.split(':');
             const channel    = client.channel(type, id);
-            await channel.delete();
+
+            await channel.watch();
+            try {
+                await channel.delete();
+            } catch {
+                await channel.hide(client.userID ?? undefined);
+            }
 
             queryClient.setQueryData(chatKeys.conversations(), (old: Conversation[] | undefined) =>
                 old ? old.filter(c => c.id !== conv.id) : old
@@ -472,15 +487,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             onConversationDeleted?.(conv.id);
             setConfirmDelete(null);
 
-            // Toast
             toast.success('Chat deleted', {
                 description: `Chat with ${capitalizeName(conv.participant.name)} has been removed.`,
                 classNames: { description: '!text-black' },
             });
         } catch (e) {
-            console.error('Delete failed', e);
-
-            // Toast
+            console.error('[ChatSidebar] Delete failed:', e);
             toast.error('Failed to delete chat', {
                 description: 'Something went wrong. Please try again.',
                 classNames: { description: '!text-black' },
@@ -490,12 +502,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         }
     };
 
-    const handleStartChat = (user: StreamUser) => {
-        const targetId = parseInt(user.id, 10);
+    const handleStartChat = (streamUser: StreamUser) => {
+        const targetId = parseInt(streamUser.id, 10);
         if (isNaN(targetId)) return;
-
-        const displayName = capitalizeName((user as any).fullName || user.name || user.id);
-        const avatar      = (user as any).image || '';
+        const displayName = capitalizeName((streamUser as any).fullName || streamUser.name || streamUser.id);
+        const avatar = (streamUser as any).image || '';
 
         startDirectChat(
             { targetUserId: targetId, targetName: displayName, targetAvatar: avatar },
@@ -509,21 +520,19 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     };
 
     const filtered = conversations
-        .filter(c => !!c.lastMessage)
         .filter(c => c.participant.name.toLowerCase().includes(searchQuery.toLowerCase()))
         .sort((a, b) => {
             const aPin = pinnedIds.includes(a.id) ? 0 : 1;
             const bPin = pinnedIds.includes(b.id) ? 0 : 1;
             if (aPin !== bPin) return aPin - bPin;
             return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
-    });
+        });
     return (
         <>
             <div className={cn('flex flex-col h-full overflow-hidden', className)}>
 
-                {/* ── Header ── */}
+                {/* Header */}
                 <div className="shrink-0 flex flex-col gap-3">
-
                     <div className="relative flex items-center justify-between py-1">
                         <div className="w-7" />
                         <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide">
@@ -598,9 +607,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                 conversation={conv}
                                 isActive={activeConversationId === conv.id}
                                 isPinned={pinnedIds.includes(conv.id)}
+                                myId={myId}
+                                translateEnabled={translateEnabled}
                                 onClick={() => onSelect(conv)}
-                                onDeleteRequest={(c) => setConfirmDelete(c)}
-                                onPinToggle={(c) => handlePin(c)}
+                                onDeleteRequest={c => setConfirmDelete(c)}
+                                onPinToggle={c => handlePin(c)}
                             />
                         ))
                     )}
