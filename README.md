@@ -1,1 +1,1 @@
-Pulse Live is a livestreaming platform for creators to connect with their audience in real-time.
+Pulse Live is a livestreaming platform for creators to connect with their audience in real-time .
