@@ -10,15 +10,11 @@ import { routeTree } from './routeTree.gen'
 export const getRouter = () => {
   const rqContext = TanstackQuery.getContext()
 
-  const authState = useAuthStore.getState()
-
   const router = createRouter({
     routeTree,
     context: {
       ...rqContext,
-      auth: {
-        isAuthenticated: authState.isAuthenticated
-      }
+      authStore: useAuthStore,
     },
     defaultPreload: 'intent',
     Wrap: (props: { children: React.ReactNode }) => {

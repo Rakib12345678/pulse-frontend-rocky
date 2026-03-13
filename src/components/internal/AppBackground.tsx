@@ -131,13 +131,14 @@ const FadingRings: React.FC = () => {
 interface AppBackgroundProps {
   children?: React.ReactNode;
   className?: string;
+  displayRings?: boolean;
 }
 
-export const AppBackground: React.FC<AppBackgroundProps> = ({ children, className }) => (
+export const AppBackground: React.FC<AppBackgroundProps> = ({ children, className, displayRings = true }) => (
   <div className={`relative bg-[#0d0a09] overflow-hidden ${className ?? 'h-full'}`}>
     <div className="pointer-events-none absolute rounded-full" style={{ width: 169, height: 220, top: -108, right: -92, background: '#FF7700', filter: 'blur(180px)', mixBlendMode: 'color-dodge' }} />
     <div className="pointer-events-none absolute rounded-full" style={{ width: 220, height: 220, bottom: -110, left: -110, background: '#3E2AB5', filter: 'blur(354px)', mixBlendMode: 'color-dodge' }} />
-    <FadingRings />
+    {displayRings && <FadingRings />}
     <div className="absolute inset-0 mix-blend-overlay pointer-events-none" style={{ backgroundImage: `url(${background})`, backgroundRepeat: 'repeat', backgroundSize: '300px 300px' }} />
     {children && (
       <div className="relative z-10 h-full overflow-y-auto">

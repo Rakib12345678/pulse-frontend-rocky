@@ -156,8 +156,10 @@ const LiveStreamInner: React.FC<{
     return (
 
         <LiveStreamContext.Provider value={{ isViewer, isGuest, call, isChatVisible, setChatVisible }}>
-            <div className="fixed inset-0 w-full bg-[#0f1117] text-white overflow-hidden" data-viewer={isViewer}>
-                {children}
+            <div className="fixed inset-0 pt-18 w-full bg-[#0f1117] text-white overflow-hidden flex flex-col" data-viewer={isViewer}>
+                <div className="flex-1 min-h-0 relative">
+                    {children}
+                </div>
                 {showPiP && <FloatingPiP />}
                 <UserProfileModal />
             </div>
@@ -349,6 +351,13 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             window.removeEventListener('beforeunload', handleBeforeUnload);
 
             if (_call) {
+                // Explicitly stop hardware tracks to ensure light goes off immediately
+                const local = _call.state.localParticipant;
+                if (local) {
+                    local.videoStream?.getTracks().forEach(track => track.stop());
+                    local.audioStream?.getTracks().forEach(track => track.stop());
+                }
+
                 _call.camera.disable();
                 _call.microphone.disable();
                 _call.leave();

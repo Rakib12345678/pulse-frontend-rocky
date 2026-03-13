@@ -378,8 +378,15 @@ const ViewerBottomBar: React.FC = () => {
     const hostName = createdBy.name || createdBy.id || 'Host';
     const hostImage = createdBy.image as string | undefined;
 
+    const { openModal, setMode } = useSignUpStore();
     const handleJoinRequest = async () => {
-        if (requestStatus !== 'idle' || !call || !user) return;
+        if (!user) {
+            setMode('login');
+            openModal();
+            return;
+        }
+
+        if (requestStatus !== 'idle' || !call) return;
         try {
             console.log('[JoinStream] Sending custom join-request event...');
             setRequestStatus('pending');

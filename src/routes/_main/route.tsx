@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
-import { Outlet, createFileRoute, useMatchRoute } from '@tanstack/react-router'
+import { Outlet, createFileRoute, useMatchRoute, useNavigate, useLocation } from '@tanstack/react-router'
 import { Navbar } from '@/components/layout/Navbar'
 import { MobileFooter } from '@/components/layout/mobile-footer'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useAuthStore } from '@/features/auth/stores/authStore'
 import { AppBackground } from '@/components/internal/AppBackground'
+import { isPublicRoute } from '@/config/routes'
 
 export const Route = createFileRoute('/_main')({
     head: () => ({
@@ -21,8 +22,10 @@ export const Route = createFileRoute('/_main')({
 
 function MainLayout() {
     const { authenticate } = useAuth()
-    const { accessToken, refreshToken } = useAuthStore()
+    const { accessToken, refreshToken, isAuthenticated } = useAuthStore()
     const isHydrated = useAuthStore(s => s.isHydrated)
+    const navigate = useNavigate()
+    const location = useLocation()
 
     // Detect if we're on the landing page (index route "/"")
     const matchRoute = useMatchRoute()
@@ -34,6 +37,15 @@ function MainLayout() {
             authenticate({ url: '/auth/refresh-token', payload: { refreshToken }, redirect: false })
         }
     }, [isHydrated])
+
+    // Client-side auth guard: after hydration, redirect unauthenticated users
+    // away from protected routes. This covers the SSR gap where beforeLoad
+    // cannot check localStorage.
+    useEffect(() => {
+        if (isHydrated && !isAuthenticated && !isPublicRoute(location.pathname)) {
+            navigate({ to: '/for-you', replace: true })
+        }
+    }, [isHydrated, isAuthenticated, location.pathname])
 
     if (!isHydrated) {
         return (

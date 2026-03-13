@@ -4,7 +4,8 @@ import {
   Bell,
   User,
   LogOut,
-  Settings
+  Settings,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -13,8 +14,11 @@ import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 
 import Logo from "@/assets/Logo.png";
 import LogoText from "@/assets/LogoText.svg";
+import coinIcon from "@/assets/coin.svg";
 import { LogoutModal } from '../internal/ConfirmModal';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
+import { AddCoinsModal } from '@/features/coins/components/AddCoinsModal';
 
 interface NavLinkProps {
   to: string;
@@ -47,6 +51,7 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, clearAuth, accessToken } = useAuthStore();
   const { reset: resetSignUp } = useSignUpStore();
+  const { openModal: openCoinsModal } = useCoinsStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
@@ -92,7 +97,7 @@ export const Navbar: React.FC = () => {
 
   if (shouldHide) return null;
 
-  if ((pathname === '/profile/setting' && isMobile) || pathname.startsWith('/live')) {
+  if ((pathname === '/profile/setting' && isMobile)) {
     return null;
   }
 
@@ -103,6 +108,7 @@ export const Navbar: React.FC = () => {
         onConfirm={handleLogout}
         onCancel={() => setShowLogoutConfirm(false)}
       />
+      <AddCoinsModal />
 
       <header className="sticky top-0 z-50 w-full bg-[#0f1117] border-b border-white/5">
         <div className="flex h-18 w-full items-center justify-between px-4 lg:px-8">
@@ -124,13 +130,13 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* ================= RIGHT SECTION: Auth & Profile ================= */}
-          <div className="hidden md:flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-2 md:gap-4 shrink-0">
 
             {/* Wait for client hydration before rendering auth UI */}
             {!hasMounted ? (
-              <div className="hidden md:block w-45" /> /* Placeholder to prevent layout shift */
+              <div className="w-10 md:w-45" /> /* Placeholder to prevent layout shift */
             ) : !isLoggedIn ? (
-              <div className="hidden md:flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 <Button
                   onClick={handleSignUpClick}
                   variant="ghost"
@@ -149,11 +155,26 @@ export const Navbar: React.FC = () => {
             ) : (
               /* LOGGED IN VIEW */
               <>
+                <Button
+                  variant="ghost"
+                  onClick={openCoinsModal}
+                  className="flex items-center gap-3 pl-4 pr-1.5 py-1.5 h-auto rounded-full bg-[#1A1C1E]/80 hover:bg-[#2D2D2D] transition-colors cursor-pointer border-0"
+                >
+                  <span className="hidden sm:inline-block text-white text-[15px] font-medium tracking-wide">My Balance</span>
+                  <div className="flex items-center gap-1.5">
+                    <img src={coinIcon} alt="coin" className="w-5 h-5" />
+                    <span className="text-white text-[15px] font-semibold">{user?.coins ?? 0}</span>
+                  </div>
+                  <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center ml-1">
+                    <Plus className="w-4 h-4 text-white" />
+                  </div>
+                </Button>
+
                 {/* Notifications */}
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative p-2 text-gray-400 hover:text-white transition-colors cursor-pointer hover:bg-transparent h-auto w-auto"
+                  className="hidden md:flex relative p-2 text-gray-400 hover:text-white transition-colors cursor-pointer hover:bg-transparent h-auto w-auto"
                 >
                   <Bell className="h-6 w-6" />
                   {/* Notification count later on*/}
@@ -161,7 +182,7 @@ export const Navbar: React.FC = () => {
                 </Button>
 
                 {/* Profile Dropdown */}
-                <div className="relative">
+                <div className="hidden md:block relative">
                   <Button
                     variant="ghost"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}

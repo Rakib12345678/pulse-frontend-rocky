@@ -3,9 +3,11 @@ import {
   HeadContent,
   Scripts,
   createRootRouteWithContext,
+  redirect,
 } from "@tanstack/react-router"
 import type { QueryClient } from "@tanstack/react-query"
 import { Suspense, lazy } from "react"
+import type { useAuthStore } from "@/features/auth/stores/authStore"
 
 import { Toaster } from "@/components/ui/sonner"
 import { SignUpModal } from "@/features/auth/components/SignUpModal"
@@ -17,9 +19,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google"
 
 export interface RouterContext {
   queryClient: QueryClient
-  auth: {
-    isAuthenticated: boolean
-  }
+  authStore: typeof useAuthStore
 }
 
 const DevtoolsLazy =
@@ -27,9 +27,50 @@ const DevtoolsLazy =
     ? lazy(() => import("@/components/Devtools.client"))
     : null
 
+import { isPublicRoute } from "@/config/routes"
+
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
   notFoundComponent: NotFound,
+  beforeLoad: async ({ location, context }) => {
+    // If we are on the server (SSR), skip auth checks completely because 
+    // we use localStorage which isn't available. The client will handle it.
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    // We must wait for the auth store to hydrate from local storage on the client
+    // before we make any routing decisions, to avoid false redirects.
+    const state = context.authStore.getState()
+    if (!state.isHydrated) {
+      await new Promise<void>((resolve) => {
+        const unsub = context.authStore.subscribe((s) => {
+          if (s.isHydrated) {
+            unsub()
+            resolve()
+          }
+        })
+      })
+    }
+
+    const publicRoute = isPublicRoute(location.pathname)
+    const { isAuthenticated } = context.authStore.getState()
+
+    // We redirect to home ("/for-you") if they are trying to access a protected route
+    // while unauthenticated.
+    if (!publicRoute && !isAuthenticated) {
+      throw redirect({
+        to: '/for-you',
+        search: {
+          redirect: location.href,
+        },
+      })
+    }
+
+    // If user IS authenticated and trying to access a public-only route (like a login page if we had one),
+    // we would redirect them to their dashboard/home, but the user requested:
+    // "a non auth user will be redirected and an auth user will not be"
+  }
 })
 
 function RootComponent() {
