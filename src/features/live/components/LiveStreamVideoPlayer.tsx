@@ -10,6 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserProfileStore } from '../stores/userProfileStore';
 import { liveService } from '../services/live.service';
 import kick from '@/assets/kick.svg'
+import { cn } from '@/lib/utils';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
@@ -217,13 +218,15 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         );
     };
 
-    /** Render a co-host video card (smaller, with badges) */
-    const renderCoHostCard = (p: any) => {
+    const renderCoHostCard = (p: any, className?: string) => {
         const participantHasVideo = hasVideo(p);
         const participantHasAudio = hasAudio(p);
 
         return (
-            <div key={p.sessionId} className={`relative rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 shadow-xl ${isMobile ? 'w-28 h-36' : 'w-44 h-52'}`}>
+            <div key={p.sessionId} className={cn(
+                "relative rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 shadow-xl",
+                isMobile ? 'w-28 h-36' : (className || 'w-44 h-52')
+            )}>
                 {participantHasVideo ? (
                     <ParticipantView
                         participant={p}
@@ -324,7 +327,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     // 2 participants: side by side equal
     if (coHosts.length === 1) {
         return (
-            <div className="flex h-full w-full p-6 pt-28 overflow-hidden">
+            <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
                 <div className="flex-1 h-full flex justify-center gap-4">
                     <div className="h-full aspect-9/16 max-w-sm">
                         {renderHostVideo(host)}
@@ -407,9 +410,39 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         );
     }
 
-    // 3+ participants: main host + right sidebar
+    // 3-4 participants: Host on left, 2-3 Co-hosts stacked on right (50/50 split)
+    if (coHosts.length === 2 || coHosts.length === 3) {
+        return (
+            <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
+                <div className="flex-1 h-full flex justify-center gap-6">
+                    {/* Host Column */}
+                    <div className="h-full aspect-9/16 max-w-sm">
+                        {renderHostVideo(host)}
+                    </div>
+                    {/* Co-host Column (stacked) */}
+                    <div className="h-full flex flex-col gap-4 max-w-sm">
+                        {coHosts.map((p) => (
+                            <div key={p.sessionId} className="flex-1 min-h-0">
+                                {renderCoHostCard(p, "w-full h-full")}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Kick confirmation modal */}
+                {confirmKick && (
+                    <RemoveCoHostModal
+                        onConfirm={() => { handleKickCoHost(confirmKick!.userId, confirmKick!.userName); setConfirmKick(null); }}
+                        onCancel={() => setConfirmKick(null)}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    // 4+ participants: main host + right sidebar
     return (
-        <div className="flex h-full w-full p-6 pt-28 overflow-hidden">
+        <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
             <div className="relative flex-1 h-full flex justify-center">
                 <div className="h-full aspect-9/16 max-w-md">
                     {renderHostVideo(host)}

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 
 export const CheckoutView = () => {
     const { selectedPackage, paymentMethod, setPaymentMethod, setStep, setResultStatus } = useCoinsStore();
-    const { updateUser } = useAuthStore();
+    const { updateWallet } = useAuthStore();
     const [isProcessing, setIsProcessing] = useState(false);
 
     if (!selectedPackage) return null;
@@ -23,11 +23,14 @@ export const CheckoutView = () => {
             // 2. Payment API
             await paymentService.processPayment({ orderId, amount });
 
-            // 3. Fetch User Wallet API
-            const { coinBalance } = await paymentService.getWalletBalance();
+            // 3. Small delay to ensure backend consistency
+            await new Promise(resolve => setTimeout(resolve, 500));
 
-            // 4. Update Global State
-            updateUser({ coins: coinBalance });
+            // 4. Fetch User Wallet API
+            const wallet = await paymentService.getWalletBalance();
+
+            // 5. Update Global State
+            updateWallet(wallet);
 
             // Success Transition
             setResultStatus('success');

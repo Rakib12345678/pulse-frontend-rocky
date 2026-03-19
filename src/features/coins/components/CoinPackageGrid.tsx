@@ -51,7 +51,7 @@ const PackageCard = ({ coin, currency }: { coin: CoinEntity, currency: string })
 };
 
 export const CoinPackageGrid = () => {
-    const { user } = useAuthStore();
+    const { wallet } = useAuthStore();
     const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
     const [coins, setCoins] = useState<CoinEntity[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +80,7 @@ export const CoinPackageGrid = () => {
                 <div className="flex items-center gap-2.5">
                     <span className="text-white text-base">My Coins</span>
                     <img src={coinIcon} alt="coin" className="w-5 h-5" />
-                    <span className="text-white font-bold text-base">{user?.coins ?? 0}</span>
+                    <span className="text-white font-bold text-base">{wallet?.coinBalance ?? 0}</span>
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

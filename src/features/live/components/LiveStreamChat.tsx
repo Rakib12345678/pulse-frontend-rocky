@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Lock, Heart, SendHorizonal, Share2 } from 'lucide-react';
+import { Lock, Heart, SendHorizonal, Share2, Gift } from 'lucide-react';
 import { useJoinRequestStore } from '../stores/joinRequestStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
+import { GiftingFeature } from './GiftingFeature';
 import {
     Channel,
     useChannelStateContext,
@@ -26,8 +27,15 @@ export const LiveStreamChat: React.FC = () => {
     const participants = useParticipants();
     const knownCohostsRef = useRef<Record<string, { username: string; profileImage: string; status: string }>>({});
     const initCohostsRef = useRef(false);
+    const [isGiftingOpen, setIsGiftingOpen] = useState(false);
+    const participantsRef = useRef(participants);
 
-    // Trigger participant sync exactly once, 25 seconds after going live (for host only)
+    // Keep participantsRef up to date for the interval sync
+    useEffect(() => {
+        participantsRef.current = participants;
+    }, [participants]);
+
+    // Trigger participant sync every 10 seconds (for host only)
     useEffect(() => {
         if (isViewer || !call) return;
 
@@ -42,10 +50,11 @@ export const LiveStreamChat: React.FC = () => {
             initCohostsRef.current = true;
         }
 
-        const timer = setTimeout(async () => {
+        const syncParticipants = async () => {
             try {
+                const currentParticipants = participantsRef.current;
                 // Extract only active co-hosts from the current participants pool
-                const currentActiveCohosts = participants
+                const currentActiveCohosts = currentParticipants
                     .filter((p: any) => !p.isLocalParticipant && !p.roles?.includes('host') && !p.roles?.includes('admin') && (
                         p.roles?.includes('co_host') ||
                         p.capabilities?.includes('send-audio') ||
@@ -76,15 +85,21 @@ export const LiveStreamChat: React.FC = () => {
 
                 const cohostsList = Object.values(knownCohostsRef.current);
 
-                console.log('[LiveStreamChat] Syncing participants after 10s delay. Cohosts count:', cohostsList.length);
+                console.log('[LiveStreamChat] Syncing participants. Cohosts count:', cohostsList.length);
                 await liveService.syncParticipants(call.id, cohostsList);
             } catch (error) {
                 console.error('[LiveStreamChat] Failed to sync participants:', error);
             }
-        }, 10000);
+        };
 
-        return () => clearTimeout(timer);
-    }, [isViewer, call?.id, participants]);
+        const intervalId = setInterval(syncParticipants, 15000);
+
+        // Also run immediately on mount (or after 25s if that was intentional, but user said "after 10s each")
+        // We'll run it once immediately to start the cycle.
+        syncParticipants();
+
+        return () => clearInterval(intervalId);
+    }, [isViewer, call?.id]);
 
     if (!isChatVisible) return null;
 
@@ -100,13 +115,18 @@ export const LiveStreamChat: React.FC = () => {
         <Channel key={chatClient.userID || 'anonymous'} channel={channel}>
             <div className={`absolute ${bottomClass} left-4 right-4 sm:left-10 sm:right-auto sm:w-80 max-h-[400px] flex flex-col z-20`}>
                 <LiveStreamMessageList />
-                <LiveStreamMessageInput />
+                <LiveStreamMessageInput setIsGiftingOpen={setIsGiftingOpen} />
                 <JoinMessageSender channel={channel} isViewer={isViewer} userId={user?.id} />
             </div>
             {/* Viewer: bottom bar with host info + Join Stream */}
             {isViewer && <ViewerBottomBar />}
             {/* Host: Invite Friends button */}
             {!isViewer && <HostInviteBar />}
+
+            <GiftingFeature
+                isOpen={isGiftingOpen}
+                onOpenChange={setIsGiftingOpen}
+            />
         </Channel>
     );
 };
@@ -176,10 +196,10 @@ const LiveStreamMessageList: React.FC = () => {
 
 const HEART_EMOJI = { char: '❤️', icon: Heart, color: 'text-red-500' };
 
-const LiveStreamMessageInput: React.FC = () => {
+const LiveStreamMessageInput: React.FC<{ setIsGiftingOpen: (open: boolean) => void }> = ({ setIsGiftingOpen }) => {
     const { isAuthenticated, user } = useAuthStore();
     const { channel } = useChannelStateContext();
-    const { call, isGuest } = useLiveStreamContext();
+    const { call, isGuest, isViewer } = useLiveStreamContext();
     const { openModal, setMode } = useSignUpStore();
     const [inputValue, setInputValue] = useState('');
 
@@ -253,7 +273,7 @@ const LiveStreamMessageInput: React.FC = () => {
 
                     />
 
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                         <button
                             onClick={handleSendReaction}
                             className="flex items-center justify-center transition-transform hover:scale-125 active:scale-95"
@@ -261,6 +281,15 @@ const LiveStreamMessageInput: React.FC = () => {
                         >
                             <Heart className="w-6 h-6 text-red-500 fill-red-500 drop-shadow-sm" />
                         </button>
+                        {isViewer && (
+                            <button
+                                onClick={() => setIsGiftingOpen(true)}
+                                className="flex items-center justify-center transition-transform hover:scale-125 active:scale-95"
+                                title="Send gift"
+                            >
+                                <Gift className="w-6 h-6 text-[#FF8800] drop-shadow-sm" />
+                            </button>
+                        )}
                     </div>
                 </div>
 

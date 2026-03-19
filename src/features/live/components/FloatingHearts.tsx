@@ -12,6 +12,7 @@ interface Heart {
     drift: number;
     size: number;
     emoji: string;
+    imageUrl?: string;
 }
 
 const HEART_COLORS = ['#FF4D4D', '#FF0000', '#FF6B6B', '#FF8080', '#D90000', '#FF3366', '#FF1744'];
@@ -33,8 +34,9 @@ export const FloatingHearts: React.FC = () => {
             console.log('FloatingHearts: New reaction received:', event);
             if (event.reaction.type === 'live-heart' || event.reaction.type === 'live-reaction') {
                 const emoji = event.reaction.custom?.emoji || '♥';
-                console.log('FloatingHearts: Adding emoji!', emoji);
-                addHeart(emoji);
+                const imageUrl = event.reaction.custom?.iconUrl;
+                console.log('FloatingHearts: Adding reaction!', emoji, imageUrl);
+                addHeart(emoji, imageUrl);
             }
         };
 
@@ -55,7 +57,8 @@ export const FloatingHearts: React.FC = () => {
                 chatListener = chatChannel.on('client-live-reaction', (event: any) => {
                     console.log('FloatingHearts: New chat event reaction received:', event);
                     const emoji = event.emoji || '♥';
-                    addHeart(emoji);
+                    const imageUrl = event.iconUrl;
+                    addHeart(emoji, imageUrl);
                 });
             } catch (err) {
                 console.error('FloatingHearts: Failed to setup chat listener', err);
@@ -75,7 +78,7 @@ export const FloatingHearts: React.FC = () => {
         };
     }, [call, chatClient, isGuest]);
 
-    const addHeart = useCallback((emoji: string = '♥') => {
+    const addHeart = useCallback((emoji: string = '♥', imageUrl?: string) => {
         const id = Math.random().toString(36).substring(7);
         const color = HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)];
         const x = Math.floor(Math.random() * 80) - 40; // Wider starting range
@@ -85,7 +88,7 @@ export const FloatingHearts: React.FC = () => {
         const size = 0.8 + Math.random() * 0.5; // Varying sizes
 
         setHearts((prev) => {
-            const updated = [...prev, { id, color, x, rotation, delay, drift, size, emoji }];
+            const updated = [...prev, { id, color, x, rotation, delay, drift, size, emoji, imageUrl }];
             return updated.length > 10 ? updated.slice(updated.length - 10) : updated;
         });
 
@@ -147,7 +150,11 @@ export const FloatingHearts: React.FC = () => {
                             filter: 'drop-shadow(0 2px 8px rgba(255, 0, 0, 0.3))',
                         }}
                     >
-                        {heart.emoji}
+                        {heart.imageUrl ? (
+                            <img src={heart.imageUrl} alt="gift" className="w-12 h-12 object-contain" />
+                        ) : (
+                            heart.emoji
+                        )}
                     </motion.div>
                 ))}
             </AnimatePresence>

@@ -24,6 +24,7 @@ export function useAuth() {
                 accessToken: data.accessToken,
                 refreshToken: data.refreshToken,
                 user: data.user,
+                wallet: data.wallet,
                 newUser: data.newUser
             });
 

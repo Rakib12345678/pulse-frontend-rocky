@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export interface Wallet {
+  coinBalance: number;
+  diamondBalance: number;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -18,7 +23,6 @@ export interface User {
   bio?: string;
   location?: string;
   profileImage?: string;
-  coins?: number;
   followedByMe?: boolean;
   preferredLanguage?: string;
 }
@@ -27,11 +31,13 @@ interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   user: User | null;
+  wallet: Wallet | null;
   isAuthenticated: boolean;
   isNewUser: boolean;
   isHydrated: boolean;
-  setAuth: (payload: { accessToken: string; refreshToken: string; user: User; newUser: boolean }) => void;
+  setAuth: (payload: { accessToken: string; refreshToken: string; user: User; newUser: boolean; wallet: Wallet }) => void;
   updateUser: (userData: Partial<User>) => void;
+  updateWallet: (walletData: Partial<Wallet>) => void;
   clearAuth: () => void;
   setHydrated: () => void;
 }
@@ -42,6 +48,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null, 
       user: null,
+      wallet: null,
       isAuthenticated: false,
       isNewUser: false,
 
@@ -49,6 +56,7 @@ export const useAuthStore = create<AuthState>()(
         accessToken: payload.accessToken,
         refreshToken: payload.refreshToken, 
         user: payload.user,
+        wallet: payload.wallet,
         isNewUser: payload.newUser,
         isAuthenticated: true,
       }),
@@ -56,11 +64,16 @@ export const useAuthStore = create<AuthState>()(
       updateUser: (userData) => set((state) => ({
         user: state.user ? { ...state.user, ...userData } : null
       })),
+ 
+      updateWallet: (walletData) => set((state) => ({
+        wallet: state.wallet ? { ...state.wallet, ...walletData } : (walletData as Wallet)
+      })),
 
       clearAuth: () => set({
         accessToken: null,
         refreshToken: null, 
         user: null,
+        wallet: null,
         isAuthenticated: false,
         isNewUser: false,
       }),
@@ -74,6 +87,7 @@ export const useAuthStore = create<AuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
         user: state.user, 
+        wallet: state.wallet,
         isNewUser: state.isNewUser,
         isAuthenticated: state.isAuthenticated
       }),

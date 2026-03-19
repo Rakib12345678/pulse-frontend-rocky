@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MainRouteRouteImport } from './routes/_main/route'
 import { Route as MainLiveRouteRouteImport } from './routes/_main/live/route'
+import { Route as MainGiftsRouteRouteImport } from './routes/_main/gifts/route'
 import { Route as MainForYouRouteRouteImport } from './routes/_main/for-you/route'
 import { Route as MainExploreRouteRouteImport } from './routes/_main/explore/route'
 import { Route as MainCoinsRouteRouteImport } from './routes/_main/coins/route'
@@ -29,6 +30,11 @@ const MainRouteRoute = MainRouteRouteImport.update({
 const MainLiveRouteRoute = MainLiveRouteRouteImport.update({
   id: '/live',
   path: '/live',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainGiftsRouteRoute = MainGiftsRouteRouteImport.update({
+  id: '/gifts',
+  path: '/gifts',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainForYouRouteRoute = MainForYouRouteRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/coins': typeof MainCoinsRouteRoute
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
+  '/gifts': typeof MainGiftsRouteRoute
   '/live': typeof MainLiveRouteRouteWithChildren
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/coins': typeof MainCoinsRouteRoute
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
+  '/gifts': typeof MainGiftsRouteRoute
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
   '/profile/setting': typeof MainProfileSettingRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/_main/coins': typeof MainCoinsRouteRoute
   '/_main/explore': typeof MainExploreRouteRoute
   '/_main/for-you': typeof MainForYouRouteRoute
+  '/_main/gifts': typeof MainGiftsRouteRoute
   '/_main/live': typeof MainLiveRouteRouteWithChildren
   '/_main/live/$id': typeof MainLiveIdRoute
   '/_main/profile/$username': typeof MainProfileUsernameRoute
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/coins'
     | '/explore'
     | '/for-you'
+    | '/gifts'
     | '/live'
     | '/live/$id'
     | '/profile/$username'
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/coins'
     | '/explore'
     | '/for-you'
+    | '/gifts'
     | '/live/$id'
     | '/profile/$username'
     | '/profile/setting'
@@ -156,6 +167,7 @@ export interface FileRouteTypes {
     | '/_main/coins'
     | '/_main/explore'
     | '/_main/for-you'
+    | '/_main/gifts'
     | '/_main/live'
     | '/_main/live/$id'
     | '/_main/profile/$username'
@@ -182,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/live'
       fullPath: '/live'
       preLoaderRoute: typeof MainLiveRouteRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/gifts': {
+      id: '/_main/gifts'
+      path: '/gifts'
+      fullPath: '/gifts'
+      preLoaderRoute: typeof MainGiftsRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/for-you': {
@@ -277,6 +296,7 @@ interface MainRouteRouteChildren {
   MainCoinsRouteRoute: typeof MainCoinsRouteRoute
   MainExploreRouteRoute: typeof MainExploreRouteRoute
   MainForYouRouteRoute: typeof MainForYouRouteRoute
+  MainGiftsRouteRoute: typeof MainGiftsRouteRoute
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
   MainProfileUsernameRoute: typeof MainProfileUsernameRoute
   MainProfileSettingRoute: typeof MainProfileSettingRoute
@@ -289,6 +309,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainCoinsRouteRoute: MainCoinsRouteRoute,
   MainExploreRouteRoute: MainExploreRouteRoute,
   MainForYouRouteRoute: MainForYouRouteRoute,
+  MainGiftsRouteRoute: MainGiftsRouteRoute,
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
   MainProfileUsernameRoute: MainProfileUsernameRoute,
   MainProfileSettingRoute: MainProfileSettingRoute,
