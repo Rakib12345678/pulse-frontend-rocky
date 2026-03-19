@@ -17,10 +17,6 @@ interface JoinRequest {
     userImage?: string;
 }
 
-/**
- * Host-side popup: listens for custom 'join-request' events
- * and lets the host Accept or Decline incoming join requests.
- */
 export const JoinRequestPopup: React.FC = () => {
     const call = useCall();
     const { useLocalParticipant } = useCallStateHooks();
@@ -34,7 +30,6 @@ export const JoinRequestPopup: React.FC = () => {
         const unsubscribe = call.on('custom', (event: any) => {
             const customData = event?.custom;
             if (customData?.type === 'join-request' && customData?.userId !== localParticipant?.userId) {
-                console.log('[JoinRequestPopup] Received join request:', customData);
                 setJoinRequests((prev) => {
                     // Avoid duplicates
                     if (prev.some((r) => r.userId === customData.userId)) return prev;
@@ -45,7 +40,6 @@ export const JoinRequestPopup: React.FC = () => {
                     }];
                 });
             } else if (customData?.type === 'cancel-join-request') {
-                console.log('[JoinRequestPopup] Received cancel join request:', customData);
                 setJoinRequests((prev) => prev.filter((r) => r.userId !== customData.userId));
             }
         });
@@ -56,7 +50,7 @@ export const JoinRequestPopup: React.FC = () => {
 
     const handleApprove = async (request: JoinRequest) => {
         try {
-            console.log('[JoinRequestPopup] Approving:', request.userId);
+
             // Grant permissions and assign the co-host role so they are recognized by all viewers
             await call.updateUserPermissions({
                 user_id: request.userId,
@@ -80,8 +74,6 @@ export const JoinRequestPopup: React.FC = () => {
             if (call.id) {
                 await liveService.addCoHost(call.id, request.userName);
             }
-
-            console.log('[JoinRequestPopup] Approved successfully');
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to grant permissions:', err);
         }
@@ -90,7 +82,6 @@ export const JoinRequestPopup: React.FC = () => {
 
     const handleDecline = async (request: JoinRequest) => {
         try {
-            console.log('[JoinRequestPopup] Declining:', request.userId);
             // Notify the viewer they were declined
             await call.sendCustomEvent({
                 type: 'join-response', userId: request.userId, accepted: false,
@@ -187,9 +178,11 @@ export const ViewerPendingRequestPopup: React.FC = () => {
 
     useEffect(() => {
         if (requestStatus !== 'pending') return;
+        let cancelled = false;
 
         const timer = setTimeout(async () => {
             // Host hasn't responded in 15 seconds, auto-cancel
+            if (cancelled) return;
             try {
                 if (call && user) {
                     await call.sendCustomEvent({
@@ -200,11 +193,16 @@ export const ViewerPendingRequestPopup: React.FC = () => {
             } catch (err) {
                 console.error('[ViewerPendingRequestPopup] Failed to auto-cancel request:', err);
             } finally {
-                setRequestStatus('idle');
+                if (!cancelled) {
+                    setRequestStatus('idle');
+                }
             }
         }, 15000);
 
-        return () => clearTimeout(timer);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
     }, [requestStatus, call, user, setRequestStatus]);
 
     if (requestStatus !== 'pending' || !createdBy) return null;
@@ -233,7 +231,7 @@ export const ViewerPendingRequestPopup: React.FC = () => {
                 onClick={handleCancel}
                 className={cn(
                     "p-5 rounded-2xl cursor-pointer",
-                    "bg-[#FF0000] text-white", // Red background matching image
+                    "bg-[#FF0000] text-white",
                     "shadow-2xl shadow-black/30",
                     "animate-in slide-in-from-bottom-5 duration-300"
                 )}

@@ -9,7 +9,7 @@ import { useGoLiveStore } from '../stores/goLiveStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUserProfileStore } from '../stores/userProfileStore';
 import { liveService } from '../services/live.service';
-import kick from '@/assets/kick.svg'
+import kick from '@/assets/kick.svg';
 import { cn } from '@/lib/utils';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
@@ -39,7 +39,9 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         const isCoHostRole = p.roles?.includes('co_host') || p.roles?.includes('admin') || p.roles?.includes('host');
         const hasCapabilities = p.capabilities?.includes('send-audio') || p.capabilities?.includes('send-video');
 
-        return isCoHostRole || hasCapabilities || p.publishedTracks?.length > 0;
+        const hasActiveTracks = p.publishedTracks?.length > 0;
+
+        return isCoHostRole || (hasCapabilities && hasActiveTracks);
     });
 
     // Sort: host (creator or local) first, then co-hosts
@@ -105,7 +107,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     const handleKickCoHost = async (userId: string, userName: string) => {
         if (!call) return;
         try {
-            console.log('[Kick] Revoking permissions for:', userId);
+
             // Revoke publisher permissions
             await call.updateUserPermissions({
                 user_id: userId,
@@ -322,9 +324,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         );
     }
 
-    /* ===== DESKTOP LAYOUT ===== */
-
-    // 2 participants: side by side equal
+    /* ===== DESKTOP: host + 1 co-host ===== */
     if (coHosts.length === 1) {
         return (
             <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
@@ -420,7 +420,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                         {renderHostVideo(host)}
                     </div>
                     {/* Co-host Column (stacked) */}
-                    <div className="h-full flex flex-col gap-4 max-w-sm">
+                    <div className="h-full aspect-9/16 flex flex-col gap-4 max-w-sm">
                         {coHosts.map((p) => (
                             <div key={p.sessionId} className="flex-1 min-h-0">
                                 {renderCoHostCard(p, "w-full h-full")}

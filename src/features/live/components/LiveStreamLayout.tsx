@@ -23,6 +23,7 @@ const apiKey = import.meta.env.VITE_STREAM_API_KEY || 'placeholder_key';
 import { UserProfileModal } from './UserProfileModal';
 import { useUserProfileStore } from '../stores/userProfileStore';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useViewerRejoinStore } from '../stores/viewerRejoinStore';
 
 // Context for sharing viewer state with child components
 interface LiveStreamContextValue {
@@ -177,13 +178,26 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     const [isViewer, setIsViewer] = useState(false);
     const [isChatVisible, setChatVisible] = useState(true);
     const navigate = useNavigate();
+    const isTerminatingRef = useRef(false);
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            isTerminatingRef.current = true;
+            localStorage.removeItem('pulse_host_is_currently_live');
+            localStorage.setItem('pulse_host_left_at', String(Date.now()));
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, []);
 
     useEffect(() => {
         userRef.current = user;
-    }, [user]);
+        if (!!streamData) {
+            useGoLiveStore.setState({ isRejoinBannerDismissed: false });
+            localStorage.removeItem('pulse_host_left_at');
+        }
+    }, [user, !!streamData]);
 
     useEffect(() => {
-        // Determine if user is a host (has streamData) or viewer (has viewerCallId but no streamData)
         const isHostMode = !!streamData;
         const isViewerMode = !streamData && !!viewerCallId;
 
@@ -195,17 +209,18 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
         let _call: Call | null = null;
         let _callId: string | null = null;
         let _isHost = false;
-        let _isReloading = false;
+
+        // Reset the terminating flag each time the effect runs (new stream session)
+        isTerminatingRef.current = false;
 
         const initCall = async () => {
-            // Wait for hardware to release from GoLiveModal
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             if (!mounted) return;
 
             let callType: string;
             let callIdToUse: string;
-            let token: string;
+            let token: string | undefined;
 
             if (isHostMode && streamData) {
                 // Host mode - use existing stream data
@@ -215,20 +230,25 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 _isHost = true;
                 _callId = streamData.callId;
                 setIsViewer(false);
+
+                localStorage.setItem('pulse_host_is_currently_live', 'true');
             } else if (isViewerMode && viewerCallId) {
                 // Viewer mode - join the stream
                 try {
                     // Use guest join for unauthenticated users
                     if (userRef.current) {
                         const joinResponse = await liveService.joinStream(viewerCallId);
+
+                        // Guard against component unmount during the async joinStream call
+                        if (!mounted) return;
+
                         callType = joinResponse.callType;
                         callIdToUse = joinResponse.callId;
                         token = joinResponse.token;
                     } else {
-                        // Anonymous join without backend endpoint
                         callType = 'livestream';
                         callIdToUse = viewerCallId;
-                        token = undefined as any;
+                        token = undefined;
                     }
                     _callId = callIdToUse;
                     setIsViewer(true);
@@ -245,7 +265,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             const currentUser = userRef.current;
             const userData = currentUser ? {
                 id: String(currentUser.id),
-                name: currentUser.username || `User ${currentUser.id}`,
+                name: currentUser.fullName || currentUser.username || `User ${currentUser.id}`,
                 image: currentUser.profileImage,
             } : {
                 type: 'anonymous'
@@ -267,15 +287,25 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 } else {
                     await _chatClient.connectUser(userData as any, token);
                 }
+
+                // Guard against unmount during chat connection
+                if (!mounted) return;
             } catch (err) {
                 console.error('Failed to connect chat user:', err);
             }
 
             try {
-                // For viewers, just join without create permission
                 await _call.join({ create: isHostMode });
 
                 if (!mounted) return;
+
+                if (isViewerMode && _call) {
+                    const streamerName = _call.state.createdBy?.name || _call.state.createdBy?.id || 'Streamer';
+                    useViewerRejoinStore.getState().setRejoinData({
+                        callId: callIdToUse,
+                        streamerName: streamerName,
+                    });
+                }
 
                 // Restriction: Prevent creator from joining their own stream as a viewer
                 if (isViewerMode && userRef.current && _call.state.createdBy?.id === String(userRef.current.id)) {
@@ -305,6 +335,8 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         toast.error("Could not access camera. Please check permissions.");
                     }
 
+                    if (!mounted) return;
+
                     try {
                         if (isMicEnabled) {
                             await _call.microphone.enable();
@@ -314,6 +346,20 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                     } catch (e) {
                         console.error("Failed to set initial mic state:", e);
                         toast.error("Could not access microphone. Please check permissions.");
+                    }
+
+                    if (!mounted) return;
+
+                    try {
+                        const state = _call.state;
+                        if (!state.backstage && !state.startedAt) {
+                            await _call.goLive();
+                        } else if (state.backstage) {
+                            await _call.goLive();
+                        }
+                        toast.success("Your stream is now live and visible to viewers!");
+                    } catch (e) {
+                        console.error("Failed to go live:", e);
                     }
                 } else {
                     // Viewers shouldn't have camera/mic enabled by default
@@ -337,18 +383,10 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             }
         };
 
-        // Warn user before closing/refreshing the tab during a live stream
-        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-            _isReloading = true;
-            e.preventDefault();
-        };
-        window.addEventListener('beforeunload', handleBeforeUnload);
-
         initCall();
 
         return () => {
             mounted = false;
-            window.removeEventListener('beforeunload', handleBeforeUnload);
 
             if (_call) {
                 // Explicitly stop hardware tracks to ensure light goes off immediately
@@ -360,7 +398,10 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
                 _call.camera.disable();
                 _call.microphone.disable();
-                _call.leave();
+
+                if (!(_isHost && isTerminatingRef.current)) {
+                    _call.leave();
+                }
             }
             if (_client) {
                 _client.disconnectUser();
@@ -369,25 +410,29 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 _chatClient.disconnectUser();
             }
 
-            // If host, end the stream on the backend if not already ending
-            // Logic:
-            // 1. If isEndingStream is true, the header already called the API. We just need to reset.
-            // 2. If isEndingStream is false and NOT a page reload, user navigated away. End the stream.
-            // 3. If page is reloading (_isReloading), skip ending so host can rejoin.
             if (_isHost && _callId) {
-                // If page is reloading, skip ending stream so host can rejoin
-                if (_isReloading) return;
+                localStorage.removeItem('pulse_host_is_currently_live');
 
-                const { isEndingStream } = useGoLiveStore.getState();
-
-                if (!isEndingStream) {
-                    liveService.endLiveStream(_callId).catch((err) => {
-                        console.error('Failed to end live stream on navigate away:', err);
-                    });
+                if (!isTerminatingRef.current) {
+                    localStorage.removeItem('pulse_host_left_at');
                 }
 
-                // Always reset the store when actually navigating away
-                useGoLiveStore.getState().reset();
+                if (!isTerminatingRef.current) {
+                    const { isEndingStream } = useGoLiveStore.getState();
+
+                    if (!isEndingStream) {
+                        liveService.endLiveStream(_callId).catch((err) => {
+                            console.error('Failed to end live stream on navigate away:', err);
+                        });
+                    }
+
+                    // Always reset the store when actually navigating away
+                    useGoLiveStore.getState().reset();
+                }
+            }
+
+            if (!_isHost) {
+                useViewerRejoinStore.getState().clearRejoinData();
             }
 
             setClient(null);
@@ -400,7 +445,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
     if (!client || !call || !chatClient) {
         return (
-            <div className="flex h-screen w-full items-center justify-center bg-[#0f1117]">
+            <div className="fixed inset-0 flex items-center justify-center bg-[#0f1117] z-[10000] overflow-hidden">
                 <Loader2 className="h-10 w-10 animate-spin text-[#FF8800]" />
             </div>
         );

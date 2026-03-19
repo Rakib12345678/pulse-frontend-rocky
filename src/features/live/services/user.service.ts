@@ -36,5 +36,18 @@ export const userService = {
 
     unblockUser: async (targetUserId: number) => {
         return api.post('/users/unblock', { targetUserId, block: false });
-    }
+    },
+
+    // Check if the current authenticated user has an active live stream
+    getUserStream: async (): Promise<{
+        isLive: boolean;
+        callId: string | null;
+        callType: string | null;
+        title: string | null;
+        category: string | null;
+        hasActiveHost?: boolean;
+    }> => {
+        const response = await api.get('/users/stream');
+        return response.data;
+    },
 };

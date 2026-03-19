@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Lock, Heart, SendHorizonal, Share2, Gift } from 'lucide-react';
 import { useJoinRequestStore } from '../stores/joinRequestStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -30,7 +30,6 @@ export const LiveStreamChat: React.FC = () => {
     const [isGiftingOpen, setIsGiftingOpen] = useState(false);
     const participantsRef = useRef(participants);
 
-    // Keep participantsRef up to date for the interval sync
     useEffect(() => {
         participantsRef.current = participants;
     }, [participants]);
@@ -106,9 +105,11 @@ export const LiveStreamChat: React.FC = () => {
     if (!call || !chatClient) return null;
 
     // Use the same ID as the call for the chat channel
-    const channel = chatClient.channel('livestream', call.id);
+    const channel = useMemo(
+        () => chatClient.channel('livestream', call.id),
+        [chatClient, call.id]
+    );
 
-    // On mobile, shift chat up to make room for bottom bar (viewer bar ~80px or host invite ~72px)
     const bottomClass = isMobile ? 'bottom-[100px]' : 'bottom-10';
 
     return (
@@ -319,32 +320,37 @@ const LiveStreamMessageInput: React.FC<{ setIsGiftingOpen: (open: boolean) => vo
 
 // Component to handle sending the join message
 const JoinMessageSender: React.FC<{ channel: StreamChannel; isViewer: boolean; userId?: number }> = ({ channel, isViewer, userId }) => {
+    const joinSentRef = useRef(false);
+
     useEffect(() => {
         if (!channel || !isViewer || !userId) return;
 
         const sessionKey = `pulse_joined_${channel.id}`;
         const hasJoined = sessionStorage.getItem(sessionKey);
 
-        if (!hasJoined) {
-            // Set immediately to prevent strict mode double-firing
-            sessionStorage.setItem(sessionKey, 'true');
+        // Both guards must pass: sessionStorage (cross-mount) and ref (same-mount)
+        if (hasJoined || joinSentRef.current) return;
 
-            const sendJoinEvent = async () => {
-                try {
-                    if (!channel.initialized) {
-                        await channel.watch();
-                    }
-                    await channel.sendMessage({
-                        text: 'has joined the live',
-                        isJoinMessage: true
-                    } as any);
-                } catch (err) {
-                    console.error('Failed to send join message:', err);
-                    sessionStorage.removeItem(sessionKey);
+        joinSentRef.current = true;
+        sessionStorage.setItem(sessionKey, 'true');
+
+        const sendJoinEvent = async () => {
+            try {
+                if (!channel.initialized) {
+                    await channel.watch();
                 }
-            };
-            sendJoinEvent();
-        }
+                await channel.sendMessage({
+                    text: 'has joined the live',
+                    isJoinMessage: true
+                } as any);
+            } catch (err) {
+                console.error('Failed to send join message:', err);
+                // Reset both guards so the next render can retry
+                joinSentRef.current = false;
+                sessionStorage.removeItem(sessionKey);
+            }
+        };
+        sendJoinEvent();
     }, [channel, isViewer, userId]);
 
     return null;

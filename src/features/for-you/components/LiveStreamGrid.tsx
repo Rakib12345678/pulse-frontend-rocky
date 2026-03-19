@@ -72,6 +72,7 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
                         title={stream.title}
                         isLive={stream.isLive}
                         cohosts={stream.cohosts}
+                        createdByUserId={stream.createdByUserId}
                     />
                 ))}
             </div>

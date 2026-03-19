@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Users, Heart } from 'lucide-react';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { toast } from 'sonner';
 
 interface LiveCardProps {
   callId: string;
@@ -14,6 +16,7 @@ interface LiveCardProps {
   isLive?: boolean;
   collaboratorAvatarUrl?: string;
   cohosts?: { username: string; profileImage: string; status: string }[];
+  createdByUserId?: string;
 }
 
 export const LiveCard: React.FC<LiveCardProps> = ({
@@ -27,11 +30,29 @@ export const LiveCard: React.FC<LiveCardProps> = ({
   isLive = false,
   collaboratorAvatarUrl,
   cohosts,
+  createdByUserId,
 }) => {
+  const { user } = useAuthStore();
+
+  const handleCardClick = useCallback(
+    async (e: React.MouseEvent) => {
+      // If the current user is the creator, they should enter as host
+      const isHost = user && createdByUserId && String(user.id) === String(createdByUserId);
+
+      if (isHost) {
+        // Prevent joining own stream as viewer from feed
+        e.preventDefault();
+        toast.info("This is your live stream. Please use the rejoin banner to resume hosting.");
+      }
+    },
+    [user, createdByUserId]
+  );
+
   return (
     <Link
       to="/live/$id"
       params={{ id: callId }}
+      onClick={handleCardClick}
       className="group relative block w-full aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 shadow-lg transition-all hover:shadow-xl cursor-pointer"
     >
       {/* Background Image */}

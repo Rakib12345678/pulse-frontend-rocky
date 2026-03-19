@@ -12,6 +12,7 @@ import type { useAuthStore } from "@/features/auth/stores/authStore"
 import { Toaster } from "@/components/ui/sonner"
 import { SignUpModal } from "@/features/auth/components/SignUpModal"
 import { GoLiveModal } from "@/features/live/components/GoLiveModal"
+import { RejoinStreamBanner } from "@/features/live/components/RejoinStreamBanner"
 
 import appCss from "../styles.css?url"
 import { Button } from "@/components/ui/button"
@@ -101,6 +102,7 @@ function RootComponent() {
           <Toaster />
           <SignUpModal />
           <GoLiveModal />
+          <RejoinStreamBanner />
         </GoogleOAuthProvider>
 
 

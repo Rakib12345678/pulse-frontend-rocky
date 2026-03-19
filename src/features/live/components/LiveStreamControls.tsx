@@ -60,7 +60,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
         }
     };
 
-    // ── CO-HOST: viewer with publish permissions ──────────────────────────────
+    // Co-host: viewer with publish permissions
     if (isCoHost) {
         if (isMobile) {
             // Mobile co-host: mic + cam top-right (same position as host)
@@ -126,7 +126,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
         );
     }
 
-    // ── PURE VIEWER: volume toggle only ──────────────────────────────────────
+    // Viewer: volume toggle only
     if (isViewer) {
         if (isMobile) return null; // Hidden on mobile — overlaps with Join Stream button
         return (
@@ -155,7 +155,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
         );
     }
 
-    // ── HOST: mic + cam controls ──────────────────────────────────────────────
+    // Host: mic + cam controls
     if (isMobile) {
         return (
             <div className="absolute top-3 right-4 flex gap-2 z-20">
