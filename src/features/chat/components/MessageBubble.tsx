@@ -12,22 +12,27 @@ export const isOnlyImage = (text: string, attachments?: any[]) => {
     if (!text) return hasAttachments;
     const trimmed = text.trim();
     
-    // Detect any bracketed tag containing a URL (language agnostic)
-    const tagRegex = /\[[\s\S]*?https?:\/\/[\s\S]*?\]/gi;
+    // Detect any bracketed tag containing a URL (language agnostic, handles various brackets)
+    const tagRegex = /[\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】]/gi;
     const hasTag = tagRegex.test(trimmed);
     const cleanText = trimmed.replace(tagRegex, '').trim();
     
-    return (hasTag && !cleanText) || (!trimmed && hasAttachments);
+    // If it has a tag and no other text, it's an only-image message.
+    // Also if it's just a raw URL without brackets (sometimes happens in translation)
+    const rawUrlRegex = /^https?:\/\/[^\s]+$/i;
+    const isRawUrl = rawUrlRegex.test(trimmed);
+
+    return (hasTag && !cleanText) || isRawUrl || (!trimmed && hasAttachments);
 };
 
 /**
- * checks if a string is a gift tag.
+ * Checks if a string is a gift tag.
  */
 export const isGift = (text: string) => {
     if (!text) return false;
     const trimmed = text.trim();
     // Structure: [Prefix : Name : Coins]
-    const tagRegex = /\[[\s\S]*?:[\s\S]*?:\d+\]/gi;
+    const tagRegex = /[\[\(\【][\s\S]*?:[\s\S]*?:\d+[\]\)\】]/gi;
     const hasTag = tagRegex.test(trimmed);
     const cleanText = trimmed.replace(tagRegex, '').trim();
     return hasTag && !cleanText;
@@ -35,7 +40,6 @@ export const isGift = (text: string) => {
 
 /**
  * Checks BOTH originalText and translated text for special message patterns.
- * This ensures that if the translation engine mangles the tag, we still catch it.
  */
 const detectSpecialMessage = (msg: Message): boolean => {
     if (msg.attachments && msg.attachments.length > 0) return true;
@@ -51,17 +55,14 @@ const detectSpecialMessage = (msg: Message): boolean => {
 
 /**
  * Pick the best content string to render for a special message.
- * We strongly prefer originalText because it usually contains the clean, un-garbled URL.
  */
 const pickSpecialContent = (msg: Message): string => {
     const original = msg.originalText || '';
     const translated = msg.text || '';
 
-    // If originalText looks like a valid special message, use it to avoid broken URLs from translation
     if (original && (isOnlyImage(original, msg.attachments) || isGift(original))) {
         return original;
     }
-    // Fallback to translated if original is missing or doesn't match
     return translated || original;
 };
 
@@ -72,8 +73,10 @@ const renderMessageContent = (text: string, onImageLoad?: () => void) => {
     if (!text) return null;
 
     // 1. Check for Gift (Structural match: [Any:Name:Coins])
-    const giftMatch = text.match(/\[[\s\S]*?:([\s\S]*?):(\d+)\]/i);
-    if (giftMatch && text.trim().startsWith('[') && text.trim().endsWith(']')) {
+    const giftMatch = text.match(/[\[\(\【][\s\S]*?:([\s\S]*?):(\d+)[\]\)\】]/i);
+    // Be more permissive: if it looks like a gift tag anywhere in the string and starts with a bracket
+    const trimmedText = text.trim();
+    if (giftMatch && (trimmedText.startsWith('[') || trimmedText.startsWith('(') || trimmedText.startsWith('【'))) {
         const [, name, coins] = giftMatch;
         return (
             <div className="flex flex-col items-center gap-3 py-2 px-1">
@@ -95,15 +98,22 @@ const renderMessageContent = (text: string, onImageLoad?: () => void) => {
         );
     }
 
-    // 2. Handle Images / URLs within brackets
-    const tagRegex = /(\[[\s\S]*?https?:\/\/[\s\S]*?\])/gi;
+    // 2. Handle Images / URLs within brackets or raw URLs
+    // This regex catches brackets [ ], parens ( ), and Japanese/Chinese brackets 【 】
+    const tagRegex = /([\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】])/gi;
     const parts = text.split(tagRegex);
     
     return parts.map((part, index) => {
-        // If it's a bracketed tag containing a URL
-        if (part.startsWith('[') && part.endsWith(']') && part.includes('http')) {
-            // Isolate the URL from any other text/labels inside the brackets
-            const urlMatch = part.match(/(https?:\/\/[^\s\n\r\]]+)/i);
+        const trimmedPart = part.trim();
+        const isBracketedTag = (trimmedPart.startsWith('[') || trimmedPart.startsWith('(') || trimmedPart.startsWith('【')) && 
+                              (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('】')) && 
+                              trimmedPart.includes('http');
+        
+        const rawUrlRegex = /^(https?:\/\/[^\s\n\r\]\)\】]+)$/i;
+        const isRawUrl = rawUrlRegex.test(trimmedPart);
+
+        if (isBracketedTag || isRawUrl) {
+            const urlMatch = trimmedPart.match(/(https?:\/\/[^\s\n\r\]\)\】]+)/i);
             if (urlMatch) {
                 const url = urlMatch[1];
                 return (

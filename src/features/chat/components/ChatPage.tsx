@@ -30,11 +30,23 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     const navigate = useNavigate();
     const myId = String(user?.id ?? '');
 
-    const [streamReady, setStreamReady] = useState(isStreamConnected);
+    const [streamReady, setStreamReady] = useState(false);
+    
+    // Reset state whenever the logged-in user changes
+    useEffect(() => {
+        setStreamReady(false);
+        setLocalConvId(null);
+        setDisplayConversation(null);
+        clearSession();
+    }, [myId]);
+
     useEffect(() => {
         if (streamReady) return;
         const id = setInterval(() => {
-            if (isStreamConnected()) { setStreamReady(true); clearInterval(id); }
+            if (isStreamConnected()) { 
+                setStreamReady(true); 
+                clearInterval(id); 
+            }
         }, 200);
         return () => clearInterval(id);
     }, [streamReady]);

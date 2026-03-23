@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/lib/api';
-import { connectStreamUser, isStreamConnected } from '../stream/streamClient';
+import { connectStreamUser, disconnectStreamUser } from '../stream/streamClient';
 import { loadStreamCredentials, saveStreamCredentials } from '@/features/chat/stream/streamCredentials';
 import { toAbsoluteUrl } from '@/features/chat/utils/chat';
+import { SESSION_ACTIVE_KEY } from '@/features/chat/utils/chatConstants';
 
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 if (!STREAM_API_KEY) {
@@ -16,8 +17,11 @@ export const useStreamInit = () => {
     const { user } = useAuthStore();
 
     useEffect(() => {
-        if (!user?.id) return;
-        if (isStreamConnected()) return;
+        if (!user?.id) {
+            disconnectStreamUser();
+            sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+            return;
+        }
 
         const init = async () => {
             try {
@@ -27,6 +31,13 @@ export const useStreamInit = () => {
                 const avatar   = toAbsoluteUrl(user.profileImage);
 
                 const saved = loadStreamCredentials();
+                
+                // CRITICAL: If the saved user is different from the current user, 
+                // we MUST clear the active session before connecting.
+                if (saved && saved.userId !== userId) {
+                    sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+                }
+
                 if (saved && saved.userId === userId) {
                     await connectStreamUser(saved.userId, saved.userName, avatar, saved.apiKey, saved.token, fullName);
                 } else {
