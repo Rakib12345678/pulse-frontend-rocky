@@ -1,23 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
-import { useConversations } from '../hooks/useChat';
-import { useChatSocket } from '../hooks/useChatSocket';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
+import { isStreamConnected } from '../stream/streamClient';
 import { chatService } from '../services/chat.service';
 import { SESSION_ACTIVE_KEY } from '@/features/chat/utils/chatConstants';
 import type { Conversation } from '../types/chat.types';
+import { useStreamChat } from '@/features/chat/hooks/useStreamChats';
 import background from '@/assets/background.png';
-
-// Session helpers
 
 const saveSession  = (id: string) => sessionStorage.setItem(SESSION_ACTIVE_KEY, id);
 const loadSession  = (): string | null => sessionStorage.getItem(SESSION_ACTIVE_KEY);
 const clearSession = () => sessionStorage.removeItem(SESSION_ACTIVE_KEY);
-
-// ChatPage
 
 interface ChatPageProps {
     onClose?: () => void;
@@ -32,84 +28,122 @@ export const ChatPage: React.FC<ChatPageProps> = ({
 }) => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
+    const myId = String(user?.id ?? '');
 
-    const [localConvId, setLocalConvId] = useState<string | null>(() => {
-        return initialConversationId ?? loadSession();
-    });
+    const [streamReady, setStreamReady] = useState(isStreamConnected);
+    useEffect(() => {
+        if (streamReady) return;
+        const id = setInterval(() => {
+            if (isStreamConnected()) { setStreamReady(true); clearInterval(id); }
+        }, 200);
+        return () => clearInterval(id);
+    }, [streamReady]);
 
+    const chat = useStreamChat(myId, streamReady);
+
+    const [localConvId, setLocalConvId] = useState<string | null>(
+        () => initialConversationId ?? loadSession(),
+    );
     const [mobileShowList, setMobileShowList] = useState(!localConvId);
+    const [displayConversation, setDisplayConversation] = useState<Conversation | null>(null);
 
-    const [directConversation, setDirectConversation] = useState<Conversation | null>(null);
-    const fetchingDirectRef = useRef(false);
-
-    useChatSocket(user?.id);
-
-    const { data: conversations = [], isLoading } = useConversations();
-
+    const activatedOnReadyRef = useRef(false);
     useEffect(() => {
-        setDirectConversation(null);
-        fetchingDirectRef.current = false;
-    }, [localConvId]);
+        if (!streamReady) {
+            activatedOnReadyRef.current = false;
+            return;
+        }
+        if (activatedOnReadyRef.current) return;
+        activatedOnReadyRef.current = true;
+        if (localConvId) chat.setActiveConvId(localConvId);
+    }, [streamReady, localConvId]);
 
+    const fetchingRef = useRef(false);
     useEffect(() => {
-        if (!localConvId) return;
-        if (isLoading) return;
-        if (conversations.find(c => c.id === localConvId)) return;
-        if (directConversation?.id === localConvId) return;
-        if (fetchingDirectRef.current) return;
+        if (!localConvId || !streamReady) return;
+        const found = chat.conversations.find(c => c.id === localConvId);
+        if (found) { setDisplayConversation(found); return; }
+        if (fetchingRef.current) return;
+        fetchingRef.current = true;
 
-        fetchingDirectRef.current = true;
+        let mounted = true;
         chatService
             .getConversationById(localConvId)
-            .then(conv => setDirectConversation(conv))
+            .then(conv => { if (mounted) setDisplayConversation(conv); })
             .catch(() => {})
-            .finally(() => { fetchingDirectRef.current = false; });
-    }, [localConvId, isLoading, conversations, directConversation]);
+            .finally(() => { fetchingRef.current = false; });
 
-    const lastKnownConvRef   = useRef<Conversation | null>(null);
-    const prevLocalConvIdRef = useRef<string | null>(null);
-    if (prevLocalConvIdRef.current !== localConvId) {
-        prevLocalConvIdRef.current = localConvId;
-        lastKnownConvRef.current   = null;
+        return () => { mounted = false; };
+    }, [localConvId, streamReady, chat.conversations]);
+
+    const staleRef  = useRef<Conversation | null>(null);
+    const prevIdRef = useRef<string | null>(null);
+    if (prevIdRef.current !== localConvId) {
+        prevIdRef.current = localConvId;
+        staleRef.current  = null;
     }
-
-    const foundInList = conversations.find(c => c.id === localConvId) ?? null;
-    const resolved    = foundInList ?? directConversation;
-    if (resolved) lastKnownConvRef.current = resolved;
-
-    const activeConversation    = resolved ?? lastKnownConvRef.current;
-    const isLoadingConversation = !!localConvId && !activeConversation && isLoading;
+    if (displayConversation) staleRef.current = displayConversation;
+    const activeConversation = displayConversation ?? staleRef.current;
 
     const handleSelect = (conversation: Conversation) => {
         setLocalConvId(conversation.id);
+        setDisplayConversation(conversation);
+        chat.setActiveConvId(conversation.id);
         setMobileShowList(false);
         saveSession(conversation.id);
     };
 
     const handleBack = () => {
+        setLocalConvId(null);
+        setDisplayConversation(null);
+        chat.setActiveConvId(null);
         setMobileShowList(true);
         clearSession();
-        if (!asModal) {
-            navigate({ to: '/chats', search: {}, replace: true });
-        }
+        if (!asModal) navigate({ to: '/chats', search: {}, replace: true });
     };
 
     const handleConversationDeleted = (deletedId: string) => {
         if (localConvId === deletedId) {
             setLocalConvId(null);
+            setDisplayConversation(null);
+            chat.setActiveConvId(null);
             setMobileShowList(true);
             clearSession();
         }
     };
 
     const modalBg: React.CSSProperties = {
-        backgroundColor:  '#0d0a09',
-        backgroundImage:  `linear-gradient(rgba(0,0,0,0.82), rgba(0,0,0,0.82)), url(${background})`,
+        backgroundColor: '#0d0a09',
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.82), rgba(0,0,0,0.82)), url(${background})`,
         backgroundRepeat: 'repeat',
-        backgroundSize:   '300px 300px',
+        backgroundSize: '300px 300px',
     };
 
-    // Modal mode
+    const sidebarProps = {
+        conversations: chat.conversations,
+        isLoading: chat.convLoading,
+        activeConversationId: localConvId,
+        onSelect: handleSelect,
+        onClose,
+        onConversationDeleted: handleConversationDeleted,
+        onReloadChannels: chat.reloadChannels,
+        onStartDirectChat: chat.startDirectChat,
+    };
+
+    const windowProps = {
+        conversation: activeConversation,
+        isLoadingConversation: !!localConvId && !activeConversation && !streamReady,
+        onBack: handleBack,
+        messages: chat.messages,
+        msgLoading: chat.msgLoading,
+        hasMore: chat.hasMore,
+        loadMore: chat.loadMore,
+        onSend: chat.sendMessage,
+        onSendImage: chat.sendImage,
+        onDelete: chat.deleteMessage,
+        onMarkAsRead: chat.markAsRead,
+    };
+
     if (asModal) {
         return (
             <div className="fixed inset-0 z-300 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4">
@@ -122,32 +156,20 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                         mobileShowList ? 'flex' : 'hidden sm:flex',
                     )}>
                         <div className="flex flex-col flex-1 overflow-hidden px-5 py-5">
-                            <ChatSidebar
-                                conversations={conversations}
-                                isLoading={isLoading}
-                                activeConversationId={localConvId}
-                                onSelect={handleSelect}
-                                onClose={onClose}
-                                onConversationDeleted={handleConversationDeleted}
-                            />
+                            {streamReady && <ChatSidebar {...sidebarProps} />}
                         </div>
                     </div>
                     <div className={cn(
                         'flex-1 min-w-0 flex flex-col overflow-hidden',
                         mobileShowList ? 'hidden sm:flex' : 'flex',
                     )}>
-                        <ChatWindow
-                            conversation={activeConversation}
-                            isLoadingConversation={isLoadingConversation}
-                            onBack={handleBack}
-                        />
+                        <ChatWindow {...windowProps} />
                     </div>
                 </div>
             </div>
         );
     }
 
-    // Full page mode
     return (
         <div className="w-full flex-1 min-h-0 overflow-hidden flex flex-col">
 
@@ -158,24 +180,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                     style={{ background: '#111213' }}
                 >
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-4 py-4">
-                        <ChatSidebar
-                            conversations={conversations}
-                            isLoading={isLoading}
-                            activeConversationId={localConvId}
-                            onSelect={handleSelect}
-                            onClose={onClose}
-                            onConversationDeleted={handleConversationDeleted}
-                        />
+                        {streamReady && <ChatSidebar {...sidebarProps} />}
                     </div>
                 </div>
                 {!mobileShowList && (
                     <div className="fixed inset-0 z-350 flex flex-col bg-[#0d0d0d] md:hidden">
-                        <ChatWindow
-                            conversation={activeConversation}
-                            isLoadingConversation={isLoadingConversation}
-                            onBack={handleBack}
-                            mobileFullscreen
-                        />
+                        <ChatWindow {...windowProps} mobileFullscreen />
                     </div>
                 )}
             </div>
@@ -187,23 +197,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                     style={{ background: '#111213' }}
                 >
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-5 py-5">
-                        <ChatSidebar
-                            conversations={conversations}
-                            isLoading={isLoading}
-                            activeConversationId={localConvId}
-                            onSelect={handleSelect}
-                            onClose={onClose}
-                            onConversationDeleted={handleConversationDeleted}
-                        />
+                        {streamReady && <ChatSidebar {...sidebarProps} />}
                     </div>
                 </div>
-
                 <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden -mb-1px">
-                    <ChatWindow
-                        conversation={activeConversation}
-                        isLoadingConversation={isLoadingConversation}
-                        onBack={handleBack}
-                    />
+                    <ChatWindow {...windowProps} />
                 </div>
             </div>
         </div>

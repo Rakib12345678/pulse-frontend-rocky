@@ -1,538 +1,50 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronDown, Loader2, Smile, Trash2, WifiOff, Copy, Forward, UserCircle2, Search } from 'lucide-react';
-import Picker from '@emoji-mart/react';
-import data from '@emoji-mart/data';
+import { ChevronLeft, Loader2, Smile, WifiOff, Gift, X, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import api from '@/lib/api';
-import { useMessages, useSendMessage, useMarkAsRead, useDeleteMessage } from '../hooks/useChat';
-import { TickIcon } from './ChatSidebar';
-import { getStreamClient } from '../stream/streamClient';
+import { useTranslationPreference } from '../hooks/useTranslationPreference';
 import type { Conversation, Message } from '../types/chat.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useOnlineStatus } from '@/features/chat/hooks/useOnlineStatus';
-import { TRANSLATE_KEY } from '@/features/chat/utils/chatConstants';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { Switch } from '@/components/ui/switch';
+import { Avatar } from '@/features/chat/components/Avatar';
+import { capitalizeName, formatLastSeen, getDayKey, getDateLabel } from '@/features/chat/utils/ChatUtils';
+import { useGoLive } from '@/features/profile/hooks/useGoLive';
 
-import chatGroup from '@/assets/chatGroup.svg';
+// Standalone components
+import { ForwardModal } from './ForwardModal';
+import { ChangeLanguageModal } from './ChangeLanguageModal';
+import { DateSeparator } from './DateSeparator';
+import { GiftCarousel } from './GiftCarousel';
+import { EmojiPickerPopup } from './EmojiPickerPopup';
+import { MessageBubble } from './MessageBubble';
+import { ChatEmptyState } from './ChatEmptyState';
+import { EmptyConversation } from './EmptyConversation';
+
 import sendIcon from '@/assets/Send.svg';
+import LiveIcon from '@/assets/Live.svg';
 
-// Fallback-safe avatar
-const Avatar = ({
-    src,
-    alt = '',
-    className = '',
-}: {
-    src?: string | null;
-    alt?: string;
-    className?: string;
-}) => {
-    const [broken, setBroken] = React.useState(false);
-    if (!src || broken) {
-        return (
-            <div className={cn('rounded-full bg-white/10 flex items-center justify-center shrink-0', className)}>
-                <UserCircle2 className="w-[55%] h-[55%] text-gray-500" />
-            </div>
-        );
-    }
-    return (
-        <img
-            src={src}
-            alt={alt}
-            className={cn('rounded-full object-cover shrink-0', className)}
-            onError={() => setBroken(true)}
-        />
-    );
-};
+const MAX_MSG_LENGTH = 4_000;
 
-const capitalizeName = (name: string): string =>
-    name.replace(/\b\w/g, c => c.toUpperCase());
-
-interface StreamUser { id: string; name?: string; image?: string; fullName?: string; }
-
-const ForwardModal = ({
-    message,
-    onClose,
-    onForwardSuccess,
-    onForwardError,
-}: {
-    message: Message;
-    onClose: () => void;
-    onForwardSuccess: (name: string) => void;
-    onForwardError: () => void;
-}) => {
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState<StreamUser[]>([]);
-    const [searching, setSearch] = useState(false);
-    const [sent, setSent] = useState<string | null>(null);
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const backdropRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        if (!query.trim()) { setResults([]); return; }
-        debounceRef.current = setTimeout(async () => {
-            setSearch(true);
-            try {
-                const client = getStreamClient();
-                const myId   = client.userID;
-                const resp = await client.queryUsers(
-                    { name: { $autocomplete: query.trim() } },
-                    { name: 1 },
-                    { limit: 20 },
-                );
-                const mapped: StreamUser[] = resp.users
-                    .filter(u => u.id !== myId)
-                    .map(u => ({
-                        id:       u.id,
-                        name:     (u as any).fullName || u.name || u.id,
-                        fullName: (u as any).fullName || '',
-                        image: (u as any).image || '',
-                    } as StreamUser));
-                setResults(mapped);
-            } catch { setResults([]); }
-            finally { setSearch(false); }
-        }, 300);
-        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-    }, [query]);
-
-    const handleForwardTo = async (user: StreamUser) => {
-        try {
-            const client  = getStreamClient();
-            const channel = client.channel('messaging', { members: [client.userID!, user.id] });
-            await channel.create();
-            await channel.sendMessage({ text: message.originalText ?? message.text });
-            const name = user.name || user.id;
-            setSent(name);
-            setTimeout(() => {
-                onForwardSuccess(name);
-                onClose();
-            }, 800);
-        } catch {
-            onForwardError();
-            onClose();
-        }
-    };
-
-    return (
-        <div
-            ref={backdropRef}
-            onClick={e => { if (e.target === backdropRef.current) onClose(); }}
-            className="fixed inset-0 z-600 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
-        >
-            <div className="relative w-full max-w-md bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-orange-900/20 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative z-10 px-10 pt-5 pb-4 flex flex-col gap-6">
-                    <div className="flex items-center justify-center">
-                        <h2 className="text-white font-semibold text-base">Forward Message</h2>
-                    </div>
-                    <p className="text-white text-sm leading-relaxed line-clamp-2">
-                        {message.originalText ?? message.text}
-                    </p>
-                    <div className="flex items-center gap-2 px-4 h-11 border border-white/15 rounded-full bg-white/3 focus-within:border-white/30 transition-colors">
-                        <input
-                            autoFocus
-                            className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-500"
-                            placeholder="Search user..."
-                            value={query}
-                            onChange={e => setQuery(e.target.value)}
-                            style={{ fontSize: '16px' }}
-                        />
-                        {searching
-                            ? <Loader2 className="w-4 h-4 text-gray-500 shrink-0 animate-spin" />
-                            : <Search className="w-4 h-4 text-gray-500 shrink-0" />
-                        }
-                    </div>
-                    <div className="flex flex-col gap-0.5 max-h-60 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-                        {sent && <p className="text-center text-green-400 text-sm py-4">✓ Forwarded to {sent}</p>}
-                        {!sent && results.length === 0 && query.trim() && !searching && (
-                            <p className="text-center text-gray-500 text-sm py-4">No users found</p>
-                        )}
-                        {!sent && results.length === 0 && !query.trim() && (
-                            <p className="text-center text-gray-500 text-sm py-4">Search to forward</p>
-                        )}
-                        {!sent && results.map(user => {
-                            const displayName = capitalizeName((user as any).fullName || user.name || user.id);
-                            return (
-                                <button key={user.id} onClick={() => handleForwardTo(user)}
-                                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left">
-                                    <Avatar src={(user as any).image || ''} alt={displayName} className="w-10 h-10" />
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-white text-sm font-semibold truncate">{displayName}</span>
-                                        <span className="text-[#FF7700] text-xs mt-0.5">Tap to forward</span>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// ChangeLanguageModal
-
-interface Language { code: string; name: string; }
-
-const ChangeLanguageModal = ({
-    onClose,
-    onSuccess,
-}: {
-    onClose: () => void;
-    onSuccess: () => void;
-}) => {
-    const { user, updateUser } = useAuthStore();
-
-    const [languages, setLanguages] = useState<Language[]>([]);
-    const [selected, setSelected]   = useState('');
-    const [loading, setLoading]     = useState(true);
-    const [saving, setSaving]       = useState(false);
-    const [fetchErr, setFetchErr]   = useState(false);
-    const backdropRef               = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        setLoading(true);
-        api.get<Language[]>('/users/languages')
-            .then(res => {
-                const langs = res.data ?? [];
-                setLanguages(langs);
-                const currentCode = user?.preferredLanguage;
-                const match = currentCode && langs.find(l => l.code === currentCode);
-                setSelected(match ? match.code : langs[0]?.code ?? '');
-            })
-            .catch(() => setFetchErr(true))
-            .finally(() => setLoading(false));
-    }, []);
-
-    const handleConfirm = async () => {
-        if (!selected) return;
-        setSaving(true);
-        try {
-            await api.put('/users/me/language', { languageCode: selected });
-            updateUser({ preferredLanguage: selected });
-            onSuccess();
-            onClose();
-        } catch {
-            toast.error('Failed to update language');
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    return (
-        <div
-            ref={backdropRef}
-            onClick={e => { if (e.target === backdropRef.current) onClose(); }}
-            className="fixed inset-0 z-600 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
-        >
-            <div className="relative w-full max-w-md bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-orange-900/20 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative z-10 px-8 pt-7 pb-7 flex flex-col gap-6">
-                    <div className="flex items-center justify-center">
-                        <h2 className="text-white font-bold text-lg tracking-wide">Change Language</h2>
-                    </div>
-                    <p className="text-center text-gray-400 text-sm leading-relaxed">
-                        Select the language you want messages translated into.
-                    </p>
-                    {loading ? (
-                        <div className="flex justify-center py-4">
-                            <Loader2 className="w-5 h-5 animate-spin text-[#FF7700]" />
-                        </div>
-                    ) : fetchErr ? (
-                        <p className="text-center text-red-400 text-sm">Failed to load languages. Please try again.</p>
-                    ) : (
-                        <div className="relative">
-                            <select
-                                value={selected}
-                                onChange={e => setSelected(e.target.value)}
-                                className={cn(
-                                    'w-full h-12 pl-4 pr-10 rounded-full text-sm text-white',
-                                    'bg-transparent border border-white/20 focus:border-white/40 focus:outline-none',
-                                    'appearance-none cursor-pointer transition-colors',
-                                )}
-                            >
-                                {languages.map(lang => (
-                                    <option key={lang.code} value={lang.code} className="bg-[#1a1c23] text-white">
-                                        {lang.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        </div>
-                    )}
-                    <div className="flex items-center gap-3 pt-1">
-                        <button
-                            onClick={handleConfirm}
-                            disabled={saving || loading || fetchErr || !selected}
-                            className={cn(
-                                'flex-1 h-11 rounded-full text-sm font-semibold transition-all active:scale-95 flex items-center justify-center gap-2',
-                                saving || loading || fetchErr || !selected
-                                    ? 'bg-[#FF7700]/50 text-black/60 cursor-not-allowed'
-                                    : 'bg-[#FF7700] text-black hover:bg-[#ff9922]',
-                            )}
-                        >
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                            Change
-                        </button>
-                        <button
-                            onClick={onClose}
-                            disabled={saving}
-                            className="flex-1 h-11 rounded-full border border-[#FF7700] text-[#FF7700] text-sm font-semibold hover:bg-[#FF7700]/10 transition-all active:scale-95"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// Helpers
-
-const formatMsgTime = (iso: string) =>
-    new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-const safeDate = (iso: string): Date => {
-    const d = new Date(iso);
-    return isNaN(d.getTime()) ? new Date() : d;
-};
-
-const getDateLabel = (iso: string): string => {
-    const date = safeDate(iso), now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const msgDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const d = Math.round((today.getTime() - msgDay.getTime()) / 86_400_000);
-    if (d === 0) return 'Today';
-    if (d === 1) return 'Yesterday';
-    if (d < 7) return date.toLocaleDateString([], { weekday: 'long' });
-    return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' });
-};
-
-const getDayKey = (iso: string) => safeDate(iso).toISOString().slice(0, 10);
-
-const formatLastSeen = (iso: string): string => {
-    const date = new Date(iso), now = new Date();
-    const s = Math.floor((now.getTime() - date.getTime()) / 1000);
-    if (s < 60) return 'last seen just now';
-    const m = Math.floor(s / 60);
-    if (m < 60) return `last seen ${m}m ago`;
-    const h = Math.floor(m / 60);
-    if (h < 24) return `last seen ${h}h ago`;
-    const dd = Math.floor(h / 24);
-    if (dd === 1) return 'last seen yesterday';
-    return `last seen ${date.toLocaleDateString([], { day: '2-digit', month: 'short' })}`;
-};
-
+// draft per conversation (kept as it is state-binding logic for the input)
 const useDraftPerConversation = (conversationId: string | null) => {
-    const drafts = useRef<Record<string, string>>({});
+    const drafts   = useRef<Record<string, string>>({});
+    const [, rerender] = useState(0);
+
     const getDraft = React.useCallback(
-        () => !conversationId ? '' : (drafts.current[conversationId] ?? ''),
+        () => (!conversationId ? '' : (drafts.current[conversationId] ?? '')),
         [conversationId],
     );
     const setDraft = React.useCallback(
         (v: string) => { if (conversationId) drafts.current[conversationId] = v; },
         [conversationId],
     );
-    const [, rerender] = useState(0);
+
     useEffect(() => { rerender(n => n + 1); }, [conversationId]);
+
     return { getDraft, setDraft };
 };
 
-// DateSeparator
-
-const DateSeparator = ({ label }: { label: string }) => (
-    <div className="flex items-center gap-3 my-2">
-        <div className="flex-1 h-px bg-white/8" />
-        <span className="text-[11px] text-gray-500 font-medium px-2 shrink-0">{label}</span>
-        <div className="flex-1 h-px bg-white/8" />
-    </div>
-);
-
-// MessageDropdown
-interface DropdownProps {
-    isMe: boolean; onDelete?: () => void; onCopy: () => void; onForward: () => void; onClose: () => void;
-    positionLeft?: boolean;
-}
-
-const MessageDropdown = ({ isMe, onDelete, onCopy, onForward, onClose, positionLeft }: DropdownProps) => {
-    const ref = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        const t = setTimeout(() => {
-            const handler = (e: MouseEvent) => {
-                if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-            };
-            document.addEventListener('mousedown', handler);
-            return () => document.removeEventListener('mousedown', handler);
-        }, 50);
-        return () => clearTimeout(t);
-    }, [onClose]);
-
-    return (
-        <div ref={ref} className={cn(
-            'absolute top-8 z-50 min-w-40 bg-[#1e2029] border border-white/10 rounded-xl shadow-2xl overflow-hidden',
-            positionLeft ? 'left-0' : 'right-0',
-        )}>
-            <button onClick={() => { onCopy(); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors border-t border-white/8">
-                <Copy className="w-4 h-4 shrink-0" /> Copy
-            </button>
-            {isMe && onDelete && (
-                <button onClick={() => { onDelete(); onClose(); }}
-                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/8">
-                    <Trash2 className="w-4 h-4 shrink-0" /> Delete
-                </button>
-            )}
-        </div>
-    );
-};
-
-// MessageBubble
-
-interface BubbleProps {
-    message: Message; isMe: boolean;
-    participantName: string;
-    participantAvatar: string; myAvatar?: string;
-    onDelete: (msg: Message) => void;
-    onCopy: (msg: Message) => void;
-    onForward: (msg: Message) => void;
-}
-
-const MessageBubble = ({
-    message, isMe, participantName, participantAvatar, myAvatar, onDelete, onCopy, onForward,
-}: BubbleProps) => {
-    const [hovered, setHovered]       = useState(false);
-    const [dropdownOpen, setDropdown] = useState(false);
-    const longPressTimer              = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const isPending                   = message.status === 'pending';
-
-    const handleTouchStart = (e: React.TouchEvent) => {
-        longPressTimer.current = setTimeout(() => { e.preventDefault(); setDropdown(true); }, 500);
-    };
-    const cancelLongPress = () => { if (longPressTimer.current) clearTimeout(longPressTimer.current); };
-
-    if (isMe) {
-        return (
-            <div className="flex items-start justify-end gap-2.5 ml-auto"
-                onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-                onTouchStart={handleTouchStart} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress}>
-                <div className="relative">
-                    <div className={cn(
-                        'max-w-[35vw] px-4 py-3 pr-8 sm:px-5 sm:py-3.5 sm:pr-9 rounded-2xl rounded-tr-sm break-words',
-                        'bg-[#2a2c35] text-white', isPending && 'opacity-50',
-                    )}>
-                        <p className="text-[13px] sm:text-sm leading-[1.6]">
-                            {message.originalText ?? message.text}
-                        </p>
-                        <div className="flex items-center gap-1 mt-1.5 justify-end">
-                            <span className="text-[10px] text-gray-500">{formatMsgTime(message.time)}</span>
-                            <TickIcon status={message.status} />
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setDropdown(v => !v)}
-                        className={cn(
-                            'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150',
-                            'bg-black/30 hover:bg-black/50 text-gray-300 hover:text-white',
-                            (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0 pointer-events-none',
-                        )}
-                    >
-                        <ChevronDown className="w-3 h-3" />
-                    </button>
-                    {dropdownOpen && (
-                        <MessageDropdown isMe positionLeft={false}
-                            onDelete={() => onDelete(message)}
-                            onCopy={() => onCopy(message)}
-                            onForward={() => onForward(message)}
-                            onClose={() => setDropdown(false)} />
-                    )}
-                </div>
-                <Avatar src={myAvatar} alt="me" className="w-8 h-8 sm:w-9 sm:h-9 mt-0.5" />
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className="flex items-start gap-2.5 mr-auto"
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={cancelLongPress}
-            onTouchMove={cancelLongPress}
-        >
-            <Avatar src={participantAvatar} alt={participantName} className="w-8 h-8 sm:w-9 sm:h-9 mt-0.5" />
-            <div className="flex flex-col gap-1 min-w-0">
-                <span className="text-[12px] font-semibold text-gray-300 leading-none">
-                    {capitalizeName(participantName)}
-                </span>
-                <div className="relative">
-                    <div className={cn(
-                        'max-w-[35vw] px-4 py-3 pr-8 sm:px-5 sm:py-3.5 sm:pr-9 rounded-2xl rounded-tl-sm break-words',
-                        'bg-[#1a1c23] text-white',
-                    )}>
-                        <p className="text-[13px] sm:text-sm leading-[1.6]">{message.text}</p>
-                        <div className="flex items-center gap-1 mt-1.5 justify-end">
-                            <span className="text-[10px] text-gray-500">{formatMsgTime(message.time)}</span>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setDropdown(v => !v)}
-                        className={cn(
-                            'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150',
-                            'bg-black/30 hover:bg-black/50 text-gray-300 hover:text-white',
-                            (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0 pointer-events-none',
-                        )}
-                    >
-                        <ChevronDown className="w-3 h-3" />
-                    </button>
-                    {dropdownOpen && (
-                        <MessageDropdown isMe={false} positionLeft
-                            onCopy={() => onCopy(message)}
-                            onForward={() => onForward(message)}
-                            onClose={() => setDropdown(false)} />
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export const ChatEmptyState = () => (
-    <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center px-6">
-        <img src={chatGroup} alt="Chat Group" className="w-8 h-8 sm:w-9 sm:h-9 object-contain" />
-        <div className="max-w-sm">
-            <p className="text-white font-bold text-lg sm:text-xl leading-snug">Please select a chat to start messaging</p>
-            <p className="text-gray-500 text-xs sm:text-sm mt-2 leading-relaxed">Choose from your existing conversations on the left to start a conversation.</p>
-        </div>
-    </div>
-);
-
-const EmptyConversation = ({ participant }: { participant: Conversation['participant'] }) => (
-    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-8">
-        <Avatar src={participant.avatar} alt={participant.name} className="w-16 h-16 sm:w-20 sm:h-20 ring-2 ring-white/10" />
-        <div>
-            <p className="text-white font-semibold text-sm sm:text-base">{capitalizeName(participant.name)}</p>
-            <p className="text-gray-500 text-xs sm:text-sm mt-1">Send a message to get the conversation started!</p>
-        </div>
-    </div>
-);
-
-const EmojiPickerPopup = ({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) => {
-    const ref = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
-        document.addEventListener('mousedown', h);
-        return () => document.removeEventListener('mousedown', h);
-    }, [onClose]);
-    return (
-        <div ref={ref} className="absolute bottom-17 sm:bottom-18 right-3 sm:right-4 z-50">
-            <Picker data={data} onEmojiSelect={(emoji: { native: string }) => { onSelect(emoji.native); onClose(); }}
-                theme="dark" set="native" previewPosition="none" skinTonePosition="none" maxFrequentRows={1} perLine={8} />
-        </div>
-    );
-};
 
 // ChatWindow
 interface ChatWindowProps {
@@ -540,32 +52,44 @@ interface ChatWindowProps {
     isLoadingConversation?: boolean;
     onBack: () => void;
     mobileFullscreen?: boolean;
+    messages: Message[];
+    msgLoading: boolean;
+    hasMore: boolean;
+    loadMore: () => Promise<void>;
+    onSend: (text: string) => Promise<void>;
+    onSendImage: (file: File) => Promise<void>;
+    onDelete: (messageId: string) => Promise<void>;
+    onMarkAsRead: () => void;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
-    conversation,
-    isLoadingConversation = false,
-    onBack,
-    mobileFullscreen = false,
+    conversation, isLoadingConversation = false, onBack, mobileFullscreen = false,
+    messages, msgLoading, hasMore, loadMore, onSend, onSendImage, onDelete, onMarkAsRead,
 }) => {
     const { user } = useAuthStore();
     const myId = String(user?.id ?? '');
-    const isOnline = useOnlineStatus();
+    const isInternetConnected = useOnlineStatus();
+    const handleGoLiveClick = useGoLive();
 
     const { getDraft, setDraft } = useDraftPerConversation(conversation?.id ?? null);
     const [draftValue, setDraftValue] = useState('');
     const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
-
-    const [translateEnabled, setTranslate] = useState<boolean>(() => {
-        try { return localStorage.getItem(TRANSLATE_KEY(myId)) === 'true'; } catch { return false; }
-    });
-
     const [showLangModal, setShowLangModal] = useState(false);
     const [showEmoji, setShowEmoji] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const inputRef       = useRef<HTMLInputElement>(null);
+    const [showGifts, setShowGifts] = useState(false);
+    const [pendingImage, setPendingImage] = useState<{ file: File; url: string } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+    const [msgToDelete, setMsgToDelete] = useState<Message | null>(null);
+    const { translateEnabled, setTranslate } = useTranslationPreference(myId);
 
-    useEffect(() => { setDraftValue(getDraft()); }, [conversation?.id]);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const atBottomRef = useRef(true);
+    const firstScrollDone = useRef<string | null>(null);
+    const scrollTimeouts = useRef<NodeJS.Timeout[]>([]);
+
+    useEffect(() => { setDraftValue(getDraft()); }, [conversation?.id, getDraft]);
 
     useEffect(() => {
         if (!conversation?.id) return;
@@ -573,94 +97,183 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         return () => clearTimeout(t);
     }, [conversation?.id]);
 
-    const handleDraftChange = (val: string) => { setDraftValue(val); setDraft(val); };
+    const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
+        messagesEndRef.current?.scrollIntoView({ behavior });
+    };
 
-    const { data: messagesData, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
-        useMessages(conversation?.id ?? null);
-    const messages: Message[] = (messagesData?.pages?.flatMap(p => p.messages) ?? [])
-        .filter(m => !!m.text?.trim());
-
-    const { mutate: sendMessage,  isPending: isSending } = useSendMessage();
-    const { mutate: markAsRead } = useMarkAsRead();
-    const { mutate: deleteMessage } = useDeleteMessage();
+    const handleImageLoad = () => {
+        // If an image loads and we were at the bottom (or it's our first scroll), push us back down
+        if (atBottomRef.current || firstScrollDone.current !== conversation?.id) {
+            scrollToBottom('auto');
+        }
+    };
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        // Clear old timeouts
+        scrollTimeouts.current.forEach(clearTimeout);
+        scrollTimeouts.current = [];
+
+        if (!msgLoading && conversation?.id) {
+            // Sequence of scrolls to handle layout shifts as everything renders
+            const delays = [50, 150, 300, 600];
+            delays.forEach(ms => {
+                const t = setTimeout(() => {
+                    scrollToBottom('auto');
+                    if (ms >= 150) firstScrollDone.current = conversation.id;
+                }, ms);
+                scrollTimeouts.current.push(t);
+            });
+        }
+    }, [msgLoading, conversation?.id]);
+
+    useEffect(() => {
+        return () => {
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            scrollTimeouts.current.forEach(clearTimeout);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (atBottomRef.current) {
+            scrollToBottom('smooth');
+        }
     }, [messages.length]);
 
+    // IntersectionObserver updates atBottomRef without a scroll listener.
     useEffect(() => {
-        if (conversation?.id && (conversation.unreadCount ?? 0) > 0) markAsRead(conversation.id);
-    }, [conversation?.id, conversation?.unreadCount]);
+        const sentinel = messagesEndRef.current;
+        if (!sentinel) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => { atBottomRef.current = entry.isIntersecting; },
+            { threshold: 0.1 },
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [conversation?.id]);
 
-    const handleSend = () => {
+    useEffect(() => {
+        if (conversation && atBottomRef.current) {
+            onMarkAsRead();
+        }
+    }, [conversation?.id]);
+
+    useEffect(() => {
+        const handleGlobalClick = () => setContextMenu(null);
+        const handleGlobalScroll = () => setContextMenu(null);
+        window.addEventListener('click', handleGlobalClick);
+        window.addEventListener('scroll', handleGlobalScroll, true);
+        return () => {
+            window.removeEventListener('click', handleGlobalClick);
+            window.removeEventListener('scroll', handleGlobalScroll, true);
+        };
+    }, []);
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setContextMenu({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleDraftChange = (val: string) => { setDraftValue(val); setDraft(val); };
+
+    const handleSend = async () => {
         const text = draftValue.trim();
-        if (!text || !conversation || !isOnline) return;
+        if ((!text && !pendingImage) || !conversation || !isInternetConnected) return;
+        if (text.length > MAX_MSG_LENGTH) {
+            toast.error(`Message too long — maximum ${MAX_MSG_LENGTH.toLocaleString()} characters`);
+            return;
+        }
+
+        const currentPendingImage = pendingImage;
+        const currentText = text;
+
         setDraftValue('');
         setDraft('');
+        setPendingImage(null);
         inputRef.current?.focus();
-        sendMessage(
-            {
-                conversationId: conversation.id,
-                targetUserId: Number(conversation.participant.id),
-                text
-            },
-            {
-                onError: () => {
-                    setDraftValue(text);
-                    setDraft(text);
-                    toast.error('Failed to send message');
-                    inputRef.current?.focus();
-                },
-            },
-        );
+        
+        try {
+            if (currentPendingImage) {
+                await onSendImage(currentPendingImage.file);
+            }
+            if (currentText) {
+                await onSend(currentText);
+            }
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        } catch {
+            setDraftValue(currentText);
+            setDraft(currentText);
+            if (currentPendingImage) setPendingImage(currentPendingImage);
+            toast.error('Failed to send message');
+            inputRef.current?.focus();
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
     };
 
-    const handleDelete = (message: Message) => {
-        if (!conversation) return;
-        deleteMessage({ messageId: message.id, conversationId: conversation.id });
-    };
-
     const handleCopy = (message: Message) => {
         const isMyMessage = message.senderId === myId;
-        const textToCopy = isMyMessage
-            ? (message.originalText ?? message.text)
-            : message.text;
-        navigator.clipboard.writeText(textToCopy)
+        let textToCopy: string;
+        if (isMyMessage) {
+            // Always copy what I actually typed
+            textToCopy = message.originalText ?? message.text;
+        } else {
+            // Copy whichever version is currently visible based on toggle
+            textToCopy = translateEnabled
+                ? (message.text || message.originalText)
+                : (message.originalText || message.text);
+        }
+        navigator.clipboard
+            .writeText(textToCopy)
             .then(() => toast.success('Message copied'))
             .catch(() => toast.error('Failed to copy'));
     };
 
-    const handleToggleTranslate = () => setTranslate(v => {
-        const next = !v;
-        try { localStorage.setItem(TRANSLATE_KEY(myId), String(next)); } catch {}
-        return next;
-    });
+    const handleToggleTranslate = () => setTranslate(v => !v);
+
+    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        // Reset input so the same file can be selected again if needed
+        e.target.value = '';
+        
+        if (!isInternetConnected || !conversation) return;
+        
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('Image size must be less than 5MB');
+            return;
+        }
+
+        setPendingImage({ file, url: URL.createObjectURL(file) });
+        inputRef.current?.focus();
+    };
+
+    const visibleMessages = messages.filter(m => !!m.text?.trim() || (m.attachments && m.attachments.length > 0));
 
     if (!conversation) {
-        if (isLoadingConversation)
+        if (isLoadingConversation) {
             return (
                 <div className="flex-1 flex flex-col items-center justify-center">
                     <Loader2 className="w-6 h-6 animate-spin text-[#FF7700]" />
                 </div>
-        );
-        return (
-            <div className="flex-1 flex flex-col overflow-hidden">
-                <ChatEmptyState />
-            </div>
-        );
+            );
+        }
+        return <div className="flex-1 flex flex-col overflow-hidden"><ChatEmptyState /></div>;
     }
 
-    const canSend = draftValue.trim().length > 0 && isOnline;
+    const canSend = (draftValue.trim().length > 0 && draftValue.trim().length <= MAX_MSG_LENGTH && isInternetConnected) || (!!pendingImage && isInternetConnected);
 
     return (
         <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden relative">
+
             {/* Header */}
             <div className="shrink-0 w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 bg-[#111213] border-b border-white/8">
-                <button onClick={onBack} className="text-white mr-0.5 p-1 rounded-lg hover:bg-white/5 transition-colors md:hidden">
+                <button
+                    onClick={onBack}
+                    className="text-white mr-0.5 p-1 rounded-lg hover:bg-white/5 transition-colors md:hidden"
+                >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
                 <div className="relative shrink-0">
@@ -674,7 +287,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     )}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm truncate">{capitalizeName(conversation.participant.name)}</p>
+                    <p className="text-white font-semibold text-sm truncate">
+                        {capitalizeName(conversation.participant.name)}
+                    </p>
                     <p className={cn('text-[11px]', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
                         {conversation.isOnline
                             ? 'Online'
@@ -684,9 +299,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     </p>
                 </div>
 
-                {/* ── Translate Chat toggle ── */}
-                <div className="flex flex-col items-center gap-1.5 shrink-0 mr-4 mr-15">
-                    <div className="flex items-center gap-10 px-3 sm:px-4 py-2 rounded-lg bg-white/8 border border-white/10">
+                {/* Translate toggle */}
+                <div className="flex flex-col items-center gap-1.5 shrink-0 mr-4">
+                    <div className="flex items-center gap-3 px-3 sm:px-4 py-2 rounded-lg bg-white/8 border border-white/10">
                         <span className="hidden sm:block text-[13px] text-gray-300 font-medium select-none whitespace-nowrap">
                             Translate Chat
                         </span>
@@ -709,49 +324,63 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
 
             {/* Messages */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-none px-4 sm:px-20 py-4 sm:py-5 flex flex-col [&::-webkit-scrollbar]:hidden bg-transparent">
+            <div 
+                className="flex-1 min-h-0 overflow-y-auto overscroll-none px-4 sm:pl-8 sm:pr-20 py-4 sm:py-5 flex flex-col [&::-webkit-scrollbar]:hidden bg-transparent relative"
+                onContextMenu={handleContextMenu}
+            >
                 <div className="flex flex-col gap-3 sm:gap-4 mx-auto w-full">
-                    {hasNextPage && (
+
+                    {hasMore && (
                         <div className="flex justify-center">
-                            <button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}
-                                className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-full border border-white/10">
-                                {isFetchingNextPage ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Load older messages'}
+                            <button
+                                onClick={loadMore}
+                                className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-full border border-white/10"
+                            >
+                                Load older messages
                             </button>
                         </div>
                     )}
 
-                    {isLoading ? (
+                    {msgLoading ? (
                         <div className="flex-1 flex items-center justify-center py-20">
                             <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
                         </div>
-                    ) : messages.length === 0 ? (
+                    ) : visibleMessages.length === 0 ? (
                         <EmptyConversation participant={conversation.participant} />
                     ) : (() => {
                         const items: React.ReactNode[] = [];
                         let lastDayKey = '';
-                        messages.forEach(msg => {
+                        visibleMessages.forEach(msg => {
                             const dayKey = getDayKey(msg.time);
                             if (dayKey !== lastDayKey) {
-                                items.push(<DateSeparator key={`sep-${dayKey}`} label={getDateLabel(msg.time)} />);
+                                items.push(
+                                    <DateSeparator key={`sep-${dayKey}`} label={getDateLabel(msg.time)} />,
+                                );
                                 lastDayKey = dayKey;
                             }
-                            const isMe = msg.senderId === myId;
                             items.push(
                                 <div key={msg.id} className="flex flex-col gap-0.5">
                                     <MessageBubble
-                                        message={msg} isMe={isMe}
+                                        message={msg}
+                                        isMe={msg.senderId === myId}
+                                        translateEnabled={translateEnabled}
                                         participantName={conversation.participant.name}
                                         participantAvatar={conversation.participant.avatar}
                                         myAvatar={user?.profileImage}
-                                        onDelete={handleDelete} onCopy={handleCopy} onForward={setForwardMsg}
+                                        onDelete={msg => setMsgToDelete(msg)}
+                                        onCopy={handleCopy}
+                                        onForward={setForwardMsg}
+                                        onImageLoad={handleImageLoad}
                                     />
                                 </div>,
                             );
                         });
                         return items;
                     })()}
+
                     <div ref={messagesEndRef} />
                 </div>
+
             </div>
 
             {showEmoji && (
@@ -761,66 +390,154 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 />
             )}
 
-            {!isOnline && (
+            {showGifts && (
+                <GiftCarousel 
+                    onSelectGift={gift => {
+                        onSend(`[GIFT:${gift.name}:${gift.noOfCoin}]`);
+                        setShowGifts(false);
+                    }} 
+                />
+            )}
+
+            {!isInternetConnected && (
                 <div className="shrink-0 flex items-center justify-center gap-2 bg-red-600 px-4 py-2.5">
                     <WifiOff className="w-3.5 h-3.5 text-white shrink-0" />
-                    <span className="text-white text-xs font-semibold tracking-wide">No Internet Connection</span>
+                    <span className="text-white text-xs font-semibold tracking-wide">No Internet Connection, Please check your internet Connection</span>
+                </div>
+            )}
+
+            {/* Floating Go Live Icon */}
+            <div 
+                onClick={handleGoLiveClick}
+                className="absolute bottom-32 right-2 sm:right-4 z-30 cursor-pointer"
+            >
+                <img
+                    src={LiveIcon}
+                    alt="Go Live"
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-[0_0_30px_rgba(255,119,0,0.4)] transition-transform active:scale-95"
+                />
+            </div>
+
+            {/* Image Preview Area */}
+            {pendingImage && (
+                <div className="shrink-0 px-4 sm:pl-8 sm:pr-24 py-2 bg-transparent">
+                    <div className="relative inline-block group">
+                        <img 
+                            src={pendingImage.url} 
+                            alt="preview" 
+                            className="max-h-32 rounded-xl border-2 border-[#FF7700] object-contain bg-black/40 shadow-xl"
+                        />
+                        <button 
+                            onClick={() => setPendingImage(null)}
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-10"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             )}
 
             <div className={cn(
-                'shrink-0 pl-4 pr-4 sm:pl-8 sm:pr-20 py-3 sm:py-4 flex items-center gap-2 sm:gap-3 border-t border-white/5 md:mb-15',
+                'shrink-0 pl-4 pr-12 sm:pl-8 sm:pr-24 py-3 sm:py-4 flex items-center border-t border-white/5 md:mb-15',
                 mobileFullscreen && 'pb-7 md:pb-5',
             )}>
-                <div className={cn(
-                    'flex-1 flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
-                    !isOnline
-                        ? 'border-yellow-500/30 focus-within:border-yellow-500/50'
-                        : 'border-white/15 focus-within:border-white/30',
-                )}>
-                    <input
-                        ref={inputRef}
-                        value={draftValue}
-                        onChange={e => handleDraftChange(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={isOnline ? 'Type Message Here...' : 'No connection...'}
-                        className="flex-1 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
-                        style={{ fontSize: '16px' }}
-                    />
-                    <button
-                        onClick={() => setShowEmoji(v => !v)}
-                        className={cn('transition-colors shrink-0', showEmoji ? 'text-[#FF7700]' : 'text-gray-500 hover:text-[#FF7700]')}
-                    >
-                        <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </button>
-                </div>
-
-                {/* Mobile send */}
-                <button onClick={handleSend} disabled={!canSend}
-                    className={cn(
-                        'sm:hidden w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95',
-                        canSend ? 'bg-[#FF7700] shadow-lg shadow-orange-500/30' : 'bg-[#111213] cursor-not-allowed opacity-50',
+                <div className="w-full flex items-center gap-2 sm:gap-4">
+                    <div className={cn(
+                        'flex-[4] flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
+                        !isInternetConnected
+                            ? 'border-yellow-500/30 focus-within:border-yellow-500/50'
+                            : 'border-white/15 focus-within:border-white/30',
                     )}>
-                    {isSending ? <Loader2 className="w-5 h-5 animate-spin text-white" />
-                        : !isOnline ? <WifiOff className="w-5 h-5 text-white" />
-                        : <img src={sendIcon} alt="Send" className="w-5 h-5" />}
-                </button>
+                        <input
+                            ref={inputRef}
+                            value={draftValue}
+                            onChange={e => handleDraftChange(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={isInternetConnected ? 'Type Message Here...' : 'No connection...'}
+                            className="flex-1 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
+                            style={{ fontSize: '16px' }}
+                        />
+                        <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            ref={fileInputRef}
+                            onChange={handleImageSelect}
+                        />
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="transition-colors shrink-0 text-gray-500 hover:text-[#FF7700]"
+                            title="Attach Image"
+                        >
+                            <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                        <button
+                            onClick={() => setShowEmoji(v => !v)}
+                            className={cn(
+                                'transition-colors shrink-0',
+                                showEmoji ? 'text-[#FF7700]' : 'text-gray-500 hover:text-[#FF7700]',
+                            )}
+                        >
+                            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                    </div>
 
-                {/* Desktop send */}
-                <button onClick={handleSend} disabled={!canSend}
-                    className={cn(
-                        'hidden sm:flex h-12 w-[15%] px-10 rounded-full text-sm font-semibold transition-all items-center justify-center gap-2 shrink-0',
-                        canSend
-                            ? 'bg-[#FF7700] text-black hover:bg-[#ff9922] active:scale-95'
-                            : 'bg-[#111213] text-gray-500 cursor-not-allowed',
-                    )}
-                >
-                    {isSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : !isOnline ? <WifiOff className="w-3.5 h-3.5" /> : null}
-                    Send
-                </button>
+                    {/* Mobile buttons */}
+                    <div className="sm:hidden flex items-center gap-2">
+                        <button
+                            onClick={handleSend}
+                            disabled={!canSend}
+                            className={cn(
+                                'w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95',
+                                canSend ? 'bg-[#FF7700] shadow-lg shadow-orange-500/30' : 'bg-[#111213] cursor-not-allowed opacity-50',
+                            )}
+                        >
+                            {!isInternetConnected
+                                ? <WifiOff className="w-5 h-5 text-white" />
+                                : <img src={sendIcon} alt="Send" className="w-5 h-5" />
+                            }
+                        </button>
+                        <button
+                            onClick={() => setShowGifts(v => !v)}
+                            className={cn(
+                                'w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 bg-[#111213] border border-white/10',
+                                showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400',
+                            )}
+                        >
+                            <Gift className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Desktop buttons */}
+                    <div className="hidden sm:flex items-center gap-3 shrink-0">
+                        <button
+                            onClick={handleSend}
+                            disabled={!canSend}
+                            className={cn(
+                                'h-12 w-36 rounded-full text-sm font-bold transition-all flex items-center justify-center gap-2',
+                                canSend
+                                    ? 'bg-[#FF7700] text-black hover:bg-[#ff9922] active:scale-95 shadow-md'
+                                    : 'bg-[#111213] text-gray-500 cursor-not-allowed',
+                            )}
+                        >
+                            {!isInternetConnected ? <WifiOff className="w-3.5 h-3.5" /> : null}
+                            Send
+                        </button>
+
+                        <button
+                            onClick={() => setShowGifts(v => !v)}
+                            className={cn(
+                                'w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 bg-[#111213] border border-white/10 shrink-0',
+                                showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400 hover:text-white',
+                            )}
+                            title="Send Gift"
+                        >
+                            <Gift className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            {/* Forward Modal */}
             {forwardMsg && (
                 <ForwardModal
                     message={forwardMsg}
@@ -834,6 +551,71 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     onClose={() => setShowLangModal(false)}
                     onSuccess={() => toast.success('Language updated successfully')}
                 />
+            )}
+
+            {msgToDelete && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="w-full max-w-sm bg-[#1a1c23] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+                                <AlertTriangle className="w-6 h-6 text-red-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">Delete Message?</h3>
+                            <p className="text-gray-400 text-sm leading-relaxed">
+                                Are you sure you want to delete this message? This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="flex border-t border-white/5 bg-black/20">
+                            <button
+                                onClick={() => setMsgToDelete(null)}
+                                className="flex-1 px-4 py-4 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r border-white/5"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const id = msgToDelete.id;
+                                    setMsgToDelete(null);
+                                    try {
+                                        await onDelete(id);
+                                        toast.success('Message deleted');
+                                    } catch {
+                                        toast.error('Failed to delete message');
+                                    }
+                                }}
+                                className="flex-1 px-4 py-4 text-sm font-bold text-red-500 hover:bg-red-500/10 transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Context Menu */}
+            {contextMenu && (
+                <div 
+                    className="fixed z-[9999] bg-[#1a1c23] border border-white/10 rounded-xl shadow-2xl py-1.5 min-w-[160px] backdrop-blur-md animate-in fade-in zoom-in duration-100"
+                    style={{ top: contextMenu.y, left: contextMenu.x }}
+                >
+                    <button
+                        onMouseDown={(e) => {
+                            e.stopPropagation();
+                            onBack();
+                            setContextMenu(null);
+                        }}
+                        className="w-full flex items-center px-4 py-2.5 text-sm text-white hover:bg-white/5 transition-colors text-left font-medium active:scale-95 duration-75"
+                    >
+                        Close Chat
+                    </button>
+                    <div className="mx-2 my-1 border-t border-white/5" />
+                    <button
+                        onClick={() => setContextMenu(null)}
+                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 transition-colors text-left active:scale-95 duration-75"
+                    >
+                        Cancel
+                    </button>
+                </div>
             )}
         </div>
     );

@@ -1,7 +1,22 @@
 export interface ChatUser {
     id: string;
     name: string;
+    fullName?: string;
     avatar: string;
+    isOnline?: boolean;
+    lastActive?: string;
+}
+
+export interface Language {
+    code: string;
+    name: string;
+}
+
+export interface GiftData {
+    id: number;
+    name: string;
+    iconUrl: string;
+    noOfCoin: number;
 }
 
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | undefined;
@@ -14,6 +29,7 @@ export interface Message {
     originalText: string;
     time: string;
     status: MessageStatus;
+    attachments?: { type: string; imageUrl: string }[];
 }
 
 export interface Conversation {

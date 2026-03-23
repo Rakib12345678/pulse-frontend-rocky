@@ -1,73 +1,46 @@
 import { StreamChat } from 'stream-chat';
-import {
-    saveStreamCredentials,
-    clearStreamCredentials,
-} from './streamCredentials';
-import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 
-let clientInstance: StreamChat | null = null;
+let _client: StreamChat | null = null;
 
-export const getStreamClient = (apiKey?: string): StreamChat => {
-    if (!clientInstance) {
-        if (!apiKey) throw new Error('StreamChat: apiKey required on first call');
-        clientInstance = StreamChat.getInstance(apiKey);
-    }
-    return clientInstance;
+export const getStreamClient = (): StreamChat => {
+    if (!_client) throw new Error('[StreamClient] Not initialised — call connectStreamUser first');
+    return _client;
 };
 
-export const isStreamConnected = (): boolean => {
-    return !!(clientInstance?.userID);
-};
-
+export const isStreamConnected = (): boolean =>
+    !!_client && !!_client.userID;
 export const connectStreamUser = async (
-    userId: string,
+    userId:   string,
     userName: string,
-    avatar: string,
-    apiKey: string,
-    token: string,
+    avatar:   string,
+    apiKey:   string,
+    token:    string,
     fullName?: string,
 ): Promise<void> => {
-    const client = getStreamClient(apiKey);
-    const absoluteAvatar = toAbsoluteUrl(avatar);
+    // Reuse existing client if already connected as the same user
+    if (_client?.userID === userId) return;
 
-    if (client.userID === userId) return;
-    if (client.userID) await client.disconnectUser();
+    // Disconnect any previous session cleanly
+    if (_client) {
+        await _client.disconnectUser().catch(() => {});
+        _client = null;
+    }
 
-    await client.connectUser(
+    _client = StreamChat.getInstance(apiKey);
+
+    await _client.connectUser(
         {
-            id: userId,
-            name: userName,
-            image: absoluteAvatar,
-            ...({ fullName: fullName ?? userName } as Record<string, unknown>),
+            id:   userId,
+            name: fullName?.trim() || userName,
+            image: avatar,
+            ...(fullName?.trim() ? { fullName: fullName.trim() } : {}),
         },
         token,
     );
-
-    try {
-        await client.upsertUser({
-            id: userId,
-            name: userName,
-            image: absoluteAvatar,
-            fullName: fullName ?? userName,
-        } as any);
-    } catch (err) {
-        console.warn('[StreamClient] upsertUser failed:', err);
-    }
-
-    saveStreamCredentials({
-        apiKey,
-        token,
-        userId,
-        userName,
-        avatar: absoluteAvatar,
-        fullName,
-    });
 };
 
 export const disconnectStreamUser = async (): Promise<void> => {
-    if (clientInstance?.userID) {
-        await clientInstance.disconnectUser();
-        clearStreamCredentials();
-        clientInstance = null;
-    }
+    if (!_client) return;
+    await _client.disconnectUser().catch(() => {});
+    _client = null;
 };

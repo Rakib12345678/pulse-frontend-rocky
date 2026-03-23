@@ -1,52 +1,22 @@
 import React from 'react';
-import { Loader2, WifiOff, SquarePen, X, UserCircle2, Pin, Trash2, AlertTriangle } from 'lucide-react';
+import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getStreamClient } from '../stream/streamClient';
-import { useStartDirectChat, chatKeys } from '../hooks/useChat';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
 import type { Conversation, MessageStatus } from '../types/chat.types';
-import { useOnlineStatus } from '@/features/chat/hooks/useOnlineStatus';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useTranslationPreference } from '../hooks/useTranslationPreference';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { TRANSLATE_KEY, PINNED_STORAGE_KEY } from '@/features/chat/utils/chatConstants';
-import chatGroup from '@/assets/chatGroup.svg';
+import { PINNED_STORAGE_KEY } from '@/features/chat/utils/chatConstants';
+import { Avatar } from '@/features/chat/components/Avatar';
+import { UserSearchList, type StreamUser } from '@/features/chat/components/Usersearchlist';
+import { capitalizeName, getDisplayName, formatRelativeTime } from '@/features/chat/utils/ChatUtils';
+import { toAbsoluteUrl } from '@/features/chat/utils/chat';
+import { chatService } from '../services/chat.service';
+import chatGroup  from '@/assets/chatGroup.svg';
 import SearchIcon from '@/assets/Search.svg';
 
-// Fallback-safe avatar
-const Avatar = ({
-    src,
-    alt = '',
-    className = '',
-}: {
-    src?: string | null;
-    alt?: string;
-    className?: string;
-}) => {
-    const [broken, setBroken] = React.useState(false);
-    if (!src || broken) {
-        return (
-            <div className={`rounded-full bg-white/10 flex items-center justify-center shrink-0 ${className}`}>
-                <UserCircle2 className="w-[55%] h-[55%] text-gray-500" />
-            </div>
-        );
-    }
-    return (
-        <img
-            src={src}
-            alt={alt}
-            className={`rounded-full object-cover shrink-0 ${className}`}
-            onError={() => setBroken(true)}
-        />
-    );
-};
-
-
-
-// Capitalize first letter in a name 
-const capitalizeName = (name: string): string =>
-    name.replace(/\b\w/g, c => c.toUpperCase());
-
 // TickIcon
+
 export const TickIcon = ({ status }: { status?: MessageStatus }) => {
     if (status === 'pending') return (
         <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" viewBox="0 0 16 16" fill="none">
@@ -74,21 +44,7 @@ export const TickIcon = ({ status }: { status?: MessageStatus }) => {
     return null;
 };
 
-// Relative time
-const formatRelativeTime = (iso: string): string => {
-    const date = new Date(iso);
-    const now = new Date();
-    const diffS = Math.floor((now.getTime() - date.getTime()) / 1000);
-    if (diffS < 60) return `${diffS}s ago`;
-    const diffM = Math.floor(diffS / 60);
-    if (diffM < 60) return `${diffM}m ago`;
-    const diffH = Math.floor(diffM / 60);
-    if (diffH < 24) return `${diffH}h ago`;
-    const diffD = Math.floor(diffH / 24);
-    if (diffD === 1) return 'Yesterday';
-    if (diffD < 7) return date.toLocaleDateString([], { weekday: 'short' });
-    return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: '2-digit' });
-};
+// relative time ticker
 
 const useRelativeTicker = () => {
     const [, setTick] = React.useState(0);
@@ -98,63 +54,23 @@ const useRelativeTicker = () => {
     }, []);
 };
 
-// Pinned helpers 
+// pinned helpers
+
 const getPinned = (): string[] => {
     try { return JSON.parse(sessionStorage.getItem(PINNED_STORAGE_KEY) ?? '[]'); } catch { return []; }
 };
 const setPinned = (ids: string[]) => sessionStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids));
 
 // NewChatModal
-interface StreamUser {
-    id: string;
-    name?: string;
-    image?: string;
-    fullName?: string;
-}
 
 const NewChatModal = ({
-    onClose,
-    onStartChat,
-    isStarting,
+    onClose, onStartChat, isStarting,
 }: {
     onClose: () => void;
     onStartChat: (user: StreamUser) => void;
     isStarting: boolean;
 }) => {
-    const [query, setQuery] = React.useState('');
-    const [results, setResults] = React.useState<StreamUser[]>([]);
-    const [searching, setSearch] = React.useState(false);
-    const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const backdropRef = React.useRef<HTMLDivElement>(null);
-
-    React.useEffect(() => {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        if (!query.trim()) { setResults([]); return; }
-        let stale = false;
-        debounceRef.current = setTimeout(async () => {
-            setSearch(true);
-            try {
-                const client = getStreamClient();
-                const myId = client.userID;
-                const resp = await client.queryUsers(
-                    { name: { $autocomplete: query.trim() } },
-                    { name: 1 },
-                    { limit: 20 },
-                );
-                if (!stale) setResults(
-                    resp.users.filter(u => u.id !== myId).map(u => ({
-                        id: u.id,
-                        name: (u as any).fullName || u.name || u.id,
-                        fullName: (u as any).fullName || '',
-                        image: (u as any).image || '',
-                    })),
-                );
-            } catch { if (!stale) setResults([]); }
-            finally { if (!stale) setSearch(false); }
-        }, 300);
-        return () => { stale = true; if (debounceRef.current) clearTimeout(debounceRef.current); };
-    }, [query]);
-
     return (
         <div
             ref={backdropRef}
@@ -163,71 +79,28 @@ const NewChatModal = ({
         >
             <div className="relative w-full max-w-125 bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden px-8">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-red-900/30 rounded-full blur-3xl pointer-events-none" />
-
                 <div className="relative z-10 px-6 pt-6 pb-5 flex flex-col gap-10">
-                    {/* Title */}
                     <div className="flex items-center justify-center">
                         <h2 className="text-white font-semibold text-lg">New Chat</h2>
                     </div>
-
-                    {/* Search bar */}
-                    <div className="flex items-center gap-2 px-6 h-14 border border-white/15 rounded-full bg-white/3 focus-within:border-white/30 transition-colors">
-                        <input
-                            autoFocus
-                            className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-500"
-                            placeholder="Search Creator Name Here..."
-                            value={query}
-                            onChange={e => setQuery(e.target.value)}
-                            style={{ fontSize: '16px' }}
-                        />
-                        {searching
-                            ? <Loader2 className="w-4 h-4 text-gray-500 shrink-0 animate-spin" />
-                            : <img src={SearchIcon} className="w-4 h-4 shrink-0 brightness-0 invert" alt="Search" />
-                        }
-                    </div>
-                    <div className="flex flex-col gap-1 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:hidden">
-                        {results.length === 0 && query.trim() && !searching && (
-                            <p className="text-center text-gray-500 text-sm py-6">No users found</p>
-                        )}
-                        {results.length === 0 && !query.trim() && (
-                            <p className="text-center text-gray-500 text-sm py-6">Type a name to search</p>
-                        )}
-                        {results.map(user => {
-                            const displayName = capitalizeName((user as any).fullName || user.name || user.id);
-                            return (
-                                <button
-                                    key={user.id}
-                                    onClick={() => onStartChat(user)}
-                                    disabled={isStarting}
-                                    className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-white/5 transition-colors text-left disabled:opacity-60"
-                                >
-                                    <Avatar
-                                        src={(user as any).image || ''}
-                                        alt={displayName}
-                                        className="w-11 h-11" />
-                                    <div className="flex flex-col">
-                                        <span className="text-white text-sm font-semibold">{displayName}</span>
-                                        <span className="text-[#FF7700] text-xs font-medium mt-0.5">Tap to Chat</span>
-                                    </div>
-                                    {isStarting && <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-auto shrink-0" />}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    <UserSearchList
+                        placeholder="Search Creator Name Here..."
+                        actionLabel="Tap to Chat"
+                        emptyMessage="Type a name to search"
+                        onSelectUser={onStartChat}
+                        isProcessing={isStarting}
+                        listClassName="max-h-80"
+                    />
                 </div>
             </div>
         </div>
     );
 };
 
+// ConfirmDeleteModal
 
-
-// Confirm Delete Modal
 const ConfirmDeleteModal = ({
-    name,
-    onConfirm,
-    onCancel,
-    isDeleting,
+    name, onConfirm, onCancel, isDeleting,
 }: {
     name: string;
     onConfirm: () => void;
@@ -267,12 +140,10 @@ const ConfirmDeleteModal = ({
     </div>
 );
 
-// Dropdown open when right click on chat
+// ConversationDropdown 
+
 const ConversationDropdown = ({
-    isPinned,
-    onPin,
-    onDelete,
-    onClose,
+    isPinned, onPin, onDelete, onClose,
 }: {
     isPinned: boolean;
     onPin: () => void;
@@ -281,17 +152,15 @@ const ConversationDropdown = ({
 }) => {
     const ref = React.useRef<HTMLDivElement>(null);
     React.useEffect(() => {
-        const handler = (e: MouseEvent) => {
+        const h = (e: MouseEvent) => {
             if (ref.current && !ref.current.contains(e.target as Node)) onClose();
         };
-        const t = setTimeout(() => document.addEventListener('mousedown', handler), 80);
-        return () => { clearTimeout(t); document.removeEventListener('mousedown', handler); };
+        const t = setTimeout(() => document.addEventListener('mousedown', h), 80);
+        return () => { clearTimeout(t); document.removeEventListener('mousedown', h); };
     }, [onClose]);
+
     return (
-        <div
-            ref={ref}
-            className="absolute top-full left-2 mt-0.5 z-50 w-60 bg-[#1e2029] border border-white/10 rounded-xl shadow-2xl overflow-hidden"
-        >
+        <div ref={ref} className="absolute top-full left-2 mt-0.5 z-50 w-60 bg-[#1e2029] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
             <button
                 onClick={e => { e.stopPropagation(); onPin(); onClose(); }}
                 className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors"
@@ -303,14 +172,14 @@ const ConversationDropdown = ({
                 onClick={e => { e.stopPropagation(); onDelete(); onClose(); }}
                 className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/8"
             >
-                <Trash2 className="w-4 h-4 shrink-0" />
-                Delete
+                <Trash2 className="w-4 h-4 shrink-0" /> Delete
             </button>
         </div>
     );
 };
 
 // ChatListItem
+
 const ChatListItem = ({
     conversation, isActive, isPinned, myId, translateEnabled,
     onClick, onDeleteRequest, onPinToggle,
@@ -321,10 +190,11 @@ const ChatListItem = ({
     myId: string;
     translateEnabled: boolean;
     onClick: () => void;
-    onDeleteRequest: (conv: Conversation) => void;
-    onPinToggle: (conv: Conversation) => void;
+    onDeleteRequest: (c: Conversation) => void;
+    onPinToggle: (c: Conversation) => void;
 }) => {
     const [open, setOpen] = React.useState(false);
+
     const isMine = conversation.lastMessageSenderId === myId;
     const preview = isMine
         ? (conversation.lastMessageOriginal || conversation.lastMessage)
@@ -355,7 +225,6 @@ const ChatListItem = ({
                         <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 ring-2 ring-[#111213]" />
                     )}
                 </div>
-
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                         <span className="flex items-center gap-1.5 text-white text-sm font-semibold truncate">
@@ -385,6 +254,7 @@ const ChatListItem = ({
                     </div>
                 </div>
             </button>
+
             {open && (
                 <ConversationDropdown
                     isPinned={isPinned}
@@ -397,11 +267,13 @@ const ChatListItem = ({
     );
 };
 
-// ChatSidebar
+// ChatSidebar 
 interface ChatSidebarProps {
     conversations: Conversation[];
     isLoading: boolean;
     activeConversationId: string | null;
+    onReloadChannels: () => Promise<void>;
+    onStartDirectChat: (targetUserId: number, targetName?: string, targetAvatar?: string) => Promise<Conversation>;
     onSelect: (conversation: Conversation) => void;
     onClose?: () => void;
     onConversationDeleted?: (conversationId: string) => void;
@@ -409,84 +281,42 @@ interface ChatSidebarProps {
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
-    conversations,
-    isLoading,
-    activeConversationId,
-    onSelect,
-    onClose,
-    onConversationDeleted,
-    className,
+    conversations, isLoading, activeConversationId,
+    onStartDirectChat,
+    onSelect, onClose, onConversationDeleted, className,
 }) => {
+    const { user } = useAuthStore();
+    const myId = String(user?.id ?? '');
+    const isOnline = useOnlineStatus();
+    useRelativeTicker();
+
     const [searchQuery, setSearchQuery] = React.useState('');
     const [showNewChat, setShowNewChat] = React.useState(false);
     const [confirmDelete, setConfirmDelete] = React.useState<Conversation | null>(null);
     const [isDeleting, setIsDeleting] = React.useState(false);
-    const [pinnedIds, setPinnedIds] = React.useState<string[]>(() => getPinned());
+    const [isStarting, setIsStarting] = React.useState(false);
+    const [pinnedIds, setPinnedIds] = React.useState<string[]>(getPinned);
 
-    const isOnline = useOnlineStatus();
-    useRelativeTicker();
-
-    const { user } = useAuthStore();
-    const myId = String(user?.id ?? '');
-    const translateStorageKey = TRANSLATE_KEY(myId);
-    const [translateEnabled, setTranslateEnabled] = React.useState<boolean>(() => {
-        try { return localStorage.getItem(translateStorageKey) === 'true'; } catch { return false; }
-    });
-
-    React.useEffect(() => {
-        if (!myId) return;
-        try { setTranslateEnabled(localStorage.getItem(translateStorageKey) === 'true'); } catch { }
-    }, [myId, translateStorageKey]);
-
-    React.useEffect(() => {
-        const handler = (e: StorageEvent) => {
-            if (e.key === translateStorageKey) setTranslateEnabled(e.newValue === 'true');
-        };
-        window.addEventListener('storage', handler);
-        return () => window.removeEventListener('storage', handler);
-    }, [translateStorageKey]);
-
-    const queryClient = useQueryClient();
-    const { mutate: startDirectChat, isPending: isStarting } = useStartDirectChat();
+    const { translateEnabled } = useTranslationPreference(myId);
 
     const handlePin = (conv: Conversation) => {
         const alreadyPinned = pinnedIds.includes(conv.id);
-
         setPinnedIds(prev => {
-            const next = alreadyPinned
-                ? prev.filter(id => id !== conv.id)
-                : [...prev, conv.id];
+            const next = alreadyPinned ? prev.filter(id => id !== conv.id) : [...prev, conv.id];
             setPinned(next);
             return next;
         });
-
-        // toast
         toast.success(alreadyPinned ? 'Conversation unpinned' : 'Conversation pinned', {
             description: capitalizeName(conv.participant.name),
             classNames: { description: '!text-black' },
         });
     };
-
     const handleDeleteConfirmed = async (conv: Conversation) => {
         setIsDeleting(true);
         try {
-            const client     = getStreamClient();
-            const [type, id] = conv.id.split(':');
-            const channel    = client.channel(type, id);
-
-            await channel.watch();
-            try {
-                await channel.delete();
-            } catch {
-                await channel.hide(client.userID ?? undefined);
-            }
-
-            queryClient.setQueryData(chatKeys.conversations(), (old: Conversation[] | undefined) =>
-                old ? old.filter(c => c.id !== conv.id) : old
-            );
+            await chatService.hideOrDeleteConversation(conv.id);
             onConversationDeleted?.(conv.id);
             setConfirmDelete(null);
-
             toast.success('Chat deleted', {
                 description: `Chat with ${capitalizeName(conv.participant.name)} has been removed.`,
                 classNames: { description: '!text-black' },
@@ -502,31 +332,45 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         }
     };
 
-    const handleStartChat = (streamUser: StreamUser) => {
+    const handleStartChat = async (streamUser: StreamUser) => {
         const targetId = parseInt(streamUser.id, 10);
         if (isNaN(targetId)) return;
-        const displayName = capitalizeName((streamUser as any).fullName || streamUser.name || streamUser.id);
-        const avatar = (streamUser as any).image || '';
-
-        startDirectChat(
-            { targetUserId: targetId, targetName: displayName, targetAvatar: avatar },
-            {
-                onSuccess: ({ conversation }) => {
-                    setShowNewChat(false);
-                    onSelect(conversation);
-                },
-            },
-        );
+        const displayName = capitalizeName(getDisplayName(streamUser));
+        const avatar = toAbsoluteUrl((streamUser as any).image || '');
+        setIsStarting(true);
+        try {
+            const conversation = await onStartDirectChat(targetId, displayName, avatar);
+            setShowNewChat(false);
+            onSelect(conversation);
+        } catch {
+            toast.error('Failed to start chat');
+        } finally {
+            setIsStarting(false);
+        }
     };
 
     const filtered = conversations
-        .filter(c => c.participant.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        .filter(c => {
+            if (c.id === activeConversationId) return true;
+            if (!c.lastMessage && !c.lastMessageOriginal) return false;
+            return (
+                c.participant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                c.participant.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (c.participant.fullName || '').toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        })
         .sort((a, b) => {
             const aPin = pinnedIds.includes(a.id) ? 0 : 1;
             const bPin = pinnedIds.includes(b.id) ? 0 : 1;
             if (aPin !== bPin) return aPin - bPin;
+
+            const aUnread = a.unreadCount > 0 ? 0 : 1;
+            const bUnread = b.unreadCount > 0 ? 0 : 1;
+            if (aUnread !== bUnread) return aUnread - bUnread;
+
             return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
         });
+
     return (
         <>
             <div className={cn('flex flex-col h-full overflow-hidden', className)}>
@@ -535,10 +379,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 <div className="shrink-0 flex flex-col gap-3">
                     <div className="relative flex items-center justify-between py-1">
                         <div className="w-7" />
-                        <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide">
-                            Chats
-                        </h2>
-
+                        <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide">Chats</h2>
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={() => setShowNewChat(true)}
@@ -547,7 +388,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             >
                                 <SquarePen className="w-4 h-4" />
                             </button>
-
                             {onClose && (
                                 <button
                                     onClick={onClose}
@@ -580,7 +420,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     </div>
                 </div>
 
-                {/* List */}
+                {/* Conversation list */}
                 <div className="chat-list-container relative flex-1 min-h-0 overflow-y-auto mt-3 [&::-webkit-scrollbar]:hidden">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-10">
@@ -591,7 +431,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             <img src={chatGroup} alt="No chats" className="w-14 h-14 object-contain opacity-80" />
                             <div className="flex flex-col gap-1.5">
                                 <p className="text-white font-bold text-base">No Chat History</p>
-                                <p className="text-gray-500 text-xs leading-relaxed">You haven't started any conversations yet. Find a creator to chat with!</p>
+                                <p className="text-gray-500 text-xs leading-relaxed">
+                                    You haven't started any conversations yet. Find a creator to chat with!
+                                </p>
                             </div>
                             <button
                                 onClick={() => setShowNewChat(true)}
@@ -618,7 +460,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 </div>
             </div>
 
-            {/* New Chat Modal */}
             {showNewChat && (
                 <NewChatModal
                     onClose={() => setShowNewChat(false)}
@@ -626,8 +467,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     isStarting={isStarting}
                 />
             )}
-
-            {/* Confirm Delete Modal */}
             {confirmDelete && (
                 <ConfirmDeleteModal
                     name={confirmDelete.participant.name}

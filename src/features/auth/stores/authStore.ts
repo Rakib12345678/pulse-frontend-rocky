@@ -23,6 +23,7 @@ export interface User {
   bio?: string;
   location?: string;
   profileImage?: string;
+  coins?: number;
   followedByMe?: boolean;
   preferredLanguage?: string;
 }
