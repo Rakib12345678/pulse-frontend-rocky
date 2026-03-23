@@ -28,7 +28,7 @@ const MAX_MSG_LENGTH = 4_000;
 
 // draft per conversation (kept as it is state-binding logic for the input)
 const useDraftPerConversation = (conversationId: string | null) => {
-    const drafts   = useRef<Record<string, string>>({});
+    const drafts = useRef<Record<string, string>>({});
     const [, rerender] = useState(0);
 
     const getDraft = React.useCallback(
@@ -190,7 +190,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         setDraft('');
         setPendingImage(null);
         inputRef.current?.focus();
-        
+
         try {
             if (currentPendingImage) {
                 await onSendImage(currentPendingImage.file);
@@ -235,12 +235,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        
+
         // Reset input so the same file can be selected again if needed
         e.target.value = '';
-        
+
         if (!isInternetConnected || !conversation) return;
-        
+
         if (file.size > 5 * 1024 * 1024) {
             toast.error('Image size must be less than 5MB');
             return;
@@ -269,7 +269,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden relative">
 
             {/* Header */}
-            <div className="shrink-0 w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 bg-[#111213] border-b border-white/8">
+            <div className="shrink-0 w-full relative z-10 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 bg-[#111213] border-b border-white/8">
                 <button
                     onClick={onBack}
                     className="text-white mr-0.5 p-1 rounded-lg hover:bg-white/5 transition-colors md:hidden"
@@ -324,7 +324,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             </div>
 
             {/* Messages */}
-            <div 
+            <div
                 className="flex-1 min-h-0 overflow-y-auto overscroll-none px-4 sm:pl-8 sm:pr-20 py-4 sm:py-5 flex flex-col [&::-webkit-scrollbar]:hidden bg-transparent relative"
                 onContextMenu={handleContextMenu}
             >
@@ -391,11 +391,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             )}
 
             {showGifts && (
-                <GiftCarousel 
+                <GiftCarousel
                     onSelectGift={gift => {
                         onSend(`[GIFT:${gift.name}:${gift.noOfCoin}]`);
                         setShowGifts(false);
-                    }} 
+                    }}
                 />
             )}
 
@@ -407,7 +407,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             )}
 
             {/* Floating Go Live Icon */}
-            <div 
+            <div
                 onClick={handleGoLiveClick}
                 className="absolute bottom-32 right-2 sm:right-4 z-30 cursor-pointer"
             >
@@ -422,12 +422,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {pendingImage && (
                 <div className="shrink-0 px-4 sm:pl-8 sm:pr-24 py-2 bg-transparent">
                     <div className="relative inline-block group">
-                        <img 
-                            src={pendingImage.url} 
-                            alt="preview" 
+                        <img
+                            src={pendingImage.url}
+                            alt="preview"
                             className="max-h-32 rounded-xl border-2 border-[#FF7700] object-contain bg-black/40 shadow-xl"
                         />
-                        <button 
+                        <button
                             onClick={() => setPendingImage(null)}
                             className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-10"
                         >
@@ -594,7 +594,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
             {/* Context Menu */}
             {contextMenu && (
-                <div 
+                <div
                     className="fixed z-[9999] bg-[#1a1c23] border border-white/10 rounded-xl shadow-2xl py-1.5 min-w-[160px] backdrop-blur-md animate-in fade-in zoom-in duration-100"
                     style={{ top: contextMenu.y, left: contextMenu.x }}
                 >

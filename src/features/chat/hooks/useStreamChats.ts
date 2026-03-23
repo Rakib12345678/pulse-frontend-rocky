@@ -68,11 +68,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
     const syncMessages = useCallback((ch: Channel) => {
         const mapped = ch.state.messages.map(m => streamMsgToMessage(m, myId, ch.cid, ch.state.read));
-        setStreamMsgs(prev => {
-            // Simple optimization: only update if message count or last message ID changes
-            if (prev.length === mapped.length && prev[prev.length - 1]?.id === mapped[mapped.length - 1]?.id) return prev;
-            return mapped;
-        });
+        setStreamMsgs(mapped);
     }, [myId]);
 
     // ── load channel list ─────────────────────────────────────────────────────
@@ -104,7 +100,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         const forceResync = () => setChannels(prev => [...prev]);
 
         const subs = [
-            client.on('message.new', forceResync),
+            client.on('message.new', reloadChannels),
             client.on('message.read', forceResync),
             client.on('message.delivered', forceResync),
             client.on('user.presence.changed', forceResync),

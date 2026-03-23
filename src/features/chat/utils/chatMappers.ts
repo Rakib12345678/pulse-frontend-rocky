@@ -37,7 +37,11 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
         index === self.findIndex((t: any) => t.imageUrl === att.imageUrl)
     );
 
-    const textToUse = msg.original_text || msg.text || '';
+    // Hunt for original text in various Stream i18n structures if missing
+    const i18n = msg.i18n || (msg as any).translations || {};
+    const originalFromI18n = i18n.original_text || i18n.text_en; 
+    const textToUse = msg.original_text || originalFromI18n || msg.text || '';
+
     const attachmentsToUse = uniqueAttachments.length > 0 ? uniqueAttachments : undefined;
 
     return {
@@ -80,18 +84,26 @@ export const channelToConversation = (
 
     let lastMsgText = lastMsg?.text ?? '';
     let lastMsgOriginal = (lastMsg as any)?.original_text ?? lastMsg?.text ?? '';
+    const hasAttachments = !!(lastMsg?.attachments && lastMsg.attachments.length > 0);
 
-    if (lastMsgText.includes('[IMAGE:')) {
-        lastMsgText = lastMsgText.replace(/\[IMAGE:(.*?)\]/g, '').trim() || '📷 Image';
-    }
-    if (lastMsgOriginal.includes('[IMAGE:')) {
-        lastMsgOriginal = lastMsgOriginal.replace(/\[IMAGE:(.*?)\]/g, '').trim() || '📷 Image';
-    }
-    if (lastMsgText.includes('[GIFT:')) {
-        lastMsgText = lastMsgText.replace(/\[GIFT:(.*?):(\d+)\]/g, '').trim() || '🎁 Gift';
-    }
-    if (lastMsgOriginal.includes('[GIFT:')) {
-        lastMsgOriginal = lastMsgOriginal.replace(/\[GIFT:(.*?):(\d+)\]/g, '').trim() || '🎁 Gift';
+    // Identify and clean image/gift tags even if translated.
+    // We check both original and translated text to be safe.
+    const imageTagRegex = /\[?[\s\S]*?https?:\/\/[\s\S]*?\]?/i;
+    const giftTagRegex  = /\[?[\s\S]*?:[\s\S]*?:\d+\]?/i;
+
+    const isImageTag = hasAttachments || 
+                      imageTagRegex.test(lastMsgOriginal) || 
+                      imageTagRegex.test(lastMsgText);
+    
+    const isGiftTag  = giftTagRegex.test(lastMsgOriginal) || 
+                      giftTagRegex.test(lastMsgText);
+
+    if (isImageTag) {
+        lastMsgOriginal = '📷 Photo';
+        lastMsgText = '📷 Photo';
+    } else if (isGiftTag) {
+        lastMsgOriginal = '🎁 Gift';
+        lastMsgText = '🎁 Gift';
     }
 
     return {

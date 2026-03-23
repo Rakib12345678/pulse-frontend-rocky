@@ -7,28 +7,73 @@ import { TickIcon } from './ChatSidebar';
 import { capitalizeName, formatMsgTime } from '../utils/ChatUtils';
 import type { Message } from '../types/chat.types';
 
-// Helper: Check if message contains only image [IMAGE:url]
 export const isOnlyImage = (text: string, attachments?: any[]) => {
     const hasAttachments = !!(attachments && attachments.length > 0);
     if (!text) return hasAttachments;
     const trimmed = text.trim();
-    const regex = /^(\[IMAGE:.*?\]\s*)+$/;
-    return regex.test(trimmed) || (!text.trim() && hasAttachments);
+    
+    // Detect any bracketed tag containing a URL (language agnostic)
+    const tagRegex = /\[[\s\S]*?https?:\/\/[\s\S]*?\]/gi;
+    const hasTag = tagRegex.test(trimmed);
+    const cleanText = trimmed.replace(tagRegex, '').trim();
+    
+    return (hasTag && !cleanText) || (!trimmed && hasAttachments);
 };
 
-// Helper: Check if message is a gift [GIFT:name:coins]
+/**
+ * checks if a string is a gift tag.
+ */
 export const isGift = (text: string) => {
     if (!text) return false;
-    return /^\[GIFT:.*?:(\d+)\]$/.test(text.trim());
+    const trimmed = text.trim();
+    // Structure: [Prefix : Name : Coins]
+    const tagRegex = /\[[\s\S]*?:[\s\S]*?:\d+\]/gi;
+    const hasTag = tagRegex.test(trimmed);
+    const cleanText = trimmed.replace(tagRegex, '').trim();
+    return hasTag && !cleanText;
 };
 
-// Helper: Render message content (handles [IMAGE:...] and [GIFT:...])
-const renderMessageContent = (text: string) => {
+/**
+ * Checks BOTH originalText and translated text for special message patterns.
+ * This ensures that if the translation engine mangles the tag, we still catch it.
+ */
+const detectSpecialMessage = (msg: Message): boolean => {
+    if (msg.attachments && msg.attachments.length > 0) return true;
+    const original = msg.originalText || '';
+    const translated = msg.text || '';
+    return (
+        isOnlyImage(original, msg.attachments) ||
+        isGift(original) ||
+        isOnlyImage(translated, msg.attachments) ||
+        isGift(translated)
+    );
+};
+
+/**
+ * Pick the best content string to render for a special message.
+ * We strongly prefer originalText because it usually contains the clean, un-garbled URL.
+ */
+const pickSpecialContent = (msg: Message): string => {
+    const original = msg.originalText || '';
+    const translated = msg.text || '';
+
+    // If originalText looks like a valid special message, use it to avoid broken URLs from translation
+    if (original && (isOnlyImage(original, msg.attachments) || isGift(original))) {
+        return original;
+    }
+    // Fallback to translated if original is missing or doesn't match
+    return translated || original;
+};
+
+/**
+ * Renders the message content, splitting by tags and extracting URLs/gifts structurally.
+ */
+const renderMessageContent = (text: string, onImageLoad?: () => void) => {
     if (!text) return null;
-    
-    // Check if it's a gift
-    const giftMatch = text.match(/^\[GIFT:(.*?):(\d+)\]$/);
-    if (giftMatch) {
+
+    // 1. Check for Gift (Structural match: [Any:Name:Coins])
+    const giftMatch = text.match(/\[[\s\S]*?:([\s\S]*?):(\d+)\]/i);
+    if (giftMatch && text.trim().startsWith('[') && text.trim().endsWith(']')) {
         const [, name, coins] = giftMatch;
         return (
             <div className="flex flex-col items-center gap-3 py-2 px-1">
@@ -37,7 +82,7 @@ const renderMessageContent = (text: string) => {
                     <Gift className="w-12 h-12 text-[#FF7700] relative z-10" />
                 </div>
                 <div className="flex flex-col items-center gap-1 text-center">
-                    <span className="text-[13px] font-bold text-white uppercase tracking-wider">{name}</span>
+                    <span className="text-[13px] font-bold text-white uppercase tracking-wider">{name.trim() || 'Gift'}</span>
                     <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20">
                         <span className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
                         <span className="text-[11px] font-black text-yellow-500">{coins} Coins</span>
@@ -50,20 +95,28 @@ const renderMessageContent = (text: string) => {
         );
     }
 
-    const parts = text.split(/(\[IMAGE:.*?\])/g);
+    // 2. Handle Images / URLs within brackets
+    const tagRegex = /(\[[\s\S]*?https?:\/\/[\s\S]*?\])/gi;
+    const parts = text.split(tagRegex);
+    
     return parts.map((part, index) => {
-        const match = part.match(/\[IMAGE:(.*?)\]/);
-        if (match) {
-            const url = match[1];
-            return (
-                <div key={index} className="my-2">
-                    <img
-                        src={url}
-                        alt="chat attachment"
-                        className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5"
-                    />
-                </div>
-            );
+        // If it's a bracketed tag containing a URL
+        if (part.startsWith('[') && part.endsWith(']') && part.includes('http')) {
+            // Isolate the URL from any other text/labels inside the brackets
+            const urlMatch = part.match(/(https?:\/\/[^\s\n\r\]]+)/i);
+            if (urlMatch) {
+                const url = urlMatch[1];
+                return (
+                    <div key={index} className="my-2">
+                        <img
+                            src={url}
+                            alt="chat attachment"
+                            onLoad={onImageLoad}
+                            className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5"
+                        />
+                    </div>
+                );
+            }
         }
         return part ? <span key={index}>{part}</span> : null;
     });
@@ -86,9 +139,19 @@ export const MessageBubble = ({
     message, isMe, translateEnabled, participantName, participantAvatar, myAvatar,
     onDelete, onCopy, onForward, onImageLoad,
 }: MessageBubbleProps) => {
-    const receivedText = translateEnabled
-        ? (message.text || message.originalText)
-        : (message.originalText || message.text);
+    
+    // Detect if this is a special message using a double-check strategy
+    const isSpecialMsg = detectSpecialMessage(message);
+
+    // Decide which text to use as the base for rendering
+    // Priority: 1. Me -> Original, 2. Normal Translated -> Translated, 3. Special -> pickSpecialContent (prioritizes original)
+    const rawContent = message.originalText || message.text || '';
+    const receivedText = isMe
+        ? rawContent
+        : (translateEnabled && !isSpecialMsg)
+            ? (message.text || message.originalText || '')
+            : pickSpecialContent(message);
+
     const [hovered, setHovered] = useState(false);
     const [dropdownOpen, setDropdown] = useState(false);
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -102,15 +165,18 @@ export const MessageBubble = ({
     };
     useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-    const isSystemEvent = message.originalText?.trim() === 'has joined the live' || message.text?.trim() === 'has joined the live';
+    const isSystemEvent =
+        message.originalText?.trim() === 'has joined the live' ||
+        message.text?.trim() === 'has joined the live';
 
-    if (isSystemEvent) {
-        return null;
-    }
+    if (isSystemEvent) return null;
 
+    // UI Rendering Logic for Sender (ME)
     if (isMe) {
-        const meOnlyImage = isOnlyImage(message.originalText, message.attachments);
-        const meIsGift = isGift(message.originalText);
+        const meOnlyImage = isOnlyImage(message.originalText || '', message.attachments) ||
+                           isOnlyImage(message.text || '', message.attachments) ||
+                           !!(message.attachments && message.attachments.length > 0);
+        const meIsGift = isGift(message.originalText || '') || isGift(message.text || '');
 
         return (
             <div
@@ -130,18 +196,27 @@ export const MessageBubble = ({
                         isPending && 'opacity-70',
                     )}>
                         {message.attachments && message.attachments.length > 0 && (
-                            <div className={cn("flex flex-col gap-2", (!meOnlyImage && !meIsGift) && "mb-2")}>
+                            <div className={cn('flex flex-col gap-2', (!meOnlyImage && !meIsGift) && 'mb-2')}>
                                 {message.attachments.map((att, i) => (
-                                    <img key={i} src={att.imageUrl} alt="attachment" onLoad={onImageLoad} className="max-w-[200px] max-h-[300px] object-contain rounded-lg bg-black/20" />
+                                    <img
+                                        key={i}
+                                        src={att.imageUrl}
+                                        alt="attachment"
+                                        onLoad={onImageLoad}
+                                        className="max-w-[200px] max-h-[300px] object-contain rounded-lg bg-black/20"
+                                    />
                                 ))}
                             </div>
                         )}
                         {message.originalText && (
-                            <div className={cn("text-[13px] sm:text-sm leading-[1.6]", (meOnlyImage || meIsGift) && "p-0")}>
-                                {renderMessageContent(message.originalText)}
+                            <div className={cn('text-[13px] sm:text-sm leading-[1.6]', (meOnlyImage || meIsGift) && 'p-0')}>
+                                {renderMessageContent(message.originalText, onImageLoad)}
                             </div>
                         )}
-                        <div className={cn("flex items-center gap-1 mt-1.5 justify-end", (meOnlyImage || meIsGift) && "absolute bottom-1 right-1 bg-black/50 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm")}>
+                        <div className={cn(
+                            'flex items-center gap-1 mt-1.5 justify-end',
+                            (meOnlyImage || meIsGift) && 'absolute bottom-1 right-1 bg-black/50 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm',
+                        )}>
                             <span className="text-[10px] text-gray-300 font-medium">{formatMsgTime(message.time)}</span>
                             <TickIcon status={message.status} />
                         </div>
@@ -172,7 +247,9 @@ export const MessageBubble = ({
         );
     }
 
-    const tOnlyImage = isOnlyImage(receivedText, message.attachments);
+    // UI Rendering Logic for Receiver (OTHERS)
+    const tOnlyImage = isOnlyImage(receivedText, message.attachments) ||
+                      !!(message.attachments && message.attachments.length > 0);
     const tIsGift = isGift(receivedText);
 
     return (
@@ -197,18 +274,27 @@ export const MessageBubble = ({
                         tOnlyImage && 'p-0 bg-transparent border-none shadow-none',
                     )}>
                         {message.attachments && message.attachments.length > 0 && (
-                            <div className={cn("flex flex-col gap-2", (!tOnlyImage && !tIsGift) && "mb-2")}>
+                            <div className={cn('flex flex-col gap-2', (!tOnlyImage && !tIsGift) && 'mb-2')}>
                                 {message.attachments.map((att, i) => (
-                                    <img key={i} src={att.imageUrl} alt="attachment" onLoad={onImageLoad} className="max-w-[200px] max-h-[300px] object-contain rounded-lg bg-black/20" />
+                                    <img
+                                        key={i}
+                                        src={att.imageUrl}
+                                        alt="attachment"
+                                        onLoad={onImageLoad}
+                                        className="max-w-[200px] max-h-[300px] object-contain rounded-lg bg-black/20"
+                                    />
                                 ))}
                             </div>
                         )}
                         {receivedText && (
-                            <div className={cn("text-[13px] sm:text-sm leading-[1.6]", (tOnlyImage || tIsGift) && "p-0")}>
-                                {renderMessageContent(receivedText)}
+                            <div className={cn('text-[13px] sm:text-sm leading-[1.6]', (tOnlyImage || tIsGift) && 'p-0')}>
+                                {renderMessageContent(receivedText, onImageLoad)}
                             </div>
                         )}
-                        <div className={cn("flex items-center gap-1 mt-1.5 justify-end", (tOnlyImage || tIsGift) && "absolute bottom-1 right-1 bg-black/50 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm")}>
+                        <div className={cn(
+                            'flex items-center gap-1 mt-1.5 justify-end',
+                            (tOnlyImage || tIsGift) && 'absolute bottom-1 right-1 bg-black/50 px-1.5 py-0.5 rounded-md backdrop-blur-sm shadow-sm',
+                        )}>
                             <span className="text-[10px] text-gray-300 font-medium">{formatMsgTime(message.time)}</span>
                         </div>
                     </div>
