@@ -46,6 +46,7 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
 
         if ((wallet?.coinBalance ?? 0) < gift.noOfCoin) {
             toast.error('Insufficient balance');
+            onClose?.();
             openCoinsModal();
             return;
         }

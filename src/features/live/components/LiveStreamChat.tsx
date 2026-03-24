@@ -34,6 +34,12 @@ export const LiveStreamChat: React.FC = () => {
         participantsRef.current = participants;
     }, [participants]);
 
+    // Use the same ID as the call for the chat channel (must be before any early returns)
+    const channel = useMemo(
+        () => (call && chatClient) ? chatClient.channel('livestream', call.id) : null,
+        [chatClient, call?.id]
+    );
+
     // Trigger participant sync every 10 seconds (for host only)
     useEffect(() => {
         if (isViewer || !call) return;
@@ -102,13 +108,7 @@ export const LiveStreamChat: React.FC = () => {
 
     if (!isChatVisible) return null;
 
-    if (!call || !chatClient) return null;
-
-    // Use the same ID as the call for the chat channel
-    const channel = useMemo(
-        () => chatClient.channel('livestream', call.id),
-        [chatClient, call.id]
-    );
+    if (!call || !chatClient || !channel) return null;
 
     const bottomClass = isMobile ? 'bottom-[100px]' : 'bottom-10';
 

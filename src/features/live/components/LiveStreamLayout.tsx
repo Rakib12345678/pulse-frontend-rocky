@@ -152,7 +152,13 @@ const LiveStreamInner: React.FC<{
     const isMobile = useIsMobile();
     const showPiP = isMobile && showFullscreen;
 
-    // Participant sync is now handled in LiveStreamChat.tsx 25 seconds after the stream starts
+    // Lock body scroll while live stream is active (prevents mobile scroll that hides navbar)
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
 
     return (
 
