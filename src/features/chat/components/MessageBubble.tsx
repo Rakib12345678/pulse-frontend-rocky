@@ -72,17 +72,24 @@ const pickSpecialContent = (msg: Message): string => {
 const renderMessageContent = (text: string, onImageLoad?: () => void) => {
     if (!text) return null;
 
-    // 1. Check for Gift (Structural match: [Any:Name:Coins])
-    const giftMatch = text.match(/[\[\(\【][\s\S]*?:([\s\S]*?):(\d+)[\]\)\】]/i);
-    // Be more permissive: if it looks like a gift tag anywhere in the string and starts with a bracket
+    const giftMatch4 = text.match(/[\[\(\【][^:\[\]]*?:(https?:\/\/[^:]+):([^:]+):(\d+)[\]\)\】]/i);
+    const giftMatch3 = text.match(/[\[\(\【][^\[\]]*?:([^:]+):(\d+)[\]\)\】]/i);
     const trimmedText = text.trim();
-    if (giftMatch && (trimmedText.startsWith('[') || trimmedText.startsWith('(') || trimmedText.startsWith('【'))) {
-        const [, name, coins] = giftMatch;
+    const startsWithBracket = trimmedText.startsWith('[') || trimmedText.startsWith('(') || trimmedText.startsWith('\u3010');
+
+    if (startsWithBracket && (giftMatch4 || giftMatch3)) {
+        const iconUrl = giftMatch4 ? giftMatch4[1] : null;
+        const name = giftMatch4 ? giftMatch4[2] : (giftMatch3 ? giftMatch3[1] : '');
+        const coins = giftMatch4 ? giftMatch4[3] : (giftMatch3 ? giftMatch3[2] : '0');
         return (
             <div className="flex flex-col items-center gap-3 py-2 px-1">
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-orange-400/20 to-red-500/20 flex items-center justify-center relative group">
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-orange-400/20 to-red-500/20 flex items-center justify-center relative group overflow-hidden">
                     <div className="absolute inset-0 bg-orange-500/10 blur-xl group-hover:bg-orange-500/20 transition-colors" />
-                    <Gift className="w-12 h-12 text-[#FF7700] relative z-10" />
+                    {iconUrl ? (
+                        <img src={iconUrl} alt={name.trim()} className="w-16 h-16 object-contain relative z-10" />
+                    ) : (
+                        <Gift className="w-12 h-12 text-[#FF7700] relative z-10" />
+                    )}
                 </div>
                 <div className="flex flex-col items-center gap-1 text-center">
                     <span className="text-[13px] font-bold text-white uppercase tracking-wider">{name.trim() || 'Gift'}</span>
@@ -99,7 +106,6 @@ const renderMessageContent = (text: string, onImageLoad?: () => void) => {
     }
 
     // 2. Handle Images / URLs within brackets or raw URLs
-    // This regex catches brackets [ ], parens ( ), and Japanese/Chinese brackets 【 】
     const tagRegex = /([\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】])/gi;
     const parts = text.split(tagRegex);
     
@@ -183,10 +189,11 @@ export const MessageBubble = ({
 
     // UI Rendering Logic for Sender (ME)
     if (isMe) {
-        const meOnlyImage = isOnlyImage(message.originalText || '', message.attachments) ||
-                           isOnlyImage(message.text || '', message.attachments) ||
-                           !!(message.attachments && message.attachments.length > 0);
         const meIsGift = isGift(message.originalText || '') || isGift(message.text || '');
+        const meOnlyImage = !meIsGift && (
+                           isOnlyImage(message.originalText || '', message.attachments) ||
+                           isOnlyImage(message.text || '', message.attachments) ||
+                           !!(message.attachments && message.attachments.length > 0));
 
         return (
             <div
@@ -258,9 +265,9 @@ export const MessageBubble = ({
     }
 
     // UI Rendering Logic for Receiver (OTHERS)
-    const tOnlyImage = isOnlyImage(receivedText, message.attachments) ||
-                      !!(message.attachments && message.attachments.length > 0);
     const tIsGift = isGift(receivedText);
+    const tOnlyImage = !tIsGift && (isOnlyImage(receivedText, message.attachments) ||
+                      !!(message.attachments && message.attachments.length > 0));
 
     return (
         <div

@@ -393,7 +393,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {showGifts && (
                 <GiftCarousel
                     onSelectGift={gift => {
-                        onSend(`[GIFT:${gift.name}:${gift.noOfCoin}]`);
+                        onSend(`[GIFT:${gift.iconUrl}:${gift.name}:${gift.noOfCoin}]`);
                         setShowGifts(false);
                     }}
                 />

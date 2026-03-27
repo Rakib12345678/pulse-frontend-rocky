@@ -141,12 +141,12 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         onCancel={() => setShowReportModal(false)}
       />
 
-      <div className="bg-[#111213] flex flex-col rounded-2xl p-6 md:p-14 border-x-0 border-y-2 md:border-2 border-[#1D1F20] mb-8 md:mb-15">
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8 justify-between items-center mb-8 md:mb-10">
+      <div className="bg-[#111213] flex flex-col rounded-2xl p-3 md:p-5 lg:p-6 xl:p-14 border-x-0 border-y-2 md:border-2 border-[#1D1F20] mb-3 md:mb-5 lg:mb-8 xl:mb-15">
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 lg:gap-6 xl:gap-8 justify-between items-center mb-3 md:mb-5 lg:mb-8 xl:mb-10">
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center text-center md:text-left">
             <div className="relative shrink-0">
               <div
-                className={`w-32 h-32 rounded-full p-1 ${isLive ? 'animate-live-ring' : ''}`}
+                className={`w-32 h-32 md:w-20 md:h-20 lg:w-26 lg:h-26 xl:w-32 xl:h-32 rounded-full p-1 ${isLive ? 'animate-live-ring' : ''}`}
                 style={{
                   background: 'linear-gradient(77.21deg, #718FF2 0%, #2927C5 53%, #FF471A 100%)',
                 }}
@@ -181,7 +181,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 
             <div className="flex flex-col items-center md:items-start w-full mt-2 md:mt-0">
               <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
-                <h1 className="text-2xl md:text-4xl font-bold text-white mb-1">
+                <h1 className="text-xl md:text-xl lg:text-2xl xl:text-4xl font-bold text-white mb-1">
                   {user.fullName || user.username}
                 </h1>
               </div>
@@ -196,7 +196,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 )}
               </div>
               {user.bio && (
-                <p className="text-zinc-300 text-sm md:text-base max-w-lg leading-relaxed text-center md:text-left mt-3">{user.bio}</p>
+                <p className="text-zinc-300 text-sm md:text-sm lg:text-sm xl:text-base max-w-lg leading-relaxed text-center md:text-left mt-1 md:mt-2 lg:mt-3 px-2 md:px-0">{user.bio}</p>
               )}
             </div>
           </div>
@@ -302,12 +302,12 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
           </div>
         </div>
 
-        <div className="bg-[#1D1F20] rounded-3xl md:rounded-4xl py-4 md:py-3 px-6 md:px-20 border border-zinc-800/40 shadow-2xl w-full">
+        <div className="bg-[#1D1F20] rounded-2xl md:rounded-3xl lg:rounded-3xl xl:rounded-4xl py-1.5 md:py-2.5 lg:py-3 xl:py-4 px-4 md:px-10 lg:px-14 xl:px-20 border border-zinc-800/40 shadow-2xl w-full">
           <div className="flex justify-between items-center w-full">
             {stats.map((stat, i) => (
               <div key={i} className="flex flex-col items-center gap-1 md:gap-1.5 flex-1">
-                <span className="text-[#494E50] text-[10px] md:text-xs font-bold tracking-widest">{stat.label}</span>
-                <span className="text-[#FFE2A5] text-xl md:text-4xl font-extrabold tracking-tight">{stat.value}</span>
+                <span className="text-[#494E50] text-[9px] md:text-xs font-bold tracking-widest">{stat.label}</span>
+                <span className="text-base md:text-2xl lg:text-3xl xl:text-4xl font-extrabold tracking-tight text-[#FFE2A5]">{stat.value}</span>
               </div>
             ))}
           </div>

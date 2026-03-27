@@ -32,6 +32,7 @@ export const connectStreamUser = async (
         {
             id:   userId,
             name: fullName?.trim() || userName,
+            username: userName,
             image: avatar,
             ...(fullName?.trim() ? { fullName: fullName.trim() } : {}),
         },

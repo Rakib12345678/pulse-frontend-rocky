@@ -33,7 +33,7 @@ export const ProfileMediaSection = ({
 
   return (
     <div className="w-full bg-[#0a0a0a]">
-      <div className="w-full border-b border-zinc-800/60 bg-transparent mb-10">
+      <div className="w-full border-b border-zinc-800/60 bg-transparent mb-4 md:mb-6 lg:mb-10">
         <div className="flex w-full">
           <div
             onClick={() => onTabChange('moments')}
@@ -69,10 +69,10 @@ export const ProfileMediaSection = ({
         </div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-1 md:px-6 pb-20">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 pb-20">
         {/* LOADING STATE */}
         {isLoading && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="aspect-[3/4.5] bg-zinc-900 rounded-xl md:rounded-3xl animate-pulse" />
             ))}
@@ -109,7 +109,7 @@ export const ProfileMediaSection = ({
         )}
 
         {!isLoading && data && data.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
             {data.map((item: LiveStream) => (
               <div className="rounded-xl md:rounded-3xl overflow-hidden aspect-[3/4.5]">
                 <LiveCard

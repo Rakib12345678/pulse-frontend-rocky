@@ -83,7 +83,7 @@ export const ProfilePage = () => {
 
   return (
     <div className="bg-transparent h-[calc(100vh-73px)] overflow-y-auto scrollbar-hide">
-      <div className="max-w-7xl mx-auto px-4 sm:px-10 py-8">
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-5 lg:py-8">
         <ProfileHeader
           user={displayUser}
           isOwnProfile={isOwnProfile}
