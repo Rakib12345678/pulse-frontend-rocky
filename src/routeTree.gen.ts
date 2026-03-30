@@ -22,9 +22,11 @@ import { Route as MainRefundPolicyIndexRouteImport } from './routes/_main/refund
 import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
 import { Route as MainPrivacyPolicyIndexRouteImport } from './routes/_main/privacy-policy/index'
 import { Route as MainLiveIndexRouteImport } from './routes/_main/live/index'
-import { Route as MainProfileSettingRouteImport } from './routes/_main/profile/setting'
 import { Route as MainProfileUsernameRouteImport } from './routes/_main/profile/$username'
 import { Route as MainLiveIdRouteImport } from './routes/_main/live/$id'
+import { Route as MainProfileSettingIndexRouteImport } from './routes/_main/profile/setting/index'
+import { Route as MainProfileSettingDiamondsRouteImport } from './routes/_main/profile/setting/diamonds'
+import { Route as MainProfileSettingCoinsRouteImport } from './routes/_main/profile/setting/coins'
 
 const MainRouteRoute = MainRouteRouteImport.update({
   id: '/_main',
@@ -91,11 +93,6 @@ const MainLiveIndexRoute = MainLiveIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MainLiveRouteRoute,
 } as any)
-const MainProfileSettingRoute = MainProfileSettingRouteImport.update({
-  id: '/profile/setting',
-  path: '/profile/setting',
-  getParentRoute: () => MainRouteRoute,
-} as any)
 const MainProfileUsernameRoute = MainProfileUsernameRouteImport.update({
   id: '/profile/$username',
   path: '/profile/$username',
@@ -105,6 +102,22 @@ const MainLiveIdRoute = MainLiveIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => MainLiveRouteRoute,
+} as any)
+const MainProfileSettingIndexRoute = MainProfileSettingIndexRouteImport.update({
+  id: '/profile/setting/',
+  path: '/profile/setting/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainProfileSettingDiamondsRoute =
+  MainProfileSettingDiamondsRouteImport.update({
+    id: '/profile/setting/diamonds',
+    path: '/profile/setting/diamonds',
+    getParentRoute: () => MainRouteRoute,
+  } as any)
+const MainProfileSettingCoinsRoute = MainProfileSettingCoinsRouteImport.update({
+  id: '/profile/setting/coins',
+  path: '/profile/setting/coins',
+  getParentRoute: () => MainRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -117,10 +130,12 @@ export interface FileRoutesByFullPath {
   '/live': typeof MainLiveRouteRouteWithChildren
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
-  '/profile/setting': typeof MainProfileSettingRoute
   '/live/': typeof MainLiveIndexRoute
   '/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/profile/': typeof MainProfileIndexRoute
+  '/profile/setting/coins': typeof MainProfileSettingCoinsRoute
+  '/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
+  '/profile/setting/': typeof MainProfileSettingIndexRoute
   '/refund-policy/': typeof MainRefundPolicyIndexRoute
   '/terms-conditions/': typeof MainTermsConditionsIndexRoute
 }
@@ -133,10 +148,12 @@ export interface FileRoutesByTo {
   '/gifts': typeof MainGiftsRouteRoute
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
-  '/profile/setting': typeof MainProfileSettingRoute
   '/live': typeof MainLiveIndexRoute
   '/privacy-policy': typeof MainPrivacyPolicyIndexRoute
   '/profile': typeof MainProfileIndexRoute
+  '/profile/setting/coins': typeof MainProfileSettingCoinsRoute
+  '/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
+  '/profile/setting': typeof MainProfileSettingIndexRoute
   '/refund-policy': typeof MainRefundPolicyIndexRoute
   '/terms-conditions': typeof MainTermsConditionsIndexRoute
 }
@@ -152,10 +169,12 @@ export interface FileRoutesById {
   '/_main/live': typeof MainLiveRouteRouteWithChildren
   '/_main/live/$id': typeof MainLiveIdRoute
   '/_main/profile/$username': typeof MainProfileUsernameRoute
-  '/_main/profile/setting': typeof MainProfileSettingRoute
   '/_main/live/': typeof MainLiveIndexRoute
   '/_main/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/_main/profile/': typeof MainProfileIndexRoute
+  '/_main/profile/setting/coins': typeof MainProfileSettingCoinsRoute
+  '/_main/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
+  '/_main/profile/setting/': typeof MainProfileSettingIndexRoute
   '/_main/refund-policy/': typeof MainRefundPolicyIndexRoute
   '/_main/terms-conditions/': typeof MainTermsConditionsIndexRoute
 }
@@ -171,10 +190,12 @@ export interface FileRouteTypes {
     | '/live'
     | '/live/$id'
     | '/profile/$username'
-    | '/profile/setting'
     | '/live/'
     | '/privacy-policy/'
     | '/profile/'
+    | '/profile/setting/coins'
+    | '/profile/setting/diamonds'
+    | '/profile/setting/'
     | '/refund-policy/'
     | '/terms-conditions/'
   fileRoutesByTo: FileRoutesByTo
@@ -187,10 +208,12 @@ export interface FileRouteTypes {
     | '/gifts'
     | '/live/$id'
     | '/profile/$username'
-    | '/profile/setting'
     | '/live'
     | '/privacy-policy'
     | '/profile'
+    | '/profile/setting/coins'
+    | '/profile/setting/diamonds'
+    | '/profile/setting'
     | '/refund-policy'
     | '/terms-conditions'
   id:
@@ -205,10 +228,12 @@ export interface FileRouteTypes {
     | '/_main/live'
     | '/_main/live/$id'
     | '/_main/profile/$username'
-    | '/_main/profile/setting'
     | '/_main/live/'
     | '/_main/privacy-policy/'
     | '/_main/profile/'
+    | '/_main/profile/setting/coins'
+    | '/_main/profile/setting/diamonds'
+    | '/_main/profile/setting/'
     | '/_main/refund-policy/'
     | '/_main/terms-conditions/'
   fileRoutesById: FileRoutesById
@@ -310,13 +335,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainLiveIndexRouteImport
       parentRoute: typeof MainLiveRouteRoute
     }
-    '/_main/profile/setting': {
-      id: '/_main/profile/setting'
-      path: '/profile/setting'
-      fullPath: '/profile/setting'
-      preLoaderRoute: typeof MainProfileSettingRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
     '/_main/profile/$username': {
       id: '/_main/profile/$username'
       path: '/profile/$username'
@@ -330,6 +348,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/live/$id'
       preLoaderRoute: typeof MainLiveIdRouteImport
       parentRoute: typeof MainLiveRouteRoute
+    }
+    '/_main/profile/setting/': {
+      id: '/_main/profile/setting/'
+      path: '/profile/setting'
+      fullPath: '/profile/setting/'
+      preLoaderRoute: typeof MainProfileSettingIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/profile/setting/diamonds': {
+      id: '/_main/profile/setting/diamonds'
+      path: '/profile/setting/diamonds'
+      fullPath: '/profile/setting/diamonds'
+      preLoaderRoute: typeof MainProfileSettingDiamondsRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/profile/setting/coins': {
+      id: '/_main/profile/setting/coins'
+      path: '/profile/setting/coins'
+      fullPath: '/profile/setting/coins'
+      preLoaderRoute: typeof MainProfileSettingCoinsRouteImport
+      parentRoute: typeof MainRouteRoute
     }
   }
 }
@@ -357,9 +396,11 @@ interface MainRouteRouteChildren {
   MainGiftsRouteRoute: typeof MainGiftsRouteRoute
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
   MainProfileUsernameRoute: typeof MainProfileUsernameRoute
-  MainProfileSettingRoute: typeof MainProfileSettingRoute
   MainPrivacyPolicyIndexRoute: typeof MainPrivacyPolicyIndexRoute
   MainProfileIndexRoute: typeof MainProfileIndexRoute
+  MainProfileSettingCoinsRoute: typeof MainProfileSettingCoinsRoute
+  MainProfileSettingDiamondsRoute: typeof MainProfileSettingDiamondsRoute
+  MainProfileSettingIndexRoute: typeof MainProfileSettingIndexRoute
   MainRefundPolicyIndexRoute: typeof MainRefundPolicyIndexRoute
   MainTermsConditionsIndexRoute: typeof MainTermsConditionsIndexRoute
 }
@@ -373,9 +414,11 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainGiftsRouteRoute: MainGiftsRouteRoute,
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
   MainProfileUsernameRoute: MainProfileUsernameRoute,
-  MainProfileSettingRoute: MainProfileSettingRoute,
   MainPrivacyPolicyIndexRoute: MainPrivacyPolicyIndexRoute,
   MainProfileIndexRoute: MainProfileIndexRoute,
+  MainProfileSettingCoinsRoute: MainProfileSettingCoinsRoute,
+  MainProfileSettingDiamondsRoute: MainProfileSettingDiamondsRoute,
+  MainProfileSettingIndexRoute: MainProfileSettingIndexRoute,
   MainRefundPolicyIndexRoute: MainRefundPolicyIndexRoute,
   MainTermsConditionsIndexRoute: MainTermsConditionsIndexRoute,
 }

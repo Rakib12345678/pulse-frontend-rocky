@@ -129,9 +129,8 @@ export const SettingsPage = () => {
                 onCancel={() => setShowDeleteModal(false)}
             />
 
-            {/* ----- Page ----- */}
-            {/* Mobile: fullscreen overlay | Desktop: normal page flow (original layout) */}
-            <div className="fixed inset-0 z-40 bg-[#161616] overflow-y-auto overflow-x-hidden md:static md:z-auto md:bg-transparent md:overflow-visible text-white">
+            {/* Mobile: fullscreen overlay | Desktop: flex column with fixed height */}
+            <div className="fixed inset-0 z-40 bg-[#161616] flex flex-col overflow-hidden md:static md:z-auto md:bg-transparent text-white md:h-[calc(100vh-160px)]">
 
                 {/* Mobile-only glow blobs */}
                 <div
@@ -158,7 +157,8 @@ export const SettingsPage = () => {
                         transform: 'translate3d(0,0,0)',
                     }}
                 />
-                <div className="mx-auto px-5 py-6 md:px-10 md:py-10 gap-8">
+                <div className="relative flex-1 overflow-y-auto overflow-x-hidden px-5 py-6 md:px-10 md:py-10 custom-scrollbar">
+                    <div className="max-w-7xl mx-auto">
 
                     {/* Header */}
                     <div className="flex items-center gap-4 mb-8 md:mb-12">
@@ -244,6 +244,16 @@ export const SettingsPage = () => {
                         </div>
                     </div>
 
+                    {/* My Coin Wallet */}
+                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors" onClick={() => navigate({ to: '/profile/setting/coins' })}>
+                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">My Coin Wallet</span>
+                    </div>
+
+                    {/* Get Money */}
+                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors" onClick={() => navigate({ to: '/profile/setting/diamonds' })}>
+                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Get Money</span>
+                    </div>
+
                     {/* Delete Account */}
                     <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5">
                         <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Delete Account</span>
@@ -267,9 +277,9 @@ export const SettingsPage = () => {
                             Log out
                         </button>
                     </div>
-
                 </div>
             </div>
-        </>
+        </div>
+    </>
     );
 };
