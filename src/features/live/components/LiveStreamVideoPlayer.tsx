@@ -16,6 +16,11 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
     const { isViewer, isGuest, isChatVisible, call } = useLiveStreamContext();
     const participants = useParticipants();
+
+    // Helper to extract fullName from participant custom fields
+    const getFullName = (p: any): string =>
+        p?.custom?.fields?.fullName?.kind?.stringValue || p.name || '';
+
     const navigate = useNavigate();
     const isMobile = useIsMobile();
     const { openModal: openProfileModal } = useUserProfileStore();
@@ -171,12 +176,12 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                             ) : (
                                 <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
                                     <span className="text-3xl font-bold text-[#FF8800]">
-                                        {(p.name || 'U').charAt(0).toUpperCase()}
+                                        {(getFullName(p) || 'U').charAt(0).toUpperCase()}
                                     </span>
                                 </div>
                             )}
                         </div>
-                        <span className="text-white/60 text-sm font-medium">{p.name || 'Host'}</span>
+                        <span className="text-white/60 text-sm font-medium">{getFullName(p) || 'Host'}</span>
                         <div className="flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
                             <VideoOff className="w-3.5 h-3.5 text-red-400" />
                             <span className="text-xs text-white/40">Camera off</span>
@@ -203,7 +208,8 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     <div className="absolute bottom-4 left-4 right-4">
                         {isViewer && !isMobile ? (
                             <StreamerInfoOverlay
-                                streamerName={p.name || 'Host'}
+                                streamerName={getFullName(p) || 'Host'}
+                                streamerUsername={p.name}
                                 streamerImage={p.image}
                             />
                         ) : (
@@ -211,7 +217,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                                 onClick={() => openProfileModal(p.name || 'Host')}
                                 className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block cursor-pointer hover:bg-black/60 transition-colors"
                             >
-                                {p.name || 'Host'}
+                                {getFullName(p) || 'Host'}
                             </button>
                         )}
                     </div>
@@ -243,12 +249,12 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                             ) : (
                                 <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
                                     <span className={`font-bold text-[#FF8800] ${isMobile ? 'text-lg' : 'text-xl'}`}>
-                                        {(p.name || 'U').charAt(0).toUpperCase()}
+                                        {(getFullName(p) || 'U').charAt(0).toUpperCase()}
                                     </span>
                                 </div>
                             )}
                         </div>
-                        <span className="text-white/50 text-xs mt-1">{p.name || 'Guest'}</span>
+                        <span className="text-white/50 text-xs mt-1">{getFullName(p) || 'Guest'}</span>
                     </div>
                 )}
 
@@ -353,12 +359,12 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                                                 ) : (
                                                     <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
                                                         <span className="text-3xl font-bold text-[#FF8800]">
-                                                            {(p.name || 'U').charAt(0).toUpperCase()}
+                                                            {(getFullName(p) || 'U').charAt(0).toUpperCase()}
                                                         </span>
                                                     </div>
                                                 )}
                                             </div>
-                                            <span className="text-white/60 text-sm font-medium">{p.name || 'Guest'}</span>
+                                            <span className="text-white/60 text-sm font-medium">{getFullName(p) || 'Guest'}</span>
                                         </div>
                                     )}
                                     {/* Disconnect badge — top left */}
@@ -389,7 +395,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                                     {isChatVisible && (
                                         <div className="absolute bottom-4 left-4">
                                             <span className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block">
-                                                {p.name || 'Guest'}
+                                                {getFullName(p) || 'Guest'}
                                             </span>
                                         </div>
                                     )}

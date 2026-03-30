@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Camera, CameraOff, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import React from 'react';
+import { Camera, CameraOff, Mic, MicOff } from 'lucide-react';
 import { useCallStateHooks, OwnCapability } from '@stream-io/video-react-sdk';
 import { cn } from '@/lib/utils';
-import { useLiveStreamContext } from './LiveStreamLayout';
+
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LiveStreamControlsProps {
@@ -20,8 +20,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
     const canSendAudio = useHasPermissions(OwnCapability.SEND_AUDIO);
     const canSendVideo = useHasPermissions(OwnCapability.SEND_VIDEO);
 
-    const { call } = useLiveStreamContext();
-    const [isMuted, setIsMuted] = useState(false);
+
     const isMobile = useIsMobile();
 
     // A viewer who has been granted publish permissions is a co-host.
@@ -48,17 +47,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
         }
     };
 
-    const toggleMute = () => {
-        if (call) {
-            const newMutedState = !isMuted;
-            setIsMuted(newMutedState);
-            call.state.remoteParticipants.forEach((participant) => {
-                participant.audioStream?.getAudioTracks().forEach((track) => {
-                    track.enabled = !newMutedState;
-                });
-            });
-        }
-    };
+
 
     // Co-host: viewer with publish permissions
     if (isCoHost) {
@@ -126,33 +115,9 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
         );
     }
 
-    // Viewer: volume toggle only
+    // Viewer: no controls here — volume toggle lives in ViewerBottomBar (LiveStreamChat)
     if (isViewer) {
-        if (isMobile) return null; // Hidden on mobile — overlaps with Join Stream button
-        return (
-            <>
-                {/* Volume toggle - bottom right (desktop only) */}
-                <div className="absolute bottom-10 right-6 flex items-center gap-3 z-20">
-                    <button
-                        onClick={toggleMute}
-                        className={cn(
-                            "w-12 h-12 rounded-full flex items-center justify-center transition-all",
-                            "backdrop-blur-md border",
-                            isMuted
-                                ? "bg-red-500 border-red-400/50 text-white hover:bg-red-600"
-                                : "bg-white/10 border-white/10 hover:bg-white/20"
-                        )}
-                        title={isMuted ? "Unmute" : "Mute"}
-                    >
-                        {isMuted ? (
-                            <VolumeX className="w-5 h-5 text-white" />
-                        ) : (
-                            <Volume2 className="w-5 h-5 text-white/70" />
-                        )}
-                    </button>
-                </div>
-            </>
-        );
+        return null;
     }
 
     // Host: mic + cam controls

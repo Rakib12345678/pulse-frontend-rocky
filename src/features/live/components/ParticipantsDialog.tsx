@@ -8,11 +8,17 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useUserProfileStore } from '../stores/userProfileStore';
+
+// Helper to extract fullName from participant custom fields
+const getFullName = (p: any): string =>
+    p?.custom?.fields?.fullName?.kind?.stringValue || p?.name || '';
 
 export const ParticipantsDialog: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
     const participants = useParticipants();
     const { user } = useAuthStore();
+    const { openModal } = useUserProfileStore();
 
     return (
         <DialogContent className="sm:max-w-[425px] bg-[#0f1117] border-white/5 text-white">
@@ -30,8 +36,9 @@ export const ParticipantsDialog: React.FC = () => {
                             participant.capabilities?.includes('send-video')
                         );
 
-                        const displayName = (isMe && user) ? user.username : participant.name;
+                        const displayName = (isMe && user) ? (user.fullName || user.username) : getFullName(participant);
                         const displayImage = (isMe && user) ? user.profileImage : participant.image;
+                        const modalUsername = (isMe && user) ? user.username : participant.name;
 
                         let roleLabel = 'Viewer';
                         if (isCreator) roleLabel = isMe ? 'Host / You' : 'Host';
@@ -41,7 +48,10 @@ export const ParticipantsDialog: React.FC = () => {
                         return (
                             <div
                                 key={participant.sessionId}
-                                className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                                className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                                onClick={() => {
+                                    if (modalUsername) openModal(modalUsername);
+                                }}
                             >
                                 <div className="flex items-center gap-3">
                                     <Avatar className={cn("h-10 w-10 border", isCreator ? "border-[#FF8800]" : (isCoHost ? "border-purple-500" : "border-white/10"))}>

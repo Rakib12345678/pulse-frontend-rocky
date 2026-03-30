@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Lock, Heart, SendHorizonal, Share2, Gift } from 'lucide-react';
+import { Lock, Heart, SendHorizonal, Share2, Volume2, VolumeX } from 'lucide-react';
+import coinIcon from '@/assets/coin.svg';
+import giftSvg from '@/assets/gift.svg';
 import { useJoinRequestStore } from '../stores/joinRequestStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
@@ -17,17 +19,20 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { StreamerInfoOverlay } from './StreamerInfoOverlay';
 import { liveService } from '../services/live.service';
+import { CompactGiftSidebar } from './CompactGiftSidebar';
+
+// Type guard for gift messages
+const isGiftMsg = (msg: any): boolean => !!msg?.isGiftMessage;
 
 export const LiveStreamChat: React.FC = () => {
     const { client: chatClient } = useChatContext();
-    const { call, isChatVisible, isViewer } = useLiveStreamContext();
+    const { call, isChatVisible, isViewer, isGiftingOpen, setIsGiftingOpen } = useLiveStreamContext();
     const { user } = useAuthStore();
     const isMobile = useIsMobile();
     const { useParticipants } = useCallStateHooks();
     const participants = useParticipants();
     const knownCohostsRef = useRef<Record<string, { username: string; profileImage: string; status: string }>>({});
     const initCohostsRef = useRef(false);
-    const [isGiftingOpen, setIsGiftingOpen] = useState(false);
     const participantsRef = useRef(participants);
 
     useEffect(() => {
@@ -116,13 +121,15 @@ export const LiveStreamChat: React.FC = () => {
         <Channel key={chatClient.userID || 'anonymous'} channel={channel}>
             <div className={`absolute ${bottomClass} left-4 right-4 sm:left-10 sm:right-auto sm:w-80 max-h-[400px] flex flex-col z-20`}>
                 <LiveStreamMessageList />
-                <LiveStreamMessageInput setIsGiftingOpen={setIsGiftingOpen} />
+                <LiveStreamMessageInput />
                 <JoinMessageSender channel={channel} isViewer={isViewer} userId={user?.id} />
             </div>
             {/* Viewer: bottom bar with host info + Join Stream */}
             {isViewer && <ViewerBottomBar />}
             {/* Host: Invite Friends button */}
             {!isViewer && <HostInviteBar />}
+
+            <CompactGiftSidebar />
 
             <GiftingFeature
                 isOpen={isGiftingOpen}
@@ -138,6 +145,26 @@ const LiveStreamMessageList: React.FC = () => {
     const { openModal: openProfileModal } = useUserProfileStore();
     const { openModal: openLoginModal, setMode } = useSignUpStore();
     const { isGuest } = useLiveStreamContext();
+    const { useParticipants: useParticipantsList } = useCallStateHooks();
+    const participants = useParticipantsList();
+
+    // Build a lookup map: userId -> fullName from custom fields
+    const fullNameMap = useMemo(() => {
+        const map = new Map<string, string>();
+        participants.forEach((p: any) => {
+            const fullName = p?.custom?.fields?.fullName?.kind?.stringValue;
+            if (fullName && p.userId) {
+                map.set(p.userId, fullName);
+            }
+        });
+        return map;
+    }, [participants]);
+
+    // Get display name: prefer fullName from participants, fall back to msg.user.name
+    const getDisplayName = (msgUser: any): string => {
+        if (!msgUser) return '';
+        return fullNameMap.get(msgUser.id) || msgUser.name || msgUser.id || '';
+    };
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -155,41 +182,92 @@ const LiveStreamMessageList: React.FC = () => {
 
     return (
         <div className="flex-1 overflow-y-auto space-y-5 mb-4 scrollbar-hide pr-2">
-            {messages?.map((msg) => (
-                <div key={msg.id} className="flex items-start gap-3">
-                    <img
-                        src={msg.user?.image || 'https://i.pravatar.cc/150'}
-                        alt={msg.user?.name || msg.user?.id}
-                        onClick={() => handleUserClick(msg.user?.name)}
-                        className="w-10 h-10 rounded-full border-2 border-blue-500/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                    />
-                    <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <span
-                                className="text-sm font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors"
+            {messages?.map((msg) => {
+                const giftMessage = isGiftMsg(msg);
+                const giftIconUrl = (msg as any)?.giftIconUrl;
+                const giftCost = (msg as any)?.giftCost;
+
+                if (giftMessage) {
+                    return (
+                        <div
+                            key={msg.id}
+                            className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                            style={{
+                                background: 'linear-gradient(135deg, rgba(255,136,0,0.15) 0%, rgba(255,200,0,0.08) 100%)',
+                                border: '1px solid rgba(255,136,0,0.35)',
+                            }}
+                        >
+                            <img
+                                src={msg.user?.image || 'https://i.pravatar.cc/150'}
+                                alt={getDisplayName(msg.user)}
                                 onClick={() => handleUserClick(msg.user?.name)}
-                            >
-                                @{msg.user?.name || msg.user?.id}
-                            </span>
-                            {typeof msg.text === 'string' && msg.text.split('\n').length > 1 && (
-                                <>
-                                    <span className="text-sm font-bold text-white mt-0.5">
-                                        {msg.text.split('\n')[0]}
+                                className="w-9 h-9 rounded-full border-2 border-[#FF8800]/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                            />
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                    <span
+                                        className="text-xs font-semibold text-[#FF8800] cursor-pointer hover:underline transition-colors"
+                                        onClick={() => handleUserClick(msg.user?.name)}
+                                    >
+                                        @{getDisplayName(msg.user)}
                                     </span>
-                                    <p className="text-sm text-white/80 mt-1 leading-relaxed">
-                                        {msg.text.split('\n').slice(1).join('\n')}
-                                    </p>
-                                </>
-                            )}
-                            {typeof msg.text === 'string' && msg.text.split('\n').length === 1 && (
-                                <span className={`text-sm font-bold ${(msg as any).isJoinMessage ? 'text-white/50 italic' : 'text-white'}`}>
-                                    {msg.text}
-                                </span>
+                                    <span className="text-xs text-white/70">{msg.text}</span>
+                                </div>
+                                {giftCost && (
+                                    <div className="flex items-center gap-1 mt-0.5">
+                                        <img src={coinIcon} alt="coins" className="w-3 h-3" />
+                                        <span className="text-[10px] font-bold text-[#FFB800]">{giftCost}</span>
+                                    </div>
+                                )}
+                            </div>
+                            {giftIconUrl && (
+                                <img
+                                    src={giftIconUrl}
+                                    alt="gift"
+                                    className="w-10 h-10 object-contain drop-shadow-[0_0_6px_rgba(255,136,0,0.5)] animate-bounce"
+                                    style={{ animationDuration: '1.5s', animationIterationCount: 3 }}
+                                />
                             )}
                         </div>
+                    );
+                }
+
+                return (
+                    <div key={msg.id} className="flex items-start gap-3">
+                        <img
+                            src={msg.user?.image || 'https://i.pravatar.cc/150'}
+                            alt={getDisplayName(msg.user)}
+                            onClick={() => handleUserClick(msg.user?.name)}
+                            className="w-10 h-10 rounded-full border-2 border-blue-500/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        />
+                        <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span
+                                    className="text-sm font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors"
+                                    onClick={() => handleUserClick(msg.user?.name)}
+                                >
+                                    @{getDisplayName(msg.user)}
+                                </span>
+                                {typeof msg.text === 'string' && msg.text.split('\n').length > 1 && (
+                                    <>
+                                        <span className="text-sm font-bold text-white mt-0.5">
+                                            {msg.text.split('\n')[0]}
+                                        </span>
+                                        <p className="text-sm text-white/80 mt-1 leading-relaxed">
+                                            {msg.text.split('\n').slice(1).join('\n')}
+                                        </p>
+                                    </>
+                                )}
+                                {typeof msg.text === 'string' && msg.text.split('\n').length === 1 && (
+                                    <span className={`text-sm font-bold ${(msg as any).isJoinMessage ? 'text-white/50 italic' : 'text-white'}`}>
+                                        {msg.text}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
             <div ref={messagesEndRef} />
         </div>
     );
@@ -197,10 +275,10 @@ const LiveStreamMessageList: React.FC = () => {
 
 const HEART_EMOJI = { char: '❤️', icon: Heart, color: 'text-red-500' };
 
-const LiveStreamMessageInput: React.FC<{ setIsGiftingOpen: (open: boolean) => void }> = ({ setIsGiftingOpen }) => {
+const LiveStreamMessageInput: React.FC = () => {
     const { isAuthenticated, user } = useAuthStore();
     const { channel } = useChannelStateContext();
-    const { call, isGuest, isViewer } = useLiveStreamContext();
+    const { call, isGuest } = useLiveStreamContext();
     const { openModal, setMode } = useSignUpStore();
     const [inputValue, setInputValue] = useState('');
 
@@ -282,15 +360,6 @@ const LiveStreamMessageInput: React.FC<{ setIsGiftingOpen: (open: boolean) => vo
                         >
                             <Heart className="w-6 h-6 text-red-500 fill-red-500 drop-shadow-sm" />
                         </button>
-                        {isViewer && (
-                            <button
-                                onClick={() => setIsGiftingOpen(true)}
-                                className="flex items-center justify-center transition-transform hover:scale-125 active:scale-95"
-                                title="Send gift"
-                            >
-                                <Gift className="w-6 h-6 text-[#FF8800] drop-shadow-sm" />
-                            </button>
-                        )}
                     </div>
                 </div>
 
@@ -356,13 +425,27 @@ const JoinMessageSender: React.FC<{ channel: StreamChannel; isViewer: boolean; u
     return null;
 };
 
-/** Bottom bar showing host info + Follow + Join Stream for viewers */
+/** Bottom bar showing host info + Follow + Join Stream + Gift icon for viewers */
 const ViewerBottomBar: React.FC = () => {
+    const { isGiftingOpen, setIsGiftingOpen } = useLiveStreamContext();
     const isMobile = useIsMobile();
     const { useCallCreatedBy } = useCallStateHooks();
     const createdBy = useCallCreatedBy();
     const { call } = useLiveStreamContext();
     const { user } = useAuthStore();
+    const [isMuted, setIsMuted] = useState(false);
+
+    const toggleMute = () => {
+        if (call) {
+            const newMutedState = !isMuted;
+            setIsMuted(newMutedState);
+            call.state.remoteParticipants.forEach((participant) => {
+                participant.audioStream?.getAudioTracks().forEach((track) => {
+                    track.enabled = !newMutedState;
+                });
+            });
+        }
+    };
 
     const { requestStatus, setRequestStatus } = useJoinRequestStore();
 
@@ -410,7 +493,8 @@ const ViewerBottomBar: React.FC = () => {
 
     if (!createdBy) return null;
 
-    const hostName = createdBy.name || createdBy.id || 'Host';
+    const hostName = (createdBy as any)?.custom?.fields?.fullName?.kind?.stringValue || createdBy.name || createdBy.id || 'Host';
+    const hostUsername = createdBy.name || createdBy.id || 'Host';
     const hostImage = createdBy.image as string | undefined;
 
     const { openModal, setMode } = useSignUpStore();
@@ -438,6 +522,36 @@ const ViewerBottomBar: React.FC = () => {
         }
     };
 
+    const muteButton = (
+        <button
+            onClick={toggleMute}
+            className={`${isMobile ? 'w-12 h-12' : 'w-12 h-12'} rounded-full flex items-center justify-center transition-all backdrop-blur-md border shrink-0 ${isMuted
+                ? 'bg-red-500 border-red-400/50 text-white hover:bg-red-600'
+                : 'bg-white/10 border-white/10 hover:bg-white/20'
+                }`}
+            title={isMuted ? 'Unmute' : 'Mute'}
+        >
+            {isMuted ? (
+                <VolumeX className="w-5 h-5 text-white" />
+            ) : (
+                <Volume2 className="w-5 h-5 text-white/70" />
+            )}
+        </button>
+    );
+
+    const giftButton = (
+        <button
+            onClick={() => setIsGiftingOpen(!isGiftingOpen)}
+            className={`${isMobile ? 'w-12 h-12' : 'w-12 h-12'} rounded-full flex items-center justify-center transition-all backdrop-blur-md border shrink-0 ${isGiftingOpen
+                ? 'bg-[#FF8800] border-[#FF8800]/50 text-black hover:bg-[#ff9922]'
+                : 'bg-white/10 border-white/10 hover:bg-white/20'
+                }`}
+            title={isGiftingOpen ? 'Close gifts' : 'Send gift'}
+        >
+            <img src={giftSvg} alt="gift" className={`w-5 h-5 ${isGiftingOpen ? 'invert-0 brightness-0' : ''}`} />
+        </button>
+    );
+
     const joinButton = requestStatus === 'approved' ? (
         <span className={`rounded-full text-sm font-bold text-green-400 bg-green-400/10 shrink-0 ${isMobile ? 'px-4 py-3' : 'px-8 py-3 rounded-full'}`}>
             Joined
@@ -462,10 +576,13 @@ const ViewerBottomBar: React.FC = () => {
                 <div className="flex items-center gap-0.5 w-full">
                     <StreamerInfoOverlay
                         streamerName={hostName}
+                        streamerUsername={hostUsername}
                         streamerImage={hostImage || undefined}
                         className="flex-1 bg-[#1a1d27] min-w-0"
                     />
                     {joinButton}
+                    {muteButton}
+                    {giftButton}
                 </div>
             </div>
         );
@@ -473,8 +590,11 @@ const ViewerBottomBar: React.FC = () => {
 
     /* ===== DESKTOP: Join Stream button in bottom-right ===== */
     return (
-        <div className="absolute bottom-10 right-10 z-30">
+        <div className="absolute bottom-10 right-10 z-30 flex items-center gap-3">
+
             {joinButton}
+            {muteButton}
+            {giftButton}
         </div>
     );
 };

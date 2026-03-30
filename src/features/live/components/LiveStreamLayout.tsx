@@ -32,6 +32,10 @@ interface LiveStreamContextValue {
     call: Call | null;
     isChatVisible: boolean;
     setChatVisible: (visible: boolean) => void;
+    isGiftingOpen: boolean;
+    setIsGiftingOpen: (open: boolean) => void;
+    streamEnded: boolean;
+    setStreamEnded: (ended: boolean) => void;
 }
 
 const LiveStreamContext = createContext<LiveStreamContextValue>({
@@ -40,6 +44,10 @@ const LiveStreamContext = createContext<LiveStreamContextValue>({
     call: null,
     isChatVisible: true,
     setChatVisible: () => { },
+    isGiftingOpen: false,
+    setIsGiftingOpen: () => { },
+    streamEnded: false,
+    setStreamEnded: () => { },
 });
 
 export const useLiveStreamContext = () => useContext(LiveStreamContext);
@@ -147,7 +155,11 @@ const LiveStreamInner: React.FC<{
     call: Call;
     isChatVisible: boolean;
     setChatVisible: (visible: boolean) => void;
-}> = ({ children, isViewer, isGuest, call, isChatVisible, setChatVisible }) => {
+    isGiftingOpen: boolean;
+    setIsGiftingOpen: (open: boolean) => void;
+    streamEnded: boolean;
+    setStreamEnded: (ended: boolean) => void;
+}> = ({ children, isViewer, isGuest, call, isChatVisible, setChatVisible, isGiftingOpen, setIsGiftingOpen, streamEnded, setStreamEnded }) => {
     const { showFullscreen } = useUserProfileStore();
     const isMobile = useIsMobile();
     const showPiP = isMobile && showFullscreen;
@@ -162,7 +174,7 @@ const LiveStreamInner: React.FC<{
 
     return (
 
-        <LiveStreamContext.Provider value={{ isViewer, isGuest, call, isChatVisible, setChatVisible }}>
+        <LiveStreamContext.Provider value={{ isViewer, isGuest, call, isChatVisible, setChatVisible, isGiftingOpen, setIsGiftingOpen, streamEnded, setStreamEnded }}>
             <div className="fixed inset-0 pt-18 w-full bg-[#0f1117] text-white overflow-hidden flex flex-col" data-viewer={isViewer}>
                 <div className="flex-1 min-h-0 relative">
                     {children}
@@ -183,6 +195,8 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     const [call, setCall] = useState<Call | null>(null);
     const [isViewer, setIsViewer] = useState(false);
     const [isChatVisible, setChatVisible] = useState(true);
+    const [isGiftingOpen, setIsGiftingOpen] = useState(false);
+    const [streamEnded, setStreamEnded] = useState(false);
     const navigate = useNavigate();
     const isTerminatingRef = useRef(false);
     useEffect(() => {
@@ -208,6 +222,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
         const isViewerMode = !streamData && !!viewerCallId;
 
         if (!isHostMode && !isViewerMode) return;
+        setStreamEnded(false);
 
         let mounted = true;
         let _client: StreamVideoClient | null = null;
@@ -271,7 +286,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             const currentUser = userRef.current;
             const userData = currentUser ? {
                 id: String(currentUser.id),
-                name: currentUser.fullName || currentUser.username || `User ${currentUser.id}`,
+                name: currentUser.username || `User ${currentUser.id}`,
                 image: currentUser.profileImage,
             } : {
                 type: 'anonymous'
@@ -467,6 +482,10 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         call={call}
                         isChatVisible={isChatVisible}
                         setChatVisible={setChatVisible}
+                        isGiftingOpen={isGiftingOpen}
+                        setIsGiftingOpen={setIsGiftingOpen}
+                        streamEnded={streamEnded}
+                        setStreamEnded={setStreamEnded}
                     >
                         {children}
                         <FloatingHearts />
@@ -476,4 +495,3 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
         </StreamVideo>
     );
 };
-

@@ -133,11 +133,11 @@ export interface FileRoutesByFullPath {
   '/live/': typeof MainLiveIndexRoute
   '/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/profile/': typeof MainProfileIndexRoute
+  '/refund-policy/': typeof MainRefundPolicyIndexRoute
+  '/terms-conditions/': typeof MainTermsConditionsIndexRoute
   '/profile/setting/coins': typeof MainProfileSettingCoinsRoute
   '/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
   '/profile/setting/': typeof MainProfileSettingIndexRoute
-  '/refund-policy/': typeof MainRefundPolicyIndexRoute
-  '/terms-conditions/': typeof MainTermsConditionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof MainIndexRouteRoute
@@ -151,11 +151,11 @@ export interface FileRoutesByTo {
   '/live': typeof MainLiveIndexRoute
   '/privacy-policy': typeof MainPrivacyPolicyIndexRoute
   '/profile': typeof MainProfileIndexRoute
+  '/refund-policy': typeof MainRefundPolicyIndexRoute
+  '/terms-conditions': typeof MainTermsConditionsIndexRoute
   '/profile/setting/coins': typeof MainProfileSettingCoinsRoute
   '/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
   '/profile/setting': typeof MainProfileSettingIndexRoute
-  '/refund-policy': typeof MainRefundPolicyIndexRoute
-  '/terms-conditions': typeof MainTermsConditionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -172,11 +172,11 @@ export interface FileRoutesById {
   '/_main/live/': typeof MainLiveIndexRoute
   '/_main/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/_main/profile/': typeof MainProfileIndexRoute
+  '/_main/refund-policy/': typeof MainRefundPolicyIndexRoute
+  '/_main/terms-conditions/': typeof MainTermsConditionsIndexRoute
   '/_main/profile/setting/coins': typeof MainProfileSettingCoinsRoute
   '/_main/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
   '/_main/profile/setting/': typeof MainProfileSettingIndexRoute
-  '/_main/refund-policy/': typeof MainRefundPolicyIndexRoute
-  '/_main/terms-conditions/': typeof MainTermsConditionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -193,11 +193,11 @@ export interface FileRouteTypes {
     | '/live/'
     | '/privacy-policy/'
     | '/profile/'
+    | '/refund-policy/'
+    | '/terms-conditions/'
     | '/profile/setting/coins'
     | '/profile/setting/diamonds'
     | '/profile/setting/'
-    | '/refund-policy/'
-    | '/terms-conditions/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -211,11 +211,11 @@ export interface FileRouteTypes {
     | '/live'
     | '/privacy-policy'
     | '/profile'
+    | '/refund-policy'
+    | '/terms-conditions'
     | '/profile/setting/coins'
     | '/profile/setting/diamonds'
     | '/profile/setting'
-    | '/refund-policy'
-    | '/terms-conditions'
   id:
     | '__root__'
     | '/_main'
@@ -231,11 +231,11 @@ export interface FileRouteTypes {
     | '/_main/live/'
     | '/_main/privacy-policy/'
     | '/_main/profile/'
+    | '/_main/refund-policy/'
+    | '/_main/terms-conditions/'
     | '/_main/profile/setting/coins'
     | '/_main/profile/setting/diamonds'
     | '/_main/profile/setting/'
-    | '/_main/refund-policy/'
-    | '/_main/terms-conditions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -398,11 +398,11 @@ interface MainRouteRouteChildren {
   MainProfileUsernameRoute: typeof MainProfileUsernameRoute
   MainPrivacyPolicyIndexRoute: typeof MainPrivacyPolicyIndexRoute
   MainProfileIndexRoute: typeof MainProfileIndexRoute
+  MainRefundPolicyIndexRoute: typeof MainRefundPolicyIndexRoute
+  MainTermsConditionsIndexRoute: typeof MainTermsConditionsIndexRoute
   MainProfileSettingCoinsRoute: typeof MainProfileSettingCoinsRoute
   MainProfileSettingDiamondsRoute: typeof MainProfileSettingDiamondsRoute
   MainProfileSettingIndexRoute: typeof MainProfileSettingIndexRoute
-  MainRefundPolicyIndexRoute: typeof MainRefundPolicyIndexRoute
-  MainTermsConditionsIndexRoute: typeof MainTermsConditionsIndexRoute
 }
 
 const MainRouteRouteChildren: MainRouteRouteChildren = {
@@ -416,11 +416,11 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainProfileUsernameRoute: MainProfileUsernameRoute,
   MainPrivacyPolicyIndexRoute: MainPrivacyPolicyIndexRoute,
   MainProfileIndexRoute: MainProfileIndexRoute,
+  MainRefundPolicyIndexRoute: MainRefundPolicyIndexRoute,
+  MainTermsConditionsIndexRoute: MainTermsConditionsIndexRoute,
   MainProfileSettingCoinsRoute: MainProfileSettingCoinsRoute,
   MainProfileSettingDiamondsRoute: MainProfileSettingDiamondsRoute,
   MainProfileSettingIndexRoute: MainProfileSettingIndexRoute,
-  MainRefundPolicyIndexRoute: MainRefundPolicyIndexRoute,
-  MainTermsConditionsIndexRoute: MainTermsConditionsIndexRoute,
 }
 
 const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(

@@ -117,7 +117,6 @@ export const LiveStreamHeader: React.FC = () => {
             navigate({ to: '/for-you' });
         } catch (error) {
             console.error('Failed to end live stream:', error);
-            toast.error('Failed to end live stream');
         }
     };
 
@@ -157,7 +156,7 @@ export const LiveStreamHeader: React.FC = () => {
                     </div>
 
                     {/* Center: timer */}
-                    {timeLeft && (
+                    {isHost && timeLeft && (
                         <div className="absolute left-1/2 -translate-x-1/2">
                             <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold tracking-wider backdrop-blur-md border transition-colors ${isUrgent
                                 ? "bg-red-500/20 border-red-500 text-red-100 shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse"
@@ -233,13 +232,13 @@ export const LiveStreamHeader: React.FC = () => {
                 )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pr-16">
                 <div className="flex items-center gap-2 bg-[#FF0000] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(255,0,0,0.3)]">
                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                     Live
                 </div>
 
-                {timeLeft && (
+                {isHost && timeLeft && (
                     <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold tracking-wider backdrop-blur-md border transition-colors ${isUrgent
                         ? "bg-red-500/20 border-red-500 text-red-100 shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse"
                         : "bg-white/10 border-white/10 text-white"

@@ -8,7 +8,7 @@ import { useLiveStreamContext } from './LiveStreamLayout';
 import { useChannelStateContext } from 'stream-chat-react';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { toast } from 'sonner';
-import { Plus, X, Loader2 } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 
 export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
     const { user, wallet, updateWallet } = useAuthStore();
@@ -84,6 +84,21 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
                 } as any);
             }
 
+            // 5. Send a chat message so the gift shows in the chat stream
+            if (channel) {
+                try {
+                    await channel.sendMessage({
+                        text: `sent ${gift.name} 🎁`,
+                        isGiftMessage: true,
+                        giftIconUrl: gift.iconUrl,
+                        giftName: gift.name,
+                        giftCost: gift.noOfCoin,
+                    } as any);
+                } catch (chatErr) {
+                    console.error('Failed to send gift chat message:', chatErr);
+                }
+            }
+
             toast.success(`Sent ${gift.name}!`);
         } catch (error) {
             console.error('Failed to send gift:', error);
@@ -92,28 +107,23 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0F1117] text-white">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                    <span className="text-gray-400 text-sm">Gifts</span>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5 bg-black/40 rounded-full px-3 py-1 border border-white/10">
-                        <img src={coinIcon} alt="coins" className="w-4 h-4" />
-                        <span className="text-sm font-bold">{wallet?.coinBalance ?? 0}</span>
-                        <button
-                            onClick={() => openCoinsModal()}
-                            className="ml-1 p-0.5 bg-white text-black rounded-full hover:bg-gray-200 transition-colors"
-                        >
-                            <Plus className="w-3 h-3" />
-                        </button>
-                    </div>
-                    {onClose && (
-                        <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
-                            <X className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
+        <div className="flex flex-col h-full bg-[#141519] text-white">
+            <div className="flex items-center justify-between p-5 border-b border-white/5">
+                <button
+                    onClick={() => openCoinsModal()}
+                    className="flex items-center gap-2 rounded-[24px] border border-white/80 px-4 py-1.5 hover:bg-white/5 transition-colors"
+                >
+                    <img src={coinIcon} alt="coins" className="w-4 h-4" />
+                    <span className="text-sm font-semibold">{wallet?.coinBalance ?? 0}</span>
+                </button>
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="w-6 h-6 bg-[#ff5a5a] hover:bg-[#ff3b3b] shadow-sm rounded-full flex items-center justify-center transition-colors"
+                    >
+                        <X className="w-4 h-4 text-white" strokeWidth={3} />
+                    </button>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">

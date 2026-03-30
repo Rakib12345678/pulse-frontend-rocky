@@ -11,18 +11,23 @@ import { useUserProfileStore } from '../stores/userProfileStore';
 
 interface StreamerInfoOverlayProps {
     streamerName: string;
+    streamerUsername?: string; // username for API calls (falls back to streamerName)
     streamerImage?: string;
     className?: string;
 }
 
 export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
     streamerName,
+    streamerUsername,
     streamerImage,
     className
 }) => {
     const { user: currentUser } = useAuthStore();
     const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
     const { openModal: openProfileModal } = useUserProfileStore();
+
+    // Use streamerUsername for API calls, fall back to streamerName
+    const apiName = streamerUsername || streamerName;
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isFollowing, setIsFollowing] = useState(false);
@@ -41,7 +46,7 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
             if (!streamerName) return;
             try {
                 // Remove '@'
-                const cleanName = streamerName.startsWith('@') ? streamerName.slice(1) : streamerName;
+                const cleanName = apiName.startsWith('@') ? apiName.slice(1) : apiName;
                 const { data } = await userService.getUserProfile(cleanName);
                 if (data) {
                     setProfile(data);
@@ -54,7 +59,7 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
         };
 
         fetchProfile();
-    }, [streamerName, currentUser]); // Re-fetch if user logs in to get correct follow status
+    }, [apiName, currentUser]); // Re-fetch if user logs in to get correct follow status
 
     const handleFollowToggle = async (e: React.MouseEvent | React.TouchEvent) => {
         e.stopPropagation();
@@ -92,7 +97,7 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
 
     const handleProfileClick = (e: React.MouseEvent | React.TouchEvent) => {
         e.stopPropagation();
-        openProfileModal(streamerName);
+        openProfileModal(apiName);
     };
 
     if (!streamerName) return null;
@@ -124,7 +129,7 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
             </div>
 
             {/* Don't show follow button if it's the current user */}
-            {currentUser?.username !== (profile?.username || streamerName.replace('@', '')) && (
+            {currentUser?.username !== (profile?.username || apiName.replace('@', '')) && (
                 <Button
                     size="sm"
                     className={`ml-auto shrink-0 h-8 px-6 rounded-full transition-all text-xs font-semibold ${isFollowing
