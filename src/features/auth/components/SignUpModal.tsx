@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, useLocation } from '@tanstack/react-router';
+import { useNavigate, useLocation, Link } from '@tanstack/react-router';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -278,8 +278,8 @@ const StepWelcome = () => {
                 </Button>
                 <p className="mt-16 text-xs text-gray-500 px-4 text-center max-w-md mx-auto leading-relaxed">
                     By continuing, you agree to our{' '}
-                    <span className="text-blue-500 cursor-pointer">Terms of Service</span> and{' '}
-                    <span className="text-blue-500 cursor-pointer">Privacy Policy</span>
+                    <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">Terms of Service</Link> and{' '}
+                    <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
                 </p>
             </div>
         </StepWrapper>
@@ -543,8 +543,8 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
 
             <p className="md:hidden text-xs text-gray-500 px-4 text-center">
                 By continuing, you agree to our{' '}
-                <span className="text-blue-500 cursor-pointer">Terms of Service</span> and{' '}
-                <span className="text-blue-500 cursor-pointer">Privacy Policy</span>
+                <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">Terms of Service</Link> and{' '}
+                <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
             </p>
         </StepWrapper>
     );
@@ -732,8 +732,8 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
 
             <p className="text-xs text-gray-500 text-center">
                 by logging in you agree to our{' '}
-                <span className="text-blue-500 cursor-pointer">terms & conditions</span> &{' '}
-                <span className="text-blue-500 cursor-pointer">privacy policy</span>
+                <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link> &{' '}
+                <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
             </p>
         </StepWrapper>
     );
@@ -810,8 +810,8 @@ const StepAge = () => {
             </div>
             <p className="mt-5 text-xs text-gray-500">
                 by logging in you agree to our{' '}
-                <span className="text-blue-500 cursor-pointer">terms & conditions</span> &{' '}
-                <span className="text-blue-500 cursor-pointer">privacy policy</span>
+                <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link> &{' '}
+                <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
             </p>
         </StepWrapper>
     );
@@ -1176,8 +1176,8 @@ export const StepDetails = ({
                                 </div>
                                 <p className="text-[11px] md:text-xs text-center md:text-left text-gray-500 mt-6 md:mt-4">
                                     by logging in you agree to our <br className="md:hidden" />
-                                    <span className="text-blue-500 cursor-pointer hover:underline">terms & conditions</span>{' '}&{' '}
-                                    <span className="text-blue-500 cursor-pointer hover:underline">privacy policy</span>
+                                    <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link>{' '}&{' '}
+                                    <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
                                 </p>
                             </form>
                         </Form>

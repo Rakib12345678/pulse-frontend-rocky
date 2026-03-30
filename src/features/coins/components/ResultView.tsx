@@ -24,7 +24,7 @@ export const ResultView = () => {
                 <Button
                     variant="ghost"
                     onClick={closeModal}
-                    className="mt-4 px-10 py-3.5 h-auto rounded-full border-2 border-[#FF8800] text-[#FF8800] font-bold text-base hover:bg-[#FF8800]/10 transition-all cursor-pointer"
+                    className="mt-4 px-10 py-3.5 h-auto rounded-full border-2 border-[#FF8800] text-[#FF8800] font-bold text-base hover:bg-[#FF8800]/10 hover:text-[#FF8800] hover:text-[#FF8800]transition-all cursor-pointer"
                 >
                     Explore Stream
                 </Button>
@@ -55,7 +55,7 @@ export const ResultView = () => {
             <Button
                 variant="ghost"
                 onClick={reset}
-                className="mt-2 px-10 py-3.5 h-auto rounded-full border-2 border-[#FF8800] text-[#FF8800] font-bold text-base hover:bg-[#FF8800]/10 transition-all cursor-pointer"
+                className="mt-2 px-10 py-3.5 h-auto rounded-full border-2 border-[#FF8800] text-[#FF8800] font-bold text-base hover:bg-[#FF8800]/10 hover:text-[#FF8800] transition-all cursor-pointer"
             >
                 Add Coins Again
             </Button>

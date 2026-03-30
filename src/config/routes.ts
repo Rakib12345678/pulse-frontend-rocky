@@ -6,7 +6,10 @@ export const PUBLIC_ROUTES = [
     // '/explore', // Explore
     '/live',    // Live streams
     '/for-you', // For you
-    '/live/:id'
+    '/live/:id',
+    '/privacy-policy',
+    '/terms-conditions',
+    '/refund-policy'
 ];
 
 /**
@@ -19,12 +22,12 @@ export const isPublicRoute = (pathname: string): boolean => {
     // 2. Dynamic route match check
     return PUBLIC_ROUTES.some(route => {
         if (!route.includes(':')) return false;
-        
+
         const routeParts = route.split('/');
         const pathParts = pathname.split('/');
-        
+
         if (routeParts.length !== pathParts.length) return false;
-        
+
         return routeParts.every((part, i) => {
             return part.startsWith(':') || part === pathParts[i];
         });

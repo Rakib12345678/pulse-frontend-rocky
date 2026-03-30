@@ -397,7 +397,7 @@ export const GoLiveModal = () => {
                                 "w-full h-14 rounded-full font-bold text-lg transition-all flex items-center justify-center gap-2",
                                 streamTitle.trim() && selectedCategory
                                     ? "bg-[#FF8800] text-black hover:bg-[#ff9d2e] shadow-[0_8px_20px_-4px_rgba(255,136,0,0.4)]"
-                                    : "bg-[#2a2c30] text-gray-500 cursor-not-allowed"
+                                    : "bg-[#2a2c30] text-black cursor-not-allowed"
                             )}
                         >
                             {isLoading ? (
@@ -552,7 +552,7 @@ export const GoLiveModal = () => {
                                                 "h-14 flex-1 rounded-full font-bold text-lg transition-all disabled:opacity-50 disabled:hover:scale-100",
                                                 streamTitle.trim() && selectedCategory
                                                     ? "bg-[#FF8800] text-black hover:bg-[#ff9d2e] hover:scale-[1.02] active:scale-95 shadow-[0_8px_20px_-4px_rgba(255,136,0,0.4)]"
-                                                    : "bg-[#2a2c30] text-gray-500 cursor-not-allowed"
+                                                    : "bg-[#2a2c30] text-black cursor-not-allowed"
                                             )}
                                         >
                                             {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isRejoining ? "Rejoin Stream" : "Go Live")}

@@ -17,7 +17,10 @@ import { Route as MainExploreRouteRouteImport } from './routes/_main/explore/rou
 import { Route as MainCoinsRouteRouteImport } from './routes/_main/coins/route'
 import { Route as MainChatsRouteRouteImport } from './routes/_main/chats/route'
 import { Route as MainIndexRouteRouteImport } from './routes/_main/index/route'
+import { Route as MainTermsConditionsIndexRouteImport } from './routes/_main/terms-conditions/index'
+import { Route as MainRefundPolicyIndexRouteImport } from './routes/_main/refund-policy/index'
 import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
+import { Route as MainPrivacyPolicyIndexRouteImport } from './routes/_main/privacy-policy/index'
 import { Route as MainLiveIndexRouteImport } from './routes/_main/live/index'
 import { Route as MainProfileSettingRouteImport } from './routes/_main/profile/setting'
 import { Route as MainProfileUsernameRouteImport } from './routes/_main/profile/$username'
@@ -62,9 +65,25 @@ const MainIndexRouteRoute = MainIndexRouteRouteImport.update({
   path: '',
   getParentRoute: () => MainRouteRoute,
 } as any)
+const MainTermsConditionsIndexRoute =
+  MainTermsConditionsIndexRouteImport.update({
+    id: '/terms-conditions/',
+    path: '/terms-conditions/',
+    getParentRoute: () => MainRouteRoute,
+  } as any)
+const MainRefundPolicyIndexRoute = MainRefundPolicyIndexRouteImport.update({
+  id: '/refund-policy/',
+  path: '/refund-policy/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainProfileIndexRoute = MainProfileIndexRouteImport.update({
   id: '/profile/',
   path: '/profile/',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainPrivacyPolicyIndexRoute = MainPrivacyPolicyIndexRouteImport.update({
+  id: '/privacy-policy/',
+  path: '/privacy-policy/',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainLiveIndexRoute = MainLiveIndexRouteImport.update({
@@ -100,7 +119,10 @@ export interface FileRoutesByFullPath {
   '/profile/$username': typeof MainProfileUsernameRoute
   '/profile/setting': typeof MainProfileSettingRoute
   '/live/': typeof MainLiveIndexRoute
+  '/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/profile/': typeof MainProfileIndexRoute
+  '/refund-policy/': typeof MainRefundPolicyIndexRoute
+  '/terms-conditions/': typeof MainTermsConditionsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof MainIndexRouteRoute
@@ -113,7 +135,10 @@ export interface FileRoutesByTo {
   '/profile/$username': typeof MainProfileUsernameRoute
   '/profile/setting': typeof MainProfileSettingRoute
   '/live': typeof MainLiveIndexRoute
+  '/privacy-policy': typeof MainPrivacyPolicyIndexRoute
   '/profile': typeof MainProfileIndexRoute
+  '/refund-policy': typeof MainRefundPolicyIndexRoute
+  '/terms-conditions': typeof MainTermsConditionsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -129,7 +154,10 @@ export interface FileRoutesById {
   '/_main/profile/$username': typeof MainProfileUsernameRoute
   '/_main/profile/setting': typeof MainProfileSettingRoute
   '/_main/live/': typeof MainLiveIndexRoute
+  '/_main/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/_main/profile/': typeof MainProfileIndexRoute
+  '/_main/refund-policy/': typeof MainRefundPolicyIndexRoute
+  '/_main/terms-conditions/': typeof MainTermsConditionsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -145,7 +173,10 @@ export interface FileRouteTypes {
     | '/profile/$username'
     | '/profile/setting'
     | '/live/'
+    | '/privacy-policy/'
     | '/profile/'
+    | '/refund-policy/'
+    | '/terms-conditions/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -158,7 +189,10 @@ export interface FileRouteTypes {
     | '/profile/$username'
     | '/profile/setting'
     | '/live'
+    | '/privacy-policy'
     | '/profile'
+    | '/refund-policy'
+    | '/terms-conditions'
   id:
     | '__root__'
     | '/_main'
@@ -173,7 +207,10 @@ export interface FileRouteTypes {
     | '/_main/profile/$username'
     | '/_main/profile/setting'
     | '/_main/live/'
+    | '/_main/privacy-policy/'
     | '/_main/profile/'
+    | '/_main/refund-policy/'
+    | '/_main/terms-conditions/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -238,11 +275,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainIndexRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
+    '/_main/terms-conditions/': {
+      id: '/_main/terms-conditions/'
+      path: '/terms-conditions'
+      fullPath: '/terms-conditions/'
+      preLoaderRoute: typeof MainTermsConditionsIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/refund-policy/': {
+      id: '/_main/refund-policy/'
+      path: '/refund-policy'
+      fullPath: '/refund-policy/'
+      preLoaderRoute: typeof MainRefundPolicyIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/profile/': {
       id: '/_main/profile/'
       path: '/profile'
       fullPath: '/profile/'
       preLoaderRoute: typeof MainProfileIndexRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/privacy-policy/': {
+      id: '/_main/privacy-policy/'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy/'
+      preLoaderRoute: typeof MainPrivacyPolicyIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/live/': {
@@ -300,7 +358,10 @@ interface MainRouteRouteChildren {
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
   MainProfileUsernameRoute: typeof MainProfileUsernameRoute
   MainProfileSettingRoute: typeof MainProfileSettingRoute
+  MainPrivacyPolicyIndexRoute: typeof MainPrivacyPolicyIndexRoute
   MainProfileIndexRoute: typeof MainProfileIndexRoute
+  MainRefundPolicyIndexRoute: typeof MainRefundPolicyIndexRoute
+  MainTermsConditionsIndexRoute: typeof MainTermsConditionsIndexRoute
 }
 
 const MainRouteRouteChildren: MainRouteRouteChildren = {
@@ -313,7 +374,10 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
   MainProfileUsernameRoute: MainProfileUsernameRoute,
   MainProfileSettingRoute: MainProfileSettingRoute,
+  MainPrivacyPolicyIndexRoute: MainPrivacyPolicyIndexRoute,
   MainProfileIndexRoute: MainProfileIndexRoute,
+  MainRefundPolicyIndexRoute: MainRefundPolicyIndexRoute,
+  MainTermsConditionsIndexRoute: MainTermsConditionsIndexRoute,
 }
 
 const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(
