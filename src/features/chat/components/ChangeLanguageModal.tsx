@@ -60,63 +60,66 @@ export const ChangeLanguageModal = ({
         <div
             ref={backdropRef}
             onClick={e => { if (e.target === backdropRef.current) onClose(); }}
-            className="fixed inset-0 z-600 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300"
         >
-            <div className="relative w-full max-w-md bg-[#111213] rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-orange-900/20 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative z-10 px-8 pt-7 pb-7 flex flex-col gap-6">
-                    <div className="flex items-center justify-center">
-                        <h2 className="text-white font-bold text-lg tracking-wide">Change Language</h2>
+            <div 
+                className="relative w-full max-w-[400px] rounded-[32px] shadow-2xl overflow-hidden p-10 flex flex-col items-center text-center backdrop-blur-[354px]"
+                style={{ 
+                    background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' 
+                }}
+            >
+                <h2 className="text-2xl font-bold text-white mb-4 tracking-tight">Change Language</h2>
+                <p className="text-gray-400 text-sm mb-8 leading-relaxed max-w-[240px]">
+                    Select the language you want messages translated into.
+                </p>
+
+                {loading ? (
+                    <div className="flex justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-[#FF7700]" />
                     </div>
-                    <p className="text-center text-gray-400 text-sm leading-relaxed">
-                        Select the language you want messages translated into.
-                    </p>
-                    {loading ? (
-                        <div className="flex justify-center py-4">
-                            <Loader2 className="w-5 h-5 animate-spin text-[#FF7700]" />
-                        </div>
-                    ) : fetchErr ? (
-                        <p className="text-center text-red-400 text-sm">Failed to load languages. Please try again.</p>
-                    ) : (
-                        <div className="relative">
-                            <select
-                                value={selected}
-                                onChange={e => setSelected(e.target.value)}
-                                className="w-full h-12 pl-4 pr-10 rounded-full text-sm text-white bg-transparent border border-white/20 focus:border-white/40 focus:outline-none appearance-none cursor-pointer transition-colors"
-                            >
-                                {languages.map((lang: Language) => (
-                                    <option key={lang.code} value={lang.code} className="bg-[#1a1c23] text-white">
-                                        {lang.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        </div>
-                    )}
-                    <div className="flex items-center gap-3 pt-1">
-                        <button
-                            onClick={handleConfirm}
-                            disabled={saving || loading || fetchErr || !selected}
-                            className={cn(
-                                'flex-1 h-11 rounded-full text-sm font-semibold transition-all active:scale-95 flex items-center justify-center gap-2',
-                                saving || loading || fetchErr || !selected
-                                    ? 'bg-[#FF7700]/50 text-black/60 cursor-not-allowed'
-                                    : 'bg-[#FF7700] text-black hover:bg-[#ff9922]',
-                            )}
+                ) : fetchErr ? (
+                    <p className="text-center text-red-400 text-sm py-4">Failed to load languages. Please try again.</p>
+                ) : (
+                    <div className="w-full mb-10">
+                        <select
+                            value={selected}
+                            onChange={e => setSelected(e.target.value)}
+                            className="w-full h-12 pl-5 pr-12 rounded-full text-sm text-white bg-white/5 border border-white/10 focus:border-[#FF7700]/50 focus:outline-none appearance-none cursor-pointer transition-all"
                         >
-                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                            Change
-                        </button>
-                        <button
-                            onClick={onClose}
-                            disabled={saving}
-                            className="flex-1 h-11 rounded-full border border-[#FF7700] text-[#FF7700] text-sm font-semibold hover:bg-[#FF7700]/10 transition-all active:scale-95"
-                        >
-                            Cancel
-                        </button>
+                            {languages.map((lang: Language) => (
+                                <option key={lang.code} value={lang.code} className="bg-[#1a1c23] text-white">
+                                    {lang.name}
+                                </option>
+                            ))}
+                        </select>
+                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                     </div>
+                )}
+
+                <div className="flex items-center gap-4 w-full justify-center">
+                    <button
+                        onClick={handleConfirm}
+                        disabled={saving || loading || fetchErr || !selected}
+                        className={cn(
+                            'flex-1 h-14 rounded-full font-extrabold text-base transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer',
+                            saving || loading || fetchErr || !selected
+                                ? 'bg-[#FF7700]/30 text-black/40 cursor-not-allowed'
+                                : 'bg-[#FF7700] text-black hover:opacity-90 shadow-lg shadow-orange-500/20',
+                        )}
+                    >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        Change
+                    </button>
+                    <button
+                        onClick={onClose}
+                        disabled={saving}
+                        className="flex-1 h-14 rounded-full border-2 border-[#FF7700] text-[#FF7700] font-extrabold text-base hover:bg-[#FF7700]/5 transition-all active:scale-95 cursor-pointer bg-transparent"
+                    >
+                        Cancel
+                    </button>
                 </div>
             </div>
         </div>
+
     );
 };

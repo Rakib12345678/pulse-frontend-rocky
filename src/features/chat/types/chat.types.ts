@@ -21,6 +21,13 @@ export interface GiftData {
 
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | undefined;
 
+export interface Reaction {
+    type: string;
+    user_id: string;
+    emoji?: string;
+    user?: ChatUser;
+}
+
 export interface Message {
     id: string;
     conversationId: string;
@@ -30,6 +37,15 @@ export interface Message {
     time: string;
     status: MessageStatus;
     attachments?: { type: string; imageUrl: string }[];
+    reactions?: {
+        latest: Reaction[];
+        own: Reaction[];
+        counts: Record<string, number>;
+    };
+    isGiftMessage?: boolean;
+    giftIconUrl?: string;
+    giftName?: string;
+    giftCost?: string;
 }
 
 export interface Conversation {
@@ -45,6 +61,9 @@ export interface Conversation {
     lastMessageStatus?: MessageStatus;
     isOnline?: boolean;
     lastActive?: string;
+    isMuted?: boolean;
+    isArchived?: boolean;
+    isGiftMessage?: boolean;
 }
 
 export interface SendMessagePayload {

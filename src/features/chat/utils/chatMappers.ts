@@ -43,6 +43,22 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
     const textToUse = msg.original_text || originalFromI18n || msg.text || '';
 
     const attachmentsToUse = uniqueAttachments.length > 0 ? uniqueAttachments : undefined;
+    const reactionCounts = msg.reaction_counts || {};
+    const latestReactions = (msg.latest_reactions || []).map((r: any) => ({
+        ...r,
+        type: r.type,
+        user_id: r.user?.id || r.user_id,
+        user: r.user ? {
+            id: r.user.id,
+            name: getDisplayName(r.user),
+            avatar: toAbsoluteUrl(r.user.image),
+        } : undefined,
+    }));
+    const ownReactions = (msg.own_reactions || []).map((r: any) => ({
+        ...r,
+        type: r.type,
+        user_id: r.user?.id || r.user_id,
+    }));
 
     return {
         id: msg.id,
@@ -53,6 +69,15 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
         time: toIso(msg.created_at),
         status: deriveStatus(msg, myId, read),
         attachments: attachmentsToUse,
+        reactions: {
+            latest: latestReactions,
+            own: ownReactions,
+            counts: reactionCounts,
+        },
+        isGiftMessage: (msg as any).isGiftMessage,
+        giftIconUrl: (msg as any).giftIconUrl,
+        giftName: (msg as any).giftName,
+        giftCost: (msg as any).giftCost,
     };
 };
 
@@ -89,7 +114,7 @@ export const channelToConversation = (
     // Identify and clean image/gift tags even if translated.
     // We check both original and translated text to be safe.
     const imageTagRegex = /\[?[\s\S]*?https?:\/\/[\s\S]*?\]?/i;
-    const giftTagRegex  = /\[?[\s\S]*?:[\s\S]*?:\d+\]?/i;
+    const giftTagRegex  = /\[?[\s\S]*?GIFT:[\s\S]*?\]?/i;
 
     const isImageTag = hasAttachments || 
                       imageTagRegex.test(lastMsgOriginal) || 
@@ -98,12 +123,12 @@ export const channelToConversation = (
     const isGiftTag  = giftTagRegex.test(lastMsgOriginal) || 
                       giftTagRegex.test(lastMsgText);
 
-    if (isImageTag) {
+    if (isGiftTag || (lastMsg as any)?.isGiftMessage) {
+        lastMsgOriginal = `🎁 ${ (lastMsg as any)?.giftName || 'Gift' }`;
+        lastMsgText = lastMsgOriginal;
+    } else if (isImageTag) {
         lastMsgOriginal = '📷 Photo';
         lastMsgText = '📷 Photo';
-    } else if (isGiftTag) {
-        lastMsgOriginal = '🎁 Gift';
-        lastMsgText = '🎁 Gift';
     }
 
     return {

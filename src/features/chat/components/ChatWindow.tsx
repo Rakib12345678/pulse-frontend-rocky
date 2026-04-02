@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, Loader2, Smile, WifiOff, Gift, X, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, Loader2, Smile, WifiOff, Gift, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useTranslationPreference } from '../hooks/useTranslationPreference';
@@ -12,7 +12,6 @@ import { capitalizeName, formatLastSeen, getDayKey, getDateLabel } from '@/featu
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
 
 // Standalone components
-import { ForwardModal } from './ForwardModal';
 import { ChangeLanguageModal } from './ChangeLanguageModal';
 import { DateSeparator } from './DateSeparator';
 import { GiftCarousel } from './GiftCarousel';
@@ -59,12 +58,14 @@ interface ChatWindowProps {
     onSend: (text: string) => Promise<void>;
     onSendImage: (file: File) => Promise<void>;
     onDelete: (messageId: string) => Promise<void>;
+    onReact: (messageId: string, type: string, extra?: any) => Promise<void>;
+    onDeleteReaction: (messageId: string, type: string) => Promise<void>;
     onMarkAsRead: () => void;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversation, isLoadingConversation = false, onBack, mobileFullscreen = false,
-    messages, msgLoading, hasMore, loadMore, onSend, onSendImage, onDelete, onMarkAsRead,
+    messages, msgLoading, hasMore, loadMore, onSend, onSendImage, onDelete, onReact, onDeleteReaction, onMarkAsRead,
 }) => {
     const { user } = useAuthStore();
     const myId = String(user?.id ?? '');
@@ -73,7 +74,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
     const { getDraft, setDraft } = useDraftPerConversation(conversation?.id ?? null);
     const [draftValue, setDraftValue] = useState('');
-    const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
     const [showLangModal, setShowLangModal] = useState(false);
     const [showEmoji, setShowEmoji] = useState(false);
     const [showGifts, setShowGifts] = useState(false);
@@ -83,6 +83,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const { translateEnabled, setTranslate } = useTranslationPreference(myId);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const giftRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const atBottomRef = useRef(true);
@@ -138,6 +139,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             scrollToBottom('smooth');
         }
     }, [messages.length]);
+    
+    // Close gift carousel when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (giftRef.current && !giftRef.current.contains(e.target as Node)) {
+                setShowGifts(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // IntersectionObserver updates atBottomRef without a scroll listener.
     useEffect(() => {
@@ -272,7 +284,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <div className="shrink-0 w-full relative z-10 flex items-center gap-2.5 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 bg-[#111213] border-b border-white/8">
                 <button
                     onClick={onBack}
-                    className="text-white mr-0.5 p-1 rounded-lg hover:bg-white/5 transition-colors md:hidden"
+                    className="text-white mr-0.5 p-1 rounded-lg hover:bg-white/5 transition-colors md:hidden cursor-pointer"
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
@@ -291,12 +303,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         {capitalizeName(conversation.participant.name)}
                     </p>
                     <p className={cn('text-[11px]', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
-                        {conversation.isOnline
-                            ? 'Online'
-                            : conversation.lastActive
-                                ? formatLastSeen(conversation.lastActive)
-                                : 'Offline'}
-                    </p>
+                            {conversation.isOnline
+                                ? 'Online'
+                                : conversation.lastActive
+                                    ? formatLastSeen(conversation.lastActive)
+                                    : 'Offline'}
+                        </p>
                 </div>
 
                 {/* Translate toggle */}
@@ -309,7 +321,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             checked={translateEnabled}
                             onCheckedChange={handleToggleTranslate}
                             aria-label="Toggle translate chat"
-                            className="data-[state=checked]:bg-[#FF7700] data-[state=unchecked]:bg-white/20"
+                            className="data-[state=checked]:bg-[#FF7700] data-[state=unchecked]:bg-white/20 cursor-pointer"
                         />
                     </div>
                     {translateEnabled && (
@@ -325,7 +337,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
             {/* Messages */}
             <div
-                className="flex-1 min-h-0 overflow-y-auto overscroll-none px-4 sm:pl-8 sm:pr-20 py-4 sm:py-5 flex flex-col [&::-webkit-scrollbar]:hidden bg-transparent relative"
+                className="flex-1 min-h-0 overflow-y-auto overscroll-none px-2 sm:px-4 lg:px-8 pt-4 pb-10 sm:pt-5 flex flex-col [&::-webkit-scrollbar]:hidden bg-transparent relative"
                 onContextMenu={handleContextMenu}
             >
                 <div className="flex flex-col gap-3 sm:gap-4 mx-auto w-full">
@@ -334,7 +346,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         <div className="flex justify-center">
                             <button
                                 onClick={loadMore}
-                                className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-full border border-white/10"
+                                className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-3 py-1 rounded-full border border-white/10 cursor-pointer"
                             >
                                 Load older messages
                             </button>
@@ -368,8 +380,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                         participantAvatar={conversation.participant.avatar}
                                         myAvatar={user?.profileImage}
                                         onDelete={msg => setMsgToDelete(msg)}
+                                        onReact={onReact}
+                                        onDeleteReaction={onDeleteReaction}
                                         onCopy={handleCopy}
-                                        onForward={setForwardMsg}
                                         onImageLoad={handleImageLoad}
                                     />
                                 </div>,
@@ -383,20 +396,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
             </div>
 
-            {showEmoji && (
-                <EmojiPickerPopup
-                    onSelect={emoji => handleDraftChange(draftValue + emoji)}
-                    onClose={() => setShowEmoji(false)}
-                />
-            )}
 
-            {showGifts && (
-                <GiftCarousel
-                    onSelectGift={gift => {
-                        onSend(`[GIFT:${gift.iconUrl}:${gift.name}:${gift.noOfCoin}]`);
-                        setShowGifts(false);
-                    }}
-                />
+            {showGifts && !draftValue.trim() && (
+                <div ref={giftRef}>
+                    <GiftCarousel
+                        onSelectGift={gift => {
+                            const giftTag = `[GIFT:${gift.id}:${gift.iconUrl}:${gift.name}:${gift.noOfCoin}]`;
+                            setShowGifts(false);
+                            onSend(giftTag);
+                        }}
+                    />
+                </div>
             )}
 
             {!isInternetConnected && (
@@ -409,7 +419,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {/* Floating Go Live Icon */}
             <div
                 onClick={handleGoLiveClick}
-                className="absolute bottom-32 right-2 sm:right-4 z-30 cursor-pointer"
+                className="md:hidden absolute bottom-32 right-2 sm:right-4 z-30 cursor-pointer"
             >
                 <img
                     src={LiveIcon}
@@ -420,7 +430,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
             {/* Image Preview Area */}
             {pendingImage && (
-                <div className="shrink-0 px-4 sm:pl-8 sm:pr-24 py-2 bg-transparent">
+                <div className="shrink-0 px-4 sm:px-8 py-2 bg-transparent">
                     <div className="relative inline-block group">
                         <img
                             src={pendingImage.url}
@@ -429,7 +439,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         />
                         <button
                             onClick={() => setPendingImage(null)}
-                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-10"
+                            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors z-10 cursor-pointer"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -437,11 +447,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 </div>
             )}
 
+
             <div className={cn(
-                'shrink-0 pl-4 pr-12 sm:pl-8 sm:pr-24 py-3 sm:py-4 flex items-center border-t border-white/5 md:mb-15',
+                'shrink-0 px-2 sm:px-4 lg:px-8 py-4 flex items-center border-t border-white/5 md:mb-15',
                 mobileFullscreen && 'pb-7 md:pb-5',
             )}>
-                <div className="w-full flex items-center gap-2 sm:gap-4">
+                    <div className="w-full flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 relative">
+                        {showEmoji && (
+                            <div className="absolute bottom-full right-0 mb-4 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200">
+                                <EmojiPickerPopup
+                                    onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
+                                    onClose={() => setShowEmoji(false)}
+                                    className="shadow-2xl border border-white/10 rounded-2xl scale-90 sm:scale-100 origin-bottom-right"
+                                />
+                            </div>
+                        )}
                     <div className={cn(
                         'flex-[4] flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
                         !isInternetConnected
@@ -454,7 +474,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             onChange={e => handleDraftChange(e.target.value)}
                             onKeyDown={handleKeyDown}
                             placeholder={isInternetConnected ? 'Type Message Here...' : 'No connection...'}
-                            className="flex-1 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
+                            className="flex-1 min-w-0 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
                             style={{ fontSize: '16px' }}
                         />
                         <input
@@ -466,15 +486,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="transition-colors shrink-0 text-gray-500 hover:text-[#FF7700]"
+                            className="transition-colors shrink-0 text-gray-500 hover:text-[#FF7700] cursor-pointer"
                             title="Attach Image"
                         >
                             <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                         </button>
                         <button
-                            onClick={() => setShowEmoji(v => !v)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowEmoji(v => !v);
+                            }}
                             className={cn(
-                                'transition-colors shrink-0',
+                                'transition-colors shrink-0 cursor-pointer',
                                 showEmoji ? 'text-[#FF7700]' : 'text-gray-500 hover:text-[#FF7700]',
                             )}
                         >
@@ -488,7 +511,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             onClick={handleSend}
                             disabled={!canSend}
                             className={cn(
-                                'w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95',
+                                'w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 cursor-pointer',
                                 canSend ? 'bg-[#FF7700] shadow-lg shadow-orange-500/30' : 'bg-[#111213] cursor-not-allowed opacity-50',
                             )}
                         >
@@ -497,15 +520,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                 : <img src={sendIcon} alt="Send" className="w-5 h-5" />
                             }
                         </button>
-                        <button
-                            onClick={() => setShowGifts(v => !v)}
-                            className={cn(
-                                'w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 bg-[#111213] border border-white/10',
-                                showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400',
-                            )}
-                        >
-                            <Gift className="w-4 h-4" />
-                        </button>
+                        {!draftValue.trim() && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowGifts(v => !v);
+                                }}
+                                className={cn(
+                                    'w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 bg-[#111213] border border-white/10 cursor-pointer',
+                                    showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400',
+                                )}
+                            >
+                                <Gift className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
 
                     {/* Desktop buttons */}
@@ -514,9 +542,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             onClick={handleSend}
                             disabled={!canSend}
                             className={cn(
-                                'h-12 w-36 rounded-full text-sm font-bold transition-all flex items-center justify-center gap-2',
+                                'h-11 sm:h-12 w-20 sm:w-28 lg:w-36 rounded-full text-sm font-bold transition-all flex items-center justify-center gap-2 shrink cursor-pointer',
                                 canSend
-                                    ? 'bg-[#FF7700] text-black hover:bg-[#ff9922] active:scale-95 shadow-md'
+                                    ? 'bg-[#FF7700] text-white hover:bg-[#ff8800] active:scale-95 shadow-lg shadow-orange-500/20'
                                     : 'bg-[#111213] text-gray-500 cursor-not-allowed',
                             )}
                         >
@@ -524,28 +552,25 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             Send
                         </button>
 
-                        <button
-                            onClick={() => setShowGifts(v => !v)}
-                            className={cn(
-                                'w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 bg-[#111213] border border-white/10 shrink-0',
-                                showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400 hover:text-white',
-                            )}
-                            title="Send Gift"
-                        >
-                            <Gift className="w-5 h-5" />
-                        </button>
+                        {!draftValue.trim() && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowGifts(v => !v);
+                                }}
+                                className={cn(
+                                    'w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all active:scale-95 bg-[#111213] border shrink-0 cursor-pointer',
+                                    showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400 hover:text-white border-white/10',
+                                )}
+                                title="Send Gift"
+                            >
+                                <Gift className="w-5 h-5" />
+                            </button>
+                        )}
                     </div>
-                </div>
+                    </div>
             </div>
 
-            {forwardMsg && (
-                <ForwardModal
-                    message={forwardMsg}
-                    onClose={() => setForwardMsg(null)}
-                    onForwardSuccess={name => toast.success(`Forwarded to ${name}`)}
-                    onForwardError={() => toast.error('Failed to forward message')}
-                />
-            )}
             {showLangModal && (
                 <ChangeLanguageModal
                     onClose={() => setShowLangModal(false)}
@@ -554,24 +579,23 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             )}
 
             {msgToDelete && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="w-full max-w-sm bg-[#1a1c23] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in duration-200">
-                        <div className="p-6">
-                            <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-                                <AlertTriangle className="w-6 h-6 text-red-500" />
-                            </div>
-                            <h3 className="text-lg font-bold text-white mb-2">Delete Message?</h3>
-                            <p className="text-gray-400 text-sm leading-relaxed">
-                                Are you sure you want to delete this message? This action cannot be undone.
-                            </p>
-                        </div>
-                        <div className="flex border-t border-white/5 bg-black/20">
-                            <button
-                                onClick={() => setMsgToDelete(null)}
-                                className="flex-1 px-4 py-4 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-r border-white/5"
-                            >
-                                Cancel
-                            </button>
+                <div 
+                    onClick={() => setMsgToDelete(null)}
+                    className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300 cursor-default"
+                >
+                    <div 
+                        onClick={e => e.stopPropagation()}
+                        className="relative w-full max-w-[400px] rounded-[32px] shadow-2xl overflow-hidden p-10 flex flex-col items-center text-center backdrop-blur-[354px]"
+                        style={{ 
+                            background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' 
+                        }}
+                    >
+                        <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">Delete Message?</h3>
+                        <p className="text-gray-400 text-sm mb-10 leading-relaxed max-w-[240px]">
+                            Are you sure you want to delete this message?
+                        </p>
+                        
+                        <div className="flex items-center gap-4 w-full justify-center">
                             <button
                                 onClick={async () => {
                                     const id = msgToDelete.id;
@@ -583,9 +607,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                         toast.error('Failed to delete message');
                                     }
                                 }}
-                                className="flex-1 px-4 py-4 text-sm font-bold text-red-500 hover:bg-red-500/10 transition-colors"
+                                className="flex-1 h-14 rounded-full bg-[#FF7700] text-black font-extrabold text-base hover:opacity-90 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20"
                             >
                                 Delete
+                            </button>
+                            <button
+                                onClick={() => setMsgToDelete(null)}
+                                className="flex-1 h-14 rounded-full border-2 border-[#FF7700] text-[#FF7700] font-extrabold text-base hover:bg-[#FF7700]/5 transition-all active:scale-95 cursor-pointer bg-transparent"
+                            >
+                                Cancel
                             </button>
                         </div>
                     </div>
@@ -604,14 +634,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             onBack();
                             setContextMenu(null);
                         }}
-                        className="w-full flex items-center px-4 py-2.5 text-sm text-white hover:bg-white/5 transition-colors text-left font-medium active:scale-95 duration-75"
+                        className="w-full flex items-center px-4 py-2.5 text-sm text-white hover:bg-white/5 transition-colors text-left font-medium active:scale-95 duration-75 cursor-pointer"
                     >
                         Close Chat
                     </button>
                     <div className="mx-2 my-1 border-t border-white/5" />
                     <button
                         onClick={() => setContextMenu(null)}
-                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 transition-colors text-left active:scale-95 duration-75"
+                        className="w-full flex items-center px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 transition-colors text-left active:scale-95 duration-75 cursor-pointer"
                     >
                         Cancel
                     </button>

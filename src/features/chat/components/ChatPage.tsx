@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatWindow } from './ChatWindow';
+import { RightSidebar } from './RightSidebar';
 import { isStreamConnected } from '../stream/streamClient';
 import { chatService } from '../services/chat.service';
 import { SESSION_ACTIVE_KEY } from '@/features/chat/utils/chatConstants';
@@ -58,6 +59,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     );
     const [mobileShowList, setMobileShowList] = useState(!localConvId);
     const [displayConversation, setDisplayConversation] = useState<Conversation | null>(null);
+    
+    useEffect(() => {
+        if (!localConvId) setMobileShowList(true);
+    }, [localConvId]);
 
     const activatedOnReadyRef = useRef(false);
     useEffect(() => {
@@ -140,6 +145,10 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         onConversationDeleted: handleConversationDeleted,
         onReloadChannels: chat.reloadChannels,
         onStartDirectChat: chat.startDirectChat,
+        onArchive: chat.archiveConversation,
+        onUnarchive: chat.unarchiveConversation,
+        onMute: chat.muteConversation,
+        onUnmute: chat.unmuteConversation,
     };
 
     const windowProps = {
@@ -153,6 +162,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         onSend: chat.sendMessage,
         onSendImage: chat.sendImage,
         onDelete: chat.deleteMessage,
+        onReact: chat.sendReaction,
+        onDeleteReaction: chat.deleteReaction,
         onMarkAsRead: chat.markAsRead,
     };
 
@@ -203,9 +214,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({
             </div>
 
             {/* DESKTOP */}
-            <div className="hidden md:flex flex-1 min-h-0 pb-0 pl-14 lg:pl-16">
+            <div className="hidden md:flex flex-1 min-h-0 pb-0">
                 <div
-                    className="flex flex-col shrink-0 w-90 lg:w-97 xl:w-112.5 overflow-hidden -mb-1px pb-6"
+                    className="flex flex-col shrink-0 w-72 lg:w-80 xl:w-96 overflow-hidden -mb-1px pb-6"
                     style={{ background: '#111213' }}
                 >
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-5 py-5">
@@ -215,6 +226,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                 <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden -mb-1px">
                     <ChatWindow {...windowProps} />
                 </div>
+                {/* Right Sidebar Utility */}
+                <RightSidebar className="hidden md:flex shrink-0 border-l border-white/5" />
             </div>
         </div>
     );

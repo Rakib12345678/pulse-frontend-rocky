@@ -1,18 +1,17 @@
 import { useEffect, useRef } from 'react';
-import { Copy, Forward, Trash2 } from 'lucide-react';
+import { Copy, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MessageDropdownProps {
     isMe: boolean;
     onDelete?: () => void;
     onCopy: () => void;
-    onForward: () => void;
     onClose: () => void;
     positionLeft?: boolean;
 }
 
 export const MessageDropdown = ({
-    isMe, onDelete, onCopy, onForward, onClose, positionLeft,
+    isMe, onDelete, onCopy, onClose, positionLeft,
 }: MessageDropdownProps) => {
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -28,7 +27,7 @@ export const MessageDropdown = ({
 
     return (
         <div ref={ref} className={cn(
-            'absolute top-8 z-50 min-w-40 bg-[#1e2029] border border-white/10 rounded-xl shadow-2xl overflow-hidden',
+            'absolute top-8 z-[101] min-w-40 bg-[#1e2029] border border-white/10 rounded-xl shadow-2xl overflow-hidden',
             positionLeft ? 'left-0' : 'right-0',
         )}>
             <button
@@ -36,12 +35,6 @@ export const MessageDropdown = ({
                 className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors border-t border-white/8"
             >
                 <Copy className="w-4 h-4 shrink-0" /> Copy
-            </button>
-            <button
-                onClick={() => { onForward(); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors border-t border-white/8"
-            >
-                <Forward className="w-4 h-4 shrink-0" /> Forward
             </button>
             {isMe && onDelete && (
                 <button

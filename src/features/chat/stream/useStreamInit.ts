@@ -39,7 +39,15 @@ export const useStreamInit = () => {
                 }
 
                 if (saved && saved.userId === userId) {
-                    await connectStreamUser(saved.userId, saved.userName, avatar, saved.apiKey, saved.token, fullName);
+                    try {
+                        await connectStreamUser(saved.userId, saved.userName, avatar, saved.apiKey, saved.token, fullName);
+                    } catch (err) {
+                        console.warn('[StreamInit] Saved token failed or expired, fetching new token...', err);
+                        // Fallback to fetch new token
+                        const { data } = await api.get<TokenResponse>('/chat/token');
+                        await connectStreamUser(userId, userName, avatar, STREAM_API_KEY, data.token, fullName);
+                        saveStreamCredentials({ apiKey: STREAM_API_KEY, token: data.token, userId, userName, avatar, fullName });
+                    }
                 } else {
                     const { data } = await api.get<TokenResponse>('/chat/token');
                     await connectStreamUser(userId, userName, avatar, STREAM_API_KEY, data.token, fullName);

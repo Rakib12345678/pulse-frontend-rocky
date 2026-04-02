@@ -33,8 +33,12 @@ export const GiftCarousel = ({ onSelectGift }: GiftCarouselProps) => {
     if (gifts.length === 0) return null;
 
     return (
-        <div className="w-full shrink-0 px-4 sm:pr-24 sm:pl-8 py-2">
-            <div className="relative group bg-[#111213]/95 backdrop-blur-xl border border-white/10 py-4 px-12 rounded-3xl shadow-2xl w-full">
+        <div className="w-full shrink-0 px-2 sm:px-4 lg:px-8 py-2">
+            <div className="relative group bg-[#111213]/95 backdrop-blur-xl border border-white/10 py-4 px-12 rounded-3xl shadow-2xl w-full overflow-hidden">
+                {/* Glow Blobs */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF7700]/5 rounded-full blur-2xl pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#3E2AB5]/5 rounded-full blur-2xl pointer-events-none" />
+
                 <button 
                     onClick={() => scroll('left')} 
                     className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors z-10"
@@ -42,7 +46,7 @@ export const GiftCarousel = ({ onSelectGift }: GiftCarouselProps) => {
                     <ChevronLeft className="w-4 h-4 text-white" />
                 </button>
                 
-                <div ref={scrollRef} className="flex gap-8 overflow-x-auto scrollbar-hide snap-x no-scrollbar flex-1">
+                <div ref={scrollRef} className="relative z-10 flex gap-8 overflow-x-auto scrollbar-hide snap-x no-scrollbar flex-1">
                     {gifts.map(gift => (
                         <button
                             key={gift.id}
