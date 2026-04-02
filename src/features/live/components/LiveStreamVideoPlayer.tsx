@@ -335,10 +335,10 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         return (
             <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
                 <div className="flex-1 h-full flex justify-center gap-4">
-                    <div className="h-full aspect-9/16 max-w-sm">
+                    <div className="h-full w-fit aspect-9/16 max-w-sm">
                         {renderHostVideo(host)}
                     </div>
-                    <div className="h-full aspect-9/16 max-w-sm relative rounded-3xl overflow-hidden bg-neutral-900 border border-white/5 shadow-2xl">
+                    <div className="h-full w-fit aspect-9/16 max-w-sm relative rounded-3xl overflow-hidden bg-neutral-900 border border-white/5 shadow-2xl">
                         {(() => {
                             const p = coHosts[0];
                             const participantHasVideo = hasVideo(p);
@@ -422,11 +422,11 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
                 <div className="flex-1 h-full flex justify-center gap-6">
                     {/* Host Column */}
-                    <div className="h-full aspect-9/16 max-w-sm">
+                    <div className="h-full w-fit aspect-9/16 max-w-sm">
                         {renderHostVideo(host)}
                     </div>
                     {/* Co-host Column (stacked) */}
-                    <div className="h-full aspect-9/16 flex flex-col gap-4 max-w-sm">
+                    <div className="h-full w-fit aspect-9/16 flex flex-col gap-4 max-w-sm">
                         {coHosts.map((p) => (
                             <div key={p.sessionId} className="flex-1 min-h-0">
                                 {renderCoHostCard(p, "w-full h-full")}
@@ -450,7 +450,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     return (
         <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
             <div className="relative flex-1 h-full flex justify-center">
-                <div className="h-full aspect-9/16 max-w-md">
+                <div className="h-full w-fit aspect-9/16 max-w-md">
                     {renderHostVideo(host)}
                 </div>
                 <div className="ml-4 flex flex-col gap-4 justify-start py-4">

@@ -64,9 +64,6 @@ export const CheckoutView = () => {
                 <div className="flex items-center gap-3">
                     <img src={coinIcon} alt="coin" className="w-6 h-6" />
                     <span className="text-white font-bold text-xl">{selectedPackage.coins.toLocaleString()}</span>
-                    <span className="bg-white text-black text-xs font-semibold px-2.5 py-1 rounded-md">
-                        + {selectedPackage.bonus}
-                    </span>
                 </div>
                 <span className="text-white font-bold text-xl">₹ {selectedPackage.price.toLocaleString()}</span>
             </div>
@@ -139,10 +136,10 @@ export const CheckoutView = () => {
                 )}
             </Button>
 
-            {/* Tax Disclaimer */}
+            {/* Tax Disclaimer
             <p className="text-gray-500 text-xs text-center">
                 Amount inclusive of regional taxes and fees: ₹{Math.round(selectedPackage.price * 1.18).toLocaleString()}
-            </p>
+            </p> */}
         </div>
     );
 };

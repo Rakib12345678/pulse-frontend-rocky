@@ -117,7 +117,7 @@
 }
 
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
+input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 textarea:-webkit-autofill,
 textarea:-webkit-autofill:hover,
@@ -127,12 +127,14 @@ textarea:-webkit-autofill:focus {
   caret-color: white !important;
 }
 
-input, textarea {
+input,
+textarea {
   color: white !important;
   caret-color: white !important;
   text-decoration: none !important;
-  
+
 }
+
 ::selection {
   background: #FF8800;
   color: #ffffff;
@@ -141,12 +143,15 @@ input, textarea {
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
   }
 
   *::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
+    display: none;
+    /* Chrome, Safari and Opera */
   }
 
   html {
@@ -246,14 +251,24 @@ html {
   .custom-scrollbar::-webkit-scrollbar {
     width: 5px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
   }
+}
+
+/* Fix Stream SDK video stretching on macOS/WebKit */
+[class*="str-video"] video {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
 }

@@ -160,126 +160,126 @@ export const SettingsPage = () => {
                 <div className="relative flex-1 overflow-y-auto overflow-x-hidden px-5 py-6 md:px-10 md:py-10 custom-scrollbar">
                     <div className="max-w-7xl mx-auto">
 
-                    {/* Header */}
-                    <div className="flex items-center gap-4 mb-8 md:mb-12">
-                        <button
-                            onClick={() => navigate({ to: "/profile" })}
-                            className="w-10 h-10 md:w-9 md:h-9 rounded-full bg-[#1D1F20] flex items-center justify-center hover:bg-[#252830] transition-colors cursor-pointer shrink-0"
-                        >
-                            <ChevronLeft className="w-6 h-6 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
-                        </button>
-                        <h1 className="text-xl md:text-2xl font-bold text-white">Settings</h1>
-                    </div>
-
-                    {/* Age Verification */}
-                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-t border-white/5">
-                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Age Verification</span>
-                        {isAgeVerified ? (
-                            <div className="flex items-center gap-2 bg-[#1D1F20] border border-white/10 rounded-full px-4 py-2 md:px-8 md:py-2.5 min-w-[130px] md:min-w-[160px] justify-center">
-                                <ShieldCheck className="w-4 h-4 text-green-400" />
-                                <span className="text-xs md:text-sm font-semibold text-green-400">18+ Verified</span>
-                            </div>
-                        ) : (
+                        {/* Header */}
+                        <div className="flex items-center gap-4 mb-8 md:mb-12">
                             <button
-                                onClick={handleAgeVerification}
-                                className="flex items-center gap-2 bg-[#1D1F20] border border-white/10 rounded-full px-4 py-2 md:px-8 md:py-2.5 min-w-[130px] md:min-w-[160px] justify-center hover:bg-[#252830] transition-colors"
+                                onClick={() => navigate({ to: "/profile" })}
+                                className="w-10 h-10 md:w-9 md:h-9 rounded-full bg-[#1D1F20] flex items-center justify-center hover:bg-[#252830] transition-colors cursor-pointer shrink-0"
                             >
-                                <Clock className="w-4 h-4 text-[#FF0000]" />
-                                <span className="text-xs md:text-sm font-semibold text-[#FF0000]">Pending</span>
+                                <ChevronLeft className="w-6 h-6 md:w-5 md:h-5 text-white" strokeWidth={2.5} />
                             </button>
-                        )}
-                    </div>
-
-                    {/* Blocked Users */}
-                    <div className="py-6 md:py-8 border-b border-white/5">
-                        <div className="flex items-center justify-between mb-4">
-                            <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Blocked Users</span>
-                            {blockedUsers.length > 0 && (
-                                <span className="text-gray-500 text-sm">({blockedUsers.length} Users)</span>
-                            )}
+                            <h1 className="text-xl md:text-2xl font-bold text-white">Settings</h1>
                         </div>
 
-                        <div className="bg-[#1a1c24] rounded-2xl overflow-hidden border border-white/5">
-                            {isLoadingBlocked ? (
-                                <div className="py-10 flex items-center justify-center">
-                                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                                </div>
-                            ) : blockedUsers.length === 0 ? (
-                                <div className="py-12 flex flex-col items-center justify-center gap-3">
-                                    <Users className="w-10 h-10 text-gray-600" />
-                                    <p className="text-gray-500 text-sm">No blocked users</p>
+                        {/* Age Verification */}
+                        <div className="flex items-center justify-between py-6 md:py-8 border-b border-t border-white/5">
+                            <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Age Verification</span>
+                            {isAgeVerified ? (
+                                <div className="flex items-center gap-2 bg-[#1D1F20] border border-white/10 rounded-full px-4 py-2 md:px-8 md:py-2.5 min-w-[130px] md:min-w-[160px] justify-center">
+                                    <ShieldCheck className="w-4 h-4 text-green-400" />
+                                    <span className="text-xs md:text-sm font-semibold text-green-400">18+ Verified</span>
                                 </div>
                             ) : (
-                                <div className="divide-y divide-white/5">
-                                    {blockedUsers.map((blockedUser) => (
-                                        <div
-                                            key={blockedUser.id}
-                                            className="flex items-center justify-between px-5 py-4"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                {blockedUser.profileImage ? (
-                                                    <img
-                                                        src={blockedUser.profileImage}
-                                                        alt={blockedUser.username}
-                                                        className="w-9 h-9 rounded-full object-cover bg-zinc-800"
-                                                    />
-                                                ) : (
-                                                    <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-bold text-white">
-                                                        {(blockedUser.fullName?.[0] || blockedUser.username?.[0] || '?').toUpperCase()}
-                                                    </div>
-                                                )}
-                                                <span className="text-gray-300 text-sm">@{blockedUser.username}</span>
-                                            </div>
-                                            <button
-                                                onClick={() => setUnblockTargetId(blockedUser.id)}
-                                                disabled={isUnblocking}
-                                                className="border border-white/20 text-white text-xs font-medium rounded-full px-5 py-2 hover:bg-white/5 transition-colors disabled:opacity-50 cursor-pointer"
-                                            >
-                                                Unblock
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
+                                <button
+                                    onClick={handleAgeVerification}
+                                    className="flex items-center gap-2 bg-[#1D1F20] border border-white/10 rounded-full px-4 py-2 md:px-8 md:py-2.5 min-w-[130px] md:min-w-[160px] justify-center hover:bg-[#252830] transition-colors"
+                                >
+                                    <Clock className="w-4 h-4 text-[#FF0000]" />
+                                    <span className="text-xs md:text-sm font-semibold text-[#FF0000]">Pending</span>
+                                </button>
                             )}
                         </div>
-                    </div>
 
-                    {/* My Coin Wallet */}
-                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors" onClick={() => navigate({ to: '/profile/setting/coins' })}>
-                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">My Coin Wallet</span>
-                    </div>
+                        {/* Blocked Users */}
+                        <div className="py-6 md:py-8 border-b border-white/5">
+                            <div className="flex items-center justify-between mb-4">
+                                <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Blocked Users</span>
+                                {blockedUsers.length > 0 && (
+                                    <span className="text-gray-500 text-sm">({blockedUsers.length} Users)</span>
+                                )}
+                            </div>
 
-                    {/* Get Money */}
-                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors" onClick={() => navigate({ to: '/profile/setting/diamonds' })}>
-                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Get Money</span>
-                    </div>
+                            <div className="bg-[#1a1c24] rounded-2xl overflow-hidden border border-white/5">
+                                {isLoadingBlocked ? (
+                                    <div className="py-10 flex items-center justify-center">
+                                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                    </div>
+                                ) : blockedUsers.length === 0 ? (
+                                    <div className="py-12 flex flex-col items-center justify-center gap-3">
+                                        <Users className="w-10 h-10 text-gray-600" />
+                                        <p className="text-gray-500 text-sm">No blocked users</p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y divide-white/5">
+                                        {blockedUsers.map((blockedUser) => (
+                                            <div
+                                                key={blockedUser.id}
+                                                className="flex items-center justify-between px-5 py-4"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    {blockedUser.profileImage ? (
+                                                        <img
+                                                            src={blockedUser.profileImage}
+                                                            alt={blockedUser.username}
+                                                            className="w-9 h-9 rounded-full object-cover bg-zinc-800"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center text-sm font-bold text-white">
+                                                            {(blockedUser.fullName?.[0] || blockedUser.username?.[0] || '?').toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <span className="text-gray-300 text-sm">@{blockedUser.username}</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => setUnblockTargetId(blockedUser.id)}
+                                                    disabled={isUnblocking}
+                                                    className="border border-white/20 text-white text-xs font-medium rounded-full px-5 py-2 hover:bg-white/5 transition-colors disabled:opacity-50 cursor-pointer"
+                                                >
+                                                    Unblock
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
 
-                    {/* Delete Account */}
-                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5">
-                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Delete Account</span>
-                        <button
-                            onClick={() => setShowDeleteModal(true)}
-                            className="flex items-center gap-2 border-2 border-red-500 text-red-500 rounded-full px-4 py-2 md:px-8 md:py-2.5 text-xs md:text-sm font-bold min-w-[130px] md:min-w-[160px] justify-center hover:bg-red-500/10 transition-colors cursor-pointer"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                        </button>
-                    </div>
+                        {/* My Coin Wallet */}
+                        <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors" onClick={() => navigate({ to: '/profile/setting/coins' })}>
+                            <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">My Coin Wallet</span>
+                        </div>
 
-                    {/* Log out */}
-                    <div className="flex items-center justify-between py-6 md:py-8">
-                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Log out</span>
-                        <button
-                            onClick={() => setShowLogoutConfirm(true)}
-                            className="flex items-center gap-2 border-2 border-[#FF7700] text-[#FF7700] rounded-full px-4 py-2 md:px-8 md:py-2.5 text-xs md:text-sm font-bold min-w-[130px] md:min-w-[160px] justify-center hover:bg-[#FF7700]/10 transition-colors cursor-pointer"
-                        >
-                            <LogOut className="w-4 h-4" />
-                            Log out
-                        </button>
+                        {/* Get Money */}
+                        <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors" onClick={() => navigate({ to: '/profile/setting/diamonds' })}>
+                            <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Get Money</span>
+                        </div>
+
+                        {/* Delete Account */}
+                        <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5">
+                            <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Delete Account</span>
+                            <button
+                                onClick={() => setShowDeleteModal(true)}
+                                className="flex items-center gap-2 border-2 border-red-500 text-red-500 rounded-full px-4 py-2 md:px-8 md:py-2.5 text-xs md:text-sm font-bold min-w-[130px] md:min-w-[160px] justify-center hover:bg-red-500/10 transition-colors cursor-pointer"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                            </button>
+                        </div>
+
+                        {/* Log out */}
+                        <div className="flex items-center justify-between pt-6 pb-18 md:py-8">
+                            <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Log out</span>
+                            <button
+                                onClick={() => setShowLogoutConfirm(true)}
+                                className="flex items-center gap-2 border-2 border-[#FF7700] text-[#FF7700] rounded-full px-4 py-2 md:px-8 md:py-2.5 text-xs md:text-sm font-bold min-w-[130px] md:min-w-[160px] justify-center hover:bg-[#FF7700]/10 transition-colors cursor-pointer"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Log out
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </>
+        </>
     );
 };

@@ -6,7 +6,8 @@ export type SignUpStep =
     | 'input'
     | 'otp'
     | 'age'
-    | 'details';
+    | 'details'
+    | 'interests';
 
 interface SignUpState {
     isOpen: boolean;

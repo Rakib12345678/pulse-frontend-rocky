@@ -41,9 +41,9 @@ export const authService = {
 
     // 2. Verify OTP
     verifyOtp: async (payload: VerifyOtpPayload) => {
-        return api.post('/otp/verify', { 
-            email: payload.identifier, 
-            otp: payload.otp 
+        return api.post('/otp/verify', {
+            email: payload.identifier,
+            otp: payload.otp
         });
     },
 
@@ -60,14 +60,18 @@ export const authService = {
         return api.put('/users/me', payload);
     },
 
-    // 4. Set Interests
-    //TODO with backend later on
-    setInterests: async (interests: string[]) => {
-        console.log('API: Setting interests', interests);
-        return new Promise((resolve) => setTimeout(resolve, 1000));
+    // 4. Get Categories
+    getCategories: async () => {
+        const response = await api.get('/categories');
+        return response.data as { id: number; name: string; createdAt: string; updatedAt: string }[];
     },
 
-    // 5. Update 18+ Consent (for OAuth users)
+    // 5. Set Interests
+    setInterests: async (categories: string[]) => {
+        return api.put('/users/me/interests', { categories });
+    },
+
+    // 6. Update 18+ Consent (for OAuth users)
     updateAgeConsent: async (eighteenPlus: boolean) => {
         return api.put('/users/me/18plus-consent', { eighteenPlus });
     }

@@ -11,6 +11,20 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 import { ParticipantsDialog } from './ParticipantsDialog';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerTrigger,
+    DrawerTitle,
+    DrawerDescription
+} from '@/components/ui/drawer';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export const LiveStreamHeader: React.FC = () => {
     const { streamData, setEndingStream } = useGoLiveStore();
@@ -170,9 +184,26 @@ export const LiveStreamHeader: React.FC = () => {
                     {/* Right side: "..." menu for viewer */}
                     <div className="flex items-center gap-2">
                         {!isHost && (
-                            <button className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10">
-                                <MoreHorizontal className="w-5 h-5 text-white" />
-                            </button>
+                            <Drawer>
+                                <DrawerTrigger asChild>
+                                    <button className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all cursor-pointer">
+                                        <MoreHorizontal className="w-5 h-5 text-white" />
+                                    </button>
+                                </DrawerTrigger>
+                                <DrawerContent className="bg-[#1C1C1E] border-none text-white outline-none">
+                                    <DrawerTitle className="sr-only">Stream Options</DrawerTitle>
+                                    <DrawerDescription className="sr-only">Report or show interest in the stream</DrawerDescription>
+                                    <div className="flex flex-col px-4 py-6 max-w-sm mx-auto w-full">
+                                        <button className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-t-xl transition-colors">
+                                            Interested
+                                        </button>
+                                        <div className="h-px bg-white/10 w-full" />
+                                        <button className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-b-xl transition-colors">
+                                            Report Stream
+                                        </button>
+                                    </div>
+                                </DrawerContent>
+                            </Drawer>
                         )}
                     </div>
                 </div>
@@ -269,6 +300,28 @@ export const LiveStreamHeader: React.FC = () => {
                 >
                     {isChatVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
                 </button>
+
+                {!isHost && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                type="button"
+                                className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all flex items-center justify-center"
+                            >
+                                <MoreHorizontal className="w-5 h-5 text-white/70" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent side="bottom" align="end" className="bg-[#1C1C1E] border-none shadow-lg text-white min-w-[200px] p-2 rounded-xl">
+                            <DropdownMenuItem className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors">
+                                Interested
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-white/10 my-1" />
+                            <DropdownMenuItem className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors">
+                                Report Stream
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
             </div>
         </div>
     );

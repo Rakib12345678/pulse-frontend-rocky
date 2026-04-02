@@ -876,9 +876,6 @@ export const StepDetails = ({
     const store = useSignUpStore();
     const { mutateAsync: updateProfileMutation } = useUpdateProfile();
     const isAdult = isAdultProp ?? store.isAdult;
-    const location = useLocation();
-    const isLiveStream = location.pathname.startsWith('/live');
-    const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [username, setUsername] = useState('');
     const [usernameError, setUsernameError] = useState('');
@@ -984,12 +981,7 @@ export const StepDetails = ({
                 }
             });
             if (mode === 'signup') {
-                useAuthStore.setState({ isNewUser: false });
-                toast.success("Account created successfully!");
-                onSuccess?.();
-                store.closeModal();
-                store.reset();
-                if (!isLiveStream) { navigate({ to: '/for-you' }); }
+                store.setStep('interests');
             } else {
                 toast.success("Profile updated successfully!");
                 onSuccess?.();
@@ -1189,6 +1181,101 @@ export const StepDetails = ({
 };
 
 
+// --- 6. INTERESTS STEP ---
+const StepInterests = () => {
+    const { reset, closeModal } = useSignUpStore();
+    const [selected, setSelected] = useState<string[]>([]);
+    const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
+    const isLiveStream = location.pathname.startsWith('/live');
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const data = await authService.getCategories();
+                setCategories(data);
+            } catch (error) {
+                console.error('Failed to fetch categories:', error);
+                toast.error('Failed to load interests');
+            } finally {
+                setIsLoadingCategories(false);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const toggleInterest = (name: string) => {
+        if (selected.includes(name)) setSelected(selected.filter(i => i !== name));
+        else setSelected([...selected, name]);
+    };
+
+    const handleConfirm = async () => {
+        setIsSubmitting(true);
+        try {
+            await authService.setInterests(selected);
+            useAuthStore.setState({ isNewUser: false });
+            toast.success("Account created successfully!");
+            closeModal();
+            reset();
+            if (!isLiveStream) { navigate({ to: '/for-you' }); }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Failed to save interests");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <StepWrapper title="Interest">
+            <div className="bg-transparent mb-8 max-w-sm mx-auto">
+                <p className="text-gray-400 text-sm leading-relaxed">
+                    Pick your interests so we can personalize your experience.
+                </p>
+            </div>
+
+            {isLoadingCategories ? (
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                </div>
+            ) : (
+                <div className="flex flex-wrap justify-center gap-3 mb-12 mt-4 w-full">
+                    {categories.map((item) => {
+                        const isActive = selected.includes(item.name);
+                        return (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => toggleInterest(item.name)}
+                                className={cn(
+                                    "min-w-[73px] h-[36px] px-4 py-[6px] rounded-full text-sm font-medium transition-all flex items-center justify-center gap-[10px] border whitespace-nowrap",
+                                    isActive
+                                        ? "bg-[#FF8800]/10 border-[#FF8800] text-[#FF8800] shadow-[0_0_15px_rgba(255,136,0,0.1)]"
+                                        : "bg-white/5 border-white/10 text-gray-400 hover:border-white/30 hover:text-white hover:bg-white/10"
+                                )}
+                            >
+                                {isActive && <Check className="w-3 h-3" />}
+                                {item.name}
+                            </button>
+                        )
+                    })}
+                </div>
+            )}
+
+            <Button
+                onClick={handleConfirm}
+                disabled={isSubmitting}
+                className="w-52 rounded-full bg-[#FF8800] py-6 text-sm font-bold text-black hover:bg-[#ff9922]"
+            >
+                {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {isSubmitting ? 'Saving...' : 'Confirm'}
+            </Button>
+        </StepWrapper>
+    );
+};
+
 export const SignUpModal = () => {
     const { isOpen, currentStep, closeModal, openModal, setStep, isAdult, identifier, method, countryCode } = useSignUpStore();
     const { isNewUser, isAuthenticated, isHydrated } = useAuthStore();
@@ -1264,6 +1351,7 @@ export const SignUpModal = () => {
                     initialValues={{ identifier: verifiedIdentifier }}
                 />
             )}
+            {currentStep === 'interests' && <StepInterests />}
         </AuthModalBackdrop>
     );
 };
