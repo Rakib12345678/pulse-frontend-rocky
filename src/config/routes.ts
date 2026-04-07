@@ -7,6 +7,7 @@ export const PUBLIC_ROUTES = [
     '/live',    // Live streams
     '/for-you', // For you
     '/live/:id',
+    '/chats',
     '/privacy-policy',
     '/terms-conditions',
     '/refund-policy'

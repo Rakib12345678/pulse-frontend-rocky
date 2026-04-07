@@ -87,8 +87,12 @@ export const ProfileMediaSection = ({
               title={isMoments ? 'No Post' : 'No previous live'}
               description={
                 isMoments
-                  ? `${userName} hasn't shared any moments yet.`
-                  : `${userName} hasn't gone live yet.`
+                  ? isOwnProfile
+                    ? "You haven't shared any moments yet. Start posting to share your story."
+                    : `${userName} hasn't shared any moments yet.`
+                  : isOwnProfile
+                    ? "You haven't gone live yet. Start your first live and connect with your audience."
+                    : `${userName} hasn't gone live yet.`
               }
               actionLabel={
                 isMoments

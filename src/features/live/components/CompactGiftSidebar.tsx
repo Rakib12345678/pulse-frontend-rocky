@@ -60,7 +60,8 @@ export const CompactGiftSidebar: React.FC = () => {
             const response = await giftsService.sendGift({
                 giftId: gift.id,
                 callId: call.id,
-                targetUserId: targetUserId
+                targetUserId: targetUserId,
+                source: 'LIVE_STREAM'
             });
 
             updateWallet({ coinBalance: response.viewerCoinBalance });

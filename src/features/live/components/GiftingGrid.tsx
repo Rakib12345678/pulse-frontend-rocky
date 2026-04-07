@@ -64,7 +64,8 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
             const response = await giftsService.sendGift({
                 giftId: gift.id,
                 callId: call.id,
-                targetUserId: targetUserId
+                targetUserId: targetUserId,
+                source: 'LIVE_STREAM'
             });
 
             // 2. Update local wallet balance

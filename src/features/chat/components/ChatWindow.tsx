@@ -144,7 +144,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             scrollToBottom('smooth');
         }
     }, [messages.length]);
-    
+
     // Close gift carousel when clicking outside
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -308,12 +308,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         {capitalizeName(conversation.participant.name)}
                     </p>
                     <p className={cn('text-[11px]', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
-                            {conversation.isOnline
-                                ? 'Online'
-                                : conversation.lastActive
-                                    ? formatLastSeen(conversation.lastActive)
-                                    : 'Offline'}
-                        </p>
+                        {conversation.isOnline
+                            ? 'Online'
+                            : conversation.lastActive
+                                ? formatLastSeen(conversation.lastActive)
+                                : 'Offline'}
+                    </p>
                 </div>
 
                 {/* Translate toggle */}
@@ -457,16 +457,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 'shrink-0 px-2 sm:px-4 lg:px-8 py-4 flex items-center border-t border-white/5 md:mb-15',
                 mobileFullscreen && 'pb-7 md:pb-5',
             )}>
-                    <div className="w-full flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 relative">
-                        {showEmoji && (
-                            <div className="absolute bottom-full right-0 mb-4 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200">
-                                <EmojiPickerPopup
-                                    onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
-                                    onClose={() => setShowEmoji(false)}
-                                    className="shadow-2xl border border-white/10 rounded-2xl scale-90 sm:scale-100 origin-bottom-right"
-                                />
-                            </div>
-                        )}
+                <div className="w-full flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 relative">
+                    {showEmoji && (
+                        <div className="absolute bottom-full right-0 mb-4 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200">
+                            <EmojiPickerPopup
+                                onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
+                                onClose={() => setShowEmoji(false)}
+                                className="shadow-2xl border border-white/10 rounded-2xl scale-90 sm:scale-100 origin-bottom-right"
+                            />
+                        </div>
+                    )}
                     <div className={cn(
                         'flex-[4] flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
                         !isInternetConnected
@@ -573,7 +573,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             </button>
                         )}
                     </div>
-                    </div>
+                </div>
             </div>
 
             {showLangModal && (
@@ -584,22 +584,22 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             )}
 
             {msgToDelete && (
-                <div 
+                <div
                     onClick={() => setMsgToDelete(null)}
                     className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300 cursor-default"
                 >
-                    <div 
+                    <div
                         onClick={e => e.stopPropagation()}
                         className="relative w-full max-w-[400px] rounded-[32px] shadow-2xl overflow-hidden p-10 flex flex-col items-center text-center backdrop-blur-[354px]"
-                        style={{ 
-                            background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' 
+                        style={{
+                            background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)'
                         }}
                     >
                         <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">Delete Message?</h3>
                         <p className="text-gray-400 text-sm mb-10 leading-relaxed max-w-[240px]">
                             Are you sure you want to delete this message?
                         </p>
-                        
+
                         <div className="flex items-center gap-4 w-full justify-center">
                             <button
                                 onClick={async () => {

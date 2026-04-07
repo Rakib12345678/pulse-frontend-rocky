@@ -12,8 +12,8 @@ import type { Conversation } from '../types/chat.types';
 import { useStreamChat } from '@/features/chat/hooks/useStreamChats';
 import background from '@/assets/background.png';
 
-const saveSession  = (id: string) => sessionStorage.setItem(SESSION_ACTIVE_KEY, id);
-const loadSession  = (): string | null => sessionStorage.getItem(SESSION_ACTIVE_KEY);
+const saveSession = (id: string) => sessionStorage.setItem(SESSION_ACTIVE_KEY, id);
+const loadSession = (): string | null => sessionStorage.getItem(SESSION_ACTIVE_KEY);
 const clearSession = () => sessionStorage.removeItem(SESSION_ACTIVE_KEY);
 
 interface ChatPageProps {
@@ -32,7 +32,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     const myId = String(user?.id ?? '');
 
     const [streamReady, setStreamReady] = useState(false);
-    
+
     // Reset state whenever the logged-in user changes
     useEffect(() => {
         setStreamReady(false);
@@ -44,9 +44,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     useEffect(() => {
         if (streamReady) return;
         const id = setInterval(() => {
-            if (isStreamConnected()) { 
-                setStreamReady(true); 
-                clearInterval(id); 
+            if (isStreamConnected()) {
+                setStreamReady(true);
+                clearInterval(id);
             }
         }, 200);
         return () => clearInterval(id);
@@ -59,7 +59,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     );
     const [mobileShowList, setMobileShowList] = useState(!localConvId);
     const [displayConversation, setDisplayConversation] = useState<Conversation | null>(null);
-    
+
     useEffect(() => {
         if (!localConvId) setMobileShowList(true);
     }, [localConvId]);
@@ -87,17 +87,17 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         chatService
             .getConversationById(localConvId)
             .then(conv => { if (mounted) setDisplayConversation(conv); })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => { fetchingRef.current = false; });
 
         return () => { mounted = false; };
     }, [localConvId, streamReady, chat.conversations]);
 
-    const staleRef  = useRef<Conversation | null>(null);
+    const staleRef = useRef<Conversation | null>(null);
     const prevIdRef = useRef<string | null>(null);
     if (prevIdRef.current !== localConvId) {
         prevIdRef.current = localConvId;
-        staleRef.current  = null;
+        staleRef.current = null;
     }
     if (displayConversation) staleRef.current = displayConversation;
     const activeConversation = displayConversation ?? staleRef.current;
@@ -227,7 +227,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                     <ChatWindow {...windowProps} />
                 </div>
                 {/* Right Sidebar Utility */}
-                <RightSidebar className="hidden md:flex shrink-0 border-l border-white/5" />
+                {user && <RightSidebar className="hidden md:flex shrink-0 border-l border-white/5" />}
             </div>
         </div>
     );

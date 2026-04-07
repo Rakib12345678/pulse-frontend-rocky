@@ -13,9 +13,9 @@ export const FollowingLoginPrompt: React.FC<FollowingLoginPromptProps> = ({ onLo
                 <LogIn className="h-16 w-16 text-white/70 mx-auto" strokeWidth={1.5} />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">
-                Please Login First to see your
+                Log in to follow creators
             </h2>
-            <p className="text-2xl font-bold text-white mb-8">following details</p>
+            <p className="text-2xl font-bold text-white mb-8">and view your following list.</p>
             <Button
                 onClick={onLoginClick}
                 className="px-10 py-3 rounded-full bg-[#FF8800] text-black text-base font-semibold hover:bg-[#ff9922] transition-all border-none"

@@ -731,7 +731,7 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
             </div>
 
             <p className="text-xs text-gray-500 text-center">
-                by logging in you agree to our{' '}
+                By continuing, you agree to our{' '}
                 <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link> &{' '}
                 <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
             </p>
@@ -786,8 +786,7 @@ const StepAge = () => {
             </p>
             <div className="bg-transparent mb-12 max-w-md mx-auto">
                 <p className="text-gray-400 text-sm leading-relaxed">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed venenatis est.
-                    Cras sagittis luctus erat, nec dignissim dui fermentum quis. Fusce pharetra sit amet.
+                    To maintain a safe and trusted environment, access to this platform is limited to users aged 18 and above.
                 </p>
             </div>
             <div className="flex flex-col md:flex-row gap-2 w-full">
@@ -809,7 +808,7 @@ const StepAge = () => {
                 </Button>
             </div>
             <p className="mt-5 text-xs text-gray-500">
-                by logging in you agree to our{' '}
+                By continuing, you agree to our{' '}
                 <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link> &{' '}
                 <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
             </p>
@@ -994,7 +993,7 @@ export const StepDetails = ({
     };
 
     const title = mode === 'edit' ? 'Edit Profile' : 'Almost There!';
-    const subtitle = mode === 'edit' ? 'Update your profile details below.' : 'Welcome, Please fill the missing fields.';
+    const subtitle = mode === 'edit' ? 'Update your profile details below.' : 'Let\'s set up your profile so you can start connecting.';
     const submitLabel = mode === 'edit' ? 'Save' : 'Enter PulseLive';
 
     const identifierPill = mode === 'signup'
@@ -1106,13 +1105,13 @@ export const StepDetails = ({
                                 <div className="grid grid-cols-2 gap-4 items-start">
                                     <div className="flex flex-col gap-1.5">
                                         <div className="flex items-center justify-between" style={{ height: '20px' }}>
-                                            <label className="text-xs text-gray-400">User name</label>
+                                            <label className="text-xs text-gray-400">Username</label>
                                             {mode === 'signup' && isCheckingUsername && <Loader2 className="w-3 h-3 animate-spin text-gray-500" />}
                                             {mode === 'signup' && isUsernameAvailable === true && !isCheckingUsername && <Check className="w-3 h-3 text-green-500" />}
                                         </div>
                                         {mode === 'signup' ? (
                                             <>
-                                                <input value={username} spellCheck={false} onChange={(e) => { setUsername(e.target.value); setUsernameError(''); setIsUsernameAvailable(null); }} placeholder="Enter your user name"
+                                                <input value={username} spellCheck={false} onChange={(e) => { setUsername(e.target.value); setUsernameError(''); setIsUsernameAvailable(null); }} placeholder="Choose a unique username"
                                                     className={cn("w-full bg-[#111213] border rounded-xl text-white text-sm placeholder:text-gray-600 outline-none transition-colors px-4", "border-white/20 focus:border-white/40", isUsernameAvailable === false && "border-red-500/70", isUsernameAvailable === true && "border-green-500/40")}
                                                     style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }} />
                                                 <div className="h-4 flex items-center">{usernameError && <p className="text-[10px] text-red-400">{usernameError}</p>}</div>
@@ -1149,7 +1148,7 @@ export const StepDetails = ({
                                         <label className="text-xs text-gray-400">Bio</label>
                                         <FormControl>
                                             <div className="relative">
-                                                <Textarea {...field} value={field.value ?? ""} spellCheck={false} className="bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 resize-y min-h-25 py-3 text-[16px]" placeholder="Lorem ipsum dolor sit amet, consectetur adipiscing elit." maxLength={100} style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }} />
+                                                <Textarea {...field} value={field.value ?? ""} spellCheck={false} className="bg-[#111213] border-white/20 rounded-lg text-white placeholder:text-gray-600 focus-visible:ring-0 focus-visible:border-white/40 resize-y min-h-25 py-3 text-[16px]" placeholder="Tell others a bit about yourself..." maxLength={100} style={{ height: '56px', border: '1px solid var(--Grey-Grey-5, #959A9D)' }} />
                                                 <span className="absolute bottom-2 right-3 text-[10px] text-gray-500">{field.value?.length || 0}/100</span>
                                             </div>
                                         </FormControl>
@@ -1167,7 +1166,7 @@ export const StepDetails = ({
                                     )}
                                 </div>
                                 <p className="text-[11px] md:text-xs text-center md:text-left text-gray-500 mt-6 md:mt-4">
-                                    by logging in you agree to our <br className="md:hidden" />
+                                    By continuing, you agree to our <br className="md:hidden" />
                                     <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link>{' '}&{' '}
                                     <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().closeModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
                                 </p>
@@ -1213,6 +1212,10 @@ const StepInterests = () => {
     };
 
     const handleConfirm = async () => {
+        if (selected.length === 0) {
+            toast.error('Please select at least one interest');
+            return;
+        }
         setIsSubmitting(true);
         try {
             await authService.setInterests(selected);
@@ -1230,9 +1233,9 @@ const StepInterests = () => {
 
     return (
         <StepWrapper title="Interest">
-            <div className="bg-transparent mb-8 max-w-sm mx-auto">
+            <div className="bg-transparent mb-4 max-w-sm mx-auto">
                 <p className="text-gray-400 text-sm leading-relaxed">
-                    Pick your interests so we can personalize your experience.
+                    Help us tailor your experience with content and creators that match your vibe. Your selections will shape your feed, recommendations, and the creators you connect with.
                 </p>
             </div>
 
@@ -1266,7 +1269,7 @@ const StepInterests = () => {
 
             <Button
                 onClick={handleConfirm}
-                disabled={isSubmitting}
+                disabled={isSubmitting || selected.length === 0}
                 className="w-52 rounded-full bg-[#FF8800] py-6 text-sm font-bold text-black hover:bg-[#ff9922]"
             >
                 {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
