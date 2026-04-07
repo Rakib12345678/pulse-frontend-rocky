@@ -216,7 +216,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
             {/* DESKTOP */}
             <div className="hidden md:flex flex-1 min-h-0 pb-0">
                 <div
-                    className="flex flex-col shrink-0 w-72 lg:w-80 xl:w-96 overflow-hidden -mb-1px pb-6"
+                    className="flex flex-col shrink-0 w-72 lg:w-90 xl:w-110 overflow-hidden -mb-1px pb-6"
                     style={{ background: '#111213' }}
                 >
                     <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-5 py-5">

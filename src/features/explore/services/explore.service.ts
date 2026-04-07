@@ -1,31 +1,81 @@
 import api from '@/lib/api';
-import { ExploreData, ExploreSearchResponse } from '../types/explore.types';
-import { MOCK_EXPLORE_DATA, MOCK_SEARCH_RESULTS } from './explore.mock';
-
-// Toggle this to switch between API and Mock data
-const USE_MOCK_DATA = true;
+import { ExploreData, ExploreSearchResponse, Category, ExploreItem } from '../types/explore.types';
 
 export const exploreService = {
-    getExploreData: async (): Promise<ExploreData> => {
-        if (USE_MOCK_DATA) {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 800));
-            return MOCK_EXPLORE_DATA;
-        }
-
+    getCategories: async (): Promise<Category[]> => {
         try {
-            const [trending, newCreators, recommended, popular] = await Promise.all([
-                api.get('/stream/feed', { params: { limit: 10 } }),
-                api.get('/users/search', { params: { query: '', limit: 10 } }).catch(() => ({ data: [] })), // Fallback for new creators
-                api.get('/stream/feed', { params: { limit: 10, offset: 10 } }),
-                api.get('/stream/feed', { params: { limit: 10, offset: 20 } })
+            const response = await api.get('/categories');
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+            return [];
+        }
+    },
+
+    getWeeklyPopular: async (categories?: string[]): Promise<ExploreItem[]> => {
+        try {
+            const response = await api.get('/explore/weekly-popular', {
+                params: { categories: categories?.join(',') }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch weekly popular:', error);
+            return [];
+        }
+    },
+
+    getTrending: async (categories?: string[]): Promise<ExploreItem[]> => {
+        try {
+            const response = await api.get('/explore/trending', {
+                params: { categories: categories?.join(',') }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch trending:', error);
+            return [];
+        }
+    },
+
+    getNewest: async (categories?: string[]): Promise<ExploreItem[]> => {
+        try {
+            const response = await api.get('/explore/newest', {
+                params: { categories: categories?.join(',') }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch newest:', error);
+            return [];
+        }
+    },
+
+    getInterests: async (): Promise<ExploreItem[]> => {
+        try {
+            const response = await api.get('/explore/interests');
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch interests:', error);
+            return [];
+        }
+    },
+
+    getExploreData: async (categories?: string[]): Promise<ExploreData> => {
+        try {
+            // Apply category filter only to Popular, Trending, and New
+            // For "All", we might pass undefined or empty array
+            const filter = categories && categories.length > 0 && !categories.includes('All Category') ? categories : undefined;
+
+            const [trending, newest, interests, popular] = await Promise.all([
+                exploreService.getTrending(filter),
+                exploreService.getNewest(),
+                exploreService.getInterests(),
+                exploreService.getWeeklyPopular(filter)
             ]);
 
             return {
-                trendingStreams: trending.data.data,
-                newCreators: newCreators.data || [],
-                recommendedStreams: recommended.data.data,
-                popularStreams: popular.data.data
+                trendingStreams: trending,
+                newCreators: newest,
+                recommendedStreams: interests,
+                popularStreams: popular
             };
         } catch (error) {
             console.error('Failed to fetch explore data:', error);
@@ -34,19 +84,19 @@ export const exploreService = {
     },
 
     searchExplore: async (query: string): Promise<ExploreSearchResponse> => {
-        if (USE_MOCK_DATA) {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            return MOCK_SEARCH_RESULTS;
+        try {
+            const [creators, streams] = await Promise.all([
+                api.get('/users/search', { params: { query } }),
+                api.get('/stream/feed', { params: { query } }) // Fallback or search in feed
+            ]);
+
+            return {
+                creators: creators.data || [],
+                streams: streams.data.data || []
+            };
+        } catch (error) {
+            console.error('Search failed:', error);
+            return { creators: [], streams: [] };
         }
-
-        const [creators, streams] = await Promise.all([
-            api.get('/users/search', { params: { query } }),
-            api.get('/stream/feed', { params: { query } }) // Assuming feed supports search
-        ]);
-
-        return {
-            creators: creators.data || [],
-            streams: streams.data.data || []
-        };
     }
 };

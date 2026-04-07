@@ -2,8 +2,9 @@ import React from 'react';
 import { ExploreSearch } from './ExploreSearch';
 import { ExploreSection } from './ExploreSection';
 import { CreatorCard } from './CreatorCard';
+import { ExploreLiveCard } from './ExploreLiveCard';
 import { ExploreEmptyState } from './ExploreEmptyState';
-import { LiveCard } from '@/features/live/components/LiveCard';
+import { ExploreNoDataState } from './ExploreNoDataState';
 import { GoLiveButton } from '@/features/for-you/components/GoLiveButton';
 import { useExplore } from '../hooks/useExplore';
 import { Loader2 } from 'lucide-react';
@@ -21,13 +22,14 @@ export const ExplorePage: React.FC = () => {
         error,
         searchQuery,
         setSearchQuery,
-        activeCategory,
-        setActiveCategory,
+        categories,
+        activeCategories,
+        toggleCategory,
         handleSearch,
+        isSearching,
         searchResults,
-        searchSuggestions,
-        isSuggesting,
-        handleExploreMore
+        handleExploreMore,
+        refreshData
     } = useExplore();
 
     if (isLoading && !exploreData) {
@@ -50,66 +52,71 @@ export const ExplorePage: React.FC = () => {
         exploreData.popularStreams.length > 0
     );
 
-    const showEmptyState = (searchQuery.trim() !== '' && searchResults && !hasSearchResults) || (!isLoading && exploreData && !hasExploreData);
+    const showSearchEmptyState = searchQuery.trim() !== '' && searchResults && !hasSearchResults && !isSearching;
+    const showDataEmptyState = !isLoading && exploreData && !hasExploreData && (!searchResults || searchQuery.trim() === '');
+    const hasActiveSearch = !!searchResults && searchQuery.trim() !== '';
 
     // Track visible sections to alternate backgrounds
     let sectionCounter = 0;
 
     return (
-        <div className="w-full mt-8 overflow-x-hidden">
+        <div className="w-full mt-8 overflow-x-hidden pb-12">
             {/* Search and Categories - Contained */}
             <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
                 <ExploreSearch
                     searchQuery={searchQuery}
                     setSearchQuery={setSearchQuery}
-                    activeCategory={activeCategory}
-                    setActiveCategory={setActiveCategory}
+                    categories={categories}
+                    activeCategories={activeCategories}
+                    toggleCategory={toggleCategory}
                     onSearch={handleSearch}
-                    suggestions={searchSuggestions}
-                    isSuggesting={isSuggesting}
+                    hideFilters={hasActiveSearch}
                 />
             </div>
 
-            {showEmptyState ? (
-                <div className="max-w-[1240px] mx-auto px-4 lg:px-8">
+            {isSearching ? (
+                <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-300">
+                    <Loader2 className="h-12 w-12 animate-spin text-[#FF8800] mb-4" />
+                    <p className="text-gray-400 font-medium">Searching for creators...</p>
+                </div>
+            ) : showSearchEmptyState ? (
+                <div className="max-w-[1240px] mx-auto px-4 lg:px-8 animate-in fade-in zoom-in duration-500">
                     <ExploreEmptyState onExploreMore={handleExploreMore} />
                 </div>
-            ) : searchResults ? (
+            ) : showDataEmptyState ? (
+                <div className="max-w-[1240px] mx-auto px-4 lg:px-8 animate-in fade-in zoom-in duration-500">
+                    <ExploreNoDataState onRetry={refreshData} />
+                </div>
+            ) : (searchResults && searchQuery.trim() !== '') ? (
                 /* Search Results View */
-                <>
-                    {searchResults.streams.length > 0 && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    {searchResults.creators.length > 0 && (
                         <ExploreSection
-                            title="Found Streams"
-                            hasBackground={sectionCounter++ % 2 === 1}
+                            title="Found Users"
+                            hasBackground={false}
                         >
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-5">
-                                {searchResults.streams.map((stream) => (
-                                    <LiveCard
-                                        key={stream.callId}
-                                        {...stream}
-                                        thumbnailUrl={stream.profileImage || bunnyTeacher}
-                                        avatarUrl={stream.profileImage || bunnyTeacher}
-                                        streamerName={stream.username || 'User'}
-                                        viewerCount={formatViewerCount(stream.participantCount)}
-                                        followersCount={formatViewerCount(stream.followerCount)}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                                {searchResults.creators.map((item) => (
+                                    <CreatorCard 
+                                        key={item.id} 
+                                        creator={{
+                                            id: item.id,
+                                            username: item.username,
+                                            displayName: item.fullName,
+                                            profileImage: item.profileImage,
+                                            followerCount: item.followerCount,
+                                            isFollower: item.isFollower,
+                                            followedByMe: item.followedByMe || item.isFollower || false,
+                                            isLive: item.isLive,
+                                            category: item.category,
+                                            cohosts: item.cohosts
+                                        }} 
                                     />
                                 ))}
                             </div>
                         </ExploreSection>
                     )}
-                    {searchResults.creators.length > 0 && (
-                        <ExploreSection
-                            title="Found Creators"
-                            hasBackground={sectionCounter++ % 2 === 1}
-                        >
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-5">
-                                {searchResults.creators.map((creator) => (
-                                    <CreatorCard key={creator.id} creator={creator} />
-                                ))}
-                            </div>
-                        </ExploreSection>
-                    )}
-                </>
+                </div>
             ) : (
                 /* Default Explore View */
                 <>
@@ -120,15 +127,18 @@ export const ExplorePage: React.FC = () => {
                             hasBackground={sectionCounter++ % 2 === 1}
                         >
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
-                                {exploreData.trendingStreams.map((stream) => (
-                                    <div key={stream.callId} className="min-w-[160px] sm:min-w-[180px] md:min-w-[200px] xl:min-w-[220px] flex">
-                                        <LiveCard
-                                            {...stream}
-                                            thumbnailUrl={stream.profileImage || bunnyTeacher}
-                                            avatarUrl={stream.profileImage || bunnyTeacher}
-                                            streamerName={stream.username || 'User'}
-                                            viewerCount={formatViewerCount(stream.participantCount)}
-                                            followersCount={formatViewerCount(stream.followerCount)}
+                                {exploreData.trendingStreams.map((item) => (
+                                    <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
+                                        <ExploreLiveCard
+                                            callId={item.id.toString()}
+                                            thumbnailUrl={item.profileImage || bunnyTeacher}
+                                            avatarUrl={item.profileImage || bunnyTeacher}
+                                            streamerName={item.username || 'User'}
+                                            viewerCount={formatViewerCount(item.participantCount)}
+                                            followersCount={formatViewerCount(item.followerCount)}
+                                            isLive={item.isLive}
+                                            category={item.category}
+                                            cohosts={item.cohosts.map(c => ({ ...c, status: 'active' }))}
                                         />
                                     </div>
                                 ))}
@@ -143,9 +153,20 @@ export const ExplorePage: React.FC = () => {
                             hasBackground={sectionCounter++ % 2 === 1}
                         >
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
-                                {exploreData.newCreators.map((creator) => (
-                                    <div key={creator.id} className="min-w-[160px] sm:min-w-[180px] md:min-w-[200px] xl:min-w-[220px] flex">
-                                        <CreatorCard creator={creator} />
+                                {exploreData.newCreators.map((item) => (
+                                    <div key={item.id} className="w-[160px] sm:w-[180px] md:w-[200px] xl:w-[220px] flex-shrink-0 flex">
+                                        <CreatorCard creator={{
+                                            id: item.id,
+                                            username: item.username,
+                                            displayName: item.fullName,
+                                            profileImage: item.profileImage,
+                                            followerCount: item.followerCount,
+                                            isFollower: item.isFollower,
+                                            followedByMe: item.followedByMe || item.isFollower || false,
+                                            isLive: item.isLive,
+                                            category: item.category,
+                                            cohosts: item.cohosts
+                                        }} />
                                     </div>
                                 ))}
                             </div>
@@ -159,15 +180,18 @@ export const ExplorePage: React.FC = () => {
                             hasBackground={sectionCounter++ % 2 === 1}
                         >
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
-                                {exploreData.recommendedStreams.map((stream) => (
-                                    <div key={stream.callId} className="min-w-[160px] sm:min-w-[180px] md:min-w-[200px] xl:min-w-[220px] flex">
-                                        <LiveCard
-                                            {...stream}
-                                            thumbnailUrl={stream.profileImage || bunnyTeacher}
-                                            avatarUrl={stream.profileImage || bunnyTeacher}
-                                            streamerName={stream.username || 'User'}
-                                            viewerCount={formatViewerCount(stream.participantCount)}
-                                            followersCount={formatViewerCount(stream.followerCount)}
+                                {exploreData.recommendedStreams.map((item) => (
+                                    <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
+                                        <ExploreLiveCard
+                                            callId={item.id.toString()}
+                                            thumbnailUrl={item.profileImage || bunnyTeacher}
+                                            avatarUrl={item.profileImage || bunnyTeacher}
+                                            streamerName={item.username || 'User'}
+                                            viewerCount={formatViewerCount(item.participantCount)}
+                                            followersCount={formatViewerCount(item.followerCount)}
+                                            isLive={item.isLive}
+                                            category={item.category}
+                                            cohosts={item.cohosts.map(c => ({ ...c, status: 'active' }))}
                                         />
                                     </div>
                                 ))}
@@ -182,15 +206,18 @@ export const ExplorePage: React.FC = () => {
                             hasBackground={sectionCounter++ % 2 === 1}
                         >
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
-                                {exploreData.popularStreams.map((stream) => (
-                                    <div key={stream.callId} className="min-w-[160px] sm:min-w-[180px] md:min-w-[200px] xl:min-w-[220px] flex">
-                                        <LiveCard
-                                            {...stream}
-                                            thumbnailUrl={stream.profileImage || bunnyTeacher}
-                                            avatarUrl={stream.profileImage || bunnyTeacher}
-                                            streamerName={stream.username || 'User'}
-                                            viewerCount={formatViewerCount(stream.participantCount)}
-                                            followersCount={formatViewerCount(stream.followerCount)}
+                                {exploreData.popularStreams.map((item) => (
+                                    <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
+                                        <ExploreLiveCard
+                                            callId={item.id.toString()}
+                                            thumbnailUrl={item.profileImage || bunnyTeacher}
+                                            avatarUrl={item.profileImage || bunnyTeacher}
+                                            streamerName={item.username || 'User'}
+                                            viewerCount={formatViewerCount(item.participantCount)}
+                                            followersCount={formatViewerCount(item.followerCount)}
+                                            isLive={item.isLive}
+                                            category={item.category}
+                                            cohosts={item.cohosts.map(c => ({ ...c, status: 'active' }))}
                                         />
                                     </div>
                                 ))}
@@ -201,7 +228,7 @@ export const ExplorePage: React.FC = () => {
             )}
 
             {/* Floating Go Live Button */}
-            {!showEmptyState && <GoLiveButton />}
+            {!showSearchEmptyState && !showDataEmptyState && <GoLiveButton />}
         </div>
     );
 };

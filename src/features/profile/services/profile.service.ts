@@ -146,7 +146,7 @@ export const useToggleFollow = () => {
       });
 
       // Optimistic update for userByUsername queries
-      previousUserByUsernameQueries.forEach(([key, old]) => {
+      previousUserByUsernameQueries.forEach(([key]) => {
         queryClient.setQueryData<User>(key, (oldData) => {
           if (!oldData || oldData.id !== targetUserId) return oldData;
           return {
@@ -157,6 +157,56 @@ export const useToggleFollow = () => {
               : (oldData.followerCount ?? 0) + 1,
           };
         });
+      });
+
+      // Optimistic update for exploreData queries
+      queryClient.setQueriesData<any>({ queryKey: ['exploreData'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+
+        const updateCreator = (c: any) => {
+          if (c.id === targetUserId) {
+            return {
+              ...c,
+              followedByMe: !followedByMe,
+              followerCount: followedByMe
+                ? Math.max(0, (c.followerCount ?? 0) - 1)
+                : (c.followerCount ?? 0) + 1,
+            };
+          }
+          return c;
+        };
+
+        return {
+          ...oldData,
+          trendingStreams: (oldData.trendingStreams || []).map(updateCreator),
+          newCreators: (oldData.newCreators || []).map(updateCreator),
+          recommendedStreams: (oldData.recommendedStreams || []).map(updateCreator),
+          popularStreams: (oldData.popularStreams || []).map(updateCreator),
+        };
+      });
+
+      // Optimistic update for exploreSearch queries
+      queryClient.setQueriesData<any>({ queryKey: ['exploreSearch'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+
+        const updateCreator = (c: any) => {
+          if (c.id === targetUserId) {
+            return {
+              ...c,
+              followedByMe: !followedByMe,
+              followerCount: followedByMe
+                ? Math.max(0, (c.followerCount ?? 0) - 1)
+                : (c.followerCount ?? 0) + 1,
+            };
+          }
+          return c;
+        };
+
+        return {
+          ...oldData,
+          creators: (oldData.creators || []).map(updateCreator),
+          streams: (oldData.streams || []).map(updateCreator),
+        };
       });
 
       // Update Zustand store if the current user is affected
@@ -211,6 +261,8 @@ export const useToggleFollow = () => {
     onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ['userProfile', variables.targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['userByUsername'] });
+      queryClient.invalidateQueries({ queryKey: ['exploreData'] });
+      queryClient.invalidateQueries({ queryKey: ['exploreSearch'] });
     },
   });
 };

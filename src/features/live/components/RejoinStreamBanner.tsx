@@ -75,13 +75,6 @@ export function RejoinStreamBanner() {
   useEffect(() => {
     if (!isHydrated || !user) return;
 
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'pulse_host_is_currently_live' && e.newValue === 'true') {
-        setBanner((prev) => (prev.mode === 'host' ? INITIAL : prev));
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-
     if (pathname.startsWith('/live')) {
       if (banner.visible && banner.mode === 'host') {
         setBanner(INITIAL);
@@ -112,13 +105,20 @@ export function RejoinStreamBanner() {
           if (banner.visible && banner.mode === 'host') {
             setBanner(INITIAL);
           }
+          // If we are not live, we can safely clear the interruption flag
+          if (!result.isLive && isSameDeviceInterruption) {
+            localStorage.removeItem('pulse_host_left_at');
+          }
         }
       } catch (err: any) {
-        console.error('Failed to check host stream status:', err);
+        // No need to log 404 as it's now handled in userService
+        const status = err.response?.status || err.status;
+        if (status !== 404) {
+          console.error('Failed to check host stream status:', err);
+        }
 
         setBanner((prev) => (prev.mode === 'host' ? INITIAL : prev));
 
-        const status = err.response?.status || err.status;
         if (status === 404 || status === 401) {
           setStreamData(null);
           localStorage.removeItem('pulse_host_left_at');
@@ -126,16 +126,33 @@ export function RejoinStreamBanner() {
       }
     };
 
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'pulse_host_is_currently_live' && e.newValue === 'true') {
+        setBanner((prev) => (prev.mode === 'host' ? INITIAL : prev));
+      }
+      // Re-check if we detect an interruption from another tab
+      if (e.key === 'pulse_host_left_at' && e.newValue) {
+        checkHostStream();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    // Initial check on mount
     const timer = setTimeout(checkHostStream, 1500);
-    const interval = setInterval(checkHostStream, 10_000);
+
+    // Only poll at a low frequency if the banner is currently showing as host
+    let interval: any;
+    if (banner.visible && banner.mode === 'host') {
+      interval = setInterval(checkHostStream, 30_000);
+    }
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       window.removeEventListener('storage', handleStorage);
     };
-  }, [user?.id, isHydrated, pathname]);
+  }, [user, isHydrated, pathname, banner.visible, banner.mode]);
 
   // VIEWER REJOIN
   useEffect(() => {

@@ -249,10 +249,10 @@ export const SettingsPage = () => {
                             <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">My Coin Wallet</span>
                         </div>
 
-                        {/* Get Money */}
-                        <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors" onClick={() => navigate({ to: '/profile/setting/diamonds' })}>
-                            <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Get Money</span>
-                        </div>
+                    {/* Get Money */}
+                    <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5 cursor-pointer hover:bg-white/5 px-2 -mx-2 rounded-xl transition-colors" onClick={() => navigate({ to: '/profile/setting/diamonds' })}>
+                        <span style={{ fontFamily: "'Public Sans', sans-serif" }} className="text-white font-semibold text-base md:text-2xl leading-snug md:leading-[40px]">Creator Wallet</span>
+                    </div>
 
                         {/* Delete Account */}
                         <div className="flex items-center justify-between py-6 md:py-8 border-b border-white/5">

@@ -265,6 +265,19 @@ html {
     background: rgba(255, 255, 255, 0.2);
   }
 }
+@layer utilities {
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animate-gradient {
+    background-size: 200% 200% !important;
+    animation: gradient-shift 3s ease infinite !important;
+  }
+}
+
 
 /* Fix Stream SDK video stretching on macOS/WebKit */
 [class*="str-video"] video {

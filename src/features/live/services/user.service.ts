@@ -38,7 +38,6 @@ export const userService = {
         return api.post('/users/unblock', { targetUserId, block: false });
     },
 
-    // Check if the current authenticated user has an active live stream
     getUserStream: async (): Promise<{
         isLive: boolean;
         callId: string | null;
@@ -47,7 +46,21 @@ export const userService = {
         category: string | null;
         hasActiveHost?: boolean;
     }> => {
-        const response = await api.get('/users/stream');
-        return response.data;
+        try {
+            const response = await api.get('/users/stream');
+            return response.data;
+        } catch (error: any) {
+            // If the user is not live, the API currently returns a 404.
+            if (error.response?.status === 404) {
+                return {
+                    isLive: false,
+                    callId: null,
+                    callType: null,
+                    title: null,
+                    category: null,
+                };
+            }
+            throw error;
+        }
     },
 };

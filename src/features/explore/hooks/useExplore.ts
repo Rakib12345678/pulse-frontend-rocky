@@ -1,150 +1,53 @@
-import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { exploreService } from '../services/explore.service';
-import { ExploreData, ExploreSearchResponse, Creator } from '../types/explore.types';
-import { toast } from 'sonner';
+import { ExploreData, ExploreSearchResponse } from '../types/explore.types';
 import { getStreamClient } from '@/features/chat/stream/streamClient';
 import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 import { getDisplayName, capitalizeName } from '@/features/chat/utils/ChatUtils';
 
 export const useExplore = () => {
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState('All Category');
-    const [isSearching, setIsSearching] = useState(false);
-    const [searchResults, setSearchResults] = useState<ExploreSearchResponse | null>(null);
-    const [searchSuggestions, setSearchSuggestions] = useState<Creator[]>([]);
-    const [isSuggesting, setIsSuggesting] = useState(false);
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [activeCategories, setActiveCategories] = useState<string[]>(['All Category']);
 
-    const { data: exploreData, isLoading, error } = useQuery<ExploreData>({
-        queryKey: ['exploreData'],
+    // Fetch categories from API
+    const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+        queryKey: ['categories'],
         queryFn: async () => {
-            // TODO: Uncomment the code below to use Stream API for Explore data instead of mock data
-            /*
-            let client;
-            try {
-                client = getStreamClient();
-            } catch (e) {
-                throw new Error('Stream client not ready yet');
-            }
-
-            // 1. Fetch New Creators
-            const usersResp = await client.queryUsers({}, { created_at: -1 }, { limit: 12 });
-            const newCreators: Creator[] = usersResp.users
-                .filter(u => u.id !== client.userID)
-                .map(u => ({
-                    id: parseInt(u.id, 10) || 0,
-                    username: (u as any).username || (u as any).name || u.id,
-                    displayName: capitalizeName(getDisplayName({ id: u.id, name: u.name })),
-                    profileImage: toAbsoluteUrl((u as any).image ?? ''),
-                    followerCount: (u as any).followerCount || 0,
-                    followedByMe: false
-                }));
-
-            // 2. Fetch Streams (Trending, Popular, Recommended)
-            const channelsResp = await client.queryChannels(
-                { type: 'livestream' },
-                { member_count: -1 },
-                { limit: 25 }
-            );
-
-            const fetchedStreams = channelsResp.map(channel => {
-                const data = channel.data as Record<string, any>;
-                return {
-                    callId: channel.id!,
-                    callType: 'livestream',
-                    title: (data?.name as string) || (data?.title as string) || `Stream ${channel.id?.substring(0, 4)}`,
-                    category: (data?.category as string) || 'Just Chatting',
-                    profileImage: toAbsoluteUrl((data?.image as string) ?? (data?.created_by?.image as string) ?? ''),
-                    createdByUserId: data?.created_by?.id || '',
-                    participantCount: data?.member_count || 1,
-                    followerCount: 0,
-                    createdAt: (data?.created_at as string) || new Date().toISOString(),
-                    isLive: true,
-                    username: data?.created_by?.username || data?.created_by?.name || data?.created_by?.id || 'Unknown',
-                };
+            const results = await exploreService.getCategories();
+            // Comprehensive case-insensitive filtering of duplicate "All" options
+            return results.filter(c => {
+                const name = c.name.toLowerCase().trim();
+                return name !== 'all' && name !== 'all category' && name !== 'all categories';
             });
-
-            // Distribute into the sections as requested
-            return {
-                trendingStreams: fetchedStreams.slice(0, 8),
-                newCreators,
-                recommendedStreams: fetchedStreams.slice(8, 16),
-                popularStreams: fetchedStreams.slice(16, 24),
-            } as ExploreData;
-            */
-
-            // Currently loading mock data (which handles the fallback dynamically based on USE_MOCK_DATA)
-            return exploreService.getExploreData();
         },
+        staleTime: 1000 * 60 * 30,
+    });
+
+    const { data: exploreData, isLoading, error, refetch } = useQuery<ExploreData>({
+        queryKey: ['exploreData', activeCategories],
+        queryFn: async () => {
+            return exploreService.getExploreData(activeCategories);
+        },
+        placeholderData: keepPreviousData,
         retry: 3,
         retryDelay: 1000,
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
-    useEffect(() => {
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        if (!searchQuery.trim()) {
-            setSearchSuggestions([]);
-            return;
-        }
+    // Search Query
+    const { data: searchResults = null, isFetching: isSearching } = useQuery<ExploreSearchResponse | null>({
+        queryKey: ['exploreSearch', searchQuery.trim()],
+        queryFn: async () => {
+            const query = searchQuery.trim();
+            if (!query) return null;
 
-        let stale = false;
-        debounceRef.current = setTimeout(async () => {
-            setIsSuggesting(true);
+            // We still use Stream Client for user search as it's more efficient for autocomplete
+            let creators: any[] = [];
             try {
                 const client = getStreamClient();
                 const resp = await client.queryUsers(
-                    { name: { $autocomplete: searchQuery.trim() } },
-                    {},
-                    { limit: 5 }
-                );
-
-                if (!stale) {
-                    setSearchSuggestions(
-                        resp.users
-                            .filter(u => u.id !== client.userID)
-                            .map(u => ({
-                                id: parseInt(u.id, 10) || 0,
-                                username: (u as any).username || (u as any).name || u.id,
-                                displayName: capitalizeName(getDisplayName({ id: u.id, name: u.name })),
-                                profileImage: toAbsoluteUrl((u as any).image ?? ''),
-                                followerCount: (u as any).followerCount || 0,
-                                followedByMe: false
-                            }))
-                    );
-                }
-            } catch {
-                if (!stale) setSearchSuggestions([]);
-            } finally {
-                if (!stale) setIsSuggesting(false);
-            }
-        }, 300);
-
-        return () => {
-            stale = true;
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-        };
-    }, [searchQuery]);
-
-    const handleSearch = async (queryOverride?: string) => {
-        const query = queryOverride || searchQuery;
-        if (!query.trim()) {
-            setIsSearching(false);
-            setSearchResults(null);
-            return;
-        }
-
-        setIsSearching(true);
-        setSearchSuggestions([]);
-        
-        try {
-            let creators: Creator[] = [];
-            
-            try {
-                const client = getStreamClient();
-                const resp = await client.queryUsers(
-                    { name: { $autocomplete: query.trim() } },
+                    { name: { $autocomplete: query } },
                     {},
                     { limit: 30 }
                 );
@@ -154,49 +57,78 @@ export const useExplore = () => {
                     .map(u => ({
                         id: parseInt(u.id, 10) || 0,
                         username: (u as any).username || (u as any).name || u.id,
-                        displayName: capitalizeName(getDisplayName({ id: u.id, name: u.name })),
+                        fullName: capitalizeName(getDisplayName({ id: u.id, name: u.name })),
                         profileImage: toAbsoluteUrl((u as any).image ?? ''),
                         followerCount: (u as any).followerCount || 0,
-                        followedByMe: false
+                        isFollower: (u as any).isFollower || (u as any).followedByMe || false,
+                        followedByMe: (u as any).followedByMe || (u as any).isFollower || false,
+                        isLive: false,
+                        participantCount: 0,
+                        cohostCount: 0,
+                        cohosts: []
                     }));
             } catch {
                 creators = [];
             }
-            
+
             const results = await exploreService.searchExplore(query);
-            
-            setSearchResults({
-                creators: creators.length > 0 ? creators : results.creators,
-                streams: results.streams
-            });
-        } catch (err) {
-            toast.error('Search failed. Please try again.');
-            console.error(err);
-        } finally {
-            setIsSearching(false);
-        }
+
+            return {
+                creators: creators.length > 0 ? creators : (results.creators as any),
+                streams: results.streams as any
+            };
+        },
+        enabled: searchQuery.trim().length > 0,
+        placeholderData: keepPreviousData,
+        staleTime: 1000 * 60 * 2, // 2 minutes
+    });
+
+    const handleSearch = () => {
+        // Query will refetch automatically on searchQuery change
+    };
+
+    const toggleCategory = (category: string) => {
+        setActiveCategories(prev => {
+            if (category === 'All Category') {
+                return ['All Category'];
+            }
+
+            const isAlreadySelected = prev.includes(category);
+            let next: string[];
+
+            if (isAlreadySelected) {
+                next = prev.filter(c => c !== category);
+            } else {
+                next = [...prev.filter(c => c !== 'All Category'), category];
+            }
+
+            // If nothing is selected, default to All
+            return next.length === 0 ? ['All Category'] : next;
+        });
     };
 
     const handleExploreMore = () => {
         setSearchQuery('');
-        setSearchResults(null);
-        setIsSearching(false);
-        setActiveCategory('All Category');
+        setActiveCategories(['All Category']);
+    };
+
+    const refreshData = async () => {
+        await refetch();
     };
 
     return {
         exploreData,
-        isLoading,
+        isLoading: isLoading || isLoadingCategories,
         error,
         searchQuery,
         setSearchQuery,
-        activeCategory,
-        setActiveCategory,
+        categories,
+        activeCategories,
+        toggleCategory,
         handleSearch,
         isSearching,
         searchResults,
-        searchSuggestions,
-        isSuggesting,
-        handleExploreMore
+        handleExploreMore,
+        refreshData
     };
 };

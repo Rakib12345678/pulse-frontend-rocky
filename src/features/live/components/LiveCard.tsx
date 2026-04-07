@@ -11,7 +11,7 @@ interface LiveCardProps {
   streamerName: string;
   viewerCount: string | number;
   followersCount: string;
-  category: string;
+  category?: string | null;
   title?: string;
   isLive?: boolean;
   collaboratorAvatarUrl?: string;
@@ -135,11 +135,13 @@ export const LiveCard: React.FC<LiveCardProps> = ({
             </div>
           </div>
 
-          <div className="shrink-0 max-w-[40%]">
-            <div className="truncate rounded-2xl bg-zinc-600/60 px-2.5 py-1.5 text-[10px] font-semibold text-white backdrop-blur-md text-center">
-              {category}
+          {category && (
+            <div className="shrink-0 max-w-[40%]">
+              <div className="truncate rounded-2xl bg-zinc-600/60 px-2.5 py-1.5 text-[10px] font-semibold text-white backdrop-blur-md text-center">
+                {category}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </div>

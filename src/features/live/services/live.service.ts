@@ -18,7 +18,7 @@ export interface FeedStreamItem {
     callId: string;
     callType: string;
     title: string;
-    category: string;
+    category?: string | null;
     profileImage: string | null;
     createdByUserId: string;
     participantCount: number;

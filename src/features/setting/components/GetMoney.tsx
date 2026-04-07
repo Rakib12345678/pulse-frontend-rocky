@@ -36,7 +36,7 @@ export const GetMoney = () => {
     }, [balanceError, historyError]);
 
     const diamonds = balanceData?.diamondBalance ?? 0;
-    const threshold = thresholdData?.threshold ?? 30000;
+    const threshold = thresholdData?.threshold ?? 500;
     const isWithdrawalEnabled = diamonds >= threshold;
 
     // Flatten infinite pages
@@ -132,18 +132,17 @@ export const GetMoney = () => {
                     </div>
                 </div>
 
-                <div className="text-center text-sm mb-6 flex justify-center items-center gap-2">
+                {/* <div className="text-center text-sm mb-6 flex justify-center items-center gap-2">
                     <span className="text-gray-400">Note: 1</span>
                     <Gem className="w-4 h-4 text-[#FF7700] mx-0.5 inline-block -translate-y-[1px]" fill="#FF7700" strokeWidth={1.5} />
                     <span className="text-gray-400">Diamonds = ₹ 1</span>
-                </div>
+                </div> */}
 
-                {/* Withdrawal Progress or Input */}
                 <div className="bg-[#fff3e6] rounded-[24px] p-6 md:p-8 mb-10 border border-[#ffe0cc]">
                     {!isWithdrawalEnabled ? (
                         <div className="flex flex-col items-center">
-                            <div className="text-black font-semibold text-base md:text-lg mb-6 flex items-center justify-center gap-2">
-                                Only <Gem className="w-5 h-5 text-black" fill="black" strokeWidth={1} /> {threshold - diamonds} left to get ₹{threshold}
+                            <div className="text-black text-base md:text-sm mb-6 flex items-center justify-center gap-2">
+                                NOTE: You should at least have {threshold} diamonds to redeem in your account
                             </div>
                             <div className="w-full bg-[#fae3cd] rounded-full h-2 overflow-hidden">
                                 <div 

@@ -16,20 +16,28 @@ export const ExploreEmptyState: React.FC<ExploreEmptyStateProps> = ({ onExploreM
     };
 
     return (
-        <div className="flex flex-col items-center justify-center py-20 px-6 text-center max-w-2xl mx-auto">
-            <div className="mb-8">
-                <img src={emptyIcon} alt="No results" className="w-32 h-32 opacity-50" />
+        <div className="flex flex-col items-center justify-center py-24 px-6 text-center max-w-2xl mx-auto animate-in fade-in zoom-in duration-700">
+            <div className="mb-10 relative">
+                <div className="absolute inset-0 bg-[#FF8800]/20 blur-[60px] rounded-full" />
+                <img 
+                    src={emptyIcon} 
+                    alt="No results" 
+                    className="w-20 h-20 relative z-10 drop-shadow-[0_0_15px_rgba(255,136,0,0.4)]" 
+                />
             </div>
             
-            <h2 className="text-white font-bold text-4xl mb-4">Oops! No User Found</h2>
+            <h2 className="text-white font-black text-3xl mb-6 tracking-tight">
+                Oops! No User Found
+            </h2>
             
-            <p className="text-gray-400 text-lg mb-10 leading-relaxed">
-                We couldn't find anyone matching your search. Try a different name or explore what's trending!
+            <p className="text-gray-400 text-xm mb-12 leading-relaxed max-w-lg mx-auto font-medium">
+                We couldn't find anyone matching your search. <br className="hidden sm:block" />
+                Try a different name or explore what's trending!
             </p>
 
             <Button
                 onClick={handleExploreMore}
-                className="bg-[#FF8800] hover:bg-[#ff9922] text-black font-extrabold rounded-full px-12 h-14 text-lg transition-all shadow-[0_0_20px_rgba(255,136,0,0.3)] cursor-pointer"
+                className="bg-[#FF8800] hover:bg-[#ff9922] text-black font-black rounded-full px-12 h-13 text-xl transition-all shadow-[0_0_30px_rgba(255,136,0,0.4)] hover:scale-105 active:scale-95 cursor-pointer border-none"
             >
                 Explore More
             </Button>
