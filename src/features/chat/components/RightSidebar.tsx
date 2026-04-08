@@ -21,7 +21,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
                 {/* Add More Icon (Coins) */}
                 <button
                     onClick={openModal}
-                    className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center p-3 rounded-2xl bg-transparent border-none lg:bg-white/5 lg:border lg:border-white/5 lg:hover:bg-[#FF7700]/10 lg:hover:border-[#FF7700]/30 transition-all duration-300 group cursor-pointer"
+                    className="w-16 h-16 sm:w-18 sm:h-18 flex items-center justify-center p-3 rounded-2xl bg-transparent border-none lg:bg-white/5 lg:border lg:border-white/5 lg:hover:bg-[#FF7700]/10 lg:hover:border-[#FF7700]/30 transition-all duration-300 group cursor-pointer"
                     title="Add Coins"
                 >
                     <img 
@@ -40,7 +40,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
                     <img
                         src={LiveIcon}
                         alt="Go Live"
-                        className="w-14 h-14 lg:w-16 lg:h-16 rounded-full shadow-[0_0_20px_rgba(255,119,0,0.3)] transition-transform active:scale-95 relative z-10"
+                        className="w-16 h-16 lg:w-18 lg:h-18 rounded-full transition-transform active:scale-95 relative z-10"
                     />
                 </div>
             </div>

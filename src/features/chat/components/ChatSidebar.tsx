@@ -429,18 +429,20 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 {/* Header */}
                 <div className="shrink-0 flex flex-col gap-3">
                     <div className="relative flex items-center justify-between py-1">
-                        {view === 'archived' ? (
-                            <button
-                                onClick={() => setView('normal')}
-                                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                        ) : <div className="w-7" />}
-                        
-                        <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide">
-                            {view === 'archived' ? 'Archived Chats' : 'Chats'}
-                        </h2>
+                        <div className='flex items-center flex-1'>
+                            {view === 'archived' && (
+                                <button
+                                    onClick={() => setView('normal')}
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer mr-2"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                            )}
+                            
+                            <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide">
+                                {view === 'archived' ? 'Archived Chats' : 'Chats'}
+                            </h2>
+                        </div>
                         
                         <div className="flex items-center gap-1">
                             {view === 'normal' && (
@@ -512,13 +514,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     ) : (
                         <>
                             {filtered.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center gap-4 py-10 px-4 text-center">
+                                <div className="flex flex-col items-center justify-center gap-10 py-10 px-4 text-center">
                                     <img src={chatGroup} alt="No chats" className="w-14 h-14 object-contain opacity-80" />
                                     <div className="flex flex-col gap-1.5">
-                                        <p className="text-white font-bold text-base">
+                                        <p className="text-white font-bold text-xl">
                                             {view === 'archived' ? 'No Archived Chats' : 'No Chat History'}
                                         </p>
-                                        <p className="text-gray-500 text-xs leading-relaxed">
+                                        <p className="text-gray-500 text-md leading-relaxed">
                                             {view === 'archived' 
                                                 ? 'You haven\'t archived any conversations yet.'
                                                 : 'You haven\'t started any conversations yet. Find a creator to chat with!'}

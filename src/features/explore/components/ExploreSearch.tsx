@@ -31,7 +31,7 @@ export const ExploreSearch: React.FC<ExploreSearchProps> = ({
     };
 
     return (
-        <div className="w-full bg-[#1A1C1E] rounded-[32px] p-6 mb-8 border border-white/5 shadow-2xl">
+        <div className="w-full bg-[#1A1C1E] rounded-2xl p-6 mb-8 border border-white/5 shadow-2xl">
             {/* Search Bar & Button */}
             <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
                 <div 

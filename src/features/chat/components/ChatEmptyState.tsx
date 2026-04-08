@@ -12,14 +12,14 @@ export const ChatEmptyState = () => {
 
     return (
         <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center px-6">
-            <img src={chatGroup} alt="Chat Group" className="w-8 h-8 sm:w-9 sm:h-9 object-contain" />
+            <img src={chatGroup} alt="Chat Group" className="w-12 h-12 sm:w-14 sm:h-14 object-contain" />
             <div className="max-w-sm">
                 {heading && (
                     <p className="text-white font-bold text-lg sm:text-xl leading-snug">
                         {heading}
                     </p>
                 )}
-                <p className="text-gray-500 text-xs sm:text-sm mt-2 leading-relaxed">
+                <p className="text-gray-500 text-md sm:text-sm mt-2 leading-relaxed">
                     {subtext}
                 </p>
             </div>

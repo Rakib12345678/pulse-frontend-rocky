@@ -53,7 +53,7 @@ export const ExploreLiveCard: React.FC<ExploreLiveCardProps> = ({
       to="/live/$id"
       params={{ id: callId }}
       onClick={handleCardClick}
-      className="group relative block w-full aspect-[3/5.2] overflow-hidden rounded-[2.5rem] bg-neutral-900 shadow-2xl transition-all duration-500 hover:shadow-orange-900/20 cursor-pointer border border-white/5"
+      className="group relative block w-full aspect-[3/5.2] overflow-hidden rounded-2xl bg-neutral-900 shadow-2xl transition-all duration-500 hover:shadow-orange-900/20 cursor-pointer border border-white/5"
     >
       {/* Background Image */}
       <img

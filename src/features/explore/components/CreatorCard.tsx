@@ -33,9 +33,9 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
     };
 
     return (
-        <div 
+        <div
             onClick={handleCardClick}
-            className="relative bg-[#1A1C1E] rounded-3xl p-6 flex flex-col items-center border border-white/5 hover:border-white/10 transition-all group w-full shadow-lg h-auto cursor-pointer"
+            className="relative bg-[#1A1C1E] rounded-2xl p-6 flex flex-col items-center border border-white/5 hover:border-white/10 transition-all group w-full shadow-lg h-auto cursor-pointer"
         >
             {/* Top Right: Cohosts */}
             {creator.cohosts && creator.cohosts.length > 0 && (
@@ -60,11 +60,11 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
             )}
 
             {/* Avatar */}
-            <div 
+            <div
                 className={cn(
                     "relative w-24 h-24 rounded-full flex items-center justify-center mb-5 shrink-0 transition-all duration-300",
-                    creator.isLive 
-                        ? "p-[3px]" 
+                    creator.isLive
+                        ? "p-[3px]"
                         : "border-2 border-[#25282B] group-hover:border-[#FF8800]/50"
                 )}
                 style={creator.isLive ? {
@@ -73,9 +73,9 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
             >
                 <div className="w-full h-full rounded-full overflow-hidden bg-[#1A1C1E]">
                     {creator.profileImage ? (
-                        <img 
-                            src={creator.profileImage} 
-                            alt={creator.displayName} 
+                        <img
+                            src={creator.profileImage}
+                            alt={creator.displayName}
                             className="w-full h-full object-cover"
                         />
                     ) : (
@@ -111,7 +111,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                 onClick={handleFollowClick}
                 disabled={isPending || creator.isFollower}
                 style={creator.isFollower ? { backgroundColor: '#262626', backgroundImage: 'none' } : undefined}
-                className={creator.isFollower 
+                className={creator.isFollower
                     ? "w-fit min-w-[124px] px-8 text-gray-500 rounded-full h-11 text-xs font-bold cursor-not-allowed transition-all opacity-100"
                     : "w-full bg-[#FF8800] text-black hover:bg-[#ff941a] rounded-full h-11 text-xs font-bold cursor-pointer transition-all shadow-lg shadow-orange-900/10"
                 }

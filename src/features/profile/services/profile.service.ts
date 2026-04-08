@@ -45,7 +45,7 @@ export const useCurrentUser = () => {
     queryFn: fetchCurrentUser,
     staleTime: 5 * 60 * 1000,
     retry: false,
-    
+
   });
 };
 
