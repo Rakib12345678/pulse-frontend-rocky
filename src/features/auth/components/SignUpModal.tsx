@@ -826,22 +826,22 @@ type DetailsFormData = z.infer<typeof detailsSchema>;
 
 const generateAvatarFile = async (name: string): Promise<File> => {
     const canvas = document.createElement('canvas');
-    canvas.width = 400;
-    canvas.height = 400;
+    canvas.width = 600;
+    canvas.height = 600;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Could not get canvas context');
     ctx.beginPath();
-    ctx.arc(200, 200, 200, 0, Math.PI * 2);
+    ctx.arc(300, 300, 300, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
     const colors = ['#FF7700', '#FF5500', '#FFAA00', '#FF3300', '#FFCC00'];
     ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-    ctx.fillRect(0, 0, 400, 400);
+    ctx.fillRect(0, 0, 600, 600);
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 200px Arial';
+    ctx.font = 'bold 300px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText((name[0] || '?').toUpperCase(), 200, 200);
+    ctx.fillText((name[0] || '?').toUpperCase(), 300, 300);
     return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
             if (blob) resolve(new File([blob], 'avatar.png', { type: 'image/png' }));

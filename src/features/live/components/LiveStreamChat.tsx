@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { StreamerInfoOverlay } from './StreamerInfoOverlay';
 import { liveService } from '../services/live.service';
 import { CompactGiftSidebar } from './CompactGiftSidebar';
+import { SuperchatTicker } from './SuperchatTicker';
 
 // Type guard for gift messages
 const isGiftMsg = (msg: any): boolean => !!msg?.isGiftMessage;
@@ -119,9 +120,12 @@ export const LiveStreamChat: React.FC = () => {
 
     return (
         <Channel key={chatClient.userID || 'anonymous'} channel={channel}>
-            <div className={`absolute ${bottomClass} left-4 right-4 sm:left-10 sm:right-auto sm:w-80 max-h-[400px] flex flex-col z-20`}>
-                <LiveStreamMessageList />
-                <LiveStreamMessageInput />
+            <div className={`absolute ${bottomClass} left-4 right-4 sm:left-10 sm:right-auto sm:w-[360px] max-h-[400px] flex flex-col z-20 rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl`}>
+                <SuperchatTicker />
+                <div className="flex-1 flex flex-col bg-[#1D1F20] pt-4 px-4 pb-3 overflow-hidden">
+                    <LiveStreamMessageList />
+                    <LiveStreamMessageInput />
+                </div>
                 <JoinMessageSender channel={channel} isViewer={isViewer} userId={user?.id} />
             </div>
             {/* Viewer: bottom bar with host info + Join Stream */}
@@ -181,7 +185,13 @@ const LiveStreamMessageList: React.FC = () => {
     };
 
     return (
-        <div className="flex-1 overflow-y-auto space-y-5 mb-4 scrollbar-hide pr-2">
+        <div
+            className="flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-hide pr-1"
+            style={{
+                maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 100%)',
+            }}
+        >
             {messages?.map((msg) => {
                 const giftMessage = isGiftMsg(msg);
                 const giftIconUrl = (msg as any)?.giftIconUrl;
@@ -191,11 +201,7 @@ const LiveStreamMessageList: React.FC = () => {
                     return (
                         <div
                             key={msg.id}
-                            className="flex items-center gap-3 rounded-xl px-3 py-2.5"
-                            style={{
-                                background: 'linear-gradient(135deg, rgba(255,136,0,0.15) 0%, rgba(255,200,0,0.08) 100%)',
-                                border: '1px solid rgba(255,136,0,0.35)',
-                            }}
+                            className="flex items-center gap-3 border border-[#494E50] rounded-2xl px-3 py-3"
                         >
                             <img
                                 src={msg.user?.image || 'https://i.pravatar.cc/150'}
@@ -233,12 +239,12 @@ const LiveStreamMessageList: React.FC = () => {
                 }
 
                 return (
-                    <div key={msg.id} className="flex items-start gap-3">
+                    <div key={msg.id} className="flex items-start gap-2.5">
                         <img
                             src={msg.user?.image || 'https://i.pravatar.cc/150'}
                             alt={getDisplayName(msg.user)}
                             onClick={() => handleUserClick(msg.user?.name)}
-                            className="w-10 h-10 rounded-full border-2 border-blue-500/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                            className="w-8 h-8 rounded-full border-2 border-transparent shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                         />
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">

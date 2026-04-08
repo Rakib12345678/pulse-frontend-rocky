@@ -21,7 +21,7 @@ export const ParticipantsDialog: React.FC = () => {
     const { openModal } = useUserProfileStore();
 
     return (
-        <DialogContent className="sm:max-w-[425px] bg-[#0f1117] border-white/5 text-white">
+        <DialogContent className="sm:max-w-[380px] bg-[#0f1117] border-white/5 text-white fixed top-[50%] right-6 left-auto translate-x-0 translate-y-[-50%] rounded-2xl max-h-[70vh]">
             <DialogHeader>
                 <DialogTitle className="text-xl font-bold">Participants ({participants.length})</DialogTitle>
             </DialogHeader>
