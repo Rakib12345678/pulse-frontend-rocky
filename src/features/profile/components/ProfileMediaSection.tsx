@@ -96,7 +96,7 @@ export const ProfileMediaSection = ({
               }
               actionLabel={
                 isMoments
-                  ? 'Explore Live Stream'
+                  ? 'Add Moments'
                   : isOwnProfile
                     ? 'Go Live'
                     : undefined

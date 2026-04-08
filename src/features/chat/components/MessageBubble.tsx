@@ -444,16 +444,18 @@ export const MessageBubble = ({
                                         <TickIcon status={message.status} />
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => setDropdown(v => !v)}
-                                    className={cn(
-                                        'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10',
-                                        'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
-                                        (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0',
-                                    )}
-                                >
-                                    <ChevronDown className="w-3 h-3" />
-                                </button>
+                                {!meIsGift && (
+                                    <button
+                                        onClick={() => setDropdown(v => !v)}
+                                        className={cn(
+                                            'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10',
+                                            'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
+                                            (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0',
+                                        )}
+                                    >
+                                        <ChevronDown className="w-3 h-3" />
+                                    </button>
+                                )}
                                 {dropdownOpen && (
                                     <MessageDropdown
                                         isMe
@@ -535,16 +537,18 @@ export const MessageBubble = ({
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => setDropdown(v => !v)}
-                            className={cn(
-                                'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10',
-                                'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
-                                (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0'
-                            )}
-                        >
-                            <ChevronDown className="w-3 h-3" />
-                        </button>
+                        {!tIsGift && (
+                            <button
+                                onClick={() => setDropdown(v => !v)}
+                                className={cn(
+                                    'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10',
+                                    'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
+                                    (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0'
+                                )}
+                            >
+                                <ChevronDown className="w-3 h-3" />
+                            </button>
+                        )}
 
                         {dropdownOpen && (
                             <MessageDropdown

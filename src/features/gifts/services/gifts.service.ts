@@ -15,9 +15,9 @@ export interface CreateGiftRequest {
 
 export interface SendGiftRequest {
     giftId: number;
-    callId: string;
+    callId?: string;
     targetUserId: string;
-    source: string;
+    source?: string;
 }
 
 export interface SendGiftResponse {

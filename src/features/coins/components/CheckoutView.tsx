@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCoinsStore } from '../hooks/useCoinsStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { paymentService } from '../services/payment.service';
@@ -8,6 +9,7 @@ import { ArrowLeft, CreditCard, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const CheckoutView = () => {
+    const queryClient = useQueryClient();
     const { selectedPackage, paymentMethod, setPaymentMethod, setStep, setResultStatus } = useCoinsStore();
     const { updateWallet } = useAuthStore();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -31,6 +33,7 @@ export const CheckoutView = () => {
 
             // 5. Update Global State
             updateWallet(wallet);
+            queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
 
             // Success Transition
             setResultStatus('success');

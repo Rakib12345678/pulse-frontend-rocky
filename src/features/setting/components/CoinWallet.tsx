@@ -11,8 +11,8 @@ import DownfallIcon from "@/assets/Downfall.svg";
 
 const TABS: { label: string; filter: WalletHistoryFilter }[] = [
     { label: 'All', filter: 'all' },
-    { label: 'Given', filter: 'debit' },
-    { label: 'Received', filter: 'credit' },
+    { label: 'Send', filter: 'debit' },
+    { label: 'Added', filter: 'credit' },
 ];
 
 export const CoinWallet = () => {
@@ -165,47 +165,46 @@ export const CoinWallet = () => {
                             </div>
                         ) : (
                             transactions.map((tx, idx) => {
-                                // Determine if this is a self top-up (username is empty or matches own username)
-                                const isAddedMoney = !tx.username || tx.username === currentUsername;
-                                const displayName = isAddedMoney ? 'Added Money' : tx.fullname || tx.username;
-                                const label = isAddedMoney ? '' : tx.isSent ? 'Given to' : 'Received from';
+                                 // Determine if this is a self top-up (username is empty or matches own username)
+                                 const isAddedMoney = !tx.username || tx.username === currentUsername;
+                                 const displayName = isAddedMoney ? 'Add Money' : tx.sentOn || tx.fullname || tx.username;
+                                 const label = isAddedMoney ? '' : 'Sent on';
 
-                                return (
-                                    <div key={`${tx.createdAt}-${idx}`} className="flex justify-between items-center px-1 py-4">
-                                        <div className="flex gap-4 items-center min-w-0">
-                                            <div className="w-12 h-12 rounded-xl border border-white/10 flex items-center justify-center bg-[#1a1c24] shrink-0 overflow-hidden">
-                                                {isAddedMoney ? (
-                                                    <img src={GrowthIcon} alt="Added" className="w-6 h-6 object-contain" />
-                                                ) : tx.isSent ? (
-                                                    <img src={DownfallIcon} alt="Sent" className="w-6 h-6 object-contain" />
-                                                ) : (
-                                                    <img src={GrowthIcon} alt="Received" className="w-6 h-6 object-contain" />
-                                                )}
-                                            </div>
-                                            <div className="min-w-0">
-                                                {label && (
-                                                    <div className="text-xs text-gray-500 mb-0.5 truncate">{label}</div>
-                                                )}
-                                                <div className="text-white font-semibold truncate">{displayName}</div>
-                                                <div className="text-xs text-gray-500 mt-0.5">
-                                                    {new Date(tx.createdAt).toLocaleDateString('en-GB', {
-                                                        day: 'numeric',
-                                                        month: 'short',
-                                                        year: 'numeric',
-                                                    })}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="text-right shrink-0 ml-4">
-                                            <div className="flex items-center gap-1.5 justify-end">
-                                                <div className="w-3.5 h-3.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]" />
-                                                <span className={`font-bold text-base ${tx.isSent && !isAddedMoney ? 'text-gray-300' : 'text-white'}`}>
-                                                    {tx.isSent && !isAddedMoney ? '-' : '+'}{(tx.noOfCoin ?? 0).toLocaleString()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
+                                 return (
+                                     <div key={`${tx.createdAt}-${idx}`} className="flex justify-between items-center px-1 py-4">
+                                         <div className="flex gap-4 items-center min-w-0">
+                                             <div className="w-12 h-12 rounded-xl border border-white/10 flex items-center justify-center bg-[#1a1c24] shrink-0 overflow-hidden">
+                                                 {isAddedMoney ? (
+                                                     <img src={GrowthIcon} alt="Added" className="w-6 h-6 object-contain" />
+                                                 ) : tx.isSent ? (
+                                                     <img src={DownfallIcon} alt="Sent" className="w-6 h-6 object-contain" />
+                                                 ) : (
+                                                     <img src={GrowthIcon} alt="Received" className="w-6 h-6 object-contain" />
+                                                 )}
+                                             </div>
+                                             <div className="min-w-0">
+                                                 {label && (
+                                                     <div className="text-xs text-gray-500 mb-0.5 truncate">{label}</div>
+                                                 )}
+                                                 <div className="text-white font-semibold truncate leading-tight">{displayName}</div>
+                                             </div>
+                                         </div>
+                                         <div className="text-right shrink-0 ml-4">
+                                             <div className="flex items-center gap-1.5 justify-end mb-1">
+                                                 <div className="w-3.5 h-3.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]" />
+                                                 <span className={`font-bold text-base ${tx.isSent && !isAddedMoney ? 'text-gray-300' : 'text-white'}`}>
+                                                     {tx.isSent && !isAddedMoney ? '-' : '+'}{(tx.noOfCoin ?? 0).toLocaleString()}
+                                                 </span>
+                                             </div>
+                                             <div className="text-[10px] text-gray-500">
+                                                 {new Date(tx.createdAt).toLocaleDateString('en-GB', {
+                                                     day: 'numeric',
+                                                     month: 'short',
+                                                 })}
+                                             </div>
+                                         </div>
+                                     </div>
+                                 );
                             })
                         )}
 

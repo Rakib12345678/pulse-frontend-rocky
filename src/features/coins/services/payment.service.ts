@@ -23,6 +23,7 @@ export interface WalletHistoryItem {
     noOfCoin: number;
     isSent: boolean;
     createdAt: string;
+    sentOn?: string;
 }
 
 export interface WalletHistoryPage {
@@ -40,6 +41,7 @@ export interface EarningHistoryItem {
     noOfCoin: number; // For diamonds, this is number of diamonds
     isSent: boolean;
     createdAt: string;
+    sentOn?: string;
 }
 
 export interface EarningHistoryPage {

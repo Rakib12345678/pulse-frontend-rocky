@@ -1,7 +1,9 @@
 import React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
+import { useWalletBalance } from '@/features/coins/hooks/useWallet';
 import { giftsService, GiftEntity } from '@/features/gifts/services/gifts.service';
 import coinIcon from '@/assets/coin.svg';
 import { useLiveStreamContext } from './LiveStreamLayout';
@@ -11,7 +13,9 @@ import { toast } from 'sonner';
 import { X, Loader2 } from 'lucide-react';
 
 export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+    const queryClient = useQueryClient();
     const { user, wallet, updateWallet } = useAuthStore();
+    const { data: walletData } = useWalletBalance();
     const { openModal: openAuthModal, setMode } = useSignUpStore();
     const { openModal: openCoinsModal } = useCoinsStore();
     const { call } = useLiveStreamContext();
@@ -44,7 +48,8 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
             return;
         }
 
-        if ((wallet?.coinBalance ?? 0) < gift.noOfCoin) {
+        const currentBalance = walletData?.coinBalance ?? wallet?.coinBalance ?? 0;
+        if (currentBalance < gift.noOfCoin) {
             toast.error('Insufficient balance');
             onClose?.();
             openCoinsModal();
@@ -70,6 +75,7 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
 
             // 2. Update local wallet balance
             updateWallet({ coinBalance: response.viewerCoinBalance });
+            queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
 
             // 3. Trigger floating reaction with image
             await call.sendReaction({
@@ -115,7 +121,7 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
                     className="flex items-center gap-2 rounded-[24px] border border-white/80 px-4 py-1.5 hover:bg-white/5 transition-colors"
                 >
                     <img src={coinIcon} alt="coins" className="w-4 h-4" />
-                    <span className="text-sm font-semibold">{wallet?.coinBalance ?? 0}</span>
+                    <span className="text-sm font-semibold">{(walletData?.coinBalance ?? wallet?.coinBalance ?? 0).toLocaleString()}</span>
                 </button>
                 {onClose && (
                     <button

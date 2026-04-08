@@ -1,12 +1,23 @@
+import { useEffect } from 'react';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { paymentService, WalletHistoryFilter, EarningHistoryFilter } from '@/features/coins/services/payment.service';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 
 export const useWalletBalance = () => {
-  return useQuery({
+  const { updateWallet } = useAuthStore();
+  const query = useQuery({
     queryKey: ['walletBalance'],
     queryFn: () => paymentService.getWalletBalance(),
     staleTime: 5 * 60 * 1000,
   });
+
+  useEffect(() => {
+    if (query.data) {
+      updateWallet(query.data);
+    }
+  }, [query.data, updateWallet]);
+
+  return query;
 };
 
 export const useWalletHistory = (filter: WalletHistoryFilter, size = 20) => {

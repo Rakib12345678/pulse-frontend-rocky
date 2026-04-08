@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Channel } from 'stream-chat';
 import { getStreamClient, isStreamConnected } from '../stream/streamClient';
 import { chatService } from '../services/chat.service';
+import { giftsService } from '@/features/gifts/services/gifts.service';
 import { channelToConversation, streamMsgToMessage } from '../utils/chatMappers';
 import { getDisplayName } from '../utils/ChatUtils';
 import type { Conversation, Message, MessageStatus } from '../types/chat.types';
@@ -43,6 +45,7 @@ const getArchived = (): string[] => {
 const setArchived = (ids: string[]) => sessionStorage.setItem(ARCHIVED_STORAGE_KEY, JSON.stringify(ids));
 
 export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChatReturn => {
+    const queryClient = useQueryClient();
     const [channels, setChannels] = useState<Channel[]>([]);
     const [convLoading, setConvLoading] = useState(true);
     const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -243,9 +246,20 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
         try {
             if (isGiftMsg && giftMatch) {
-                const cost = parseInt(giftMatch[4], 10);
-                if ((wallet?.coinBalance ?? 0) >= cost) {
-                    updateWallet({ coinBalance: (wallet?.coinBalance ?? 0) - cost });
+                const giftId = parseInt(giftMatch[1], 10);
+                try {
+                    const response = await giftsService.sendGift({
+                        giftId,
+                        targetUserId: conv.participant.id,
+                        source: 'CHAT'
+                    });
+                    if (response && typeof response.viewerCoinBalance === 'number') {
+                        updateWallet({ coinBalance: response.viewerCoinBalance });
+                        queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+                    }
+                } catch (giftErr) {
+                    console.error('[StreamChat] Gift send failed:', giftErr);
+                    throw giftErr;
                 }
             }
 

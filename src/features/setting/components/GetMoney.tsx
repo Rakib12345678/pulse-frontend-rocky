@@ -17,6 +17,7 @@ const TABS: { label: string; filter: EarningHistoryFilter }[] = [
 export const GetMoney = () => {
     const navigate = useNavigate();
     const [activeFilter, setActiveFilter] = useState<EarningHistoryFilter>('all');
+    const [withdrawAmount, setWithdrawAmount] = useState('');
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
     const { data: balanceData, isLoading: isLoadingBalance, error: balanceError } = useWalletBalance();
@@ -153,10 +154,28 @@ export const GetMoney = () => {
                         </div>
                     ) : (
                         <div className="flex flex-col md:flex-row gap-4 mx-auto items-center">
+                            <style>{`
+                                .withdraw-input {
+                                    color: black !important;
+                                    caret-color: black !important;
+                                }
+                                .withdraw-input::placeholder {
+                                    color: #4b5563 !important;
+                                }
+                            `}</style>
                             <input 
                                 type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={withdrawAmount}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '' || /^[0-9]+$/.test(val)) {
+                                        setWithdrawAmount(val);
+                                    }
+                                }}
                                 placeholder="Enter Withdrawal Amount Here..."
-                                className="w-full md:flex-1 bg-[#ffe3ca] border border-[#f5d0b0] rounded-full px-6 py-3.5 text-black placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
+                                className="withdraw-input w-full md:flex-1 bg-[#ffe3ca] border border-[#f5d0b0] rounded-full px-6 py-3.5 focus:outline-none focus:ring-2 focus:ring-[#FF7700]/50"
                             />
                             <button className="w-full md:w-auto bg-[#FF7700] hover:bg-[#ff8800] text-black font-bold rounded-full px-8 py-3.5 transition-colors shadow-sm">
                                 Withdrawal Amount
@@ -202,9 +221,22 @@ export const GetMoney = () => {
                     ) : (
                         transactions.map((tx: EarningHistoryItem, idx: number) => {
                             const diamondAmount = tx.noOfCoin ?? (tx as any).noOfDiamond ?? (tx as any).diamonds ?? 0;
-                            // If the API provides the original coin amount, we show it. 
-                            // Otherwise we just show the diamond amount as fallback.
                             const coinAmount = (tx as any).coinAmount; 
+                            
+                            const formatDate = (dateStr: string) => {
+                                const date = new Date(dateStr);
+                                const day = date.getDate();
+                                const month = date.toLocaleDateString('en-GB', { month: 'long' });
+                                
+                                // Simple ordinal suffix helper
+                                const getOrdinal = (n: number) => {
+                                    const s = ["th", "st", "nd", "rd"];
+                                    const v = n % 100;
+                                    return s[(v - 20) % 10] || s[v] || s[0];
+                                };
+                                
+                                return `${day}${getOrdinal(day)} ${month}`;
+                            };
 
                             return (
                                 <div key={`${tx.createdAt}-${idx}`} className="flex justify-between items-center py-4">
@@ -218,16 +250,10 @@ export const GetMoney = () => {
                                         </div>
                                         <div className="min-w-0">
                                             <div className="text-xs text-gray-500 mb-0.5 truncate">
-                                                {tx.isSent ? 'Withdrawal' : 'Received by'}
+                                                {tx.isSent ? 'Withdrawal Money' : 'Received on'}
                                             </div>
                                             <div className="text-white font-semibold truncate leading-tight">
-                                                {tx.isSent ? 'Withdrawal Money' : (tx.fullname || tx.username || 'Unknown')}
-                                            </div>
-                                            <div className="text-xs text-gray-500 mt-1">
-                                                {new Date(tx.createdAt).toLocaleDateString('en-GB', {
-                                                    day: 'numeric',
-                                                    month: 'long',
-                                                })}
+                                                {tx.isSent ? 'Withdrawal Money' : formatDate(tx.createdAt)}
                                             </div>
                                         </div>
                                     </div>

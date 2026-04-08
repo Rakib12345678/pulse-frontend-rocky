@@ -48,11 +48,11 @@ export const chatService = {
     }): Promise<{ id: string; time: string }> => {
         const { data } = await api.post<any>('/chat/send', {
             targetUserId: payload.targetUserId,
-            text:         payload.text,
+            text: payload.text,
         });
         const raw = data?.message ?? data;
         return {
-            id:   raw?.id   ?? '',
+            id: raw?.id   ?? '',
             time: raw?.created_at ?? new Date().toISOString(),
         };
     },
@@ -75,7 +75,7 @@ export const chatService = {
     hideOrDeleteConversation: async (channelCid: string): Promise<void> => {
         const client = getStreamClient();
         const [type, id] = channelCid.split(':');
-        const channel    = client.channel(type, id);
+        const channel = client.channel(type, id);
         await channel.watch();
         try {
             await channel.delete();
@@ -86,9 +86,9 @@ export const chatService = {
 
     getTargetUserId: async (channelCid: string): Promise<number> => {
         const client = getStreamClient();
-        const myId   = client.userID ?? '';
+        const myId = client.userID ?? '';
         const [type, id] = channelCid.split(':');
-        const channel    = client.channel(type, id);
+        const channel = client.channel(type, id);
         await channel.watch();
         const other = Object.values(channel.state.members).find(m => m.user_id !== myId);
         return parseInt(other?.user_id ?? '0', 10);

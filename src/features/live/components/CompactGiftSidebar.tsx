@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
+import { useWalletBalance } from '@/features/coins/hooks/useWallet';
 import { giftsService, GiftEntity } from '@/features/gifts/services/gifts.service';
 import coinIcon from '@/assets/coin.svg';
 import { useLiveStreamContext } from './LiveStreamLayout';
@@ -11,7 +13,9 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const CompactGiftSidebar: React.FC = () => {
+    const queryClient = useQueryClient();
     const { user, wallet, updateWallet } = useAuthStore();
+    const { data: walletData } = useWalletBalance();
     const { openModal: openAuthModal, setMode } = useSignUpStore();
     const { openModal: openCoinsModal } = useCoinsStore();
     const { call, isViewer, isGiftingOpen } = useLiveStreamContext();
@@ -42,7 +46,8 @@ export const CompactGiftSidebar: React.FC = () => {
             return;
         }
 
-        if ((wallet?.coinBalance ?? 0) < gift.noOfCoin) {
+        const currentBalance = walletData?.coinBalance ?? wallet?.coinBalance ?? 0;
+        if (currentBalance < gift.noOfCoin) {
             toast.error('Insufficient balance');
             openCoinsModal();
             return;
@@ -65,6 +70,7 @@ export const CompactGiftSidebar: React.FC = () => {
             });
 
             updateWallet({ coinBalance: response.viewerCoinBalance });
+            queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
 
             await call.sendReaction({
                 type: 'live-reaction',

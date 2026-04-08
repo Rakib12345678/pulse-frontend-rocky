@@ -10,9 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Avatar } from '@/features/chat/components/Avatar';
 import { capitalizeName, formatLastSeen, getDayKey, getDateLabel } from '@/features/chat/utils/ChatUtils';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
-import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
-import { paymentService } from '@/features/coins/services/payment.service';
 
 // Standalone components
 import { ChangeLanguageModal } from './ChangeLanguageModal';
@@ -70,8 +68,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversation, isLoadingConversation = false, onBack, mobileFullscreen = false,
     messages, msgLoading, hasMore, loadMore, onSend, onSendImage, onDelete, onReact, onDeleteReaction, onMarkAsRead,
 }) => {
-    const { user, wallet, updateWallet } = useAuthStore();
-    const { openModal: openAuthModal, setMode } = useSignUpStore();
+    const { user, wallet } = useAuthStore();
     const { openModal: openCoinsModal } = useCoinsStore();
     const myId = String(user?.id ?? '');
     const isInternetConnected = useOnlineStatus();
@@ -406,6 +403,12 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <div ref={giftRef}>
                     <GiftCarousel
                         onSelectGift={gift => {
+                            if ((wallet?.coinBalance ?? 0) < gift.noOfCoin) {
+                                toast.error('Insufficient balance');
+                                setShowGifts(false);
+                                openCoinsModal();
+                                return;
+                            }
                             const giftTag = `[GIFT:${gift.id}:${gift.iconUrl}:${gift.name}:${gift.noOfCoin}]`;
                             setShowGifts(false);
                             onSend(giftTag);

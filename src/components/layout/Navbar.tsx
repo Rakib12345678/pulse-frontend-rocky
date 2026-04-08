@@ -18,6 +18,7 @@ import coinIcon from "@/assets/coin.svg";
 import { LogoutModal } from '../internal/ConfirmModal';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
+import { useWalletBalance } from '@/features/coins/hooks/useWallet';
 import { AddCoinsModal } from '@/features/coins/components/AddCoinsModal';
 
 interface NavLinkProps {
@@ -50,6 +51,7 @@ const NavLink = ({ to, label }: NavLinkProps) => {
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, wallet, clearAuth, accessToken } = useAuthStore();
+  const { data: walletData } = useWalletBalance();
   const { reset: resetSignUp } = useSignUpStore();
   const { openModal: openCoinsModal } = useCoinsStore();
 
@@ -163,7 +165,7 @@ export const Navbar: React.FC = () => {
                   <span className="hidden sm:inline-block text-white text-[15px] font-medium tracking-wide">My Balance</span>
                   <div className="flex items-center gap-1.5">
                     <img src={coinIcon} alt="coin" className="w-5 h-5" />
-                    <span className="text-white text-[15px] font-semibold">{wallet?.coinBalance ?? 0}</span>
+                    <span className="text-white text-[15px] font-semibold">{(walletData?.coinBalance ?? wallet?.coinBalance ?? 0).toLocaleString()}</span>
                   </div>
                   <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center ml-1">
                     <Plus className="w-4 h-4 text-white" />
