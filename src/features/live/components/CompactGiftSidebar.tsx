@@ -90,6 +90,7 @@ export const CompactGiftSidebar: React.FC = () => {
                         giftIconUrl: gift.iconUrl,
                         giftName: gift.name,
                         giftCost: gift.noOfCoin,
+                        duration: gift.duration,
                     } as any);
                 } catch (chatErr) {
                     console.error('Failed to send gift chat message:', chatErr);

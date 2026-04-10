@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useCallStateHooks, ParticipantView, hasVideo, hasAudio, OwnCapability } from '@stream-io/video-react-sdk';
+import { useChatContext } from 'stream-chat-react';
 import { useLiveStreamContext } from './LiveStreamLayout';
 import { useNavigate } from '@tanstack/react-router';
 import { StreamerInfoOverlay } from './StreamerInfoOverlay';
@@ -15,6 +16,8 @@ import { cn } from '@/lib/utils';
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
     const { isViewer, isGuest, isChatVisible, call } = useLiveStreamContext();
+    const { client: chatClient } = useChatContext();
+    const channel = React.useMemo(() => (call && chatClient) ? chatClient.channel('livestream', call.id) : null, [chatClient, call?.id]);
     const participants = useParticipants();
 
     // Helper to extract fullName from participant custom fields
@@ -134,6 +137,16 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             // Hit the leave endpoint here
             if (call.id) {
                 await liveService.removeCoHost(call.id, userName);
+            }
+
+            if (channel) {
+                try {
+                    await channel.sendMessage({
+                        text: `@${userName} was kicked`,
+                    });
+                } catch (e) {
+                    console.error('Failed to send kick chat message:', e);
+                }
             }
 
             toast.success(`Removed @${userName} from stream`);

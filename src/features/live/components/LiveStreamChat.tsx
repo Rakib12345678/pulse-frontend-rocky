@@ -121,7 +121,7 @@ export const LiveStreamChat: React.FC = () => {
     return (
         <Channel key={chatClient.userID || 'anonymous'} channel={channel}>
             <div className={`absolute ${bottomClass} left-4 right-4 sm:left-10 sm:right-auto sm:w-[360px] max-h-[400px] flex flex-col z-20 rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl`}>
-                <SuperchatTicker />
+                {!isViewer && <SuperchatTicker />}
                 <div className="flex-1 flex flex-col bg-[#1D1F20] pt-4 px-4 pb-3 overflow-hidden">
                     <LiveStreamMessageList />
                     <LiveStreamMessageInput />
@@ -148,7 +148,7 @@ const LiveStreamMessageList: React.FC = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { openModal: openProfileModal } = useUserProfileStore();
     const { openModal: openLoginModal, setMode } = useSignUpStore();
-    const { isGuest } = useLiveStreamContext();
+    const { isGuest, isViewer } = useLiveStreamContext();
     const { useParticipants: useParticipantsList } = useCallStateHooks();
     const participants = useParticipantsList();
 
@@ -198,6 +198,8 @@ const LiveStreamMessageList: React.FC = () => {
                 const giftCost = (msg as any)?.giftCost;
 
                 if (giftMessage) {
+                    if (isViewer) return null;
+
                     return (
                         <div
                             key={msg.id}

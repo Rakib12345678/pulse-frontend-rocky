@@ -1,4 +1,4 @@
-import api  from '@/lib/api';
+import api from '@/lib/api';
 
 export interface UserProfile {
     id: number;
@@ -36,6 +36,11 @@ export const userService = {
 
     unblockUser: async (targetUserId: number) => {
         return api.post('/users/unblock', { targetUserId, block: false });
+    },
+
+    getFollowStatuses: async (users: { userId: number; username: string }[]) => {
+        const response = await api.post<{ userId: number; username: string; isFollowing: boolean }[]>('/users/follow/status', users);
+        return response.data;
     },
 
     getUserStream: async (): Promise<{

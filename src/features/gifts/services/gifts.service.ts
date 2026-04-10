@@ -5,12 +5,14 @@ export interface GiftEntity {
     name: string;
     iconUrl: string;
     noOfCoin: number;
+    duration: number;
 }
 
 export interface CreateGiftRequest {
     name: string;
     noOfCoin: number;
     iconUrl: string;
+    duration: number;
 }
 
 export interface SendGiftRequest {

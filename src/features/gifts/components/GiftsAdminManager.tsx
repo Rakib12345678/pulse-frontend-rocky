@@ -21,6 +21,7 @@ export const GiftsAdminManager = () => {
     // Form State
     const [name, setName] = useState('');
     const [noOfCoin, setNoOfCoin] = useState<number | ''>('');
+    const [duration, setDuration] = useState<number | ''>('');
 
     // Image Upload State
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -49,6 +50,7 @@ export const GiftsAdminManager = () => {
         setEditingGift(null);
         setName('');
         setNoOfCoin('');
+        setDuration('');
         setSelectedImage(null);
         setPreviewUrl('');
         setExistingImageUrl('');
@@ -59,6 +61,7 @@ export const GiftsAdminManager = () => {
         setEditingGift(gift);
         setName(gift.name);
         setNoOfCoin(gift.noOfCoin);
+        setDuration(gift.duration || '');
         setSelectedImage(null);
         setPreviewUrl('');
         setExistingImageUrl(gift.iconUrl);
@@ -86,7 +89,7 @@ export const GiftsAdminManager = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name || noOfCoin === '') {
+        if (!name || noOfCoin === '' || duration === '') {
             alert('Please fill all required fields');
             return;
         }
@@ -111,7 +114,8 @@ export const GiftsAdminManager = () => {
             const payload: CreateGiftRequest = {
                 name,
                 noOfCoin: Number(noOfCoin),
-                iconUrl: finalImageUrl
+                iconUrl: finalImageUrl,
+                duration: Number(duration)
             };
 
             if (editingGift) {
@@ -163,6 +167,7 @@ export const GiftsAdminManager = () => {
                                 <div>
                                     <h3 className="text-lg font-bold">{gift.name}</h3>
                                     <p className="text-sm text-gray-400">{gift.noOfCoin} Coins required</p>
+                                    <p className="text-xs text-gray-500">Duration: {gift.duration}</p>
                                 </div>
                                 <div className="flex gap-2">
                                     <button
@@ -254,6 +259,19 @@ export const GiftsAdminManager = () => {
                                 onChange={(e) => setNoOfCoin(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
                                 className="bg-black/50 border-white/10 text-white focus-visible:ring-[#FF8800]/50 focus-visible:border-[#FF8800]"
                                 placeholder="e.g. 100"
+                                required
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <Label className="text-gray-300">Duration *</Label>
+                            <Input
+                                type="number"
+                                min={1}
+                                value={duration}
+                                onChange={(e) => setDuration(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                                className="bg-black/50 border-white/10 text-white focus-visible:ring-[#FF8800]/50 focus-visible:border-[#FF8800]"
+                                placeholder="e.g. 5000 (ms) or 5 (s)"
                                 required
                             />
                         </div>

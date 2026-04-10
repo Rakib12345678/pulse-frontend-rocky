@@ -7,7 +7,7 @@ import { useUserProfileStore } from '../stores/userProfileStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useLiveStreamContext } from './LiveStreamLayout';
 
-const SUPERCHAT_DURATION = 16_000; // 16 seconds
+const DEFAULT_DURATION_SECONDS = 16;
 
 interface SuperchatEntry {
     id: string;
@@ -17,9 +17,9 @@ interface SuperchatEntry {
     giftIconUrl: string;
     giftName: string;
     createdAt: number;
+    durationSeconds: number;
 }
 
-/** Horizontal scrolling superchat ticker showing recent gift messages with Lottie backgrounds */
 export const SuperchatTicker: React.FC = () => {
     const { messages } = useChannelStateContext();
     const { useParticipants } = useCallStateHooks();
@@ -41,7 +41,6 @@ export const SuperchatTicker: React.FC = () => {
         }
     }, [isGuest, setMode, openLoginModal, openProfileModal]);
 
-    // Build fullName lookup from participants
     const fullNameMap = useMemo(() => {
         const map = new Map<string, string>();
         participants.forEach((p: any) => {
@@ -59,12 +58,13 @@ export const SuperchatTicker: React.FC = () => {
         [fullNameMap],
     );
 
-    // Watch for new gift messages and add them to the ticker
+    // 🔍 DEBUG: Track message processing
     useEffect(() => {
         if (!messages) return;
 
         const now = Date.now();
         const newEntries: SuperchatEntry[] = [];
+
         for (const msg of messages) {
             if (
                 !(msg as any)?.isGiftMessage ||
@@ -73,15 +73,24 @@ export const SuperchatTicker: React.FC = () => {
                 continue;
 
             const msgCreatedAt = msg.created_at ? new Date(msg.created_at).getTime() : now;
+            const rawDuration = (msg as any)?.duration;
 
-            // If the message is already older than the duration, discard it silently
-            if (now - msgCreatedAt >= SUPERCHAT_DURATION) {
+            // Parse duration safely
+            let durationSeconds = DEFAULT_DURATION_SECONDS;
+            if (typeof rawDuration === 'number' && rawDuration > 0) {
+                durationSeconds = rawDuration >= 1000 ? rawDuration / 1000 : rawDuration;
+            } else if (typeof rawDuration === 'string') {
+                const parsed = parseFloat(rawDuration);
+                if (!isNaN(parsed) && parsed > 0) durationSeconds = parsed >= 1000 ? parsed / 1000 : parsed;
+            }
+
+            const expiryTime = msgCreatedAt + durationSeconds * 1000;
+            if (now >= expiryTime) {
                 processedIdsRef.current.add(msg.id);
                 continue;
             }
 
             processedIdsRef.current.add(msg.id);
-
             newEntries.push({
                 id: msg.id,
                 senderName: getDisplayName(msg.user),
@@ -90,6 +99,7 @@ export const SuperchatTicker: React.FC = () => {
                 giftIconUrl: (msg as any)?.giftIconUrl || '',
                 giftName: (msg as any)?.giftName || '',
                 createdAt: msgCreatedAt,
+                durationSeconds,
             });
         }
 
@@ -98,14 +108,20 @@ export const SuperchatTicker: React.FC = () => {
         }
     }, [messages, getDisplayName]);
 
-    // Auto-remove expired entries
+    // 🔍 DEBUG: Track expiration
     useEffect(() => {
         if (entries.length === 0) return;
 
         const timer = setInterval(() => {
             const now = Date.now();
-            setEntries((prev) => prev.filter((e) => now - e.createdAt < SUPERCHAT_DURATION));
-        }, 1000);
+            setEntries((prev) => {
+                const filtered = prev.filter((e) => {
+                    const expiryTime = e.createdAt + e.durationSeconds * 1000;
+                    return now < expiryTime;
+                });
+                return filtered;
+            });
+        }, 250);
 
         return () => clearInterval(timer);
     }, [entries.length]);
@@ -126,25 +142,45 @@ export const SuperchatTicker: React.FC = () => {
     );
 };
 
-/** Individual superchat card — Lottie background with profile photo, username, and gift icon */
 const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: string) => void }> = ({ entry, onUserClick }) => {
+    const animationSpeed = useMemo(() => {
+        return Math.max(0.1, Math.min(4, DEFAULT_DURATION_SECONDS / entry.durationSeconds));
+    }, [entry.durationSeconds]);
+
+    const [remainingPercent, setRemainingPercent] = useState<number>(100);
+
+    useEffect(() => {
+        const updateProgress = () => {
+            const now = Date.now();
+            const totalMs = entry.durationSeconds * 1000;
+            const expiry = entry.createdAt + totalMs;
+            const remainingMs = Math.max(0, expiry - now);
+            setRemainingPercent((remainingMs / totalMs) * 100);
+
+            if (remainingMs > 0) {
+                requestAnimationFrame(updateProgress);
+            }
+        };
+        const handle = requestAnimationFrame(updateProgress);
+        return () => cancelAnimationFrame(handle);
+    }, [entry.createdAt, entry.durationSeconds]);
+
     return (
         <div
             className="relative shrink-0 rounded-2xl overflow-hidden"
             style={{ width: 180, height: 52 }}
         >
-            {/* Lottie animated background */}
             <div className="absolute inset-0 z-0">
                 <DotLottieReact
                     src={giftBoxLottie}
                     loop
                     autoplay
+                    speed={animationSpeed}
                     style={{ width: '100%', height: '100%' }}
                 />
             </div>
 
-            {/* Content: avatar + username + gift icon */}
-            <div className="relative z-1 flex items-center gap-2 px-2 h-full">
+            <div className="relative z-1 flex items-center gap-2 px-2 h-full pb-[2px]">
                 <img
                     src={entry.senderAvatar}
                     alt={entry.senderName}
@@ -164,6 +200,13 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
                         className="w-7 h-7 object-contain shrink-0"
                     />
                 )}
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40 z-20">
+                <div
+                    className="h-full bg-linear-to-r from-orange-500 to-[#FFB800] opacity-90 transition-all duration-75 ease-linear"
+                    style={{ width: `${remainingPercent}%` }}
+                />
             </div>
         </div>
     );

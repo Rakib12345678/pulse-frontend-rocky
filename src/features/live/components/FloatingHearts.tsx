@@ -18,7 +18,7 @@ interface Heart {
 const HEART_COLORS = ['#FF4D4D', '#FF0000', '#FF6B6B', '#FF8080', '#D90000', '#FF3366', '#FF1744'];
 
 export const FloatingHearts: React.FC = () => {
-    const { call, isGuest } = useLiveStreamContext();
+    const { call, isGuest, isViewer } = useLiveStreamContext();
     const { client: chatClient } = useChatContext();
     const [hearts, setHearts] = useState<Heart[]>([]);
 
@@ -79,6 +79,8 @@ export const FloatingHearts: React.FC = () => {
     }, [call, chatClient, isGuest]);
 
     const addHeart = useCallback((emoji: string = '♥', imageUrl?: string) => {
+        if (isViewer && imageUrl) return;
+
         const id = Math.random().toString(36).substring(7);
         const color = HEART_COLORS[Math.floor(Math.random() * HEART_COLORS.length)];
         const x = Math.floor(Math.random() * 80) - 40; // Wider starting range
@@ -95,7 +97,7 @@ export const FloatingHearts: React.FC = () => {
         setTimeout(() => {
             setHearts((prev) => prev.filter((h) => h.id !== id));
         }, 3000);
-    }, []);
+    }, [isViewer]);
 
     return (
         <div className="absolute bottom-20 right-[35%] w-20 h-96 pointer-events-none z-30 overflow-visible flex flex-col justify-end items-center">

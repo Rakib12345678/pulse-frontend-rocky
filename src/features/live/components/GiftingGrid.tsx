@@ -95,11 +95,12 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
             if (channel) {
                 try {
                     await channel.sendMessage({
-                        text: `sent ${gift.name} 🎁`,
+                        text: `sent ${gift.name}`,
                         isGiftMessage: true,
                         giftIconUrl: gift.iconUrl,
                         giftName: gift.name,
                         giftCost: gift.noOfCoin,
+                        duration: gift.duration,
                     } as any);
                 } catch (chatErr) {
                     console.error('Failed to send gift chat message:', chatErr);
