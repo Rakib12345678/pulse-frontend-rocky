@@ -23,27 +23,27 @@ const PackageCard = ({ coin, currency }: { coin: CoinEntity, currency: string })
             <Button
                 variant="ghost"
                 onClick={() => selectPackage({ id: String(coin.id), coins: coin.noOfCoin, price: coin.price, bonus: '', image: coin.bannerImage })}
-                className="w-full h-auto bg-[#1A1C1E] border border-white/10 rounded-2xl p-4 pt-5 flex flex-col items-center gap-2 
+                className="w-full h-auto bg-[#1A1C1E] border border-white/10 rounded-2xl p-2.5 sm:p-4 pt-3 sm:pt-5 flex flex-col items-center gap-1.5 sm:gap-2 
           hover:border-[#FF8800]/50 hover:bg-[#1A1C1E]/80 transition-all cursor-pointer group-hover:shadow-[0_0_20px_rgba(255,136,0,0.1)]"
             >
                 {/* Package Image */}
-                <div className="w-24 h-20 flex items-center justify-center">
+                <div className="w-14 h-12 sm:w-24 sm:h-20 flex items-center justify-center">
                     {coin.bannerImage ? (
                         <img src={coin.bannerImage} alt={`${coin.noOfCoin} coins`} className="max-w-full max-h-full object-contain" />
                     ) : (
-                        <img src={coinIcon} alt="coin" className="w-12 h-12" />
+                        <img src={coinIcon} alt="coin" className="w-8 h-8 sm:w-12 sm:h-12" />
                     )}
                 </div>
 
                 {/* Coin Amount */}
-                <div className="flex items-center gap-1.5">
-                    <img src={coinIcon} alt="coin" className="w-5 h-5" />
-                    <span className="text-white font-bold text-lg">{coin.noOfCoin.toLocaleString()}</span>
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                    <img src={coinIcon} alt="coin" className="w-3.5 h-3.5 sm:w-5 h-5" />
+                    <span className="text-white font-bold text-sm sm:text-lg">{coin.noOfCoin.toLocaleString()}</span>
                 </div>
 
                 {/* Price Button */}
-                <div className="w-full bg-[#FF8800] rounded-lg py-2 px-4 text-center">
-                    <span className="text-black font-bold text-sm">{pricePrefix} {displayPrice}</span>
+                <div className="w-full bg-[#FF8800] rounded-lg py-1.5 sm:py-2 px-2 sm:px-4 text-center">
+                    <span className="text-black font-bold text-[10px] sm:text-sm">{pricePrefix} {displayPrice}</span>
                 </div>
             </Button>
         </div>
@@ -116,7 +116,7 @@ export const CoinPackageGrid = () => {
             ) : coins.length === 0 ? (
                 <p className="text-gray-400 text-center py-5">No coin packages available</p>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 pt-4 pb-8">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 pb-8">
                     {coins.map((coin) => (
                         <PackageCard key={coin.id} coin={coin} currency={currency} />
                     ))}

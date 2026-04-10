@@ -101,13 +101,14 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                         </span>
                     )}
                     <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider bg-white/5 px-2.5 py-0.5 rounded-full border border-white/5">
-                        {creator.followerCount.toLocaleString()} followers
+                        {(creator.followerCount || 0).toLocaleString()} followers
                     </span>
                 </div>
             </div>
 
             {/* Follow Button */}
             <Button
+                type="button"
                 onClick={handleFollowClick}
                 disabled={isPending || creator.isFollower}
                 style={creator.isFollower ? { backgroundColor: '#262626', backgroundImage: 'none' } : undefined}

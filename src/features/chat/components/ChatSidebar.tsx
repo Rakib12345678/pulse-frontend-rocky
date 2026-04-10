@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, Archive, BellOff, Bell } from 'lucide-react';
+import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Conversation, MessageStatus } from '../types/chat.types';
@@ -9,9 +9,22 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { PINNED_STORAGE_KEY } from '@/features/chat/utils/chatConstants';
 import { Avatar } from '@/features/chat/components/Avatar';
 import { UserSearchList, type StreamUser } from '@/features/chat/components/Usersearchlist';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+} from "@/components/ui/drawer"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { capitalizeName, getDisplayName, formatRelativeTime } from '@/features/chat/utils/ChatUtils';
 import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 import { chatService } from '../services/chat.service';
+import { useIsMobile } from '@/hooks/use-mobile';
 import chatGroup  from '@/assets/chatGroup.svg';
 import SearchIcon from '@/assets/Search.svg';
 
@@ -61,42 +74,113 @@ const getPinned = (): string[] => {
 };
 const setPinned = (ids: string[]) => sessionStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids));
 
-// NewChatModal
-
 const NewChatModal = ({
-    onClose, onStartChat, isStarting,
+    onClose, onStartChat, isStarting, conversations, isMobile
 }: {
     onClose: () => void;
     onStartChat: (user: StreamUser) => void;
     isStarting: boolean;
+    conversations: Conversation[];
+    isMobile: boolean;
 }) => {
-    const backdropRef = React.useRef<HTMLDivElement>(null);
-    return (
-        <div
-            ref={backdropRef}
-            onClick={e => { if (e.target === backdropRef.current) onClose(); }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300"
-        >
-            <div 
-                className="relative w-full max-w-[500px] rounded-[32px] shadow-2xl overflow-hidden p-8 sm:p-10 flex flex-col items-center backdrop-blur-[354px]"
-                style={{ 
-                    background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' 
-                }}
-            >
-                <h2 className="text-2xl font-bold text-white mb-8 tracking-tight">New Chat</h2>
-                
-                <div className="w-full">
+    // Get unique participants for recently contacted
+    const uniqueRecent = conversations
+        .map(c => c.participant)
+        .filter((p, i, self) => self.findIndex(s => s.id === p.id) === i)
+        .slice(0, 10);
+
+    const content = (
+        <div className="flex-1 overflow-y-auto pb-4 custom-scrollbar">
+            {/* Search Bar */}
+            <div className="px-6 py-4">
+                <UserSearchList
+                    placeholder="Search Creator Name Here..."
+                    actionLabel="Tap to Chat"
+                    emptyMessage="Type a name to search"
+                    onSelectUser={onStartChat}
+                    isProcessing={isStarting}
+                    hideListInitially={true}
+                />
+            </div>
+
+            {/* Recently Contacted */}
+            {uniqueRecent.length > 0 && (
+                <div className="mb-6">
+                    <h3 className="px-6 text-sm font-bold text-white mb-4">Recently Contacted</h3>
+                    <div className="flex overflow-x-auto gap-5 px-6 no-scrollbar pb-2">
+                        {uniqueRecent.map((p) => (
+                            <button
+                                key={p.id}
+                                onClick={() => onStartChat({
+                                    id: p.id,
+                                    name: p.name,
+                                    image: p.avatar,
+                                    isOnline: p.isOnline
+                                })}
+                                className="flex flex-col items-center gap-2 shrink-0 group focus:outline-none cursor-pointer"
+                            >
+                                <div className="relative">
+                                    <Avatar src={p.avatar} alt={p.name} className="w-13 h-13 ring-2 ring-white/5 group-hover:ring-white/10 transition-all" />
+                                    {p.isOnline && (
+                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#111213]" />
+                                    )}
+                                </div>
+                                <span className="text-[11px] text-gray-400 font-medium max-w-[60px] truncate">
+                                    {p.name.split(' ')[0]}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* All Followers / Following */}
+            <div>
+                <h3 className="px-6 text-sm font-bold text-white mb-2">All Followers</h3>
+                <div className="px-6">
                     <UserSearchList
-                        placeholder="Search Creator Name Here..."
+                        placeholder=""
                         actionLabel="Tap to Chat"
-                        emptyMessage="Type a name to search"
+                        emptyMessage="No followers found"
                         onSelectUser={onStartChat}
                         isProcessing={isStarting}
-                        listClassName="max-h-80"
+                        hideListInitially={false}
+                        showInitialList={true}
                     />
                 </div>
             </div>
         </div>
+    );
+
+    if (isMobile) {
+        return (
+            <Drawer open onOpenChange={onClose}>
+                <DrawerContent 
+                    className="bg-[#111213] border-none text-white h-[85vh] pb-8 overflow-hidden flex flex-col"
+                    style={{ background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' }}
+                >
+                    <div className="mx-auto mt-2 h-1 w-12 shrink-0 rounded-full bg-white/20" />
+                    <DrawerHeader className="pb-1">
+                        <DrawerTitle className="text-center text-lg font-bold text-white">New Chat</DrawerTitle>
+                    </DrawerHeader>
+                    {content}
+                </DrawerContent>
+            </Drawer>
+        );
+    }
+
+    return (
+        <Dialog open onOpenChange={onClose}>
+            <DialogContent 
+                className="bg-[#111213] border-white/10 text-white max-w-lg p-0 overflow-hidden flex flex-col h-[600px]"
+                style={{ background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' }}
+            >
+                <DialogHeader className="p-6 pb-2 border-b border-white/5">
+                    <DialogTitle className="text-xl font-bold text-white">New Chat</DialogTitle>
+                </DialogHeader>
+                {content}
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -122,7 +206,7 @@ const ConfirmDeleteModal = ({
                 background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' 
             }}
         >
-            <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">Delete Conversations?</h3>
+            <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">Delete Conversation?</h3>
             <p className="text-gray-400 text-sm mb-10 leading-relaxed max-w-[280px]">
                 Are you sure you want to delete your conversation with{' '}
                 <span className="text-white font-bold">{capitalizeName(name)}</span>. This cannot be undone.
@@ -178,9 +262,9 @@ const ConversationDropdown = ({
         <div ref={ref} className="absolute top-full left-2 mt-0.5 z-50 w-60 bg-[#1e2029] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1">
             <button
                 onClick={e => { e.stopPropagation(); onPin(); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-200 hover:bg-white/8 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-200 hover:bg-white/8 transition-colors cursor-pointer group"
             >
-                <Pin className="w-3.5 h-3.5 shrink-0 text-gray-400 group-hover:text-white" />
+                <Pin className={cn("w-3.5 h-3.5 shrink-0 group-hover:text-white transition-colors", isPinned ? "text-[#FF7700]" : "text-gray-400")} />
                 {isPinned ? 'Unpin' : 'Pin Chat'}
             </button>
             <button
@@ -192,9 +276,13 @@ const ConversationDropdown = ({
             </button>
             <button
                 onClick={e => { e.stopPropagation(); onArchiveToggle(); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-200 hover:bg-white/8 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-200 hover:bg-white/8 transition-colors cursor-pointer group"
             >
-                <Archive className="w-3.5 h-3.5 shrink-0 text-gray-400" />
+                {isArchived ? (
+                    <SquareArrowUp className="w-3.5 h-3.5 shrink-0 text-gray-400 group-hover:text-white transition-colors" />
+                ) : (
+                    <SquareArrowDown className="w-3.5 h-3.5 shrink-0 text-gray-400 group-hover:text-white transition-colors" />
+                )}
                 {isArchived ? 'Unarchive Chat' : 'Archive Chat'}
             </button>
             <div className="h-px bg-white/8 my-1" />
@@ -211,19 +299,21 @@ const ConversationDropdown = ({
 // ChatListItem
 
 const ChatListItem = ({
-    conversation, isActive, isPinned, myId, translateEnabled,
-    onClick, onDeleteRequest, onPinToggle, onMuteToggle, onArchiveToggle,
+    conversation, isActive, isPinned, myId, translateEnabled, isMobile,
+    onClick, onDeleteRequest, onPinToggle, onMuteToggle, onArchiveToggle, onSelectionMode,
 }: {
     conversation: Conversation;
     isActive: boolean;
     isPinned: boolean;
     myId: string;
     translateEnabled: boolean;
+    isMobile: boolean;
     onClick: () => void;
     onDeleteRequest: (c: Conversation) => void;
     onPinToggle: (c: Conversation) => void;
     onMuteToggle: (c: Conversation) => void;
     onArchiveToggle: (c: Conversation) => void;
+    onSelectionMode: (id: string) => void;
 }) => {
     const [open, setOpen] = React.useState(false);
 
@@ -237,8 +327,16 @@ const ChatListItem = ({
     return (
         <div
             className="relative"
-            onDoubleClick={e => { e.preventDefault(); setOpen(v => !v); }}
-            onContextMenu={e => { e.preventDefault(); setOpen(v => !v); }}
+            onDoubleClick={e => {
+                e.preventDefault();
+                if (isMobile) onSelectionMode(conversation.id);
+                else setOpen(v => !v);
+            }}
+            onContextMenu={e => {
+                e.preventDefault();
+                if (isMobile) onSelectionMode(conversation.id);
+                else setOpen(v => !v);
+            }}
         >
             <button
                 onClick={onClick}
@@ -259,27 +357,34 @@ const ChatListItem = ({
                 </div>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-1.5 text-white text-sm font-semibold truncate">
+                        <span className="flex items-center gap-1.5 text-white text-[15px] font-bold truncate">
                             {capitalizeName(conversation.participant.name)}
-                            {isPinned && <Pin className="w-3 h-3 text-[#FF7700] shrink-0 rotate-45" />}
-                            {conversation.isMuted && <BellOff className="w-3 h-3 text-gray-500 shrink-0" />}
                         </span>
-                        {conversation.unreadCount > 0 ? (
-                            <span className="shrink-0 min-w-4.5 h-4.5 px-1 rounded-full bg-[#FF7700] flex items-center justify-center text-[10px] font-bold text-black">
-                                {conversation.unreadCount}
-                            </span>
-                        ) : (
-                            <span className="shrink-0 text-[10px] text-gray-500">
+                        <div className="flex flex-col items-end gap-1.5 shrink-0 ml-auto">
+                            <span className="text-[10px] text-gray-500 font-medium">
                                 {formatRelativeTime(conversation.lastMessageTime)}
                             </span>
-                        )}
+                            <div className="flex items-center gap-1.5">
+                                {(isPinned || conversation.isMuted) && (
+                                    <div className="flex items-center gap-1.5 ">
+                                        {conversation.isMuted && <BellOff className="w-3 h-3 text-gray-500" />}
+                                        {isPinned && <Pin className="w-3 h-3 text-[#FF7700]" />}
+                                    </div>
+                                )}
+                                {conversation.unreadCount > 0 && (
+                                    <span className="shrink-0 w-4.5 h-4.5 rounded-full bg-[#FF7700] flex items-center justify-center text-[10px] font-black text-black">
+                                        {conversation.unreadCount}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
                     </div>
                     <div className="flex items-center gap-1 mt-0.5">
                         {conversation.lastMessageStatus && (
                             <TickIcon status={conversation.lastMessageStatus} />
                         )}
                         <span className={cn(
-                            'text-xs truncate',
+                            'text-xs truncate font-medium',
                             conversation.lastMessageStatus === 'pending' ? 'text-yellow-400/70' : 'text-gray-400',
                             conversation.isGiftMessage && 'animate-bounce !text-[#FF7700] font-medium'
                         )}>
@@ -340,8 +445,23 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [isStarting, setIsStarting] = React.useState(false);
     const [pinnedIds, setPinnedIds] = React.useState<string[]>(getPinned);
+    const [selectionModeId, setSelectionModeId] = React.useState<string | null>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
 
+    const isMobile = useIsMobile();
     const { translateEnabled } = useTranslationPreference(myId);
+
+    React.useEffect(() => {
+        if (!selectionModeId) return;
+        const h = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setSelectionModeId(null);
+            }
+        };
+        document.addEventListener('mousedown', h);
+        return () => document.removeEventListener('mousedown', h);
+    }, [selectionModeId]);
+
 
     const handlePin = (conv: Conversation) => {
         const alreadyPinned = pinnedIds.includes(conv.id);
@@ -424,46 +544,107 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
     return (
         <>
-            <div className={cn('flex flex-col h-full overflow-hidden', className)}>
+            <div ref={containerRef} className={cn('flex flex-col h-full overflow-hidden', className)}>
 
                 {/* Header */}
                 <div className="shrink-0 flex flex-col gap-3">
-                    <div className="relative flex items-center justify-between py-1">
-                        <div className='flex items-center flex-1'>
-                            {view === 'archived' && (
+                    {selectionModeId ? (
+                        <div className="relative flex items-center justify-between py-1 px-1">
+                            <button
+                                onClick={() => setSelectionModeId(null)}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg text-white hover:bg-white/8 transition-colors cursor-pointer"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+
+                            <div className="flex items-center gap-5">
                                 <button
-                                    onClick={() => setView('normal')}
-                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer mr-2"
+                                    onClick={() => {
+                                        const conv = conversations.find(c => c.id === selectionModeId);
+                                        if (conv) handleMuteToggle(conv);
+                                        setSelectionModeId(null);
+                                    }}
+                                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                                    title="Mute/Unmute"
                                 >
-                                    <ChevronLeft className="w-4 h-4" />
+                                    <BellOff className="w-4.5 h-4.5" />
                                 </button>
-                            )}
+                                <button
+                                    onClick={() => {
+                                        const conv = conversations.find(c => c.id === selectionModeId);
+                                        if (conv) handlePin(conv);
+                                        setSelectionModeId(null);
+                                    }}
+                                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                                    title="Pin/Unpin"
+                                >
+                                    <Pin className="w-4.5 h-4.5" />
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const conv = conversations.find(c => c.id === selectionModeId);
+                                        if (conv) handleArchiveToggle(conv);
+                                        setSelectionModeId(null);
+                                    }}
+                                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                                    title="Archive/Unarchive"
+                                >
+                                    {conversations.find(c => c.id === selectionModeId)?.isArchived ? (
+                                        <SquareArrowUp className="w-4.5 h-4.5" />
+                                    ) : (
+                                        <SquareArrowDown className="w-4.5 h-4.5" />
+                                    )}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const conv = conversations.find(c => c.id === selectionModeId);
+                                        if (conv) setConfirmDelete(conv);
+                                        setSelectionModeId(null);
+                                    }}
+                                    className="text-red-500 hover:text-red-400 transition-colors cursor-pointer"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-4.5 h-4.5" />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="relative flex items-center justify-between py-1">
+                            <div className="flex items-center gap-2">
+                                {view === 'archived' && (
+                                    <button
+                                        onClick={() => setView('normal')}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                )}
+                                <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide">
+                                    {view === 'archived' ? 'Archived Chats' : 'Chats'}
+                                </h2>
+                            </div>
                             
-                            <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide">
-                                {view === 'archived' ? 'Archived Chats' : 'Chats'}
-                            </h2>
+                            <div className="flex items-center gap-1">
+                                {view === 'normal' && (
+                                    <button
+                                        onClick={() => setShowNewChat(true)}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
+                                        title="New Chat"
+                                    >
+                                        <SquarePen className="w-4 h-4" />
+                                    </button>
+                                )}
+                                {onClose && (
+                                    <button
+                                        onClick={onClose}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                        
-                        <div className="flex items-center gap-1">
-                            {view === 'normal' && (
-                                <button
-                                    onClick={() => setShowNewChat(true)}
-                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
-                                    title="New Chat"
-                                >
-                                    <SquarePen className="w-4 h-4" />
-                                </button>
-                            )}
-                            {onClose && (
-                                <button
-                                    onClick={onClose}
-                                    className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            )}
-                        </div>
-                    </div>
+                    )}
 
                     <div className="h-px w-full bg-white/8" />
 
@@ -473,7 +654,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             className="w-full h-15 flex items-center gap-4 px-5 rounded-2xl bg-white/5 hover:bg-white/10 transition-all text-left cursor-pointer"
                         >
                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                                <Archive className="w-5 h-5 text-gray-400" />
+                                <SquareArrowDown className="w-5 h-5 text-gray-400" />
                             </div>
                             <div className="flex-1 flex items-center justify-between min-w-0">
                                 <span className="text-white text-sm font-semibold">Archive Chats</span>
@@ -492,15 +673,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     )}
 
                     {view === 'normal' && (
-                        <div className="flex items-center gap-2 px-6 h-14 border border-white/15 rounded-full bg-white/3 focus-within:border-white/25 transition-colors">
+                        <div className="flex items-center gap-3 px-5 h-13 border border-white/10 rounded-full bg-white/5 focus-within:border-white/20 transition-all">
                             <input
                                 className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none"
-                                placeholder="Search Creator"
+                                placeholder="Search Creator Here..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 style={{ fontSize: '16px' }}
                             />
-                            <img src={SearchIcon} className="w-4 h-4 shrink-0 brightness-0 invert" alt="Search" />
+                            <img src={SearchIcon} className="w-[18px] h-[18px] shrink-0 opacity-60" alt="Search" />
                         </div>
                     )}
                 </div>
@@ -529,26 +710,34 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                     {view === 'normal' && (
                                         <button
                                             onClick={() => setShowNewChat(true)}
-                                            className="mt-1 px-6 py-2.5 rounded-full bg-[#FF7700] hover:bg-[#ff9922] text-black text-sm font-semibold transition-all active:scale-95"
+                                            className="mt-1 px-6 py-2.5 rounded-full bg-[#FF7700] hover:bg-[#ff9922] text-black text-sm font-semibold transition-all active:scale-95 cursor-pointer"
                                         >
                                             Find Creator to Chat
                                         </button>
                                     )}
                                 </div>
                             ) : (
-                                filtered.map(conv => (
+                                 filtered.map(conv => (
                                     <ChatListItem
                                         key={conv.id}
                                         conversation={conv}
-                                        isActive={activeConversationId === conv.id}
+                                        isActive={activeConversationId === conv.id || selectionModeId === conv.id}
                                         isPinned={pinnedIds.includes(conv.id)}
                                         myId={myId}
                                         translateEnabled={translateEnabled}
-                                        onClick={() => onSelect(conv)}
+                                        isMobile={isMobile}
+                                        onClick={() => {
+                                            if (selectionModeId) {
+                                                setSelectionModeId(null);
+                                                return;
+                                            }
+                                            onSelect(conv);
+                                        }}
                                         onDeleteRequest={c => setConfirmDelete(c)}
                                         onPinToggle={c => handlePin(c)}
                                         onMuteToggle={c => handleMuteToggle(c)}
                                         onArchiveToggle={c => handleArchiveToggle(c)}
+                                        onSelectionMode={id => setSelectionModeId(id)}
                                     />
                                 ))
                             )}
@@ -562,6 +751,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     onClose={() => setShowNewChat(false)}
                     onStartChat={handleStartChat}
                     isStarting={isStarting}
+                    conversations={conversations}
+                    isMobile={isMobile}
                 />
             )}
             {confirmDelete && (

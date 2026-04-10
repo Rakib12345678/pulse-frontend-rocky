@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { Loader2, ChevronDown } from 'lucide-react';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { Loader2, ChevronDown, Search, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -22,7 +22,10 @@ export const ChangeLanguageModal = ({
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [fetchErr, setFetchErr] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isOpen, setIsOpen] = useState(false);
     const backdropRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setLoading(true);
@@ -38,8 +41,23 @@ export const ChangeLanguageModal = ({
             })
             .catch(() => setFetchErr(true))
             .finally(() => setLoading(false));
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const filteredLanguages = useMemo(() => {
+        if (!searchQuery.trim()) return languages;
+        return languages.filter(l => 
+            l.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [languages, searchQuery]);
 
     const handleConfirm = async () => {
         if (!selected) return;
@@ -56,6 +74,8 @@ export const ChangeLanguageModal = ({
         }
     };
 
+    const selectedLanguageName = languages.find(l => l.code === selected)?.name ?? 'Select Language...';
+
     return (
         <div
             ref={backdropRef}
@@ -63,7 +83,7 @@ export const ChangeLanguageModal = ({
             className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300"
         >
             <div 
-                className="relative w-full max-w-[400px] rounded-[32px] shadow-2xl overflow-hidden p-10 flex flex-col items-center text-center backdrop-blur-[354px]"
+                className="relative w-full max-w-[500px] rounded-[32px] shadow-2xl p-10 flex flex-col items-center text-center backdrop-blur-[354px]"
                 style={{ 
                     background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' 
                 }}
@@ -80,19 +100,64 @@ export const ChangeLanguageModal = ({
                 ) : fetchErr ? (
                     <p className="text-center text-red-400 text-sm py-4">Failed to load languages. Please try again.</p>
                 ) : (
-                    <div className="w-full mb-10">
-                        <select
-                            value={selected}
-                            onChange={e => setSelected(e.target.value)}
-                            className="w-full h-12 pl-5 pr-12 rounded-full text-sm text-white bg-white/5 border border-white/10 focus:border-[#FF7700]/50 focus:outline-none appearance-none cursor-pointer transition-all"
+                    <div className="w-full mb-10 relative" ref={dropdownRef}>
+                        {/* Custom Searchable Dropdown Trigger */}
+                        <div
+                            onClick={() => setIsOpen(!isOpen)}
+                            className="w-full h-12 pl-5 pr-12 rounded-full text-sm text-white bg-white/5 border border-white/10 focus-within:border-[#FF7700]/50 flex items-center cursor-pointer transition-all hover:bg-white/10 relative"
                         >
-                            {languages.map((lang: Language) => (
-                                <option key={lang.code} value={lang.code} className="bg-[#1a1c23] text-white">
-                                    {lang.name}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                            <span className="truncate">{selectedLanguageName}</span>
+                            <ChevronDown className={cn("absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 transition-transform duration-200 pointer-events-none", isOpen && "rotate-180")} />
+                        </div>
+
+                        {/* Dropdown Menu */}
+                        {isOpen && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-[#1A1C23] border border-white/10 rounded-2xl shadow-2xl z-[10001] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                <div className="p-3 border-b border-white/5 relative">
+                                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search language..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="w-full h-10 pl-10 pr-10 bg-white/5 border border-white/5 rounded-xl text-sm text-white focus:outline-none focus:border-[#FF7700]/30 transition-all"
+                                        autoFocus
+                                    />
+                                    {searchQuery && (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); setSearchQuery(''); }}
+                                            className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="max-h-[220px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/10">
+                                    {filteredLanguages.length > 0 ? (
+                                        filteredLanguages.map((lang: Language) => (
+                                            <div
+                                                key={lang.code}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelected(lang.code);
+                                                    setIsOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "px-5 py-3 flex items-center justify-between cursor-pointer transition-colors text-sm",
+                                                    selected === lang.code ? "bg-[#FF7700] text-black" : "text-gray-300 hover:bg-white/5"
+                                                )}
+                                            >
+                                                <span>{lang.name}</span>
+                                                {selected === lang.code && <Check className="w-4 h-4" />}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="p-5 text-center text-gray-500 text-xs">No languages found</div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 

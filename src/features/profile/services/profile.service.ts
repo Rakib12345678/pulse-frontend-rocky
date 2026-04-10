@@ -164,10 +164,12 @@ export const useToggleFollow = () => {
         if (!oldData) return oldData;
 
         const updateCreator = (c: any) => {
-          if (c.id === targetUserId) {
+          if (c.id === targetUserId || (c.id === 0 && targetUserId === 0)) {
             return {
               ...c,
               followedByMe: !followedByMe,
+              isFollower: !followedByMe,
+              isFollowed: !followedByMe,
               followerCount: followedByMe
                 ? Math.max(0, (c.followerCount ?? 0) - 1)
                 : (c.followerCount ?? 0) + 1,
@@ -190,10 +192,12 @@ export const useToggleFollow = () => {
         if (!oldData) return oldData;
 
         const updateCreator = (c: any) => {
-          if (c.id === targetUserId) {
+          if (c.id === targetUserId || (c.id === 0 && targetUserId === 0)) {
             return {
               ...c,
               followedByMe: !followedByMe,
+              isFollower: !followedByMe,
+              isFollowed: !followedByMe,
               followerCount: followedByMe
                 ? Math.max(0, (c.followerCount ?? 0) - 1)
                 : (c.followerCount ?? 0) + 1,

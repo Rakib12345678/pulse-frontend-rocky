@@ -55,9 +55,11 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
     const messages = useMemo(() => {
         const confirmedTexts = new Set(streamMsgs.map(m => m.originalText));
-        const activePending = pendingMessages.filter(pm => !confirmedTexts.has(pm.originalText));
+        const activePending = pendingMessages.filter(pm => 
+            pm.conversationId === activeConvId && !confirmedTexts.has(pm.originalText)
+        );
         return [...streamMsgs, ...activePending];
-    }, [streamMsgs, pendingMessages]);
+    }, [streamMsgs, pendingMessages, activeConvId]);
 
     const [msgLoading, setMsgLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);

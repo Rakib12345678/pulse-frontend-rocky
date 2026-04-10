@@ -86,7 +86,7 @@ export const exploreService = {
     searchExplore: async (query: string): Promise<ExploreSearchResponse> => {
         try {
             const [creators, streams] = await Promise.all([
-                api.get('/users/search', { params: { query } }),
+                api.get('/explore/creators/search', { params: { query } }),
                 api.get('/stream/feed', { params: { query } }) // Fallback or search in feed
             ]);
 

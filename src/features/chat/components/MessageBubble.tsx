@@ -8,6 +8,7 @@ import { TickIcon } from './ChatSidebar';
 import { capitalizeName, formatMsgTime } from '../utils/ChatUtils';
 import type { Message } from '../types/chat.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { getRecentEmojis, saveRecentEmoji, type QuickReaction } from '../utils/EmojiUtils';
 
 export const isOnlyImage = (text: string, attachments?: any[]) => {
     const hasAttachments = !!(attachments && attachments.length > 0);
@@ -40,42 +41,9 @@ export const isGift = (text: string) => {
     return hasTag && !cleanText;
 };
 
-const QUICK_REACTIONS = [
-    { id: 'love', emoji: '❤️' },
-    { id: 'thumbsup', emoji: '👍' },
-    { id: 'fire', emoji: '🔥' },
-    { id: 'joy', emoji: '😂' },
-    { id: 'wow', emoji: '😮' },
-    { id: 'sad', emoji: '😢' },
-];
 
-/**
- * Checks BOTH originalText and translated text for special message patterns.
- */
-const detectSpecialMessage = (msg: Message): boolean => {
-    if (msg.attachments && msg.attachments.length > 0) return true;
-    const original = msg.originalText || '';
-    const translated = msg.text || '';
-    return (
-        isOnlyImage(original, msg.attachments) ||
-        isGift(original) ||
-        isOnlyImage(translated, msg.attachments) ||
-        isGift(translated)
-    );
-};
 
-/**
- * Pick the best content string to render for a special message.
- */
-const pickSpecialContent = (msg: Message): string => {
-    const original = msg.originalText || '';
-    const translated = msg.text || '';
 
-    if (original && (isOnlyImage(original, msg.attachments) || isGift(original))) {
-        return original;
-    }
-    return translated || original;
-};
 
 /**
  * Renders the message content, splitting by tags and extracting URLs/gifts structurally.
@@ -169,17 +137,14 @@ export const MessageBubble = ({
     onDelete, onReact, onDeleteReaction, onCopy, onImageLoad,
 }: MessageBubbleProps) => {
     
-    // Detect if this is a special message using a double-check strategy
-    const isSpecialMsg = detectSpecialMessage(message);
 
     // Decide which text to use as the base for rendering
     // Priority: 1. Me -> Original, 2. Normal Translated -> Translated, 3. Special -> pickSpecialContent (prioritizes original)
-    const rawContent = message.originalText || message.text || '';
     const receivedText = isMe
-        ? rawContent
-        : (translateEnabled && !isSpecialMsg)
+        ? (message.originalText || message.text || '')
+        : translateEnabled
             ? (message.text || message.originalText || '')
-            : pickSpecialContent(message);
+            : (message.originalText || message.text || '');
 
     const [hovered, setHovered] = useState(false);
     const [dropdownOpen, setDropdown] = useState(false);
@@ -187,7 +152,9 @@ export const MessageBubble = ({
     const [fullPickerOpen, setFullPickerOpen] = useState(false);
     const [showReactionModal, setShowReactionModal] = useState(false);
     const [removingReaction, setRemovingReaction] = useState<string | null>(null);
+    const [quickReactions, setQuickReactions] = useState<QuickReaction[]>(getRecentEmojis());
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const pickerRef = useRef<HTMLDivElement>(null);
     const isPending = message.status === 'pending';
     const myId = String(useAuthStore.getState().user?.id ?? '');
 
@@ -197,7 +164,23 @@ export const MessageBubble = ({
     const cancelLongPress = () => {
         if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     };
-    useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+    useEffect(() => {
+        const handleUpdate = (e: any) => {
+            if (e.detail) setQuickReactions(e.detail);
+        };
+        const handleClickOutside = (e: MouseEvent) => {
+            if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+                setQuickReactionOpen(false);
+            }
+        };
+        window.addEventListener('recent_emojis_updated', handleUpdate);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            window.removeEventListener('recent_emojis_updated', handleUpdate);
+            document.removeEventListener('mousedown', handleClickOutside);
+            if (timer.current) clearTimeout(timer.current);
+        };
+    }, []);
 
     const isSystemEvent =
         message.originalText?.trim() === 'has joined the live' ||
@@ -208,8 +191,11 @@ export const MessageBubble = ({
         setQuickReactionOpen(false);
         setFullPickerOpen(false);
         
+        // Save to recent list
+        saveRecentEmoji(emoji);
+        
         const type = typeof emoji === 'string' 
-            ? (QUICK_REACTIONS.find(r => r.emoji === emoji)?.id || 'love')
+            ? (quickReactions.find(r => r.emoji === emoji)?.id || emoji)
             : emoji.id;
         const native = typeof emoji === 'string' ? emoji : emoji.native;
 
@@ -229,7 +215,7 @@ export const MessageBubble = ({
         const totalCount = Object.values(message.reactions.counts).reduce((a, b) => a + b, 0);
         const uniqueEmojis = keys.map(type => {
             const reactionData = message.reactions!.latest.find(r => r.type === type);
-            return reactionData?.emoji || QUICK_REACTIONS.find(r => r.id === type)?.emoji || type;
+            return reactionData?.emoji || quickReactions.find(r => r.id === type)?.emoji || type;
         });
 
         const filteredEmojis = Array.from(new Set(uniqueEmojis.filter(Boolean)));
@@ -270,8 +256,6 @@ export const MessageBubble = ({
                             if (!r.user) return null;
                             const isMyReaction = String(r.user_id) === myId;
                             const isRemoving = removingReaction === r.type && isMyReaction;
-                            const emoji = r.emoji || QUICK_REACTIONS.find(qr => qr.id === r.type)?.emoji || r.type;
-                            
                             const handleRemove = async (e: React.MouseEvent) => {
                                 e.stopPropagation();
                                 if (isMyReaction && onDeleteReaction && !removingReaction) {
@@ -284,6 +268,8 @@ export const MessageBubble = ({
                                     }
                                 }
                             };
+
+                            const emoji = r.emoji || quickReactions.find(qr => qr.id === r.type)?.emoji || r.type;
 
                             return (
                                 <div 
@@ -329,7 +315,7 @@ export const MessageBubble = ({
                     setQuickReactionOpen(v => !v);
                 }}
                 className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/50 text-gray-400 hover:text-white transition-all shadow-sm",
+                    "w-6 h-6 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/50 text-gray-400 hover:text-white transition-all shadow-sm cursor-pointer",
                     (hovered || quickReactionOpen || fullPickerOpen) ? 'opacity-100' : 'opacity-0'
                 )}
             >
@@ -337,22 +323,24 @@ export const MessageBubble = ({
             </button>
 
             {quickReactionOpen && !fullPickerOpen && (
-                <div className={cn(
+                <div 
+                    ref={pickerRef}
+                    className={cn(
                     "absolute bottom-0 flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[100] animate-in duration-200",
                     alignment === 'left' ? 'left-full ml-3' : 'right-full mr-3'
                 )}>
-                    {QUICK_REACTIONS.map(r => (
+                    {quickReactions.map(r => (
                         <button
                             key={r.id}
                             onClick={(e2) => { e2.stopPropagation(); handleReaction(r.emoji); }}
-                            className="text-lg sm:text-xl hover:scale-125 transition-transform active:scale-95 px-0.5"
+                            className="text-lg sm:text-xl hover:scale-125 transition-transform active:scale-95 px-0.5 cursor-pointer"
                         >
                             {r.emoji}
                         </button>
                     ))}
                     <button
                         onClick={(e) => { e.stopPropagation(); setFullPickerOpen(true); }}
-                        className="w-7 h-7 ml-1 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors shadow-inner"
+                        className="w-7 h-7 ml-1 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors shadow-inner cursor-pointer"
                     >
                         <Plus className="w-4 h-4 text-white font-bold" />
                     </button>
@@ -445,10 +433,10 @@ export const MessageBubble = ({
                                     </div>
                                 </div>
                                 {!meIsGift && (
-                                    <button
+                                        <button
                                         onClick={() => setDropdown(v => !v)}
                                         className={cn(
-                                            'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10',
+                                            'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10 cursor-pointer',
                                             'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
                                             (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0',
                                         )}
@@ -541,7 +529,7 @@ export const MessageBubble = ({
                             <button
                                 onClick={() => setDropdown(v => !v)}
                                 className={cn(
-                                    'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10',
+                                    'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10 cursor-pointer',
                                     'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
                                     (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0'
                                 )}

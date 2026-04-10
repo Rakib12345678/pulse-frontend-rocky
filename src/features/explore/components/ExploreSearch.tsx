@@ -64,6 +64,7 @@ export const ExploreSearch: React.FC<ExploreSearchProps> = ({
                     </div>
                 </div>
                 <Button
+                    type="button"
                     onClick={() => onSearch()}
                     className="w-full md:w-auto bg-[#FF8800] hover:bg-[#ff9922] text-black font-black rounded-full px-10 h-12 text-sm transition-all cursor-pointer shadow-[0_0_20px_rgba(255,136,0,0.3)] hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border-none"
                 >

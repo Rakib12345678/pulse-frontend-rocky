@@ -2,9 +2,6 @@ import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { exploreService } from '../services/explore.service';
 import { ExploreData, ExploreSearchResponse } from '../types/explore.types';
-import { getStreamClient } from '@/features/chat/stream/streamClient';
-import { toAbsoluteUrl } from '@/features/chat/utils/chat';
-import { getDisplayName, capitalizeName } from '@/features/chat/utils/ChatUtils';
 
 export const useExplore = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -42,40 +39,36 @@ export const useExplore = () => {
             const query = searchQuery.trim();
             if (!query) return null;
 
-            // We still use Stream Client for user search as it's more efficient for autocomplete
-            let creators: any[] = [];
-            try {
-                const client = getStreamClient();
-                const resp = await client.queryUsers(
-                    { name: { $autocomplete: query } },
-                    {},
-                    { limit: 30 }
-                );
-
-                creators = resp.users
-                    .filter(u => u.id !== client.userID)
-                    .map(u => ({
-                        id: parseInt(u.id, 10) || 0,
-                        username: (u as any).username || (u as any).name || u.id,
-                        fullName: capitalizeName(getDisplayName({ id: u.id, name: u.name })),
-                        profileImage: toAbsoluteUrl((u as any).image ?? ''),
-                        followerCount: (u as any).followerCount || 0,
-                        isFollower: (u as any).isFollower || (u as any).followedByMe || false,
-                        followedByMe: (u as any).followedByMe || (u as any).isFollower || false,
-                        isLive: false,
-                        participantCount: 0,
-                        cohostCount: 0,
-                        cohosts: []
-                    }));
-            } catch {
-                creators = [];
-            }
-
             const results = await exploreService.searchExplore(query);
+            
+            // Handle case where results.creators might be an object containing the array
+            const creatorList = Array.isArray(results.creators) 
+                ? results.creators 
+                : (results.creators as any)?.data || (results.creators as any)?.users || [];
 
             return {
-                creators: creators.length > 0 ? creators : (results.creators as any),
-                streams: results.streams as any
+                creators: creatorList.map((u: any) => {
+                    // Try to extract ID from various common field names or nested objects
+                    const id = u.id || u.userId || u.userID || u.user_id || u.pk || u._id || u.user?.id || u.user?.userId || 0;
+                    
+                    return {
+                        id,
+                        username: u.username || u.user?.username || 'user',
+                        fullName: u.fullname || u.fullName || u.displayName || u.user?.fullname || u.user?.fullName || u.username || 'Unknown',
+                        profileImage: u.profileImage || u.avatar || u.user?.profileImage || '',
+                        followerCount: u.followerCount || u.user?.followerCount || 0,
+                        isFollower: u.isFollowed || u.isFollowing || u.isFollower || u.followedByMe || u.user?.isFollowed || false,
+                        followedByMe: u.isFollowed || u.followedByMe || u.isFollowing || u.isFollower || u.user?.isFollowed || false,
+                        isLive: u.isLive || u.user?.isLive || false,
+                        participantCount: u.participantCount || 0,
+                        cohostCount: u.cohostCount || 0,
+                        cohosts: u.cohosts || []
+                    };
+                }),
+                streams: (Array.isArray(results.streams) ? results.streams : (results.streams as any)?.data || []).map((s: any) => ({
+                    ...s,
+                    id: s.id || 0
+                }))
             };
         },
         enabled: searchQuery.trim().length > 0,

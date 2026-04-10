@@ -1,15 +1,17 @@
 import { useEffect, useRef } from 'react';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import { cn } from '@/lib/utils';
 
 interface EmojiPickerPopupProps {
     onSelect: (emoji: any) => void;
     onClose: () => void;
     className?: string;
     style?: React.CSSProperties;
+    isMobile?: boolean;
 }
 
-export const EmojiPickerPopup = ({ onSelect, onClose, className, style }: EmojiPickerPopupProps) => {
+export const EmojiPickerPopup = ({ onSelect, onClose, className, style, isMobile }: EmojiPickerPopupProps) => {
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -30,15 +32,32 @@ export const EmojiPickerPopup = ({ onSelect, onClose, className, style }: EmojiP
         '--rgb-border':        '255, 255, 255',
         '--color-border':      'rgba(255,255,255,0.08)',
         '--color-border-over': 'rgba(255,255,255,0.15)',
+        width: isMobile ? '100%' : undefined,
         ...style,
     } as any;
 
     return (
         <div
             ref={ref}
-            className={className || "absolute bottom-17 sm:bottom-18 right-3 sm:right-4 z-50"}
+            className={cn(
+                className || "absolute bottom-17 sm:bottom-18 right-3 sm:right-4 z-50",
+                isMobile && "w-full min-w-full flex flex-col"
+            )}
             style={defaultStyle}
         >
+            {isMobile && (
+                <style>{`
+                    em-emoji-picker {
+                        width: 100% !important;
+                        min-width: 100% !important;
+                        max-width: 100% !important;
+                        --width: 100% !important;
+                    }
+                    div[data-emoji-picker] {
+                        width: 100% !important;
+                    }
+                `}</style>
+            )}
             <Picker
                 data={data}
                 onEmojiSelect={(emoji: any) => {
@@ -50,7 +69,9 @@ export const EmojiPickerPopup = ({ onSelect, onClose, className, style }: EmojiP
                 previewPosition="none"
                 skinTonePosition="none"
                 maxFrequentRows={1}
-                perLine={8}
+                navPosition={isMobile ? "bottom" : "top"}
+                perLine={isMobile ? 8 : 8}
+                dynamicWidth={isMobile}
             />
         </div>
     );

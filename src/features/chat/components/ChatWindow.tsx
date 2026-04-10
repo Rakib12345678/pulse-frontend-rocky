@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, Loader2, Smile, WifiOff, Gift, X, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, Loader2, Smile, WifiOff, Gift, X, ChevronDown, ChevronUp, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useTranslationPreference } from '../hooks/useTranslationPreference';
@@ -7,6 +7,7 @@ import type { Conversation, Message } from '../types/chat.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { Switch } from '@/components/ui/switch';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Avatar } from '@/features/chat/components/Avatar';
 import { capitalizeName, formatLastSeen, getDayKey, getDateLabel } from '@/features/chat/utils/ChatUtils';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
@@ -18,8 +19,11 @@ import { DateSeparator } from './DateSeparator';
 import { GiftCarousel } from './GiftCarousel';
 import { EmojiPickerPopup } from './EmojiPickerPopup';
 import { MessageBubble } from './MessageBubble';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ChatEmptyState } from './ChatEmptyState';
 import { EmptyConversation } from './EmptyConversation';
+import { TranslateDrawer } from './TranslateDrawer';
+import { TranslateTogglePopover } from './TranslateTogglePopover';
 
 import sendIcon from '@/assets/Send.svg';
 import LiveIcon from '@/assets/Live.svg';
@@ -70,6 +74,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 }) => {
     const { user, wallet } = useAuthStore();
     const { openModal: openCoinsModal } = useCoinsStore();
+    const isMobile = useIsMobile();
     const myId = String(user?.id ?? '');
     const isInternetConnected = useOnlineStatus();
     const handleGoLiveClick = useGoLive();
@@ -77,6 +82,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const { getDraft, setDraft } = useDraftPerConversation(conversation?.id ?? null);
     const [draftValue, setDraftValue] = useState('');
     const [showLangModal, setShowLangModal] = useState(false);
+    const [showTranslateDrawer, setShowTranslateDrawer] = useState(false);
+    const [showTranslateMenu, setShowTranslateMenu] = useState(false);
     const [showEmoji, setShowEmoji] = useState(false);
     const [showGifts, setShowGifts] = useState(false);
     const [pendingImage, setPendingImage] = useState<{ file: File; url: string } | null>(null);
@@ -301,10 +308,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     )}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm truncate">
+                    <p className="text-white font-bold text-[15px] truncate flex items-center gap-1.5 focus:outline-none outline-none">
                         {capitalizeName(conversation.participant.name)}
                     </p>
-                    <p className={cn('text-[11px]', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
+                    <p className={cn('text-[11px] font-medium', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
                         {conversation.isOnline
                             ? 'Online'
                             : conversation.lastActive
@@ -313,27 +320,86 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     </p>
                 </div>
 
-                {/* Translate toggle */}
-                <div className="flex flex-col items-center gap-1.5 shrink-0 mr-4">
-                    <div className="flex items-center gap-3 px-3 sm:px-4 py-2 rounded-lg bg-white/8 border border-white/10">
-                        <span className="hidden sm:block text-[13px] text-gray-300 font-medium select-none whitespace-nowrap">
-                            Translate Chat
-                        </span>
-                        <Switch
-                            checked={translateEnabled}
-                            onCheckedChange={handleToggleTranslate}
-                            aria-label="Toggle translate chat"
-                            className="data-[state=checked]:bg-[#FF7700] data-[state=unchecked]:bg-white/20 cursor-pointer"
-                        />
+                {/* Translate toggle (Desktop) */}
+                {user?.preferredLanguage && (
+                    <div className="hidden md:flex flex-col items-center gap-1.5 shrink-0 mr-4">
+                        <div className="flex items-center gap-3 px-3 sm:px-4 py-2 rounded-lg bg-white/8 border border-white/10">
+                            <span className="hidden sm:block text-[13px] text-gray-300 font-medium select-none whitespace-nowrap">
+                                Translate Chat
+                            </span>
+                            <Switch
+                                checked={translateEnabled}
+                                onCheckedChange={handleToggleTranslate}
+                                aria-label="Toggle translate chat"
+                                className="data-[state=checked]:bg-[#FF7700] data-[state=unchecked]:bg-white/20 cursor-pointer"
+                            />
+                        </div>
+                        {translateEnabled && (
+                            <button
+                                onClick={() => setShowLangModal(true)}
+                                className="text-[12px] text-[#4A9EFF] hover:text-[#7ab8ff] underline underline-offset-2 transition-colors font-medium leading-none cursor-pointer"
+                            >
+                                Change Language
+                            </button>
+                        )}
                     </div>
-                    {translateEnabled && (
-                        <button
-                            onClick={() => setShowLangModal(true)}
-                            className="text-[12px] text-[#4A9EFF] hover:text-[#7ab8ff] underline underline-offset-2 transition-colors font-medium leading-none cursor-pointer"
-                        >
-                            Change Language
-                        </button>
-                    )}
+                )}
+
+                {/* Translate Toggle (Mobile / Tablet Overlay) */}
+                <div className="relative shrink-0 mr-2 md:hidden">
+                    <Popover open={showTranslateMenu} onOpenChange={setShowTranslateMenu}>
+                        <PopoverTrigger asChild>
+                            <button
+                                className={cn(
+                                    "w-9 h-9 flex items-center justify-center rounded-full transition-all cursor-pointer relative",
+                                    translateEnabled && user?.preferredLanguage
+                                        ? "border border-[#FF7700] text-white"
+                                        : "bg-white/5 text-gray-400"
+                                )}
+                            >
+                                {showTranslateMenu ? (
+                                    <ChevronUp className="w-5 h-5" />
+                                ) : (
+                                    <ChevronDown className="w-5 h-5" />
+                                )}
+
+                                {/* The "dot" from user's description - active status indicator */}
+                                {translateEnabled && user?.preferredLanguage && (
+                                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-[#0d0d0d]" />
+                                )}
+                            </button>
+                        </PopoverTrigger>
+
+                        {user?.preferredLanguage && translateEnabled ? (
+                            <TranslateTogglePopover
+                                enabled={translateEnabled}
+                                onToggle={(val) => {
+                                    setTranslate(val);
+                                    if (!val) setShowTranslateMenu(false);
+                                }}
+                                onChangeLanguage={() => {
+                                    setShowTranslateMenu(false);
+                                    setShowTranslateDrawer(true);
+                                }}
+                            />
+                        ) : (
+                            <PopoverContent
+                                align="end"
+                                sideOffset={12}
+                                className="w-auto p-0 bg-transparent border-none shadow-none z-[10000]"
+                            >
+                                <button
+                                    onClick={() => {
+                                        setShowTranslateMenu(false);
+                                        setShowTranslateDrawer(true);
+                                    }}
+                                    className="bg-[#FF7700] text-black font-bold px-5 py-2.5 rounded-full whitespace-nowrap shadow-xl active:scale-95 transition-all text-sm cursor-pointer"
+                                >
+                                    Translate Chat
+                                </button>
+                            </PopoverContent>
+                        )}
+                    </Popover>
                 </div>
             </div>
 
@@ -402,6 +468,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {showGifts && !draftValue.trim() && (
                 <div ref={giftRef}>
                     <GiftCarousel
+                        coinBalance={wallet?.coinBalance ?? 0}
                         onSelectGift={gift => {
                             if ((wallet?.coinBalance ?? 0) < gift.noOfCoin) {
                                 toast.error('Insufficient balance');
@@ -457,34 +524,97 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
 
             <div className={cn(
-                'shrink-0 px-2 sm:px-4 lg:px-8 py-4 flex items-center border-t border-white/5 md:mb-15',
+                'shrink-0 border-t border-white/5 md:mb-15 flex flex-col',
                 mobileFullscreen && 'pb-7 md:pb-5',
             )}>
-                <div className="w-full flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 relative">
-                    {showEmoji && (
-                        <div className="absolute bottom-full right-0 mb-4 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200">
-                            <EmojiPickerPopup
-                                onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
-                                onClose={() => setShowEmoji(false)}
-                                className="shadow-2xl border border-white/10 rounded-2xl scale-90 sm:scale-100 origin-bottom-right"
+                <div className="px-2 sm:px-4 lg:px-8 py-4 w-full h-full">
+                    <div className="w-full flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 relative">
+                        {showEmoji && !isMobile && (
+                            <div className="absolute bottom-full right-0 mb-4 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200 lg:mr-8 sm:mr-4">
+                                <EmojiPickerPopup
+                                    onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
+                                    onClose={() => setShowEmoji(false)}
+                                    className="shadow-2xl border border-white/10 rounded-2xl scale-90 sm:scale-100 origin-bottom-right"
+                                />
+                            </div>
+                        )}
+                        <div className={cn(
+                            'flex-[4] flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
+                            !isInternetConnected
+                                ? 'border-yellow-500/30 focus-within:border-yellow-500/50'
+                                : 'border-white/15 focus-within:border-white/30',
+                        )}>
+                            <input
+                                ref={inputRef}
+                                value={draftValue}
+                                onChange={e => handleDraftChange(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder={isInternetConnected ? 'Type Message Here...' : 'No connection...'}
+                                className="flex-1 min-w-0 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
+                                style={{ fontSize: '16px' }}
                             />
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleImageSelect}
+                            />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="transition-colors shrink-0 text-gray-500 hover:text-[#FF7700] cursor-pointer"
+                                title="Attach Image"
+                            >
+                                <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowEmoji(v => !v);
+                                }}
+                                className={cn(
+                                    'transition-colors shrink-0 cursor-pointer p-1',
+                                    showEmoji ? 'text-[#FF7700]' : 'text-gray-500 hover:text-[#FF7700]',
+                                )}
+                            >
+                                <Smile className="w-5 h-5" />
+                            </button>
                         </div>
-                    )}
-                    <div className={cn(
-                        'flex-[4] flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
-                        !isInternetConnected
-                            ? 'border-yellow-500/30 focus-within:border-yellow-500/50'
-                            : 'border-white/15 focus-within:border-white/30',
-                    )}>
-                        <input
-                            ref={inputRef}
-                            value={draftValue}
-                            onChange={e => handleDraftChange(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder={isInternetConnected ? 'Type Message Here...' : 'No connection...'}
-                            className="flex-1 min-w-0 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
-                            style={{ fontSize: '16px' }}
-                        />
+
+                        {/* Mobile buttons */}
+                        {isMobile && (
+                            <div className="flex items-center gap-2">
+                                {(draftValue.trim() || pendingImage) ? (
+                                    <button
+                                        onClick={handleSend}
+                                        disabled={!canSend}
+                                        className={cn(
+                                            'w-13 h-13 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 cursor-pointer shadow-xl',
+                                            canSend ? 'bg-[#FF7700] shadow-orange-500/30' : 'bg-[#1a1a1a] cursor-not-allowed opacity-50',
+                                        )}
+                                    >
+                                        {!isInternetConnected
+                                            ? <WifiOff className="w-6 h-6 text-white" />
+                                            : <img src={sendIcon} alt="Send" className="w-6 h-6" />
+                                        }
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowGifts(v => !v);
+                                        }}
+                                        className={cn(
+                                            'w-13 h-13 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 cursor-pointer shadow-xl border border-white/5',
+                                            showGifts ? 'bg-[#FF7700] text-black border-[#FF7700]/30' : 'bg-[#FF7700] text-black',
+                                        )}
+                                    >
+                                        <Gift className="w-6 h-6" />
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         <input
                             type="file"
                             accept="image/*"
@@ -492,97 +622,72 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             ref={fileInputRef}
                             onChange={handleImageSelect}
                         />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="transition-colors shrink-0 text-gray-500 hover:text-[#FF7700] cursor-pointer"
-                            title="Attach Image"
-                        >
-                            <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowEmoji(v => !v);
-                            }}
-                            className={cn(
-                                'transition-colors shrink-0 cursor-pointer',
-                                showEmoji ? 'text-[#FF7700]' : 'text-gray-500 hover:text-[#FF7700]',
-                            )}
-                        >
-                            <Smile className="w-4 h-4 sm:w-5 sm:h-5" />
-                        </button>
-                    </div>
 
-                    {/* Mobile buttons */}
-                    <div className="sm:hidden flex items-center gap-2">
-                        <button
-                            onClick={handleSend}
-                            disabled={!canSend}
-                            className={cn(
-                                'w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 cursor-pointer',
-                                canSend ? 'bg-[#FF7700] shadow-lg shadow-orange-500/30' : 'bg-[#111213] cursor-not-allowed opacity-50',
-                            )}
-                        >
-                            {!isInternetConnected
-                                ? <WifiOff className="w-5 h-5 text-white" />
-                                : <img src={sendIcon} alt="Send" className="w-5 h-5" />
-                            }
-                        </button>
-                        {!draftValue.trim() && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowGifts(v => !v);
-                                }}
-                                className={cn(
-                                    'w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-95 bg-[#111213] border border-white/10 cursor-pointer',
-                                    showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400',
+                        {/* Desktop buttons */}
+                        {!isMobile && (
+                            <div className="flex items-center gap-3 shrink-0">
+                                <button
+                                    onClick={handleSend}
+                                    disabled={!canSend}
+                                    className={cn(
+                                        'h-11 sm:h-12 w-20 sm:w-28 lg:w-36 rounded-full text-sm font-bold transition-all flex items-center justify-center gap-2 shrink cursor-pointer',
+                                        canSend
+                                            ? 'bg-[#FF7700] text-white hover:bg-[#ff8800] active:scale-95 shadow-lg shadow-orange-500/20'
+                                            : 'bg-[#111213] text-gray-500 cursor-not-allowed',
+                                    )}
+                                >
+                                    {!isInternetConnected ? <WifiOff className="w-3.5 h-3.5" /> : null}
+                                    Send
+                                </button>
+
+                                {!draftValue.trim() && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setShowGifts(v => !v);
+                                        }}
+                                        className={cn(
+                                            'w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all active:scale-95 bg-[#111213] border shrink-0 cursor-pointer',
+                                            showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400 hover:text-white border-white/10',
+                                        )}
+                                        title="Send Gift"
+                                    >
+                                        <Gift className="w-5 h-5" />
+                                    </button>
                                 )}
-                            >
-                                <Gift className="w-4 h-4" />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Desktop buttons */}
-                    <div className="hidden sm:flex items-center gap-3 shrink-0">
-                        <button
-                            onClick={handleSend}
-                            disabled={!canSend}
-                            className={cn(
-                                'h-11 sm:h-12 w-20 sm:w-28 lg:w-36 rounded-full text-sm font-bold transition-all flex items-center justify-center gap-2 shrink cursor-pointer',
-                                canSend
-                                    ? 'bg-[#FF7700] text-white hover:bg-[#ff8800] active:scale-95 shadow-lg shadow-orange-500/20'
-                                    : 'bg-[#111213] text-gray-500 cursor-not-allowed',
-                            )}
-                        >
-                            {!isInternetConnected ? <WifiOff className="w-3.5 h-3.5" /> : null}
-                            Send
-                        </button>
-
-                        {!draftValue.trim() && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowGifts(v => !v);
-                                }}
-                                className={cn(
-                                    'w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all active:scale-95 bg-[#111213] border shrink-0 cursor-pointer',
-                                    showGifts ? 'text-[#FF7700] border-[#FF7700]/30' : 'text-gray-400 hover:text-white border-white/10',
-                                )}
-                                title="Send Gift"
-                            >
-                                <Gift className="w-5 h-5" />
-                            </button>
+                            </div>
                         )}
                     </div>
                 </div>
+
+                {/* Mobile Emoji Picker (Below Input, True 100% Width) */}
+                {showEmoji && isMobile && (
+                    <div className="w-full z-[100] animate-in slide-in-from-bottom-2 duration-300">
+                        <EmojiPickerPopup
+                            isMobile
+                            onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
+                            onClose={() => setShowEmoji(false)}
+                            className="w-full relative shadow-none"
+                        />
+                    </div>
+                )}
             </div>
 
             {showLangModal && (
                 <ChangeLanguageModal
                     onClose={() => setShowLangModal(false)}
                     onSuccess={() => toast.success('Language updated successfully')}
+                />
+            )}
+
+            {isMobile && (
+                <TranslateDrawer
+                    open={showTranslateDrawer}
+                    onOpenChange={setShowTranslateDrawer}
+                    onSuccess={() => {
+                        toast.success('Translation language updated');
+                        setTranslate(true);
+                    }}
                 />
             )}
 

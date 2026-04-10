@@ -5,9 +5,10 @@ import type { GiftData } from '../types/chat.types';
 
 interface GiftCarouselProps {
     onSelectGift: (gift: GiftData) => void;
+    coinBalance?: number;
 }
 
-export const GiftCarousel = ({ onSelectGift }: GiftCarouselProps) => {
+export const GiftCarousel = ({ onSelectGift, coinBalance = 0 }: GiftCarouselProps) => {
     const [gifts, setGifts] = useState<GiftData[]>([]);
     const [loading, setLoading] = useState(true);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -39,9 +40,14 @@ export const GiftCarousel = ({ onSelectGift }: GiftCarouselProps) => {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF7700]/5 rounded-full blur-2xl pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#3E2AB5]/5 rounded-full blur-2xl pointer-events-none" />
 
+                <div className="absolute top-3 right-6 z-20 flex md:hidden items-center gap-1.5 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+                    <span className="text-[11px] font-bold text-gray-300">Balance: {coinBalance}</span>
+                </div>
+
                 <button 
                     onClick={() => scroll('left')} 
-                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors z-10"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors z-10 cursor-pointer"
                 >
                     <ChevronLeft className="w-4 h-4 text-white" />
                 </button>
@@ -51,7 +57,7 @@ export const GiftCarousel = ({ onSelectGift }: GiftCarouselProps) => {
                         <button
                             key={gift.id}
                             onClick={() => onSelectGift(gift)}
-                            className="flex flex-col items-center gap-2 shrink-0 snap-start group/item active:scale-95 transition-transform"
+                            className="flex flex-col items-center gap-2 shrink-0 snap-start group/item active:scale-95 transition-transform cursor-pointer"
                         >
                             <div className="w-14 h-14 rounded-2xl bg-white/5 group-hover/item:bg-white/10 flex items-center justify-center transition-colors overflow-hidden border border-white/5 group-hover/item:border-white/10">
                                 <img src={gift.iconUrl} alt={gift.name} className="w-10 h-10 object-contain" />
@@ -66,7 +72,7 @@ export const GiftCarousel = ({ onSelectGift }: GiftCarouselProps) => {
 
                 <button 
                     onClick={() => scroll('right')} 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors z-10"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors z-10 cursor-pointer"
                 >
                     <ChevronRight className="w-4 h-4 text-white" />
                 </button>

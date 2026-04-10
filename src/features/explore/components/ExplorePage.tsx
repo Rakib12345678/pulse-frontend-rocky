@@ -10,12 +10,8 @@ import { useExplore } from '../hooks/useExplore';
 import { Loader2 } from 'lucide-react';
 import { formatViewerCount } from '@/features/for-you/hooks/useStreamFeed';
 import bunnyTeacher from '@/assets/bunnyTeacher.png';
-import { useStreamInit } from '@/features/chat/stream/useStreamInit';
 
 export const ExplorePage: React.FC = () => {
-    // Initialize stream client so we can search users
-    useStreamInit();
-
     const {
         exploreData,
         isLoading,
@@ -74,7 +70,7 @@ export const ExplorePage: React.FC = () => {
                 />
             </div>
 
-            {isSearching ? (
+            {(isSearching && !searchResults) ? (
                 <div className="flex flex-col items-center justify-center py-20 animate-in fade-in duration-300">
                     <Loader2 className="h-12 w-12 animate-spin text-[#FF8800] mb-4" />
                     <p className="text-gray-400 font-medium">Searching for creators...</p>
@@ -95,23 +91,24 @@ export const ExplorePage: React.FC = () => {
                             title="Found Users"
                             hasBackground={false}
                         >
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                                {searchResults.creators.map((item) => (
-                                    <CreatorCard 
-                                        key={item.id} 
-                                        creator={{
-                                            id: item.id,
-                                            username: item.username,
-                                            displayName: item.fullName,
-                                            profileImage: item.profileImage,
-                                            followerCount: item.followerCount,
-                                            isFollower: item.isFollower,
-                                            followedByMe: item.followedByMe || item.isFollower || false,
-                                            isLive: item.isLive,
-                                            category: item.category,
-                                            cohosts: item.cohosts
-                                        }} 
-                                    />
+                            <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
+                                {searchResults.creators.filter(Boolean).map((item) => (
+                                    <div key={item.id || item.username} className="w-[160px] sm:w-[180px] md:w-[200px] xl:w-[220px] flex-shrink-0 flex">
+                                        <CreatorCard 
+                                            creator={{
+                                                id: item.id,
+                                                username: item.username,
+                                                displayName: item.fullName,
+                                                profileImage: item.profileImage,
+                                                followerCount: item.followerCount,
+                                                isFollower: item.isFollower,
+                                                followedByMe: item.followedByMe || item.isFollower || false,
+                                                isLive: item.isLive,
+                                                category: item.category,
+                                                cohosts: item.cohosts
+                                            }} 
+                                        />
+                                    </div>
                                 ))}
                             </div>
                         </ExploreSection>
