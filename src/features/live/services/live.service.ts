@@ -54,14 +54,24 @@ export const liveService = {
     },
 
     // End a live stream
-    endLiveStream: async (callId: string): Promise<void> => {
+    endLiveStream: async (callId: string, save: boolean = true): Promise<void> => {
         try {
-            // Updated to match backend swagger: POST /api/stream/end?callId=...
+            // Updated to match backend swagger: POST /api/stream/end?callId=...&save=...
             await api.post('/stream/end', null, {
-                params: { callId }
+                params: { callId, save }
             });
         } catch (error) {
             console.error('Failed to end live stream:', error);
+            throw error;
+        }
+    },
+
+    // Start recording for a live stream
+    startRecording: async (callId: string): Promise<void> => {
+        try {
+            await api.post('/stream/recording/start', { callId });
+        } catch (error) {
+            console.error('Failed to start recording:', error);
             throw error;
         }
     },
@@ -133,12 +143,23 @@ export const liveService = {
     },
 
 
-    // Sync participants
     syncParticipants: async (callId: string, cohosts: { username: string; profileImage: string; status: string }[]): Promise<void> => {
         try {
             await api.post('/stream/sync-participants', { cohosts }, { params: { callId } });
         } catch (error) {
             console.error('Failed to sync participants:', error);
+            throw error;
+        }
+    },
+
+    getStreamByCallId: async (callId: string): Promise<FeedStreamItem> => {
+        try {
+            const response = await api.get(`/stream/details`, {
+                params: { callId }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to get stream details:', error);
             throw error;
         }
     }

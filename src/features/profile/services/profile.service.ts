@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import type { User, LiveStream, LiveStatus } from '@/features/profile/services/profile.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/lib/api';
@@ -21,9 +21,28 @@ const fetchUserByUsername = async (username: string): Promise<User> => {
   return data;
 };
 
-// Past live streams
+// Past live streams (User specific)
 const fetchPastLiveStreams = async (userId: number): Promise<LiveStream[]> => {
   const { data } = await api.get(`/users/${userId}/live-streams`);
+  return data;
+};
+
+// Global past live streams (Can be filtered by user)
+const fetchGlobalPastLiveStreams = async (page = 0, size = 20, userId?: number): Promise<{ data: any[], hasMore: boolean, page: number }> => {
+  const params: any = { page, size };
+  const url = userId ? `stream/recording/past-live/${userId}` : 'stream/recording/past-live';
+  
+  const { data } = await api.get(url, {
+    params
+  });
+  
+  if (Array.isArray(data)) {
+    return {
+      data,
+      hasMore: data.length === size,
+      page
+    };
+  }
   return data;
 };
 
@@ -78,6 +97,16 @@ export const usePastLiveStreams = (userId?: number) => {
     enabled: !!userId,
     staleTime: 2 * 60 * 1000,
     retry: false,
+  });
+};
+
+export const useGlobalPastLiveStreams = (userId?: number, limit = 20) => {
+  return useInfiniteQuery({
+    queryKey: ['globalPastLiveStreams', userId],
+    queryFn: ({ pageParam = 0 }) => fetchGlobalPastLiveStreams(pageParam as number, limit, userId),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    initialPageParam: 0,
+    staleTime: 5 * 60 * 1000,
   });
 };
 

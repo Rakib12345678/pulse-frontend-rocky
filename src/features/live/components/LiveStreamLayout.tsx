@@ -379,6 +379,13 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                             await _call.goLive();
                         }
                         toast.success("Your stream is now live and visible to viewers!");
+                        
+                        // Start recording AFTER successful join and goLive
+                        if (_callId) {
+                            liveService.startRecording(_callId).catch(err => {
+                                console.error("Failed to start recording:", err);
+                            });
+                        }
                     } catch (e) {
                         console.error("Failed to go live:", e);
                     }
@@ -442,7 +449,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                     const { isEndingStream } = useGoLiveStore.getState();
 
                     if (!isEndingStream) {
-                        liveService.endLiveStream(_callId).catch((err) => {
+                        liveService.endLiveStream(_callId, false).catch((err) => {
                             console.error('Failed to end live stream on navigate away:', err);
                         });
                     }

@@ -2,7 +2,7 @@ import React from 'react';
 import { ExploreSearch } from './ExploreSearch';
 import { ExploreSection } from './ExploreSection';
 import { CreatorCard } from './CreatorCard';
-import { ExploreLiveCard } from './ExploreLiveCard';
+import { StreamCard } from '@/components/StreamCard';
 import { ExploreEmptyState } from './ExploreEmptyState';
 import { ExploreNoDataState } from './ExploreNoDataState';
 import { GoLiveButton } from '@/features/for-you/components/GoLiveButton';
@@ -94,7 +94,7 @@ export const ExplorePage: React.FC = () => {
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
                                 {searchResults.creators.filter(Boolean).map((item) => (
                                     <div key={item.id || item.username} className="w-[160px] sm:w-[180px] md:w-[200px] xl:w-[220px] flex-shrink-0 flex">
-                                        <CreatorCard 
+                                        <CreatorCard
                                             creator={{
                                                 id: item.id,
                                                 username: item.username,
@@ -106,7 +106,7 @@ export const ExplorePage: React.FC = () => {
                                                 isLive: item.isLive,
                                                 category: item.category,
                                                 cohosts: item.cohosts
-                                            }} 
+                                            }}
                                         />
                                     </div>
                                 ))}
@@ -126,7 +126,8 @@ export const ExplorePage: React.FC = () => {
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
                                 {exploreData.trendingStreams.map((item) => (
                                     <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
-                                        <ExploreLiveCard
+                                        <StreamCard
+                                            variant="explore"
                                             callId={item.id.toString()}
                                             thumbnailUrl={item.profileImage || bunnyTeacher}
                                             avatarUrl={item.profileImage || bunnyTeacher}
@@ -135,7 +136,8 @@ export const ExplorePage: React.FC = () => {
                                             followersCount={formatViewerCount(item.followerCount)}
                                             isLive={item.isLive}
                                             category={item.category}
-                                            cohosts={item.cohosts.map(c => ({ ...c, status: 'active' }))}
+                                            cohosts={item.cohosts}
+                                            createdByUserId={(item as any).createdByUserId}
                                         />
                                     </div>
                                 ))}
@@ -179,7 +181,8 @@ export const ExplorePage: React.FC = () => {
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
                                 {exploreData.recommendedStreams.map((item) => (
                                     <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
-                                        <ExploreLiveCard
+                                        <StreamCard
+                                            variant="explore"
                                             callId={item.id.toString()}
                                             thumbnailUrl={item.profileImage || bunnyTeacher}
                                             avatarUrl={item.profileImage || bunnyTeacher}
@@ -188,7 +191,8 @@ export const ExplorePage: React.FC = () => {
                                             followersCount={formatViewerCount(item.followerCount)}
                                             isLive={item.isLive}
                                             category={item.category}
-                                            cohosts={item.cohosts.map(c => ({ ...c, status: 'active' }))}
+                                            cohosts={item.cohosts}
+                                            createdByUserId={(item as any).createdByUserId}
                                         />
                                     </div>
                                 ))}
@@ -205,7 +209,8 @@ export const ExplorePage: React.FC = () => {
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
                                 {exploreData.popularStreams.map((item) => (
                                     <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
-                                        <ExploreLiveCard
+                                        <StreamCard
+                                            variant="explore"
                                             callId={item.id.toString()}
                                             thumbnailUrl={item.profileImage || bunnyTeacher}
                                             avatarUrl={item.profileImage || bunnyTeacher}
@@ -214,7 +219,8 @@ export const ExplorePage: React.FC = () => {
                                             followersCount={formatViewerCount(item.followerCount)}
                                             isLive={item.isLive}
                                             category={item.category}
-                                            cohosts={item.cohosts.map(c => ({ ...c, status: 'active' }))}
+                                            cohosts={item.cohosts}
+                                            createdByUserId={(item as any).createdByUserId}
                                         />
                                     </div>
                                 ))}

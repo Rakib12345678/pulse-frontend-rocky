@@ -1,11 +1,11 @@
-import { Grid3X3, LayoutDashboard, Video } from 'lucide-react';
+import { useEffect, useRef, useCallback } from 'react';
+import { Grid3X3, LayoutDashboard, Video, Loader2 } from 'lucide-react';
 import {
   useMoments,
-  usePastLiveStreams,
+  useGlobalPastLiveStreams,
 } from '@/features/profile/services/profile.service';
 import { EmptyState } from './EmptyState';
-import { LiveCard } from '@/features/live/components/LiveCard';
-import type { LiveStream } from '@/features/profile/services/profile.types';
+import { StreamCard } from '@/components/StreamCard';
 
 interface ProfileMediaSectionProps {
   userId: number;
@@ -25,11 +25,40 @@ export const ProfileMediaSection = ({
   onGoLive,
 }: ProfileMediaSectionProps) => {
   const momentsQuery = useMoments(userId);
-  const livesQuery = usePastLiveStreams(userId);
+  const {
+    data: globalPastLivesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: isRecordingsLoading
+  } = useGlobalPastLiveStreams(userId);
 
   const isMoments = activeTab === 'moments';
-  const data = isMoments ? momentsQuery.data : livesQuery.data;
-  const isLoading = isMoments ? momentsQuery.isLoading : livesQuery.isLoading;
+  const isLoading = isMoments ? momentsQuery.isLoading : isRecordingsLoading;
+
+  const loader = useRef(null);
+
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const target = entries[0];
+    if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  useEffect(() => {
+    const option = {
+      root: null,
+      rootMargin: "20px",
+      threshold: 0
+    };
+    const observer = new IntersectionObserver(handleObserver, option);
+    if (loader.current) observer.observe(loader.current);
+    return () => observer.disconnect();
+  }, [handleObserver, activeTab]);
+
+  const displayData = isMoments 
+    ? (momentsQuery.data || []) 
+    : (globalPastLivesData?.pages.flatMap(page => page.data) || []);
 
   return (
     <div className="w-full bg-[#0a0a0a]">
@@ -80,7 +109,7 @@ export const ProfileMediaSection = ({
         )}
 
         {/* EMPTY STATE */}
-        {!isLoading && (!data || data.length === 0) && (
+        {!isLoading && (!displayData || displayData.length === 0) && (
           <div className="py-10 h-70">
             <EmptyState
               icon={isMoments ? Grid3X3 : Video}
@@ -112,25 +141,52 @@ export const ProfileMediaSection = ({
           </div>
         )}
 
-        {!isLoading && data && data.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
-            {data.map((item: LiveStream) => (
-              <div className="rounded-xl md:rounded-3xl overflow-hidden aspect-[3/4.5]">
-                <LiveCard
-                  key={item.id}
-                  callId={item.id}
-                  thumbnailUrl={item.thumbnail}
-                  avatarUrl={item.avatar}
-                  streamerName={item.username}
-                  viewerCount={item.views}
-                  followersCount=""
-                  category=""
-                  title={item.displayName}
-                  isLive={isMoments ? false : (item.isLive ?? false)}
-                />
+        {!isLoading && displayData && displayData.length > 0 && (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-5">
+              {displayData.map((item: any) => (
+                <div key={item.id || item.callId} className="rounded-xl md:rounded-3xl overflow-hidden">
+                  {isMoments ? (
+                    <StreamCard
+                      variant="standard"
+                      callId={item.id}
+                      thumbnailUrl={item.thumbnail}
+                      avatarUrl={item.avatar}
+                      streamerName={item.username}
+                      viewerCount={item.views}
+                      followersCount=""
+                      category=""
+                      title={item.displayName}
+                      isLive={false}
+                    />
+                  ) : (
+                    <StreamCard
+                      variant="explore"
+                      callId={item.callId || item.id}
+                      thumbnailUrl={item.thumbnailUrl || item.thumbnail || item.profileImage || item.avatar}
+                      avatarUrl={item.profileImage || item.avatar}
+                      streamerName={item.username}
+                      viewerCount={item.participantCount || item.views || 0}
+                      followersCount={String(item.followerCount || 0)}
+                      category={item.category}
+                      title={item.title || item.displayName}
+                      isLive={item.isLive ?? false}
+                      cohosts={item.cohosts}
+                      createdByUserId={item.createdByUserId}
+                      recordingUrl={item.recordingUrl}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination Loader */}
+            {!isMoments && (
+              <div ref={loader} className="w-full flex justify-center py-10">
+                {isFetchingNextPage && <Loader2 className="w-8 h-8 animate-spin text-[#FF7700]" />}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

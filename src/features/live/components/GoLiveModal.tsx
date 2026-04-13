@@ -239,6 +239,7 @@ export const GoLiveModal = () => {
                     to: '/live/$id',
                     params: { id: response.callId }
                 });
+
                 closeModal();
             }
         } catch (error: any) {

@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
     const { isViewer, isGuest, isChatVisible, call } = useLiveStreamContext();
+    const isHost = !isViewer;
     const { client: chatClient } = useChatContext();
     const channel = React.useMemo(() => (call && chatClient) ? chatClient.channel('livestream', call.id) : null, [chatClient, call?.id]);
     const participants = useParticipants();
@@ -76,9 +77,13 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             } catch (e) {
                 // Ignore — call may already be torn down
             }
-            useGoLiveStore.getState().setEndingStream(true);
-            toast.info('Stream has ended');
-            navigate({ to: '/for-you' });
+            
+            // Only auto-navigate for viewers. Hosts handle their own end-stream flow.
+            if (!isHost) {
+                useGoLiveStore.getState().setEndingStream(true);
+                toast.info('Stream has ended');
+                navigate({ to: '/for-you' });
+            }
         });
 
         let pollInterval: NodeJS.Timeout;
@@ -86,13 +91,15 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             pollInterval = setInterval(async () => {
                 try {
                     const callState = await call.get();
-                    if (callState.call.ended_at) {
+                    if (callState.call.ended_at && !isHost) {
                         toast.info('Stream has ended');
                         navigate({ to: '/for-you' });
                     }
                 } catch (e) {
-                    toast.info('Stream has ended');
-                    navigate({ to: '/for-you' });
+                    if (!isHost) {
+                        toast.info('Stream has ended');
+                        navigate({ to: '/for-you' });
+                    }
                 }
             }, 5000);
         }
@@ -101,7 +108,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             unsubscribe();
             if (pollInterval) clearInterval(pollInterval);
         };
-    }, [call, navigate, isGuest]);
+    }, [call, navigate, isGuest, isHost]);
 
     // Fallback: auto-exit if no streamers for 15 seconds
     useEffect(() => {

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MainRouteRouteImport } from './routes/_main/route'
+import { Route as MainStreamRouteRouteImport } from './routes/_main/stream/route'
 import { Route as MainLiveRouteRouteImport } from './routes/_main/live/route'
 import { Route as MainGiftsRouteRouteImport } from './routes/_main/gifts/route'
 import { Route as MainForYouRouteRouteImport } from './routes/_main/for-you/route'
@@ -22,6 +23,7 @@ import { Route as MainRefundPolicyIndexRouteImport } from './routes/_main/refund
 import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
 import { Route as MainPrivacyPolicyIndexRouteImport } from './routes/_main/privacy-policy/index'
 import { Route as MainLiveIndexRouteImport } from './routes/_main/live/index'
+import { Route as MainStreamIdRouteImport } from './routes/_main/stream/$id'
 import { Route as MainProfileUsernameRouteImport } from './routes/_main/profile/$username'
 import { Route as MainLiveIdRouteImport } from './routes/_main/live/$id'
 import { Route as MainProfileSettingIndexRouteImport } from './routes/_main/profile/setting/index'
@@ -31,6 +33,11 @@ import { Route as MainProfileSettingCoinsRouteImport } from './routes/_main/prof
 const MainRouteRoute = MainRouteRouteImport.update({
   id: '/_main',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MainStreamRouteRoute = MainStreamRouteRouteImport.update({
+  id: '/stream',
+  path: '/stream',
+  getParentRoute: () => MainRouteRoute,
 } as any)
 const MainLiveRouteRoute = MainLiveRouteRouteImport.update({
   id: '/live',
@@ -93,6 +100,11 @@ const MainLiveIndexRoute = MainLiveIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MainLiveRouteRoute,
 } as any)
+const MainStreamIdRoute = MainStreamIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MainStreamRouteRoute,
+} as any)
 const MainProfileUsernameRoute = MainProfileUsernameRouteImport.update({
   id: '/profile/$username',
   path: '/profile/$username',
@@ -128,8 +140,10 @@ export interface FileRoutesByFullPath {
   '/for-you': typeof MainForYouRouteRoute
   '/gifts': typeof MainGiftsRouteRoute
   '/live': typeof MainLiveRouteRouteWithChildren
+  '/stream': typeof MainStreamRouteRouteWithChildren
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
+  '/stream/$id': typeof MainStreamIdRoute
   '/live/': typeof MainLiveIndexRoute
   '/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/profile/': typeof MainProfileIndexRoute
@@ -146,8 +160,10 @@ export interface FileRoutesByTo {
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
   '/gifts': typeof MainGiftsRouteRoute
+  '/stream': typeof MainStreamRouteRouteWithChildren
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
+  '/stream/$id': typeof MainStreamIdRoute
   '/live': typeof MainLiveIndexRoute
   '/privacy-policy': typeof MainPrivacyPolicyIndexRoute
   '/profile': typeof MainProfileIndexRoute
@@ -167,8 +183,10 @@ export interface FileRoutesById {
   '/_main/for-you': typeof MainForYouRouteRoute
   '/_main/gifts': typeof MainGiftsRouteRoute
   '/_main/live': typeof MainLiveRouteRouteWithChildren
+  '/_main/stream': typeof MainStreamRouteRouteWithChildren
   '/_main/live/$id': typeof MainLiveIdRoute
   '/_main/profile/$username': typeof MainProfileUsernameRoute
+  '/_main/stream/$id': typeof MainStreamIdRoute
   '/_main/live/': typeof MainLiveIndexRoute
   '/_main/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/_main/profile/': typeof MainProfileIndexRoute
@@ -188,8 +206,10 @@ export interface FileRouteTypes {
     | '/for-you'
     | '/gifts'
     | '/live'
+    | '/stream'
     | '/live/$id'
     | '/profile/$username'
+    | '/stream/$id'
     | '/live/'
     | '/privacy-policy/'
     | '/profile/'
@@ -206,8 +226,10 @@ export interface FileRouteTypes {
     | '/explore'
     | '/for-you'
     | '/gifts'
+    | '/stream'
     | '/live/$id'
     | '/profile/$username'
+    | '/stream/$id'
     | '/live'
     | '/privacy-policy'
     | '/profile'
@@ -226,8 +248,10 @@ export interface FileRouteTypes {
     | '/_main/for-you'
     | '/_main/gifts'
     | '/_main/live'
+    | '/_main/stream'
     | '/_main/live/$id'
     | '/_main/profile/$username'
+    | '/_main/stream/$id'
     | '/_main/live/'
     | '/_main/privacy-policy/'
     | '/_main/profile/'
@@ -250,6 +274,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof MainRouteRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_main/stream': {
+      id: '/_main/stream'
+      path: '/stream'
+      fullPath: '/stream'
+      preLoaderRoute: typeof MainStreamRouteRouteImport
+      parentRoute: typeof MainRouteRoute
     }
     '/_main/live': {
       id: '/_main/live'
@@ -335,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainLiveIndexRouteImport
       parentRoute: typeof MainLiveRouteRoute
     }
+    '/_main/stream/$id': {
+      id: '/_main/stream/$id'
+      path: '/$id'
+      fullPath: '/stream/$id'
+      preLoaderRoute: typeof MainStreamIdRouteImport
+      parentRoute: typeof MainStreamRouteRoute
+    }
     '/_main/profile/$username': {
       id: '/_main/profile/$username'
       path: '/profile/$username'
@@ -387,6 +425,18 @@ const MainLiveRouteRouteWithChildren = MainLiveRouteRoute._addFileChildren(
   MainLiveRouteRouteChildren,
 )
 
+interface MainStreamRouteRouteChildren {
+  MainStreamIdRoute: typeof MainStreamIdRoute
+}
+
+const MainStreamRouteRouteChildren: MainStreamRouteRouteChildren = {
+  MainStreamIdRoute: MainStreamIdRoute,
+}
+
+const MainStreamRouteRouteWithChildren = MainStreamRouteRoute._addFileChildren(
+  MainStreamRouteRouteChildren,
+)
+
 interface MainRouteRouteChildren {
   MainIndexRouteRoute: typeof MainIndexRouteRoute
   MainChatsRouteRoute: typeof MainChatsRouteRoute
@@ -395,6 +445,7 @@ interface MainRouteRouteChildren {
   MainForYouRouteRoute: typeof MainForYouRouteRoute
   MainGiftsRouteRoute: typeof MainGiftsRouteRoute
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
+  MainStreamRouteRoute: typeof MainStreamRouteRouteWithChildren
   MainProfileUsernameRoute: typeof MainProfileUsernameRoute
   MainPrivacyPolicyIndexRoute: typeof MainPrivacyPolicyIndexRoute
   MainProfileIndexRoute: typeof MainProfileIndexRoute
@@ -413,6 +464,7 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainForYouRouteRoute: MainForYouRouteRoute,
   MainGiftsRouteRoute: MainGiftsRouteRoute,
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
+  MainStreamRouteRoute: MainStreamRouteRouteWithChildren,
   MainProfileUsernameRoute: MainProfileUsernameRoute,
   MainPrivacyPolicyIndexRoute: MainPrivacyPolicyIndexRoute,
   MainProfileIndexRoute: MainProfileIndexRoute,

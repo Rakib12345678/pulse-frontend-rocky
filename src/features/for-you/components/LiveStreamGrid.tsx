@@ -1,7 +1,7 @@
 import React from 'react';
 import { Video, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LiveCard } from '@/features/live/components/LiveCard';
+import { StreamCard } from '@/components/StreamCard';
 import { FeedStreamItem } from '@/features/live/services/live.service';
 import { formatViewerCount } from '@/features/for-you/hooks/useStreamFeed';
 import bunnyTeacher from '@/assets/bunnyTeacher.png';
@@ -60,7 +60,8 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
         <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 {streams.map((stream) => (
-                    <LiveCard
+                    <StreamCard
+                        variant="standard"
                         key={stream.callId}
                         callId={stream.callId}
                         thumbnailUrl={stream.profileImage || bunnyTeacher}
