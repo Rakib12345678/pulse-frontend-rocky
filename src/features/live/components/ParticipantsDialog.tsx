@@ -11,6 +11,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useUserProfileStore } from '../stores/userProfileStore';
 import { userService } from '@/features/live/services/user.service';
 import { RefreshCw } from 'lucide-react';
+import { useParticipantPresenceStore } from '../stores/participantPresenceStore';
 
 // Helper to extract fullName from participant custom fields
 const getFullName = (p: any): string =>
@@ -20,9 +21,24 @@ export const ParticipantsDialog: React.FC = () => {
     const { useParticipants, useCallCreatedBy } = useCallStateHooks();
     const participants = useParticipants();
     const createdBy = useCallCreatedBy();
-    const activeParticipants = participants.filter((p: any) => {
+    const connectedParticipants = participants.filter((p: any) => {
         const isCreator = p.roles?.includes('host') || p.roles?.includes('admin') || p.userId === createdBy?.id;
         return p.connectionQuality !== 'offline' && !!p.sessionId && !isCreator;
+    });
+
+    // Only show participants who have an active presence heartbeat
+    const { getActiveUserIds } = useParticipantPresenceStore();
+    const activeUserIds = new Set(getActiveUserIds());
+    const activeParticipants = connectedParticipants.filter((p: any) => {
+        // Always show the local participant (self)
+        if (p.isLocalParticipant) return true;
+        // Co-hosts are always shown (they have publishing capabilities)
+        const isCoHost = p.roles?.includes('co_host') ||
+            p.capabilities?.includes('send-audio') ||
+            p.capabilities?.includes('send-video');
+        if (isCoHost) return true;
+        // Regular viewers: only show if they have an active heartbeat
+        return activeUserIds.has(p.userId);
     });
     const { user } = useAuthStore();
     const { openModal } = useUserProfileStore();

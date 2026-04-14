@@ -12,6 +12,8 @@ import { useUserProfileStore } from '../stores/userProfileStore';
 import { liveService } from '../services/live.service';
 import kick from '@/assets/kick.svg';
 import { cn } from '@/lib/utils';
+import { useParticipantPresence } from '../hooks/useParticipantPresence';
+import { useParticipantPresenceStore } from '../stores/participantPresenceStore';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
@@ -31,6 +33,38 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
     // Confirmation modal state for kicking a co-host
     const [confirmKick, setConfirmKick] = useState<{ userId: string; userName: string } | null>(null);
+
+    // --- Participant Presence ---
+    // Viewers: send heartbeat while tab is visible
+    useParticipantPresence(call, isViewer);
+
+    // Host: listen for presence events and track active viewers
+    const { markActive, markInactive, pruneStale, clear: clearPresence } = useParticipantPresenceStore();
+
+    useEffect(() => {
+        if (!call || !isHost) return;
+
+        const unsubscribe = call.on('custom', (event: any) => {
+            const customData = event?.custom;
+            const senderUserId = event?.user?.id;
+            if (!senderUserId) return;
+
+            if (customData?.type === 'presence-heartbeat') {
+                markActive(senderUserId);
+            } else if (customData?.type === 'presence-inactive') {
+                markInactive(senderUserId);
+            }
+        });
+
+        // Prune stale entries every 5 seconds
+        const pruneInterval = setInterval(pruneStale, 5000);
+
+        return () => {
+            unsubscribe();
+            clearInterval(pruneInterval);
+            clearPresence();
+        };
+    }, [call, isHost, markActive, markInactive, pruneStale, clearPresence]);
 
 
     // Get the call creator ID to always show the host

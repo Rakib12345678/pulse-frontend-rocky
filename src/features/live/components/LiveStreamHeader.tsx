@@ -11,6 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { EndLiveModal } from './EndLiveModal';
 
 import { ParticipantsDialog } from './ParticipantsDialog';
+import { useParticipantPresenceStore } from '../stores/participantPresenceStore';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
     Drawer,
@@ -31,11 +32,29 @@ export const LiveStreamHeader: React.FC = () => {
     const { streamData, setEndingStream } = useGoLiveStore();
     const { isChatVisible, setChatVisible, call } = useLiveStreamContext();
     const navigate = useNavigate();
-    const { useCallSession, useParticipantCount, useCallCreatedBy } = useCallStateHooks();
+    const { useCallSession, useParticipants, useCallCreatedBy } = useCallStateHooks();
     const session = useCallSession();
-    const participantCount = useParticipantCount();
-    const displayCount = Math.max(0, participantCount - 1);
+    const participants = useParticipants();
     const createdBy = useCallCreatedBy();
+
+    // Compute presence-aware participant count (excludes inactive viewers)
+    const { getActiveUserIds } = useParticipantPresenceStore();
+    const activeUserIds = new Set(getActiveUserIds());
+    const displayCount = participants.filter((p: any) => {
+        // Exclude the creator (host) from the viewer count
+        const isCreator = p.roles?.includes('host') || p.roles?.includes('admin') || p.userId === createdBy?.id;
+        if (isCreator) return false;
+        if (p.connectionQuality === 'offline' || !p.sessionId) return false;
+        // Always count local participant
+        if (p.isLocalParticipant) return true;
+        // Always count co-hosts
+        const isCoHost = p.roles?.includes('co_host') ||
+            p.capabilities?.includes('send-audio') ||
+            p.capabilities?.includes('send-video');
+        if (isCoHost) return true;
+        // Regular viewers: only count if they have an active heartbeat
+        return activeUserIds.has(p.userId);
+    }).length;
     const isMobile = useIsMobile();
 
     // Timer state

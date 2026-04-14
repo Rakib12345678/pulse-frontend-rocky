@@ -2,7 +2,7 @@
 
 const TermsConditionsPage = () => {
     return (
-        <div className="min-h-screen text-gray-200 p-6 pb-24 md:p-12">
+        <div className="min-h-screen text-gray-200 p-6 pb-18 md:p-12">
             <div className="max-w-4xl mx-auto">
                 <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Terms & Conditions</h1>
                 <p className="text-sm text-gray-400 mb-10">Effective Date: 26th March 2026 | Last Updated: 27th March 2026</p>
@@ -159,7 +159,7 @@ const TermsConditionsPage = () => {
                         <p>The Company reserves the right to update or modify these Terms at any time. Continued use of the Platform constitutes acceptance of the revised Terms.</p>
                     </section>
 
-                    <section className="space-y-4 border-t border-white/5 pt-8">
+                    <section className="space-y-4 border-t border-white/5 pt-8 mb-36">
                         <h2 className="text-xl md:text-2xl font-semibold text-white">17. Contact Information</h2>
                         <p>For any queries regarding these Terms:</p>
                         <ul className="list-none space-y-2">

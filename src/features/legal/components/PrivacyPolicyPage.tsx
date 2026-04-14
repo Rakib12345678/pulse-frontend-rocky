@@ -2,7 +2,7 @@
 
 const PrivacyPolicyPage = () => {
     return (
-        <div className="min-h-screen text-gray-200 p-6 pb-24 md:p-12">
+        <div className="min-h-screen text-gray-200 p-6 pb-18 md:p-12">
             <div className="max-w-4xl mx-auto">
                 <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Privacy Policy</h1>
                 <p className="text-sm text-gray-400 mb-10">Effective Date: 26th March 2026 | Last Updated: 27th March 2026</p>
@@ -156,7 +156,7 @@ const PrivacyPolicyPage = () => {
                         <p>We reserve the right to modify this Privacy Policy at any time to reflect changes in legal, technical, or business developments. Material updates will be communicated through appropriate channels. Continued use of the platform following such updates constitutes acceptance of the revised Policy.</p>
                     </section>
 
-                    <section className="space-y-4 border-t border-white/5 pt-8">
+                    <section className="space-y-4 border-t border-white/5 pt-8 mb-36">
                         <h2 className="text-xl md:text-2xl font-semibold text-white">14. Contact Information</h2>
                         <p>For questions, concerns, or requests related to this Privacy Policy, please contact:</p>
                         <ul className="list-none space-y-2">
