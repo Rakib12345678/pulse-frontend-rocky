@@ -478,7 +478,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         <Button
                             type="submit"
                             disabled={isLoading || !form.formState.isValid}
-                            className="flex-1 rounded-full bg-[#1a1c24] hover:bg-[#252833] py-3 md:py-6 text-sm font-medium text-gray-200 transition-all border border-white/5"
+                            className="flex-1 rounded-full bg-[#FF7700] bg-none hover:bg-[#ff9922] disabled:bg-[#262626] disabled:bg-none py-3 md:py-6 text-sm font-medium text-black transition-all border border-white/5 disabled:opacity-100"
                         >
                             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             {isLoading ? 'Sending...' : 'Verify'}
@@ -1040,7 +1040,10 @@ export const StepDetails = ({
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/jpeg,image/png" onChange={handleFileChange} />
                             <div className="size-33 rounded-full p-0.75" style={{ background: 'linear-gradient(135deg, #6366f1 0%, #3b3bd6 50%, #ef4444 100%)' }}>
                                 <div className="w-full h-full rounded-full bg-[#1c1e27] p-0.5">
-                                    <div className="w-full h-full rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center text-4xl font-bold text-white">
+                                    <div className={cn(
+                                        "w-full h-full rounded-full overflow-hidden flex items-center justify-center text-4xl font-bold transition-colors",
+                                        profileImage ? "bg-zinc-800 text-white" : "bg-orange-400 text-white"
+                                    )}>
                                         {profileImage ? (
                                             <img src={profileImage} alt="Avatar" className="w-full h-full object-cover" />
                                         ) : (

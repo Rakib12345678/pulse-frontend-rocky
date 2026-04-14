@@ -34,6 +34,7 @@ export const LiveStreamHeader: React.FC = () => {
     const { useCallSession, useParticipantCount, useCallCreatedBy } = useCallStateHooks();
     const session = useCallSession();
     const participantCount = useParticipantCount();
+    const displayCount = Math.max(0, participantCount - 1);
     const createdBy = useCallCreatedBy();
     const isMobile = useIsMobile();
 
@@ -139,7 +140,7 @@ export const LiveStreamHeader: React.FC = () => {
         setIsEndingProcess(true);
         // Set ending stream flag immediately to bypass navigation blockers
         setEndingStream(true);
-        
+
         try {
             await liveService.endLiveStream(streamData.callId, save);
             if (call) {
@@ -147,7 +148,7 @@ export const LiveStreamHeader: React.FC = () => {
                 await call.microphone.disable();
                 await call.endCall();
             }
-            
+
             const durationMins = streamDuration / 60;
             if (save && durationMins >= 10) {
                 setShowDurationPopup(true);
@@ -183,184 +184,184 @@ export const LiveStreamHeader: React.FC = () => {
                 <>
                     {/* Top bar */}
                     <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 pt-5 pb-3 bg-linear-to-b from-black/60 to-transparent">
-                    <div className="flex items-center gap-2">
-                        {isHost ? (
-                            /* Host: red End Live with back icon */
-                            <button
-                                onClick={handleEndLiveClick}
-                                className="flex items-center gap-1 text-red-500 font-bold text-base"
-                            >
-                                <ChevronLeft className="w-6 h-6" />
-                                <span>End Live</span>
-                            </button>
-                        ) : (
-                            /* Viewer: back + host username */
-                            <>
+                        <div className="flex items-center gap-2">
+                            {isHost ? (
+                                /* Host: red End Live with back icon */
                                 <button
-                                    onClick={handleLeaveStream}
-                                    className="text-white"
+                                    onClick={handleEndLiveClick}
+                                    className="flex items-center gap-1 text-red-500 font-bold text-base"
                                 >
                                     <ChevronLeft className="w-6 h-6" />
+                                    <span>End Live</span>
                                 </button>
-                                <span className="text-white font-bold text-base truncate max-w-[200px]">
-                                    {hostName}
-                                </span>
-                            </>
+                            ) : (
+                                /* Viewer: back + host username */
+                                <>
+                                    <button
+                                        onClick={handleLeaveStream}
+                                        className="text-white"
+                                    >
+                                        <ChevronLeft className="w-6 h-6" />
+                                    </button>
+                                    <span className="text-white font-bold text-base truncate max-w-[200px]">
+                                        {hostName}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Center: timer */}
+                        {isHost && timeLeft && (
+                            <div className="absolute left-1/2 -translate-x-1/2">
+                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold tracking-wider backdrop-blur-md border transition-colors ${isUrgent
+                                    ? "bg-red-500/20 border-red-500 text-red-100 shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse"
+                                    : "bg-white/10 border-white/10 text-white"
+                                    }`}>
+                                    <span>{timeLeft}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Right side: "..." menu for viewer */}
+                        <div className="flex items-center gap-2">
+                            {!isHost && (
+                                <Drawer>
+                                    <DrawerTrigger asChild>
+                                        <button className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all cursor-pointer">
+                                            <MoreHorizontal className="w-5 h-5 text-white" />
+                                        </button>
+                                    </DrawerTrigger>
+                                    <DrawerContent className="bg-[#1C1C1E] border-none text-white outline-none">
+                                        <DrawerTitle className="sr-only">Stream Options</DrawerTitle>
+                                        <DrawerDescription className="sr-only">Report or show interest in the stream</DrawerDescription>
+                                        <div className="flex flex-col px-4 py-6 max-w-sm mx-auto w-full">
+                                            <button className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-t-xl transition-colors">
+                                                Interested
+                                            </button>
+                                            <div className="h-px bg-white/10 w-full" />
+                                            <button className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-b-xl transition-colors">
+                                                Report Stream
+                                            </button>
+                                        </div>
+                                    </DrawerContent>
+                                </Drawer>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Left side buttons (below header): eye + participants */}
+                    <div className="absolute top-24 left-4 z-20 flex flex-col gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setChatVisible(!isChatVisible)}
+                            className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
+                            title={isChatVisible ? "Hide Chat" : "Show Chat"}
+                        >
+                            {isChatVisible ? <Eye className="w-4 h-4 text-white/70" /> : <EyeOff className="w-4 h-4 text-white/70" />}
+                        </button>
+
+                        {isHost && (
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all cursor-pointer">
+                                        <Users className="w-4 h-4 text-white/70" />
+                                    </button>
+                                </DialogTrigger>
+                                <ParticipantsDialog />
+                            </Dialog>
+                        )}
+                    </div>
+                </>
+            ) : (
+                /* ========== DESKTOP HEADER ========== */
+                <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 bg-linear-to-b from-black/60 to-transparent">
+                    <div className="flex items-center gap-4">
+                        {isHost ? (
+                            <Button
+                                onClick={handleEndLiveClick}
+                                className="bg-[#FF8800] hover:bg-[#FF8800]/90 text-black font-bold px-6 py-2 rounded-full h-11 transition-all hover:scale-105 active:scale-95"
+                            >
+                                End Live
+                            </Button>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleLeaveStream}
+                                    className="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all"
+                                    title="Leave Stream"
+                                >
+                                    <ArrowLeft className="w-5 h-5 text-white" />
+                                </button>
+                                <div className="flex items-center gap-2 bg-[#FFD580] px-4 py-1.5 rounded-full text-black">
+                                    <Users className="w-4 h-4 text-black" />
+                                    <span className="text-sm font-bold">{displayCount >= 1000 ? `${(displayCount / 1000).toFixed(1)}k` : displayCount}</span>
+                                </div>
+                            </div>
                         )}
                     </div>
 
-                    {/* Center: timer */}
-                    {isHost && timeLeft && (
-                        <div className="absolute left-1/2 -translate-x-1/2">
-                            <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold tracking-wider backdrop-blur-md border transition-colors ${isUrgent
+                    <div className="flex items-center gap-3 pr-16">
+                        <div className="flex items-center gap-2 bg-[#FF0000] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(255,0,0,0.3)]">
+                            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                            Live
+                        </div>
+
+                        {isHost && timeLeft && (
+                            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold tracking-wider backdrop-blur-md border transition-colors ${isUrgent
                                 ? "bg-red-500/20 border-red-500 text-red-100 shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse"
                                 : "bg-white/10 border-white/10 text-white"
                                 }`}>
                                 <span>{timeLeft}</span>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Right side: "..." menu for viewer */}
-                    <div className="flex items-center gap-2">
-                        {!isHost && (
-                            <Drawer>
-                                <DrawerTrigger asChild>
-                                    <button className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all cursor-pointer">
-                                        <MoreHorizontal className="w-5 h-5 text-white" />
-                                    </button>
-                                </DrawerTrigger>
-                                <DrawerContent className="bg-[#1C1C1E] border-none text-white outline-none">
-                                    <DrawerTitle className="sr-only">Stream Options</DrawerTitle>
-                                    <DrawerDescription className="sr-only">Report or show interest in the stream</DrawerDescription>
-                                    <div className="flex flex-col px-4 py-6 max-w-sm mx-auto w-full">
-                                        <button className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-t-xl transition-colors">
-                                            Interested
-                                        </button>
-                                        <div className="h-px bg-white/10 w-full" />
-                                        <button className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-b-xl transition-colors">
-                                            Report Stream
-                                        </button>
+                        {isHost && (
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition-all">
+                                        <Users className="w-4 h-4 text-white/70" />
+                                        <span className="text-sm font-bold">{displayCount}</span>
                                     </div>
-                                </DrawerContent>
-                            </Drawer>
+                                </DialogTrigger>
+                                <ParticipantsDialog />
+                            </Dialog>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setChatVisible(!isChatVisible)}
+                            className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all"
+                            title={isChatVisible ? "Hide Chat" : "Show Chat"}
+                        >
+                            {isChatVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                        </button>
+
+                        {!isHost && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all flex items-center justify-center"
+                                    >
+                                        <MoreHorizontal className="w-5 h-5 text-white/70" />
+                                    </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="bottom" align="end" className="bg-[#1C1C1E] border-none shadow-lg text-white min-w-[200px] p-2 rounded-xl">
+                                    <DropdownMenuItem className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors">
+                                        Interested
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator className="bg-white/10 my-1" />
+                                    <DropdownMenuItem className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors">
+                                        Report Stream
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                     </div>
                 </div>
-
-                {/* Left side buttons (below header): eye + participants */}
-                <div className="absolute top-24 left-4 z-20 flex flex-col gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setChatVisible(!isChatVisible)}
-                        className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
-                        title={isChatVisible ? "Hide Chat" : "Show Chat"}
-                    >
-                        {isChatVisible ? <Eye className="w-4 h-4 text-white/70" /> : <EyeOff className="w-4 h-4 text-white/70" />}
-                    </button>
-
-                    {isHost && (
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all cursor-pointer">
-                                    <Users className="w-4 h-4 text-white/70" />
-                                </button>
-                            </DialogTrigger>
-                            <ParticipantsDialog />
-                        </Dialog>
-                    )}
-                </div>
-                </>
-            ) : (
-                /* ========== DESKTOP HEADER ========== */
-                <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 bg-linear-to-b from-black/60 to-transparent">
-                <div className="flex items-center gap-4">
-                    {isHost ? (
-                        <Button
-                            onClick={handleEndLiveClick}
-                            className="bg-[#FF8800] hover:bg-[#FF8800]/90 text-black font-bold px-6 py-2 rounded-full h-11 transition-all hover:scale-105 active:scale-95"
-                        >
-                            End Live
-                        </Button>
-                    ) : (
-                        <div className="flex items-center gap-3">
-                            <button
-                                type="button"
-                                onClick={handleLeaveStream}
-                                className="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all"
-                                title="Leave Stream"
-                            >
-                                <ArrowLeft className="w-5 h-5 text-white" />
-                            </button>
-                            <div className="flex items-center gap-2 bg-[#FFD580] px-4 py-1.5 rounded-full text-black">
-                                <Users className="w-4 h-4 text-black" />
-                                <span className="text-sm font-bold">{participantCount >= 1000 ? `${(participantCount / 1000).toFixed(1)}k` : participantCount}</span>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-3 pr-16">
-                    <div className="flex items-center gap-2 bg-[#FF0000] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(255,0,0,0.3)]">
-                        <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                        Live
-                    </div>
-
-                    {isHost && timeLeft && (
-                        <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold tracking-wider backdrop-blur-md border transition-colors ${isUrgent
-                            ? "bg-red-500/20 border-red-500 text-red-100 shadow-[0_0_10px_rgba(220,38,38,0.5)] animate-pulse"
-                            : "bg-white/10 border-white/10 text-white"
-                            }`}>
-                            <span>{timeLeft}</span>
-                        </div>
-                    )}
-
-                    {isHost && (
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition-all">
-                                    <Users className="w-4 h-4 text-white/70" />
-                                    <span className="text-sm font-bold">{participantCount}</span>
-                                </div>
-                            </DialogTrigger>
-                            <ParticipantsDialog />
-                        </Dialog>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={() => setChatVisible(!isChatVisible)}
-                        className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all"
-                        title={isChatVisible ? "Hide Chat" : "Show Chat"}
-                    >
-                        {isChatVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-                    </button>
-
-                    {!isHost && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button
-                                    type="button"
-                                    className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all flex items-center justify-center"
-                                >
-                                    <MoreHorizontal className="w-5 h-5 text-white/70" />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent side="bottom" align="end" className="bg-[#1C1C1E] border-none shadow-lg text-white min-w-[200px] p-2 rounded-xl">
-                                <DropdownMenuItem className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors">
-                                    Interested
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-white/10 my-1" />
-                                <DropdownMenuItem className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors">
-                                    Report Stream
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
-                </div>
-            </div>
             )}
 
             <EndLiveModal

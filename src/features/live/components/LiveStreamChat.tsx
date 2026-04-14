@@ -151,6 +151,7 @@ const LiveStreamMessageList: React.FC = () => {
     const { isGuest, isViewer } = useLiveStreamContext();
     const { useParticipants: useParticipantsList } = useCallStateHooks();
     const participants = useParticipantsList();
+    const { user } = useAuthStore();
 
     // Build a lookup map: userId -> fullName from custom fields
     const fullNameMap = useMemo(() => {
@@ -179,7 +180,7 @@ const LiveStreamMessageList: React.FC = () => {
         if (isGuest) {
             setMode('login');
             openLoginModal();
-        } else {
+        } else if (user?.username !== username) {
             openProfileModal(username);
         }
     };

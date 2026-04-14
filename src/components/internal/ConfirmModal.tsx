@@ -1,4 +1,4 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
     Drawer,
@@ -26,24 +26,9 @@ interface ConfirmModalProps {
     useDrawer?: boolean;
 }
 
-/* Shared inner content used by both modal and drawer */
-const ConfirmModalContent = ({
-    descriptionPrefix,
-    username,
-    description,
-    avatarUrl,
-    avatarFallback,
-    confirmLabel,
-    confirmIcon,
-    confirmClassName = 'bg-[#FF7700] text-black hover:bg-[#ff9922]',
-    cancelLabel = 'Cancel',
-    isLoading,
-    onConfirm,
-    onCancel,
-}: Omit<ConfirmModalProps, 'isOpen'>) => (
-    <>
-        {/* Avatar */}
-        {(avatarUrl || avatarFallback) && (
+const ModalHeaderIcon = ({ avatarUrl, avatarFallback }: { avatarUrl?: string, avatarFallback?: string }) => {
+    if (avatarUrl || avatarFallback) {
+        return (
             <div className="mb-5 flex justify-center">
                 {avatarUrl ? (
                     <img
@@ -67,15 +52,30 @@ const ConfirmModalContent = ({
                     </div>
                 )}
             </div>
-        )}
+        );
+    }
 
-        {/* Icon for modals without avatar */}
-        {!avatarUrl && !avatarFallback && (
-            <div className="mb-4 text-white flex justify-center">
-                <LogOut className="w-10 h-10 mx-auto opacity-80" />
-            </div>
-        )}
+    return (
+        <div className="mb-4 text-white flex justify-center">
+            <LogOut className="w-12 h-12 mx-auto stroke-[1.5px]" />
+        </div>
+    );
+};
 
+/* Shared inner content used by both modal and drawer */
+const ConfirmModalContent = ({
+    descriptionPrefix,
+    username,
+    description,
+    confirmLabel,
+    confirmIcon,
+    confirmClassName = 'bg-[#FF7700] text-black hover:bg-[#ff9922]',
+    cancelLabel = 'Cancel',
+    isLoading,
+    onConfirm,
+    onCancel,
+}: Omit<ConfirmModalProps, 'isOpen'>) => (
+    <>
         {/* Description */}
         {descriptionPrefix && username && (
             <p className="text-gray-400 text-md mb-4 leading-relaxed text-center">
@@ -90,11 +90,11 @@ const ConfirmModalContent = ({
         )}
 
         {/* Buttons */}
-        <div className="flex gap-3 w-full mt-5">
+        <div className="flex gap-3 w-full mt-4">
             <button
                 onClick={onConfirm}
                 disabled={isLoading}
-                className={`flex-1 flex items-center cursor-pointer justify-center gap-2 py-3 rounded-full text-sm transition-all disabled:opacity-60 ${confirmClassName}`}
+                className={`flex-1 flex items-center cursor-pointer justify-center gap-2 py-3 rounded-full text-base font-semibold transition-all disabled:opacity-60 ${confirmClassName}`}
             >
                 {confirmIcon}
                 {isLoading ? 'Please wait...' : confirmLabel}
@@ -102,7 +102,7 @@ const ConfirmModalContent = ({
             <button
                 onClick={onCancel}
                 disabled={isLoading}
-                className="flex-1 py-3 rounded-full text-sm font-bold border border-[#FF7700] text-[#FF7700] hover:bg-white/5 transition-all cursor-pointer"
+                className="flex-1 py-3 rounded-full text-base font-semibold border-2 border-[#FF7700] text-[#FF7700] hover:bg-white/5 transition-all cursor-pointer"
             >
                 {cancelLabel}
             </button>
@@ -126,6 +126,7 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
                         <DrawerDescription className="sr-only">{title}</DrawerDescription>
                     </DrawerHeader>
                     <div className="flex flex-col items-center px-2">
+                        <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
                         <ConfirmModalContent onCancel={onCancel} confirmLabel={confirmLabel} confirmIcon={confirmIcon} confirmClassName={confirmClassName} cancelLabel={cancelLabel} isLoading={isLoading} onConfirm={onConfirm} {...rest} />
                     </div>
                 </DrawerContent>
@@ -138,15 +139,10 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
                 <div className="absolute inset-0 bg-black/80" onClick={onCancel} />
-                <div className="relative bg-[#1D1F20] rounded-[28px] w-full max-w-sm p-10 shadow-2xl flex flex-col items-center text-center">
-                    {/* Icon */}
-                    {!rest.avatarUrl && !rest.avatarFallback && (
-                        <div className="mb-6 text-gray-400">
-                            <LogOut className="w-12 h-12 mx-auto" />
-                        </div>
-                    )}
+                <div className="relative bg-[#1D1F20] border border-white/10 rounded-[24px] w-full max-w-sm p-8 flex flex-col items-center text-center">
+                    <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
 
-                    <h3 className="text-white text-2xl font-bold mb-10 leading-snug">{title}</h3>
+                    <h3 className="text-white text-2xl font-bold mb-8 leading-snug">{title}</h3>
 
                     {/* Stacked buttons */}
                     <div className="flex flex-col gap-4 w-full">
@@ -175,8 +171,9 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/70" onClick={onCancel} />
-            <div className="relative bg-[#1D1F20] border border-white/10 rounded-2xl px-25 py-8 w-full max-w-md mx-4 shadow-2xl flex flex-col items-center text-center">
-                <h3 className="text-white text-xl font-bold mb-6">{title}</h3>
+            <div className="relative bg-[#1D1F20] border border-white/10 rounded-3xl px-8 py-10 w-full max-w-md mx-4 shadow-2xl flex flex-col items-center text-center">
+                <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
+                <h3 className="text-white text-2xl font-bold mb-8 leading-snug">{title}</h3>
                 <ConfirmModalContent onCancel={onCancel} confirmLabel={confirmLabel} confirmIcon={confirmIcon} confirmClassName={confirmClassName} cancelLabel={cancelLabel} isLoading={isLoading} onConfirm={onConfirm} {...rest} />
             </div>
         </div>
@@ -194,9 +191,9 @@ export const LogoutModal = ({
 }: Pick<ConfirmModalProps, 'isOpen' | 'isLoading' | 'onConfirm' | 'onCancel'>) => (
     <ConfirmModal
         isOpen={isOpen}
-        title="Are you sure you want to log out?"
+        title="Are you sure do you want to log out?"
         confirmLabel="Log Out"
-        confirmIcon={<LogOut className="w-4 h-4" />}
+        confirmIcon={<Trash2 className="w-5 h-5" />}
         confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
         isLoading={isLoading}
         onConfirm={onConfirm}

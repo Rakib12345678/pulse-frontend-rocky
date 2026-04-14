@@ -274,7 +274,7 @@ export const UserProfileModal: React.FC = () => {
                             )}
 
                             {/* Action buttons */}
-                            {currentUser?.username !== profile.username && (
+                            {currentUser?.id !== profile.id && (
                                 <div className="flex flex-col gap-3 w-full max-w-xs mb-5">
                                     {profile.blockedByMe ? (
                                         <Button
@@ -464,7 +464,7 @@ export const UserProfileModal: React.FC = () => {
                                 </div>
 
                                 {/* Action buttons */}
-                                {currentUser?.username !== profile.username && (
+                                {currentUser?.id !== profile.id && (
                                     <div className="flex gap-3 px-6 pb-4 w-full">
                                         <Button
                                             className={`flex-1 rounded-full h-11 font-bold text-sm ${profile.followedByMe
@@ -611,7 +611,7 @@ export const UserProfileModal: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {currentUser?.username !== profile.username && (
+                                {currentUser?.id !== profile.id && (
                                     <div className="flex flex-col gap-4 w-full mb-2">
                                         {profile.blockedByMe ? (
                                             <Button

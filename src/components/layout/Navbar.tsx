@@ -3,8 +3,6 @@ import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Bell,
   User,
-  LogOut,
-  Settings,
   Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -55,7 +53,6 @@ export const Navbar: React.FC = () => {
   const { reset: resetSignUp } = useSignUpStore();
   const { openModal: openCoinsModal } = useCoinsStore();
 
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const isMobile = useIsMobile();
@@ -83,16 +80,10 @@ export const Navbar: React.FC = () => {
   const handleLogout = () => {
     clearAuth();
     resetSignUp();
-    setIsDropdownOpen(false);
     setShowLogoutConfirm(false);
     navigate({ to: '/' });
   };
 
-  // ── Settings navigation ──
-  const handleSettingsClick = () => {
-    setIsDropdownOpen(false);
-    navigate({ to: '/profile/setting' });
-  };
 
   const isLoggedIn = isAuthenticated && !!accessToken;
   const { pathname } = useLocation();
@@ -183,75 +174,21 @@ export const Navbar: React.FC = () => {
                   <span className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-[#0f1117]" />
                 </Button>
 
-                {/* Profile Dropdown */}
-                <div className="hidden md:block relative">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/10 transition-transform hover:scale-105 active:scale-95 cursor-pointer bg-neutral-800 hover:bg-neutral-800 p-0"
-                  >
-                    {user?.profileImage ? (
-                      <img
-                        src={user?.profileImage}
-                        alt={user?.displayName || user?.username || 'User'}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <User className="h-5 w-5 text-white" />
-                    )}
-                  </Button>
-
-                  {isDropdownOpen && (
-                    <>
-                      {/* Invisible backdrop to close dropdown */}
-                      <div
-                        className="fixed inset-0 z-[-1]"
-                        onClick={() => setIsDropdownOpen(false)}
-                      />
-                      <div className="absolute right-0 top-full mt-3 w-64 origin-top-right rounded-xl border border-white/10 bg-[#1a1c24] p-1 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-100">
-                        <div className="px-4 py-3 border-b border-white/5">
-                          <p className="text-sm font-bold text-white truncate">
-                            {user?.displayName || user?.username || 'User'}
-                          </p>
-                          <p className="text-xs text-gray-400 truncate">
-                            {user?.email || user?.phone || 'Account verified'}
-                          </p>
-                        </div>
-
-                        <div className="p-1">
-                          <Link
-                            to="/profile"
-                            onClick={() => setIsDropdownOpen(false)}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
-                          >
-                            <User className="h-4 w-4" />
-                            My Profile
-                          </Link>
-                          <button
-                            onClick={handleSettingsClick}
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors cursor-pointer"
-                          >
-                            <Settings className="h-4 w-4" />
-                            Settings
-                          </button>
-                        </div>
-
-                        <div className="p-1 border-t border-white/5">
-                          <button
-                            onClick={() => {
-                              setIsDropdownOpen(false);
-                              setShowLogoutConfirm(true);
-                            }}
-                            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                          >
-                            <LogOut className="h-4 w-4" />
-                            Log Out
-                          </button>
-                        </div>
-                      </div>
-                    </>
+                {/* Profile Link */}
+                <Link
+                  to="/profile"
+                  className="hidden md:flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/10 transition-transform hover:scale-105 active:scale-95 cursor-pointer bg-neutral-800 p-0"
+                >
+                  {user?.profileImage ? (
+                    <img
+                      src={user?.profileImage}
+                      alt={user?.displayName || user?.username || 'User'}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-5 w-5 text-white" />
                   )}
-                </div>
+                </Link>
               </>
             )}
           </div>

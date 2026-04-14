@@ -115,12 +115,9 @@ export const JoinRequestPopup: React.FC = () => {
                             </Avatar>
                             <div className="flex flex-wrap items-center gap-x-2">
                                 <span className="text-[#a0a0a0] text-[17px]">@{request.userName}</span>
-                                <span className="text-white text-[17px] font-medium">wants to join you</span>
+                                <span className="text-white text-[17px] font-medium">wants to join you on this live stream</span>
                             </div>
                         </div>
-                        <p className="text-white text-[17px] font-medium">
-                            on this live stream
-                        </p>
                     </div>
 
                     {/* Action buttons */}

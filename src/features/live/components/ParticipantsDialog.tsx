@@ -17,8 +17,13 @@ const getFullName = (p: any): string =>
     p?.custom?.fields?.fullName?.kind?.stringValue || p?.name || '';
 
 export const ParticipantsDialog: React.FC = () => {
-    const { useParticipants } = useCallStateHooks();
+    const { useParticipants, useCallCreatedBy } = useCallStateHooks();
     const participants = useParticipants();
+    const createdBy = useCallCreatedBy();
+    const activeParticipants = participants.filter((p: any) => {
+        const isCreator = p.roles?.includes('host') || p.roles?.includes('admin') || p.userId === createdBy?.id;
+        return p.connectionQuality !== 'offline' && !!p.sessionId && !isCreator;
+    });
     const { user } = useAuthStore();
     const { openModal } = useUserProfileStore();
 
@@ -30,7 +35,7 @@ export const ParticipantsDialog: React.FC = () => {
         if (!user) return;
 
         const fetchFollowStatuses = async () => {
-            const usersToCheck = participants
+            const usersToCheck = activeParticipants
                 .filter(p => !p.isLocalParticipant)
                 .map(p => ({
                     userId: parseInt(p.userId, 10),
@@ -60,13 +65,13 @@ export const ParticipantsDialog: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const handleRefresh = async () => {
-        if (!user || participants.length === 0) return;
+        if (!user || activeParticipants.length === 0) return;
         setIsRefreshing(true);
 
         // Clear the ref so we fetch everyone again
         fetchedIdsRef.current.clear();
 
-        const usersToCheck = participants
+        const usersToCheck = activeParticipants
             .filter(p => !p.isLocalParticipant)
             .map(p => ({
                 userId: parseInt(p.userId, 10),
@@ -116,7 +121,7 @@ export const ParticipantsDialog: React.FC = () => {
     return (
         <DialogContent className="sm:max-w-[380px] bg-[#0f1117] border-white/5 text-white fixed top-[50%] right-6 left-auto translate-x-0 translate-y-[-50%] rounded-2xl max-h-[70vh]">
             <DialogHeader className="flex flex-row items-center justify-between">
-                <DialogTitle className="text-xl font-bold mt-2">Participants ({participants.length})</DialogTitle>
+                <DialogTitle className="text-xl font-bold mt-2">Participants ({activeParticipants.length})</DialogTitle>
                 <button
                     onClick={handleRefresh}
                     disabled={isRefreshing}
@@ -128,9 +133,9 @@ export const ParticipantsDialog: React.FC = () => {
             </DialogHeader>
             <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                 <div className="space-y-4">
-                    {participants.map((participant: any) => {
+                    {activeParticipants.map((participant: any) => {
                         const isMe = participant.isLocalParticipant;
-                        const isCreator = participant.roles?.includes('host') || participant.roles?.includes('admin');
+                        const isCreator = participant.roles?.includes('host') || participant.roles?.includes('admin') || participant.userId === createdBy?.id;
                         const isCoHost = !isCreator && (
                             participant.roles?.includes('co_host') ||
                             participant.capabilities?.includes('send-audio') ||
@@ -149,9 +154,9 @@ export const ParticipantsDialog: React.FC = () => {
                         return (
                             <div
                                 key={participant.sessionId}
-                                className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+                                className={cn("flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors", !isMe ? "cursor-pointer" : "")}
                                 onClick={() => {
-                                    if (modalUsername) openModal(modalUsername);
+                                    if (modalUsername && !isMe) openModal(modalUsername);
                                 }}
                             >
                                 <div className="flex items-center gap-3">

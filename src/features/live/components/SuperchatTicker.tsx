@@ -147,22 +147,23 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
         return Math.max(0.1, Math.min(4, DEFAULT_DURATION_SECONDS / entry.durationSeconds));
     }, [entry.durationSeconds]);
 
-    const [remainingPercent, setRemainingPercent] = useState<number>(100);
+    const isFrameSetRef = useRef(false);
+    const handleDotLottieRefCallback = useCallback((dotLottie: any) => {
+        if (!dotLottie || isFrameSetRef.current) return;
 
-    useEffect(() => {
-        const updateProgress = () => {
-            const now = Date.now();
+        const initFrame = () => {
+            if (isFrameSetRef.current || !dotLottie.totalFrames) return;
             const totalMs = entry.durationSeconds * 1000;
-            const expiry = entry.createdAt + totalMs;
-            const remainingMs = Math.max(0, expiry - now);
-            setRemainingPercent((remainingMs / totalMs) * 100);
-
-            if (remainingMs > 0) {
-                requestAnimationFrame(updateProgress);
-            }
+            const elapsedMs = Math.max(0, Date.now() - entry.createdAt);
+            const fraction = elapsedMs / totalMs;
+            const targetFrame = (fraction * dotLottie.totalFrames) % dotLottie.totalFrames;
+            dotLottie.setFrame(targetFrame);
+            isFrameSetRef.current = true;
         };
-        const handle = requestAnimationFrame(updateProgress);
-        return () => cancelAnimationFrame(handle);
+
+        dotLottie.addEventListener('ready', initFrame);
+        dotLottie.addEventListener('load', initFrame);
+        initFrame(); // Trigger in case it's already ready
     }, [entry.createdAt, entry.durationSeconds]);
 
     return (
@@ -176,6 +177,7 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
                     loop
                     autoplay
                     speed={animationSpeed}
+                    dotLottieRefCallback={handleDotLottieRefCallback}
                     style={{ width: '100%', height: '100%' }}
                 />
             </div>
@@ -200,13 +202,6 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
                         className="w-7 h-7 object-contain shrink-0"
                     />
                 )}
-            </div>
-
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40 z-20">
-                <div
-                    className="h-full bg-linear-to-r from-orange-500 to-[#FFB800] opacity-90 transition-all duration-75 ease-linear"
-                    style={{ width: `${remainingPercent}%` }}
-                />
             </div>
         </div>
     );

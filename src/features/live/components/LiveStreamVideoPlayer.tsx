@@ -77,7 +77,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             } catch (e) {
                 // Ignore — call may already be torn down
             }
-            
+
             // Only auto-navigate for viewers. Hosts handle their own end-stream flow.
             if (!isHost) {
                 useGoLiveStore.getState().setEndingStream(true);
@@ -224,7 +224,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                 )}
 
                 {/* Name badge for host */}
-                {isChatVisible && (
+                {isChatVisible && !p.isLocalParticipant && (
                     <div className="absolute bottom-4 left-4 right-4">
                         {isViewer && !isMobile ? (
                             <StreamerInfoOverlay
@@ -234,8 +234,15 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                             />
                         ) : (
                             <button
-                                onClick={() => openProfileModal(p.name || 'Host')}
-                                className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block cursor-pointer hover:bg-black/60 transition-colors"
+                                onClick={() => {
+                                    if (!p.isLocalParticipant) {
+                                        openProfileModal(p.name || 'Host');
+                                    }
+                                }}
+                                className={cn(
+                                    "bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block transition-colors",
+                                    !p.isLocalParticipant ? "cursor-pointer hover:bg-black/60" : "cursor-default"
+                                )}
                             >
                                 {getFullName(p) || 'Host'}
                             </button>
@@ -311,6 +318,18 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                         <MicOff className="w-3.5 h-3.5 text-white" />
                     )}
                 </button>
+
+                {/* Name badge */}
+                {isChatVisible && !p.isLocalParticipant && (
+                    <div className="absolute bottom-2 left-2">
+                        <button
+                            onClick={() => openProfileModal(p.name || 'Guest')}
+                            className="bg-black/40 backdrop-blur-md px-2 py-1 rounded-md text-[10px] sm:text-xs font-medium border border-white/10 inline-block cursor-pointer hover:bg-black/60 transition-colors"
+                        >
+                            {getFullName(p) || 'Guest'}
+                        </button>
+                    </div>
+                )}
             </div>
         );
     };
@@ -412,11 +431,14 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                                         {participantHasAudio ? <Mic className="w-4 h-4 text-white/70" /> : <MicOff className="w-4 h-4 text-white" />}
                                     </button>
                                     {/* Name badge */}
-                                    {isChatVisible && (
+                                    {isChatVisible && !p.isLocalParticipant && (
                                         <div className="absolute bottom-4 left-4">
-                                            <span className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block">
+                                            <button
+                                                onClick={() => openProfileModal(p.name || 'Guest')}
+                                                className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block cursor-pointer hover:bg-black/60 transition-colors"
+                                            >
                                                 {getFullName(p) || 'Guest'}
-                                            </span>
+                                            </button>
                                         </div>
                                     )}
                                 </>
