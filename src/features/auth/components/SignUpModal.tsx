@@ -478,7 +478,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         <Button
                             type="submit"
                             disabled={isLoading || !form.formState.isValid}
-                            className="flex-1 rounded-full bg-[#FF7700] bg-none hover:bg-[#ff9922] disabled:bg-[#262626] disabled:bg-none py-3 md:py-6 text-sm font-medium text-black transition-all border border-white/5 disabled:opacity-100"
+                            className="flex-1 rounded-full bg-[#FF7700] bg-none hover:bg-[#ff9922] disabled:bg-[#262626] disabled:bg-none py-3 md:py-6 text-sm font-medium text-white transition-all border border-white/5 disabled:opacity-100"
                         >
                             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                             {isLoading ? 'Sending...' : 'Verify'}
@@ -857,6 +857,7 @@ export interface StepDetailsProps {
         location?: string;
         bio?: string;
         profileImage?: string;
+        isDefaultImage?: boolean;
         username?: string;
         identifier?: string;
     };
@@ -883,6 +884,7 @@ export const StepDetails = ({
     const [profileImage, setProfileImage] = useState<string | null>(initialValues?.profileImage ?? null);
     const [profileImageKey, setProfileImageKey] = useState<string | null>(initialValues?.profileImage ?? null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDefaultImage, setIsDefaultImage] = useState(initialValues?.isDefaultImage ?? true);
     const [cameraMenuOpen, setCameraMenuOpen] = useState(false);
     const [locationDrawerOpen, setLocationDrawerOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -928,6 +930,7 @@ export const StepDetails = ({
             await mediaService.uploadFileToS3(uploadUrl, file);
             setProfileImage(fullUrl);
             setProfileImageKey(fullUrl);
+            setIsDefaultImage(false);
             toast.success("Profile photo updated");
         } catch (error) {
             console.error("Upload failed:", error);
@@ -944,6 +947,7 @@ export const StepDetails = ({
             await mediaService.deleteFile(profileImageKey);
             setProfileImage(null);
             setProfileImageKey(null);
+            setIsDefaultImage(true);
             toast.success("Profile photo removed");
         } catch (error) {
             console.error("Delete failed:", error);
@@ -959,15 +963,18 @@ export const StepDetails = ({
         setIsLoading(true);
         try {
             let currentProfileImageKey = profileImageKey;
+            let isDefault = isDefaultImage;
             if (!currentProfileImageKey) {
                 try {
                     const file = await generateAvatarFile(data.fullName);
                     const { uploadUrl, fullUrl } = await mediaService.generatePresignedUrl('PROFILE_IMAGE', 'png');
                     await mediaService.uploadFileToS3(uploadUrl, file);
                     currentProfileImageKey = fullUrl;
+                    isDefault = true;
                 } catch (err) {
                     console.error("Failed to generate/upload default avatar", err);
                     currentProfileImageKey = `https://ui-avatars.com/api/?name=${encodeURIComponent(data.fullName)}&background=random`;
+                    isDefault = true;
                 }
             }
             await updateProfileMutation({
@@ -976,8 +983,9 @@ export const StepDetails = ({
                     username: mode === 'signup' ? username : (initialValues?.username ?? ''),
                     bio: data.bio ?? "",
                     eighteenPlus: isAdult,
-                    profileImage: currentProfileImageKey || ""
-                }
+                    profileImage: currentProfileImageKey || "",
+                    defaultProfileImage: isDefault
+                } as any
             });
             if (mode === 'signup') {
                 store.setStep('interests');
@@ -1066,9 +1074,9 @@ export const StepDetails = ({
                                         <div className="fixed inset-0 z-40" style={{ background: 'transparent' }} onClick={() => setCameraMenuOpen(false)} />
                                         <div className="absolute bottom-full -right-20 mb-2 z-50 min-w-32.5 bg-[#1a1c24] border border-white/10 rounded-xl p-1 shadow-2xl">
                                             <button type="button" onClick={() => { fileInputRef.current?.click(); setCameraMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-white/5 rounded-lg">
-                                                {profileImage ? 'Change Photo' : 'Add Photo'}
+                                                {!isDefaultImage ? 'Change Photo' : 'Choose Photo'}
                                             </button>
-                                            {profileImage && (
+                                            {profileImage && !isDefaultImage && (
                                                 <>
                                                     <div className="my-1 border-t border-white/10" />
                                                     <button type="button" onClick={() => { handleDeletePhoto(); setCameraMenuOpen(false); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-white cursor-pointer hover:bg-red-400/5 rounded-lg">

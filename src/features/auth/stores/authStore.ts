@@ -23,6 +23,7 @@ export interface User {
   bio?: string;
   location?: string;
   profileImage?: string;
+  isDefaultImage?: boolean;
   coins?: number;
   followedByMe?: boolean;
   preferredLanguage?: string;
@@ -47,7 +48,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       accessToken: null,
-      refreshToken: null, 
+      refreshToken: null,
       user: null,
       wallet: null,
       isAuthenticated: false,
@@ -55,7 +56,7 @@ export const useAuthStore = create<AuthState>()(
 
       setAuth: (payload) => set({
         accessToken: payload.accessToken,
-        refreshToken: payload.refreshToken, 
+        refreshToken: payload.refreshToken,
         user: payload.user,
         wallet: payload.wallet,
         isNewUser: payload.newUser,
@@ -65,14 +66,14 @@ export const useAuthStore = create<AuthState>()(
       updateUser: (userData) => set((state) => ({
         user: state.user ? { ...state.user, ...userData } : null
       })),
- 
+
       updateWallet: (walletData) => set((state) => ({
         wallet: state.wallet ? { ...state.wallet, ...walletData } : (walletData as Wallet)
       })),
 
       clearAuth: () => set({
         accessToken: null,
-        refreshToken: null, 
+        refreshToken: null,
         user: null,
         wallet: null,
         isAuthenticated: false,
@@ -82,12 +83,12 @@ export const useAuthStore = create<AuthState>()(
       isHydrated: false,
       setHydrated: () => set({ isHydrated: true }),
     }),
-    { 
+    {
       name: 'auth-storage',
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
-        user: state.user, 
+        user: state.user,
         wallet: state.wallet,
         isNewUser: state.isNewUser,
         isAuthenticated: state.isAuthenticated

@@ -23,6 +23,7 @@ export const EditProfile = ({ isOpen, onClose }: EditProfileModalProps) => {
                     location: user.location ?? '',
                     bio: user.bio ?? '',
                     profileImage: user.profileImage ?? '',
+                    isDefaultImage: user.isDefaultImage ?? true,
                 }}
                 onSuccess={onClose}
                 onCancel={onClose}

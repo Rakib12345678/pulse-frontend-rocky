@@ -15,6 +15,7 @@ export interface User {
   postCount: number;
   location?: string;
   profileImage?: string;
+  isDefaultImage?: boolean;
   coins?: number;
   isFollowing?: boolean;
   isFollower?: boolean;
