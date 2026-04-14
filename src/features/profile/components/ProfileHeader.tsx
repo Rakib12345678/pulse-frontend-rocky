@@ -11,6 +11,8 @@ import { useReportUser } from '@/features/setting/services/setting.service';
 import { BlockUserModal } from '@/components/internal/ConfirmModal';
 import { ReportUserModal } from '@/components/internal/ReasonModal';
 import { SuccessModal } from '@/features/setting/components/SuccessModal';
+import { FollowersFollowingModal } from '@/features/profile/components/FollowersFollowingModal';
+import { cn } from '@/lib/utils';
 
 interface ProfileHeaderProps {
   user: User;
@@ -25,6 +27,10 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showReportSuccess, setShowReportSuccess] = useState(false);
+  const [followModal, setFollowModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
+    isOpen: false,
+    type: 'followers',
+  });
 
   const { mutate: toggleFollow, isPending } = useToggleFollow();
   const { mutate: toggleBlock, isPending: isBlockPending } = useBlockUser();
@@ -105,6 +111,10 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
     }
   };
 
+  const openFollowModal = (type: 'followers' | 'following') => {
+    setFollowModal({ isOpen: true, type });
+  };
+
   return (
     <>
       <EditProfile
@@ -139,6 +149,12 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         isLoading={isReportPending}
         onConfirm={handleReportConfirm}
         onCancel={() => setShowReportModal(false)}
+      />
+
+      <FollowersFollowingModal
+        isOpen={followModal.isOpen}
+        onClose={() => setFollowModal({ ...followModal, isOpen: false })}
+        type={followModal.type}
       />
 
       <div className="bg-[#111213] flex flex-col rounded-2xl p-3 md:p-5 lg:p-6 xl:p-14 border-x-0 border-y-2 md:border-2 border-[#1D1F20] mb-3 md:mb-5 lg:mb-8 xl:mb-15">
@@ -305,7 +321,14 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         <div className="bg-[#1D1F20] rounded-2xl md:rounded-3xl lg:rounded-3xl xl:rounded-4xl py-1.5 md:py-2.5 lg:py-3 xl:py-4 px-4 md:px-10 lg:px-14 xl:px-20 border border-zinc-800/40 shadow-2xl w-full">
           <div className="flex justify-between items-center w-full">
             {stats.map((stat, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 md:gap-1.5 flex-1">
+              <div 
+                key={i} 
+                className={cn(
+                  "flex flex-col items-center gap-1 md:gap-1.5 flex-1",
+                  stat.label !== 'Post' && "cursor-pointer hover:opacity-80 transition-opacity"
+                )}
+                onClick={stat.label !== 'Post' ? () => openFollowModal(stat.label.toLowerCase() as any) : undefined}
+              >
                 <span className="text-[#494E50] text-[9px] md:text-xs font-bold tracking-widest">{stat.label}</span>
                 <span className="text-base md:text-2xl lg:text-3xl xl:text-4xl font-extrabold tracking-tight text-[#FFE2A5]">{stat.value}</span>
               </div>

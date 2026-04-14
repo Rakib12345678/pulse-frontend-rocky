@@ -25,6 +25,7 @@ export interface FeedStreamItem {
     followerCount: number;
     createdAt: string;
     isLive: boolean;
+    recordingUrl?: string | null;
     cohosts?: { username: string; profileImage: string; status: string }[];
 }
 

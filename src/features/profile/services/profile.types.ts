@@ -60,4 +60,11 @@ export interface BlockedUser {
   fullName: string;
   profileImage: string;
 }
+export interface FollowUser {
+  userId: number;
+  username: string;
+  fullName: string;
+  profileImage: string;
+  isFollowing?: boolean;
+}
 

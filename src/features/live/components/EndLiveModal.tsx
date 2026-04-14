@@ -32,7 +32,7 @@ export const EndLiveModal: React.FC<EndLiveModalProps> = ({
     React.useEffect(() => {
         if (isOpen && autoEndCountdown) {
             if (intervalRef.current) clearInterval(intervalRef.current);
-            
+
             intervalRef.current = setInterval(() => {
                 setLocalCountdown((prev) => {
                     if (prev <= 1) {
@@ -68,19 +68,21 @@ export const EndLiveModal: React.FC<EndLiveModalProps> = ({
                 <DialogHeader className="flex flex-col items-center gap-4 text-center">
                     <div className="relative w-24 h-24 mb-2 flex items-center justify-center">
                         {autoEndCountdown ? (
-                             <div className="absolute inset-0 rounded-full border-4 border-red-500/20 flex items-center justify-center">
+                            <div className="absolute inset-0 rounded-full border-4 border-red-500/20 flex items-center justify-center">
                                 <span className="text-4xl font-black text-red-500">{localCountdown}</span>
-                             </div>
+                            </div>
                         ) : (
                             <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
                                 <Trash2 className="w-8 h-8 text-red-500" />
                             </div>
                         )}
                     </div>
-                    <DialogTitle className="text-2xl font-bold text-white tracking-tight">End Live Stream?</DialogTitle>
+                    <DialogTitle className="text-2xl font-bold text-white tracking-tight">
+                        {autoEndCountdown ? "Session Ended" : "End Live Stream?"}
+                    </DialogTitle>
                     <DialogDescription className="text-gray-400 text-base leading-relaxed">
                         {autoEndCountdown ? (
-                            "Session limit reached! Save your recording before it's automatically discarded."
+                            "Your 10-minute session limit has been reached. Would you like to save the recording to your profile?"
                         ) : (
                             "Are you sure you want to end your live stream? You can choose to save the recording to your profile."
                         )}
@@ -91,26 +93,29 @@ export const EndLiveModal: React.FC<EndLiveModalProps> = ({
                     <Button
                         onClick={() => onEnd(true)}
                         disabled={isLoading}
-                        className="flex-1 py-7 rounded-2xl !bg-[#FF8800] !text-black font-bold text-base hover:!bg-[#ff9d2e] active:scale-95 transition-all shadow-lg flex items-center justify-center gap-1 border-0"
+                        className="flex-1 py-7 rounded-2xl !bg-[#ff7700] !bg-none !text-black font-bold text-base hover:!bg-[#ff8800] active:scale-95 transition-all shadow-lg flex items-center justify-center gap-1 border-0"
                     >
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-black" /> : "Leave and Save"}
-                    </Button>
-                    
-                    <Button
-                        onClick={() => onEnd(false)}
-                        disabled={isLoading}
-                        className="flex-1 py-7 rounded-2xl !bg-[#2C2C2E] !text-white font-bold text-base hover:!bg-[#3A3A3C] active:scale-95 transition-all flex items-center justify-center gap-1 border-0"
-                    >
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : "Leave and Discard"}
+                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-black" /> : (autoEndCountdown ? "Save Recording" : "Save & End")}
                     </Button>
 
                     <Button
-                        onClick={onClose}
+                        onClick={() => onEnd(false)}
                         disabled={isLoading}
-                        className="flex-1 py-7 rounded-2xl bg-transparent !text-gray-400 font-bold text-base border-2 border-gray-700 hover:border-gray-500 hover:!text-white transition-all disabled:opacity-50"
+                        className="flex-1 py-7 rounded-2xl !bg-[#555555] !bg-none !text-white font-bold text-base hover:!bg-[#666666] active:scale-95 transition-all flex items-center justify-center gap-1 border-0"
                     >
-                        Stay
+                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin text-white" /> : (autoEndCountdown ? "Discard" : "Discard & End")}
                     </Button>
+
+                    {!autoEndCountdown && (
+                        <Button
+                            onClick={onClose}
+                            variant="ghost"
+                            disabled={isLoading}
+                            className="flex-1 py-7 rounded-2xl !bg-transparent !bg-none border-2 border-gray-600 !text-gray-400 font-bold text-base hover:border-gray-400 hover:!text-white transition-all disabled:opacity-50"
+                        >
+                            Stay
+                        </Button>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

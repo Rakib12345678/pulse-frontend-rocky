@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfileModal } from './UserProfileModal';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { ChevronLeft } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 
 // Context for sharing recording state
 interface RecordingContextValue {
@@ -14,7 +16,15 @@ interface RecordingContextValue {
         title?: string;
         category?: string;
         recordingUrl?: string;
-    }
+        cohosts?: { username: string; profileImage: string; status: string }[];
+        participantCount?: number;
+    };
+    currentTime: number;
+    setCurrentTime: (time: number) => void;
+    duration: number;
+    setDuration: (duration: number) => void;
+    isPlaying: boolean;
+    setIsPlaying: (isPlaying: boolean) => void;
 }
 
 const RecordingContext = createContext<RecordingContextValue>({
@@ -23,7 +33,13 @@ const RecordingContext = createContext<RecordingContextValue>({
     isChatVisible: true,
     setChatVisible: () => { },
     isRecording: true,
-    recordingMetadata: {}
+    recordingMetadata: {},
+    currentTime: 0,
+    setCurrentTime: () => { },
+    duration: 0,
+    setDuration: () => { },
+    isPlaying: false,
+    setIsPlaying: () => { }
 });
 
 export const useRecordingContext = () => useContext(RecordingContext);
@@ -35,6 +51,8 @@ interface RecordingLayoutProps {
         username?: string;
         title?: string;
         category?: string;
+        cohosts?: { username: string; profileImage: string; status: string }[];
+        participantCount?: number;
     }
 }
 
@@ -45,6 +63,9 @@ export const RecordingLayout: React.FC<RecordingLayoutProps> = ({
 }) => {
     const { user } = useAuthStore();
     const [isChatVisible, setChatVisible] = useState(true);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
 
     // Lock body scroll while active
     useEffect(() => {
@@ -54,6 +75,11 @@ export const RecordingLayout: React.FC<RecordingLayoutProps> = ({
         };
     }, []);
 
+    const navigate = useNavigate();
+    const handleBack = () => {
+        navigate({ to: '/profile' });
+    };
+
     return (
         <RecordingContext.Provider value={{
             isViewer: true,
@@ -61,12 +87,27 @@ export const RecordingLayout: React.FC<RecordingLayoutProps> = ({
             isChatVisible,
             setChatVisible,
             isRecording: true,
-            recordingMetadata: { ...recordingMetadata, recordingUrl }
+            recordingMetadata: { ...recordingMetadata, recordingUrl },
+            currentTime,
+            setCurrentTime,
+            duration,
+            setDuration,
+            isPlaying,
+            setIsPlaying
         }}>
-            <div className="fixed inset-0 pt-18 w-full bg-[#0f1117] text-white overflow-hidden flex flex-col recording-mode">
-                <div className="flex-1 min-h-0 relative">
-                    {children}
+            <div className="fixed inset-0 w-full h-full bg-black overflow-hidden z-[9999]">
+                {/* Fixed Back Button at Top Level */}
+                <div className="fixed top-24 left-8 z-[10000]">
+                    <button
+                        onClick={handleBack}
+                        className="bg-[#FF8800] hover:bg-[#FF8800]/90 text-black font-bold px-6 py-2 rounded-full h-11 shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                        Back
+                    </button>
                 </div>
+
+                {children}
                 <UserProfileModal />
             </div>
         </RecordingContext.Provider>

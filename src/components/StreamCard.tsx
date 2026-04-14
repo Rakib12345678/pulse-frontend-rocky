@@ -58,7 +58,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
     return (
       <Link
-        to={recordingUrl ? "/stream/$id" : "/live/$id"}
+        to={isLive ? "/live/$id" : "/stream/$id"}
         params={{ id: callId }}
         search={{
           recordingUrl,
@@ -149,7 +149,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   // STANDARD VARIANT (LiveCard design)
   return (
     <Link
-      to={recordingUrl ? "/stream/$id" : "/live/$id"}
+      to={isLive ? "/live/$id" : "/stream/$id"}
       params={{ id: callId }}
       search={{
         recordingUrl,

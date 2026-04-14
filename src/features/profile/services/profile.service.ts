@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import type { User, LiveStream, LiveStatus } from '@/features/profile/services/profile.types';
+import type { User, LiveStream, LiveStatus, FollowUser } from '@/features/profile/services/profile.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/lib/api';
 
@@ -31,11 +31,11 @@ const fetchPastLiveStreams = async (userId: number): Promise<LiveStream[]> => {
 const fetchGlobalPastLiveStreams = async (page = 0, size = 20, userId?: number): Promise<{ data: any[], hasMore: boolean, page: number }> => {
   const params: any = { page, size };
   const url = userId ? `stream/recording/past-live/${userId}` : 'stream/recording/past-live';
-  
+
   const { data } = await api.get(url, {
     params
   });
-  
+
   if (Array.isArray(data)) {
     return {
       data,
@@ -50,6 +50,34 @@ const fetchGlobalPastLiveStreams = async (page = 0, size = 20, userId?: number):
 const fetchMoments = async (userId: number): Promise<LiveStream[]> => {
   const { data } = await api.get(`/users/${userId}/moments`);
   return data;
+};
+
+// Followers
+const fetchFollowers = async (page = 0, size = 20): Promise<{ data: FollowUser[], hasMore: boolean, page: number }> => {
+  const { data } = await api.get('/users/followers', { params: { page, size } });
+  const content = Array.isArray(data) ? data : data.content || [];
+  return {
+    data: content,
+    hasMore: data.last === false || content.length === size,
+    page
+  };
+};
+
+// Following
+const fetchFollowing = async (page = 0, size = 20): Promise<{ data: FollowUser[], hasMore: boolean, page: number }> => {
+  const { data } = await api.get('/users/following', { params: { page, size } });
+  const content = Array.isArray(data) ? data : data.content || [];
+  return {
+    data: content,
+    hasMore: data.last === false || content.length === size,
+    page
+  };
+};
+
+// Search creators
+const fetchSearchCreators = async (query: string): Promise<FollowUser[]> => {
+  const { data } = await api.get('/explore/creators/search', { params: { query } });
+  return data.creators || data || [];
 };
 
 // Live status by username
@@ -131,6 +159,35 @@ export const useUserLiveStatus = (username?: string, enabled = true) => {
   });
 };
 
+export const useFollowers = (limit = 20) => {
+  return useInfiniteQuery({
+    queryKey: ['followers'],
+    queryFn: ({ pageParam = 0 }) => fetchFollowers(pageParam as number, limit),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    initialPageParam: 0,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useFollowing = (limit = 20) => {
+  return useInfiniteQuery({
+    queryKey: ['following'],
+    queryFn: ({ pageParam = 0 }) => fetchFollowing(pageParam as number, limit),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    initialPageParam: 0,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useSearchCreators = (query: string) => {
+  return useQuery({
+    queryKey: ['searchCreators', query],
+    queryFn: () => fetchSearchCreators(query),
+    enabled: !!query && query.length >= 2,
+    staleTime: 2 * 60 * 1000,
+  });
+};
+
 export const useToggleFollow = () => {
   const queryClient = useQueryClient();
   const updateUser = useAuthStore((state) => state.updateUser);
@@ -191,7 +248,6 @@ export const useToggleFollow = () => {
       // Optimistic update for exploreData queries
       queryClient.setQueriesData<any>({ queryKey: ['exploreData'] }, (oldData: any) => {
         if (!oldData) return oldData;
-
         const updateCreator = (c: any) => {
           if (c.id === targetUserId || (c.id === 0 && targetUserId === 0)) {
             return {
@@ -215,6 +271,26 @@ export const useToggleFollow = () => {
           popularStreams: (oldData.popularStreams || []).map(updateCreator),
         };
       });
+
+      // Optimistic update for followers and following lists
+      const updateListQuery = (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            data: page.data.map((user: any) => {
+              if (user.userId === targetUserId) {
+                return { ...user, isFollowing: !followedByMe };
+              }
+              return user;
+            }),
+          })),
+        };
+      };
+
+      queryClient.setQueriesData({ queryKey: ['followers'] }, updateListQuery);
+      queryClient.setQueriesData({ queryKey: ['following'] }, updateListQuery);
 
       // Optimistic update for exploreSearch queries
       queryClient.setQueriesData<any>({ queryKey: ['exploreSearch'] }, (oldData: any) => {
@@ -242,6 +318,17 @@ export const useToggleFollow = () => {
         };
       });
 
+      // Update followingCount for currentUser
+      queryClient.setQueryData<User>(['currentUser'], (old) => {
+        if (!old || old.id === targetUserId) return old;
+        return {
+          ...old,
+          followingCount: followedByMe
+            ? Math.max(0, (old.followingCount ?? 0) - 1)
+            : (old.followingCount ?? 0) + 1,
+        };
+      });
+
       // Update Zustand store if the current user is affected
       if (updateUser) {
         const currentUser = queryClient.getQueryData<User>(['currentUser']);
@@ -251,6 +338,13 @@ export const useToggleFollow = () => {
             followerCount: followedByMe
               ? Math.max(0, (currentUser.followerCount ?? 0) - 1)
               : (currentUser.followerCount ?? 0) + 1,
+          });
+        } else if (currentUser) {
+          // Also update the store for the current user's following count
+          updateUser({
+            followingCount: followedByMe
+              ? Math.max(0, (currentUser.followingCount ?? 0) - 1)
+              : (currentUser.followingCount ?? 0) + 1,
           });
         }
       }
@@ -296,6 +390,8 @@ export const useToggleFollow = () => {
       queryClient.invalidateQueries({ queryKey: ['userByUsername'] });
       queryClient.invalidateQueries({ queryKey: ['exploreData'] });
       queryClient.invalidateQueries({ queryKey: ['exploreSearch'] });
+      queryClient.invalidateQueries({ queryKey: ['followers'] });
+      queryClient.invalidateQueries({ queryKey: ['following'] });
     },
   });
 };
@@ -335,6 +431,30 @@ export const useBlockUser = () => {
           return { ...old, blockedByMe: !blockedByMe };
         });
       });
+
+      // Decrement counts for currentUser if blocking
+      if (!blockedByMe) {
+        queryClient.setQueryData<User>(['currentUser'], (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            followerCount: Math.max(0, (old.followerCount ?? 0) - 1),
+            followingCount: Math.max(0, (old.followingCount ?? 0) - 1),
+          };
+        });
+
+        // Optimistic update for followers list (remove if blocking)
+        queryClient.setQueriesData<any>({ queryKey: ['followers'] }, (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              data: page.data.filter((user: any) => user.userId !== targetUserId),
+            })),
+          };
+        });
+      }
     },
 
     onError: (_err, variables) => {
@@ -346,6 +466,8 @@ export const useBlockUser = () => {
     onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ['userProfile', variables.targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['userByUsername'] });
+      queryClient.invalidateQueries({ queryKey: ['followers'] });
+      queryClient.invalidateQueries({ queryKey: ['following'] });
     },
   });
 };
@@ -380,6 +502,30 @@ export const useUpdateProfile = () => {
       updateUserStore(updatedUser);
 
       // 5. Invalidate to ensure everything stays in sync
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+};
+
+export const useRemoveFollower = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (targetUserId: number) => {
+      // Assuming this endpoint based on context, will check if it fails
+      await api.post('/users/followers/remove', { targetUserId });
+    },
+    onMutate: async () => {
+      // Optimistic update for follower count
+      queryClient.setQueryData<User>(['currentUser'], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          followerCount: Math.max(0, (old.followerCount ?? 0) - 1),
+        };
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['followers'] });
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     },
   });

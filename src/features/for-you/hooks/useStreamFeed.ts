@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { liveService, FeedStreamItem } from '@/features/live/services/live.service';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 
 export function useStreamFeed() {
+    const { user } = useAuthStore();
     const [streams, setStreams] = useState<FeedStreamItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -25,8 +27,9 @@ export function useStreamFeed() {
         try {
             const response = await liveService.getStreamFeed();
             const newStreams = Array.isArray(response.data) ? response.data : [];
+            const filteredStreams = newStreams.filter(stream => stream.createdByUserId !== String(user?.id));
 
-            setStreams(newStreams);
+            setStreams(filteredStreams);
             setNextCursor(response.nextCursor);
             setHasMore(response.hasMore);
         } catch (err) {
@@ -42,7 +45,9 @@ export function useStreamFeed() {
         setIsLoadingMore(true);
         try {
             const response = await liveService.getStreamFeed(nextCursor);
-            setStreams(prev => [...prev, ...(Array.isArray(response.data) ? response.data : [])]);
+            const moreStreams = Array.isArray(response.data) ? response.data : [];
+            const filteredMore = moreStreams.filter(stream => stream.createdByUserId !== String(user?.id));
+            setStreams(prev => [...prev, ...filteredMore]);
             setNextCursor(response.nextCursor);
             setHasMore(response.hasMore);
             setHasPaginated(true);

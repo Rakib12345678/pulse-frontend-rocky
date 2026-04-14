@@ -7,7 +7,7 @@ import { liveService, FeedStreamItem } from '@/features/live/services/live.servi
 import { useEffect, useState } from 'react'
 
 const recordingSearchSchema = z.object({
-  recordingUrl: z.string(),
+  recordingUrl: z.string().optional().nullable(),
 })
 
 export const Route = createFileRoute('/_main/stream/$id')({
@@ -18,7 +18,6 @@ export const Route = createFileRoute('/_main/stream/$id')({
 function RecordingPlaybackContent() {
   return (
     <>
-      <RecordedStreamHeader />
       <RecordedVideoPlayer />
     </>
   )
@@ -26,7 +25,7 @@ function RecordingPlaybackContent() {
 
 function RecordingPlaybackComponent() {
   const { id } = Route.useParams()
-  const { recordingUrl } = Route.useSearch()
+  const { recordingUrl: searchUrl } = Route.useSearch()
   const [metadata, setMetadata] = useState<Partial<FeedStreamItem>>({})
 
   useEffect(() => {
@@ -41,13 +40,17 @@ function RecordingPlaybackComponent() {
     fetchMetadata()
   }, [id])
 
+  const finalRecordingUrl = searchUrl || metadata.recordingUrl || undefined;
+
   return (
     <RecordingLayout 
-      recordingUrl={recordingUrl} 
+      recordingUrl={finalRecordingUrl} 
       recordingMetadata={{
         username: metadata.username || undefined,
         title: metadata.title || undefined,
-        category: metadata.category || undefined
+        category: metadata.category || undefined,
+        cohosts: metadata.cohosts,
+        participantCount: metadata.participantCount
       }}
     >
       <RecordingPlaybackContent />
