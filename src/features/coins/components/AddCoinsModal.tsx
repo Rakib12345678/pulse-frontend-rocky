@@ -24,8 +24,8 @@ export const AddCoinsModal = () => {
     const isMobile = useIsMobile();
 
     const renderContent = (isMobileView: boolean) => (
-        <AppBackground 
-            displayRings={false} 
+        <AppBackground
+            displayRings={false}
             className={`h-full w-full ${isMobileView ? '' : 'sm:rounded-3xl'} flex flex-col pt-8`}
             innerClassName="flex flex-col overflow-hidden"
         >
@@ -63,7 +63,7 @@ export const AddCoinsModal = () => {
     if (isMobile) {
         return (
             <Drawer open={isOpen} onOpenChange={(open) => !open && closeModal()}>
-                <DrawerContent 
+                <DrawerContent
                     className="bg-[#111213] border-none text-white max-h-[95vh] h-[95vh] flex flex-col p-0 overflow-hidden"
                     style={{ background: 'linear-gradient(180deg, #111213 0%, #0d0d0d 100%)' }}
                 >

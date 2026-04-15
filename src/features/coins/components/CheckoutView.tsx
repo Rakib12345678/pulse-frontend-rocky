@@ -1,48 +1,36 @@
 import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useCoinsStore } from '../hooks/useCoinsStore';
-import { useAuthStore } from '@/features/auth/stores/authStore';
 import { paymentService } from '../services/payment.service';
 import coinIcon from '@/assets/coin.svg';
-import upiIcon from '@/assets/upi.svg';
-import { ArrowLeft, CreditCard, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const CheckoutView = () => {
-    const queryClient = useQueryClient();
-    const { selectedPackage, paymentMethod, setPaymentMethod, setStep, setResultStatus } = useCoinsStore();
-    const { updateWallet } = useAuthStore();
+    const { selectedPackage, setStep } = useCoinsStore();
     const [isProcessing, setIsProcessing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     if (!selectedPackage) return null;
 
     const handlePay = async () => {
         setIsProcessing(true);
+        setError(null);
         try {
-            // 1. Create Order API
-            const { orderId, amount } = await paymentService.createOrder(Number(selectedPackage.id));
+            const response = await paymentService.createCheckoutSession({
+                coinId: Number(selectedPackage.id),
+                successUrl: `${window.location.origin}/wallet/success`,
+                cancelUrl: `${window.location.origin}/wallet/cancel`,
+            });
 
-            // 2. Payment API
-            await paymentService.processPayment({ orderId, amount });
-
-            // 3. Small delay to ensure backend consistency
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // 4. Fetch User Wallet API
-            const wallet = await paymentService.getWalletBalance();
-
-            // 5. Update Global State
-            updateWallet(wallet);
-            queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
-
-            // Success Transition
-            setResultStatus('success');
-            setStep('result');
-        } catch (error) {
-            console.error('Payment failed:', error);
-            setResultStatus('failure');
-            setStep('result');
-        } finally {
+            // The backend returns a checkoutUrl for Stripe Hosted Checkout
+            if (response.checkoutUrl) {
+                window.location.href = response.checkoutUrl;
+            } else {
+                throw new Error("No checkout URL returned from backend");
+            }
+        } catch (err) {
+            console.error('Failed to create checkout session:', err);
+            setError('Something went wrong. Please try again.');
             setIsProcessing(false);
         }
     };
@@ -71,54 +59,17 @@ export const CheckoutView = () => {
                 <span className="text-white font-bold text-xl">₹ {selectedPackage.price.toLocaleString()}</span>
             </div>
 
-            {/* Payment Methods */}
-            <div className="flex flex-col">
-                {/* Add Card */}
-                <Button
-                    variant="ghost"
-                    onClick={() => setPaymentMethod('card')}
-                    disabled={isProcessing}
-                    className="flex items-center justify-between px-4 py-5 border-b border-white/5 cursor-pointer hover:bg-white/2 transition-colors w-full h-auto rounded-none disabled:opacity-50"
-                >
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-[#2D2D2D] flex items-center justify-center">
-                            <CreditCard className="w-5 h-5 text-gray-400" />
-                        </div>
-                        <span className="text-white text-base font-medium">Add Card</span>
-                    </div>
-                    <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === 'card'
-                            ? 'bg-[#FF8800] border-[#FF8800]'
-                            : 'border-gray-500 bg-transparent'
-                            }`}
-                    >
-                        {paymentMethod === 'card' && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                </Button>
-
-                {/* UPI */}
-                <Button
-                    variant="ghost"
-                    onClick={() => setPaymentMethod('upi')}
-                    disabled={isProcessing}
-                    className="flex items-center justify-between px-4 py-5 cursor-pointer hover:bg-white/2 transition-colors w-full h-auto rounded-none disabled:opacity-50"
-                >
-                    <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-[#2D2D2D] flex items-center justify-center">
-                            <img src={upiIcon} alt="UPI" className="w-5 h-5" />
-                        </div>
-                        <span className="text-white text-base font-medium">UPI</span>
-                    </div>
-                    <div
-                        className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === 'upi'
-                            ? 'bg-[#FF8800] border-[#FF8800]'
-                            : 'border-gray-500 bg-transparent'
-                            }`}
-                    >
-                        {paymentMethod === 'upi' && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                </Button>
+            {/* Info */}
+            <div className="bg-[#1A1C1E]/50 border border-white/5 rounded-2xl px-5 py-4">
+                <p className="text-gray-400 text-sm leading-relaxed">
+                    You will be redirected to Stripe's secure checkout to complete your payment. All major payment methods are supported.
+                </p>
             </div>
+
+            {/* Error */}
+            {error && (
+                <p className="text-red-400 text-sm text-center">{error}</p>
+            )}
 
             {/* Spacer */}
             <div className="flex-1" />
@@ -132,17 +83,15 @@ export const CheckoutView = () => {
                 {isProcessing ? (
                     <div className="flex items-center gap-2">
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Processing...</span>
+                        <span>Redirecting to Stripe...</span>
                     </div>
                 ) : (
-                    'Pay'
+                    <div className="flex items-center gap-2">
+                        <span>Pay with Stripe</span>
+                        <ExternalLink className="w-4 h-4" />
+                    </div>
                 )}
             </Button>
-
-            {/* Tax Disclaimer
-            <p className="text-gray-500 text-xs text-center">
-                Amount inclusive of regional taxes and fees: ₹{Math.round(selectedPackage.price * 1.18).toLocaleString()}
-            </p> */}
         </div>
     );
 };

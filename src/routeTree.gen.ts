@@ -26,6 +26,8 @@ import { Route as MainLiveIndexRouteImport } from './routes/_main/live/index'
 import { Route as MainStreamIdRouteImport } from './routes/_main/stream/$id'
 import { Route as MainProfileUsernameRouteImport } from './routes/_main/profile/$username'
 import { Route as MainLiveIdRouteImport } from './routes/_main/live/$id'
+import { Route as MainWalletSuccessRouteRouteImport } from './routes/_main/wallet/success/route'
+import { Route as MainWalletCancelRouteRouteImport } from './routes/_main/wallet/cancel/route'
 import { Route as MainProfileSettingIndexRouteImport } from './routes/_main/profile/setting/index'
 import { Route as MainProfileSettingDiamondsRouteImport } from './routes/_main/profile/setting/diamonds'
 import { Route as MainProfileSettingCoinsRouteImport } from './routes/_main/profile/setting/coins'
@@ -115,6 +117,16 @@ const MainLiveIdRoute = MainLiveIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => MainLiveRouteRoute,
 } as any)
+const MainWalletSuccessRouteRoute = MainWalletSuccessRouteRouteImport.update({
+  id: '/wallet/success',
+  path: '/wallet/success',
+  getParentRoute: () => MainRouteRoute,
+} as any)
+const MainWalletCancelRouteRoute = MainWalletCancelRouteRouteImport.update({
+  id: '/wallet/cancel',
+  path: '/wallet/cancel',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainProfileSettingIndexRoute = MainProfileSettingIndexRouteImport.update({
   id: '/profile/setting/',
   path: '/profile/setting/',
@@ -141,6 +153,8 @@ export interface FileRoutesByFullPath {
   '/gifts': typeof MainGiftsRouteRoute
   '/live': typeof MainLiveRouteRouteWithChildren
   '/stream': typeof MainStreamRouteRouteWithChildren
+  '/wallet/cancel': typeof MainWalletCancelRouteRoute
+  '/wallet/success': typeof MainWalletSuccessRouteRoute
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
   '/stream/$id': typeof MainStreamIdRoute
@@ -161,6 +175,8 @@ export interface FileRoutesByTo {
   '/for-you': typeof MainForYouRouteRoute
   '/gifts': typeof MainGiftsRouteRoute
   '/stream': typeof MainStreamRouteRouteWithChildren
+  '/wallet/cancel': typeof MainWalletCancelRouteRoute
+  '/wallet/success': typeof MainWalletSuccessRouteRoute
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
   '/stream/$id': typeof MainStreamIdRoute
@@ -184,6 +200,8 @@ export interface FileRoutesById {
   '/_main/gifts': typeof MainGiftsRouteRoute
   '/_main/live': typeof MainLiveRouteRouteWithChildren
   '/_main/stream': typeof MainStreamRouteRouteWithChildren
+  '/_main/wallet/cancel': typeof MainWalletCancelRouteRoute
+  '/_main/wallet/success': typeof MainWalletSuccessRouteRoute
   '/_main/live/$id': typeof MainLiveIdRoute
   '/_main/profile/$username': typeof MainProfileUsernameRoute
   '/_main/stream/$id': typeof MainStreamIdRoute
@@ -207,6 +225,8 @@ export interface FileRouteTypes {
     | '/gifts'
     | '/live'
     | '/stream'
+    | '/wallet/cancel'
+    | '/wallet/success'
     | '/live/$id'
     | '/profile/$username'
     | '/stream/$id'
@@ -227,6 +247,8 @@ export interface FileRouteTypes {
     | '/for-you'
     | '/gifts'
     | '/stream'
+    | '/wallet/cancel'
+    | '/wallet/success'
     | '/live/$id'
     | '/profile/$username'
     | '/stream/$id'
@@ -249,6 +271,8 @@ export interface FileRouteTypes {
     | '/_main/gifts'
     | '/_main/live'
     | '/_main/stream'
+    | '/_main/wallet/cancel'
+    | '/_main/wallet/success'
     | '/_main/live/$id'
     | '/_main/profile/$username'
     | '/_main/stream/$id'
@@ -387,6 +411,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainLiveIdRouteImport
       parentRoute: typeof MainLiveRouteRoute
     }
+    '/_main/wallet/success': {
+      id: '/_main/wallet/success'
+      path: '/wallet/success'
+      fullPath: '/wallet/success'
+      preLoaderRoute: typeof MainWalletSuccessRouteRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/wallet/cancel': {
+      id: '/_main/wallet/cancel'
+      path: '/wallet/cancel'
+      fullPath: '/wallet/cancel'
+      preLoaderRoute: typeof MainWalletCancelRouteRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
     '/_main/profile/setting/': {
       id: '/_main/profile/setting/'
       path: '/profile/setting'
@@ -446,6 +484,8 @@ interface MainRouteRouteChildren {
   MainGiftsRouteRoute: typeof MainGiftsRouteRoute
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
   MainStreamRouteRoute: typeof MainStreamRouteRouteWithChildren
+  MainWalletCancelRouteRoute: typeof MainWalletCancelRouteRoute
+  MainWalletSuccessRouteRoute: typeof MainWalletSuccessRouteRoute
   MainProfileUsernameRoute: typeof MainProfileUsernameRoute
   MainPrivacyPolicyIndexRoute: typeof MainPrivacyPolicyIndexRoute
   MainProfileIndexRoute: typeof MainProfileIndexRoute
@@ -465,6 +505,8 @@ const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainGiftsRouteRoute: MainGiftsRouteRoute,
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
   MainStreamRouteRoute: MainStreamRouteRouteWithChildren,
+  MainWalletCancelRouteRoute: MainWalletCancelRouteRoute,
+  MainWalletSuccessRouteRoute: MainWalletSuccessRouteRoute,
   MainProfileUsernameRoute: MainProfileUsernameRoute,
   MainPrivacyPolicyIndexRoute: MainPrivacyPolicyIndexRoute,
   MainProfileIndexRoute: MainProfileIndexRoute,

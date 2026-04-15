@@ -22,7 +22,7 @@ export const ResultView = () => {
 
                 {/* Explore Stream Button */}
                 <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={closeModal}
                     className="mt-4 px-10 py-3.5 h-auto rounded-full border-2 border-[#FF8800] text-[#FF8800] font-bold text-base hover:bg-[#FF8800]/10 hover:text-[#FF8800] hover:text-[#FF8800]transition-all cursor-pointer"
                 >
@@ -53,7 +53,7 @@ export const ResultView = () => {
 
             {/* Add Coins Again Button */}
             <Button
-                variant="ghost"
+                variant="outline"
                 onClick={reset}
                 className="mt-2 px-10 py-3.5 h-auto rounded-full border-2 border-[#FF8800] text-[#FF8800] font-bold text-base hover:bg-[#FF8800]/10 hover:text-[#FF8800] transition-all cursor-pointer"
             >

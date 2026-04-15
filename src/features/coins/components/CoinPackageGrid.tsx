@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react';
 import { useCoinsStore } from '../hooks/useCoinsStore';
-import { coinsService, type CoinEntity } from '../services/coins.service';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { coinsService, type CoinEntity } from '../services/coins.service';
 import coinIcon from '@/assets/coin.svg';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState, useEffect } from 'react';
 
-const PackageCard = ({ coin, currency }: { coin: CoinEntity, currency: string }) => {
-    const { selectPackage } = useCoinsStore();
-
+const PackageCard = ({ coin, currency, onBuy, isBuying }: { coin: CoinEntity, currency: string, onBuy: (coinId: number) => void, isBuying: boolean }) => {
     const pricePrefix = currency === 'INR' ? '₹' : '$';
     const displayPrice = currency === 'INR' ? coin.price.toLocaleString() : (coin.price / 83).toFixed(2);
 
@@ -22,9 +20,10 @@ const PackageCard = ({ coin, currency }: { coin: CoinEntity, currency: string })
         <div className="relative group">
             <Button
                 variant="ghost"
-                onClick={() => selectPackage({ id: String(coin.id), coins: coin.noOfCoin, price: coin.price, bonus: '', image: coin.bannerImage })}
+                onClick={() => onBuy(coin.id)}
+                disabled={isBuying}
                 className="w-full h-auto bg-[#1A1C1E] border border-white/10 rounded-2xl p-2.5 sm:p-4 pt-3 sm:pt-5 flex flex-col items-center gap-1.5 sm:gap-2 
-          hover:border-[#FF8800]/50 hover:bg-[#1A1C1E]/80 transition-all cursor-pointer group-hover:shadow-[0_0_20px_rgba(255,136,0,0.1)]"
+          hover:border-[#FF8800]/50 hover:bg-[#1A1C1E]/80 transition-all cursor-pointer group-hover:shadow-[0_0_20px_rgba(255,136,0,0.1)] disabled:opacity-60"
             >
                 {/* Package Image */}
                 <div className="w-14 h-12 sm:w-24 sm:h-20 flex items-center justify-center">
@@ -43,7 +42,11 @@ const PackageCard = ({ coin, currency }: { coin: CoinEntity, currency: string })
 
                 {/* Price Button */}
                 <div className="w-full bg-[#FF8800] rounded-lg py-1.5 sm:py-2 px-2 sm:px-4 text-center">
-                    <span className="text-black font-bold text-[10px] sm:text-sm">{pricePrefix} {displayPrice}</span>
+                    {isBuying ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-black mx-auto" />
+                    ) : (
+                        <span className="text-black font-bold text-[10px] sm:text-sm">{pricePrefix} {displayPrice}</span>
+                    )}
                 </div>
             </Button>
         </div>
@@ -51,6 +54,7 @@ const PackageCard = ({ coin, currency }: { coin: CoinEntity, currency: string })
 };
 
 export const CoinPackageGrid = () => {
+    const { selectPackage } = useCoinsStore();
     const { wallet } = useAuthStore();
     const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
     const [coins, setCoins] = useState<CoinEntity[]>([]);
@@ -69,6 +73,16 @@ export const CoinPackageGrid = () => {
         };
         fetchCoins();
     }, []);
+
+    const handleBuy = (coin: CoinEntity) => {
+        selectPackage({
+            id: String(coin.id),
+            coins: coin.noOfCoin,
+            price: coin.price,
+            bonus: '',
+            image: coin.bannerImage
+        });
+    };
 
     return (
         <div className="flex flex-col gap-6">
@@ -118,7 +132,13 @@ export const CoinPackageGrid = () => {
             ) : (
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 pb-8">
                     {coins.map((coin) => (
-                        <PackageCard key={coin.id} coin={coin} currency={currency} />
+                        <PackageCard
+                            key={coin.id}
+                            coin={coin}
+                            currency={currency}
+                            onBuy={() => handleBuy(coin)}
+                            isBuying={false}
+                        />
                     ))}
                 </div>
             )}

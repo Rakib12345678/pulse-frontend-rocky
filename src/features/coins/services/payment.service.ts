@@ -1,13 +1,28 @@
 import api from '@/lib/api';
 
-export interface CreateOrderResponse {
-    orderId: string;
-    amount: number;
+export interface CheckoutSessionRequest {
+    coinId: number;
+    successUrl?: string;
+    cancelUrl?: string;
 }
 
-export interface PaymentRequest {
-    orderId: string;
+export interface CheckoutSessionResponse {
+    sessionId: string;
+    checkoutUrl: string;
+    publishableKey?: string;
+    status?: string;
+    amount?: number;
+    coins?: number;
+    currency?: string;
+}
+
+export interface SessionStatusResponse {
+    sessionId: string;
+    status: 'SUCCESS' | 'PENDING' | 'FAILED' | 'EXPIRED';
+    providerPaymentId: string;
     amount: number;
+    coins: number;
+    currency: string;
 }
 
 export interface WalletResponse {
@@ -38,7 +53,7 @@ export type WalletHistoryFilter = 'all' | 'credit' | 'debit';
 export interface EarningHistoryItem {
     fullname: string;
     username: string;
-    noOfCoin: number; // For diamonds, this is number of diamonds
+    noOfCoin: number;
     isSent: boolean;
     createdAt: string;
     sentOn?: string;
@@ -54,13 +69,21 @@ export interface EarningHistoryPage {
 export type EarningHistoryFilter = 'all' | 'diamond_received' | 'diamond_withdrawn';
 
 export const paymentService = {
-    createOrder: async (coinId: string | number): Promise<CreateOrderResponse> => {
-        const response = await api.post('/create-order', { coinId: Number(coinId) });
+    /**
+     * Create a Stripe Checkout Session
+     */
+    createCheckoutSession: async (data: CheckoutSessionRequest): Promise<CheckoutSessionResponse> => {
+        const response = await api.post('/payments/checkout-session', data);
         return response.data;
     },
 
-    processPayment: async (data: PaymentRequest): Promise<void> => {
-        const response = await api.post('/payment', data);
+    /**
+     * Get the final status of a Stripe session (called after redirect back)
+     */
+    getSessionStatus: async (sessionId: string): Promise<SessionStatusResponse> => {
+        const response = await api.get('/payments/session-status', {
+            params: { sessionId }
+        });
         return response.data;
     },
 
