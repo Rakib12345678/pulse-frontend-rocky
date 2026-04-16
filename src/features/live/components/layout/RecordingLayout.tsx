@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { UserProfileModal } from './UserProfileModal';
+import { UserProfileModal } from '@/features/live/components/modals/UserProfileModal';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';

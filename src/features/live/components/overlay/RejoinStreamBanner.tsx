@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from '@tanstack/react-router';
 import { Radio, Tv, X } from 'lucide-react';
-import { useGoLiveStore } from '../stores/goLiveStore';
-import { useViewerRejoinStore } from '../stores/viewerRejoinStore';
+import { useGoLiveStore } from '@/features/live/stores/goLiveStore';
+import { useViewerRejoinStore } from '@/features/live/stores/viewerRejoinStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { liveService } from '../services/live.service';
-import { userService } from '../services/user.service';
+import { liveService } from '@/features/live/services/live.service';
+import { userService } from '@/features/live/services/user.service';
 import { Button } from '@/components/ui/button';
 
 type RejoinMode = 'host' | 'viewer';

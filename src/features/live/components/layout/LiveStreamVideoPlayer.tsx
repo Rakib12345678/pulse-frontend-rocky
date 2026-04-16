@@ -2,18 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useCallStateHooks, ParticipantView, hasVideo, hasAudio, OwnCapability } from '@stream-io/video-react-sdk';
 import { useChatContext } from 'stream-chat-react';
-import { useLiveStreamContext } from './LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 import { useNavigate } from '@tanstack/react-router';
-import { StreamerInfoOverlay } from './StreamerInfoOverlay';
+import { StreamerInfoOverlay } from '@/features/live/components/overlay/StreamerInfoOverlay';
 import { MicOff, VideoOff, PhoneOff, Mic, Pin } from 'lucide-react';
-import { useGoLiveStore } from '../stores/goLiveStore';
+import { useGoLiveStore } from '@/features/live/stores/goLiveStore';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useUserProfileStore } from '../stores/userProfileStore';
-import { liveService } from '../services/live.service';
+import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
+import { liveService } from '@/features/live/services/live.service';
 import kick from '@/assets/kick.svg';
 import { cn } from '@/lib/utils';
-import { useParticipantPresence } from '../hooks/useParticipantPresence';
-import { useParticipantPresenceStore } from '../stores/participantPresenceStore';
+import { useParticipantPresence } from '@/features/live/hooks/useParticipantPresence';
+import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();

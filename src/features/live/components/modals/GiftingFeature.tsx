@@ -4,7 +4,7 @@ import {
     Drawer,
     DrawerContent,
 } from '@/components/ui/drawer';
-import { GiftingGrid } from './GiftingGrid';
+import { GiftingGrid } from '@/features/live/components/modals/GiftingGrid';
 
 interface GiftingFeatureProps {
     isOpen: boolean;

@@ -11,8 +11,8 @@ import type { useAuthStore } from "@/features/auth/stores/authStore"
 
 import { Toaster } from "@/components/ui/sonner"
 import { SignUpModal } from "@/features/auth/components/SignUpModal"
-import { GoLiveModal } from "@/features/live/components/GoLiveModal"
-import { RejoinStreamBanner } from "@/features/live/components/RejoinStreamBanner"
+import { GoLiveModal } from "@/features/live/components/modals/GoLiveModal"
+import { RejoinStreamBanner } from "@/features/live/components/overlay/RejoinStreamBanner"
 
 import appCss from "../styles.css?url"
 import { Button } from "@/components/ui/button"

@@ -6,10 +6,10 @@ import {
 } from '@stream-io/video-react-sdk';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { useJoinRequestStore } from '../stores/joinRequestStore';
+import { useJoinRequestStore } from '@/features/live/stores/joinRequestStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { liveService } from '../services/live.service';
+import { liveService } from '@/features/live/services/live.service';
 
 interface JoinRequest {
     userId: string;

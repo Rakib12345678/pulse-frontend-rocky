@@ -20,14 +20,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, X, Loader2, LayoutGrid, Video, ChevronLeft, Ban } from 'lucide-react';
-import { useUserProfileStore } from '../stores/userProfileStore';
-import { userService, UserProfile } from '../services/user.service';
+import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
+import { userService, UserProfile } from '@/features/live/services/user.service';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useNavigate } from '@tanstack/react-router';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useLiveStreamContext } from './LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 
 export const UserProfileModal: React.FC = () => {
     const { isOpen, username: targetUsername, closeModal, showFullscreen, setShowFullscreen } = useUserProfileStore();

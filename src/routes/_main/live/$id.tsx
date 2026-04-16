@@ -1,12 +1,12 @@
 // import { createFileRoute, useBlocker } from '@tanstack/react-router'
 import { createFileRoute } from '@tanstack/react-router'
-import { LiveStreamLayout, useLiveStreamContext } from '@/features/live/components/LiveStreamLayout'
-import { LiveStreamHeader } from '@/features/live/components/LiveStreamHeader'
-import { LiveStreamVideoPlayer } from '@/features/live/components/LiveStreamVideoPlayer'
-import { LiveStreamChat } from '@/features/live/components/LiveStreamChat'
-import { LiveStreamControls } from '@/features/live/components/LiveStreamControls'
+import { LiveStreamLayout, useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout'
+import { LiveStreamHeader } from '@/features/live/components/layout/LiveStreamHeader'
+import { LiveStreamVideoPlayer } from '@/features/live/components/layout/LiveStreamVideoPlayer'
+import { LiveStreamChat } from '@/features/live/components/layout/LiveStreamChat'
+import { LiveStreamControls } from '@/features/live/components/layout/LiveStreamControls'
 import { useGoLiveStore } from '@/features/live/stores/goLiveStore'
-import { JoinRequestPopup, JoinDeclineBanner, ViewerPendingRequestPopup } from '@/features/live/components/JoinRequestPopup'
+import { JoinRequestPopup, JoinDeclineBanner, ViewerPendingRequestPopup } from '@/features/live/components/overlay/JoinRequestPopup'
 // import { useEffect } from 'react'
 // import { liveService } from '@/features/live/services/live.service'
 // import {
@@ -85,7 +85,7 @@ function LiveStreamComponent() {
       <LiveStreamContent />
     </LiveStreamLayout>
 
-      /* Custom leave confirmation dialog for host*/
+    /* Custom leave confirmation dialog for host*/
     //   <Dialog open={status === 'blocked'} onOpenChange={(open) => { if (!open) reset?.() }}>
     //     <DialogContent showCloseButton={false} className="bg-[#1a1d27] border-white/10 text-white max-w-sm">
     //       <DialogHeader>

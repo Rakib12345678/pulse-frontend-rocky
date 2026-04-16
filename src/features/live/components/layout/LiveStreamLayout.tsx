@@ -10,20 +10,20 @@ import {
 import { StreamChat } from 'stream-chat';
 import { Chat } from 'stream-chat-react';
 import '@stream-io/video-react-sdk/dist/css/styles.css';
-import { useGoLiveStore } from '../stores/goLiveStore';
+import { useGoLiveStore } from '@/features/live/stores/goLiveStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
-import { liveService } from '../services/live.service';
-import { FloatingHearts } from './FloatingHearts';
+import { liveService } from '@/features/live/services/live.service';
+import { FloatingHearts } from '@/features/live/components/overlay/FloatingHearts';
 
 const apiKey = import.meta.env.VITE_STREAM_API_KEY || 'placeholder_key';
 
-import { UserProfileModal } from './UserProfileModal';
-import { useUserProfileStore } from '../stores/userProfileStore';
+import { UserProfileModal } from '@/features/live/components/modals/UserProfileModal';
+import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useViewerRejoinStore } from '../stores/viewerRejoinStore';
+import { useViewerRejoinStore } from '@/features/live/stores/viewerRejoinStore';
 
 // Context for sharing viewer state with child components
 interface LiveStreamContextValue {
@@ -379,7 +379,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                             await _call.goLive();
                         }
                         toast.success("Your stream is now live and visible to viewers!");
-                        
+
                         // Start recording AFTER successful join and goLive
                         if (_callId) {
                             liveService.startRecording(_callId).catch(err => {

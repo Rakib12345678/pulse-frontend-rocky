@@ -1,13 +1,13 @@
 import React, { useRef } from 'react';
-import { useRecordingContext } from './RecordingLayout';
+import { useRecordingContext } from '@/features/live/components/layout/RecordingLayout';
 import { Loader2 } from 'lucide-react';
 
 export const RecordedVideoPlayer: React.FC = () => {
-    const { 
+    const {
         recordingMetadata,
         setIsPlaying
     } = useRecordingContext();
-    
+
     const videoRef = useRef<HTMLVideoElement>(null);
 
     if (!recordingMetadata?.recordingUrl) {

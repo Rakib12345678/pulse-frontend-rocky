@@ -1,17 +1,17 @@
 import React from 'react';
 import { Users, Eye, EyeOff, ArrowLeft, ChevronLeft, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useGoLiveStore } from '../stores/goLiveStore';
-import { liveService } from '../services/live.service';
+import { useGoLiveStore } from '@/features/live/stores/goLiveStore';
+import { liveService } from '@/features/live/services/live.service';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
-import { useLiveStreamContext } from './LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { EndLiveModal } from './EndLiveModal';
+import { EndLiveModal } from '@/features/live/components/modals/EndLiveModal';
 
-import { ParticipantsDialog } from './ParticipantsDialog';
-import { useParticipantPresenceStore } from '../stores/participantPresenceStore';
+import { ParticipantsDialog } from '@/features/live/components/modals/ParticipantsDialog';
+import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
     Drawer,

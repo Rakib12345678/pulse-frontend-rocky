@@ -3,11 +3,11 @@ import { Loader2 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { userService, UserProfile } from '../services/user.service';
+import { userService, UserProfile } from '@/features/live/services/user.service';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
-import { useUserProfileStore } from '../stores/userProfileStore';
+import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 
 interface StreamerInfoOverlayProps {
     streamerName: string;

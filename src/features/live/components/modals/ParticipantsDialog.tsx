@@ -8,10 +8,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useUserProfileStore } from '../stores/userProfileStore';
+import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { userService } from '@/features/live/services/user.service';
 import { RefreshCw } from 'lucide-react';
-import { useParticipantPresenceStore } from '../stores/participantPresenceStore';
+import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
 
 // Helper to extract fullName from participant custom fields
 const getFullName = (p: any): string =>

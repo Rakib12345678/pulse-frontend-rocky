@@ -3,9 +3,9 @@ import { useChannelStateContext } from 'stream-chat-react';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import giftBoxLottie from '@/assets/GiftBoxAnimation.lottie';
-import { useUserProfileStore } from '../stores/userProfileStore';
+import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
-import { useLiveStreamContext } from './LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 
 const DEFAULT_DURATION_SECONDS = 16;
 

@@ -2,25 +2,25 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Lock, Heart, SendHorizonal, Share2, Volume2, VolumeX } from 'lucide-react';
 import coinIcon from '@/assets/coin.svg';
 import giftSvg from '@/assets/gift.svg';
-import { useJoinRequestStore } from '../stores/joinRequestStore';
+import { useJoinRequestStore } from '@/features/live/stores/joinRequestStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
-import { GiftingFeature } from './GiftingFeature';
+import { GiftingFeature } from '@/features/live/components/modals/GiftingFeature';
 import {
     Channel,
     useChannelStateContext,
     useChatContext,
 } from 'stream-chat-react';
 import { Channel as StreamChannel } from 'stream-chat';
-import { useLiveStreamContext } from './LiveStreamLayout';
-import { useUserProfileStore } from '../stores/userProfileStore';
+import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
+import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
-import { StreamerInfoOverlay } from './StreamerInfoOverlay';
-import { liveService } from '../services/live.service';
-import { CompactGiftSidebar } from './CompactGiftSidebar';
-import { SuperchatTicker } from './SuperchatTicker';
+import { StreamerInfoOverlay } from '@/features/live/components/overlay/StreamerInfoOverlay';
+import { liveService } from '@/features/live/services/live.service';
+import { CompactGiftSidebar } from '@/features/live/components/overlay/CompactGiftSidebar';
+import { SuperchatTicker } from '@/features/live/components/overlay/SuperchatTicker';
 
 // Type guard for gift messages
 const isGiftMsg = (msg: any): boolean => !!msg?.isGiftMessage;
@@ -468,15 +468,9 @@ const ViewerBottomBar: React.FC = () => {
                 setRequestStatus(customData.accepted ? 'approved' : 'declined');
                 if (customData.accepted) {
                     toast.success('Host accepted your join request!');
-                    (async () => {
-                        try {
-                            await call.camera.enable();
-                            await call.microphone.enable();
-                            console.log('[ViewerBottomBar] Camera & mic enabled — now a co-host');
-                        } catch (err) {
-                            console.error('[ViewerBottomBar] Failed to enable camera/mic:', err);
-                        }
-                    })();
+                    // Note: co-hosts join with mic and camera off by default.
+                    // They can manually enable them using the controls.
+                    console.log('[ViewerBottomBar] Now a co-host — mic/camera remain off');
                 } else {
                     toast.error('Host declined your join request');
                     setTimeout(() => setRequestStatus('idle'), 3000);

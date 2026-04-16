@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronLeft, MoreHorizontal, Eye, EyeOff, Users } from 'lucide-react';
-import { useRecordingContext } from './RecordingLayout';
+import { useRecordingContext } from '@/features/live/components/layout/RecordingLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useNavigate } from '@tanstack/react-router';
 import {
@@ -22,7 +22,6 @@ export const RecordedStreamHeader: React.FC = () => {
     const navigate = useNavigate();
     const isMobile = useIsMobile();
 
-    const hostName = recordingMetadata?.username || 'Host';
     const participantCount = recordingMetadata?.participantCount || 0;
 
     const formatTime = (seconds: number) => {
@@ -51,7 +50,7 @@ export const RecordedStreamHeader: React.FC = () => {
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                             Recorded
                         </div>
-                        
+
                         <Drawer>
                             <DrawerTrigger asChild>
                                 <button className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10 hover:bg-white/20 transition-all cursor-pointer">

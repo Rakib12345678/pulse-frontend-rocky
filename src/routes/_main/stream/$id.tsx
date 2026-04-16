@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { RecordingLayout } from '@/features/live/components/RecordingLayout'
-import { RecordedVideoPlayer } from '@/features/live/components/RecordedVideoPlayer'
-import { RecordedStreamHeader } from '@/features/live/components/RecordedStreamHeader'
+import { RecordingLayout } from '@/features/live/components/layout/RecordingLayout'
+import { RecordedVideoPlayer } from '@/features/live/components/layout/RecordedVideoPlayer'
+import { RecordedStreamHeader } from '@/features/live/components/layout/RecordedStreamHeader'
 import { z } from 'zod'
 import { liveService, FeedStreamItem } from '@/features/live/services/live.service'
 import { useEffect, useState } from 'react'
@@ -43,8 +43,8 @@ function RecordingPlaybackComponent() {
   const finalRecordingUrl = searchUrl || metadata.recordingUrl || undefined;
 
   return (
-    <RecordingLayout 
-      recordingUrl={finalRecordingUrl} 
+    <RecordingLayout
+      recordingUrl={finalRecordingUrl}
       recordingMetadata={{
         username: metadata.username || undefined,
         title: metadata.title || undefined,
