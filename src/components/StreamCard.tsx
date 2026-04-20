@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Users, Heart } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -186,8 +186,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 alt={cohost.username}
                 className="h-9 w-9 rounded-full border-2 border-white object-cover bg-zinc-800"
               />
-              <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFE9C0] ring-1 ring-white">
-                <Heart className="h-2.5 w-2.5 fill-[#8B5E3C] text-[#8B5E3C]" />
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE9C0] shadow-sm">
+                <img src={coHostIcon} className="h-3 w-3" alt="co-host" />
               </div>
             </div>
           ))}
@@ -200,8 +200,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
               alt="Collaborator"
               className="h-9 w-9 rounded-full border-2 border-white object-cover"
             />
-            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFE9C0] ring-1 ring-white">
-              <Heart className="h-2.5 w-2.5 fill-[#8B5E3C] text-[#8B5E3C]" />
+            <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE9C0] shadow-sm">
+              <img src={coHostIcon} className="h-3 w-3" alt="co-host" />
             </div>
           </div>
         </div>
