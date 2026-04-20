@@ -50,17 +50,17 @@ export const FollowersFollowingModal = ({
       setSearchQuery('');
     }
   }, [isOpen]);
-  
+
   // Fetch data base on type
-  const { 
-    data: followersData, 
+  const {
+    data: followersData,
     isLoading: isLoadingFollowers,
     fetchNextPage: fetchNextFollowers,
     hasNextPage: hasMoreFollowers
   } = useFollowers();
-  
-  const { 
-    data: followingData, 
+
+  const {
+    data: followingData,
     isLoading: isLoadingFollowing,
     fetchNextPage: fetchNextFollowing,
     hasNextPage: hasMoreFollowing
@@ -75,7 +75,7 @@ export const FollowersFollowingModal = ({
     if (searchQuery) return searchResults || [];
     const data = type === 'followers' ? followersData : followingData;
     const users = data?.pages.flatMap((page) => page.data) || [];
-    
+
     if (type === 'following') {
       return users.map(u => ({ ...u, isFollowing: u.isFollowing ?? true }));
     }
@@ -134,8 +134,8 @@ export const FollowersFollowingModal = ({
           {type}
         </TitleWrapper>
         {!isMobile && (
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="w-7 h-7 bg-[#FF0000] rounded-full flex items-center justify-center hover:bg-red-600 transition-all shadow-lg active:scale-90 cursor-pointer"
           >
             <X className="w-4 h-4 text-white stroke-[3px]" />
@@ -144,15 +144,15 @@ export const FollowersFollowingModal = ({
       </HeaderWrapper>
 
       <div className={cn("px-8 py-4", isMobile && "px-6")}>
-         <div className="relative flex items-center bg-[#1D1F20] rounded-2xl px-5 py-4 border border-zinc-800 focus-within:border-[#FF7700]/50 transition-all group shadow-inner">
-           <Search className="w-5 h-5 text-gray-500 mr-3 group-focus-within:text-[#FF7700] transition-colors" />
-           <input
-             className="bg-transparent border-none text-base text-white focus:outline-none placeholder:text-gray-500 w-full font-medium"
-             placeholder={`Search ${type === 'followers' ? 'Followers' : 'Following'} Here...`}
-             value={searchQuery}
-             onChange={(e) => setSearchQuery(e.target.value)}
-           />
-         </div>
+        <div className="relative flex items-center bg-[#1D1F20] rounded-2xl px-5 py-4 border border-zinc-800 focus-within:border-[#FF7700]/50 transition-all group shadow-inner">
+          <Search className="w-5 h-5 text-gray-500 mr-3 group-focus-within:text-[#FF7700] transition-colors" />
+          <input
+            className="bg-transparent border-none text-base text-white focus:outline-none placeholder:text-gray-500 w-full font-medium"
+            placeholder={`Search ${type === 'followers' ? 'Followers' : 'Following'} Here...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className={cn(
@@ -180,7 +180,7 @@ export const FollowersFollowingModal = ({
                   <div className="flex flex-col">
                     <span className="text-white font-bold text-base group-hover:text-[#FF7700] transition-colors line-clamp-1">{user.username}</span>
                     {type === 'followers' && (
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); setConfirmRemove(user); }}
                         className="text-red-500 text-xs font-bold hover:text-red-400 transition-colors text-left mt-1 cursor-pointer"
                       >
@@ -189,13 +189,13 @@ export const FollowersFollowingModal = ({
                     )}
                   </div>
                 </div>
-                
+
                 <button
                   onClick={(e) => { e.stopPropagation(); handleToggleFollow(user); }}
                   className={cn(
                     "px-8 py-2.5 rounded-full text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap",
-                    user.isFollowing 
-                      ? "bg-[#1D1F20] text-gray-400 border border-zinc-700 hover:bg-zinc-800" 
+                    user.isFollowing
+                      ? "bg-[#1D1F20] text-gray-400 border border-zinc-700 hover:bg-zinc-800"
                       : "bg-[#FF7700] text-[#111213] hover:bg-[#ff8c2b]"
                   )}
                 >
@@ -203,7 +203,7 @@ export const FollowersFollowingModal = ({
                 </button>
               </div>
             ))}
-            
+
             {(type === 'followers' ? hasMoreFollowers : hasMoreFollowing) && (
               <button
                 onClick={() => type === 'followers' ? fetchNextFollowers() : fetchNextFollowing()}
@@ -215,13 +215,13 @@ export const FollowersFollowingModal = ({
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-             <div className="text-gray-600 mb-6">
-               <div className="w-24 h-24 mx-auto mb-6 bg-zinc-800/30 rounded-full flex items-center justify-center shadow-2xl">
-                  <UserPlus className="w-10 h-10 opacity-20 text-[#FF7700]" />
-               </div>
-               <p className="text-2xl font-extrabold text-white mb-2">Opss! No One {type === 'followers' ? 'Following' : 'Followed by'} you</p>
-               <p className="text-gray-500 font-medium">Start connecting with other creators!</p>
-             </div>
+            <div className="text-gray-600 mb-6">
+              <div className="w-24 h-24 mx-auto mb-6 bg-zinc-800/30 rounded-full flex items-center justify-center shadow-2xl">
+                <UserPlus className="w-10 h-10 opacity-20 text-[#FF7700]" />
+              </div>
+              <p className="text-2xl font-extrabold text-white mb-2">Oops! No one is {type === 'followers' ? 'following' : 'followed by'} you</p>
+              <p className="text-gray-500 font-medium">Start connecting with other creators!</p>
+            </div>
           </div>
         )}
       </div>
@@ -252,12 +252,12 @@ export const FollowersFollowingModal = ({
 
   return (
     <ModalWrapper open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <ContentWrapper 
+      <ContentWrapper
         showCloseButton={false}
         className={cn(
           "border-none text-white p-0 overflow-hidden flex flex-col shadow-2xl",
-          isMobile 
-            ? "bg-[#111213] rounded-t-[40px] h-[90vh]" 
+          isMobile
+            ? "bg-[#111213] rounded-t-[40px] h-[90vh]"
             : "max-w-lg h-[700px] rounded-[40px]"
         )}
         style={!isMobile ? { background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), #111213' } : {}}

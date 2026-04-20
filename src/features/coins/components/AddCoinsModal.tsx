@@ -27,7 +27,7 @@ export const AddCoinsModal = () => {
         <AppBackground
             displayRings={false}
             className={`h-full w-full ${isMobileView ? '' : 'sm:rounded-3xl'} flex flex-col pt-8`}
-            innerClassName="flex flex-col overflow-hidden"
+            innerClassName="flex flex-col overflow-hidden flex-1 min-h-0"
         >
             {/* Accessibility — hidden title */}
             {isMobileView ? (
@@ -52,7 +52,7 @@ export const AddCoinsModal = () => {
             </Button>
 
             {/* Content */}
-            <div className={`${isMobileView ? 'px-6' : 'px-18'} py-6 pt-0 flex-1 overflow-y-auto min-h-0`}>
+            <div className={`${isMobileView ? 'px-6' : 'px-18'} py-6 pt-0 flex-1 overflow-y-auto min-h-0 pb-8`}>
                 {step === 'select' && <CoinPackageGrid />}
                 {step === 'checkout' && <CheckoutView />}
                 {step === 'result' && <ResultView />}
@@ -64,7 +64,7 @@ export const AddCoinsModal = () => {
         return (
             <Drawer open={isOpen} onOpenChange={(open) => !open && closeModal()}>
                 <DrawerContent
-                    className="bg-[#111213] border-none text-white max-h-[95vh] h-[95vh] flex flex-col p-0 overflow-hidden"
+                    className="bg-[#111213] border-none text-white max-h-[95vh] h-[95vh] flex flex-col p-0"
                     style={{ background: 'linear-gradient(180deg, #111213 0%, #0d0d0d 100%)' }}
                 >
                     <div className="mx-auto mt-2 h-1 w-12 shrink-0 rounded-full bg-white/20" />
@@ -78,7 +78,7 @@ export const AddCoinsModal = () => {
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
             <DialogContent
                 showCloseButton={false}
-                className="bg-transparent border border-white/10 rounded-3xl p-0 sm:max-w-[580px] h-full sm:h-auto max-h-[90vh] overflow-hidden shadow-2xl"
+                className="bg-transparent border border-white/10 rounded-3xl p-0 sm:max-w-[580px] h-full sm:h-auto max-h-[90vh] overflow-y-auto shadow-2xl"
             >
                 {renderContent(false)}
             </DialogContent>

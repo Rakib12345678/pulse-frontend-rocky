@@ -9,6 +9,7 @@ export interface CheckoutSessionRequest {
 export interface CheckoutSessionResponse {
     sessionId: string;
     checkoutUrl: string;
+    clientSecret?: string;
     publishableKey?: string;
     status?: string;
     amount?: number;
@@ -17,8 +18,8 @@ export interface CheckoutSessionResponse {
 }
 
 export interface SessionStatusResponse {
-    sessionId: string;
-    status: 'SUCCESS' | 'PENDING' | 'FAILED' | 'EXPIRED';
+    paymentIntentId: string;
+    status: string;
     providerPaymentId: string;
     amount: number;
     coins: number;

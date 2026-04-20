@@ -29,38 +29,65 @@ function WalletSuccessPage() {
 
   useEffect(() => {
     const checkStatus = async () => {
-      const sessionId = new URLSearchParams(window.location.search).get('session_id');
-      if (!sessionId) {
+      const params = new URLSearchParams(window.location.search);
+
+      // Payment Element flow: Stripe appends payment_intent + redirect_status
+      const paymentIntent = params.get('payment_intent');
+      const redirectStatus = params.get('redirect_status');
+
+      // Checkout Session flow: backend appends session_id
+      const sessionId = params.get('session_id');
+
+      // Determine which ID to use for backend verification
+      const verificationId = sessionId || paymentIntent;
+
+      if (!verificationId) {
         setStatus('failed');
         return;
       }
 
       try {
-        const res = await paymentService.getSessionStatus(sessionId);
+        // Always verify with backend using session-status API
+        const res = await paymentService.getSessionStatus(verificationId);
         setSessionData(res);
 
-        switch (res.status) {
-          case 'SUCCESS':
-            setStatus('success');
-            // Refresh wallet balance
+        // Normalize backend status to our UI states
+        const backendStatus = res.status?.toUpperCase();
+
+        if (backendStatus === 'SUCCESS' || backendStatus === 'SUCCEEDED' || backendStatus === 'COMPLETE') {
+          setStatus('success');
+          // Refresh wallet balance
+          try {
             const wallet = await paymentService.getWalletBalance();
             updateWallet(wallet);
             queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
-            break;
-          case 'PENDING':
-            setStatus('pending');
-            break;
-          case 'EXPIRED':
-            setStatus('expired');
-            break;
-          case 'FAILED':
-          default:
-            setStatus('failed');
-            break;
+          } catch (err) {
+            console.error('Failed to refresh wallet:', err);
+          }
+        } else if (backendStatus === 'PENDING' || backendStatus === 'PROCESSING' || backendStatus === 'REQUIRES_ACTION') {
+          setStatus('pending');
+        } else if (backendStatus === 'EXPIRED') {
+          setStatus('expired');
+        } else {
+          setStatus('failed');
         }
       } catch (error) {
         console.error('Failed to check session status:', error);
-        setStatus('failed');
+
+        // Fallback: If backend call fails but we have redirect_status from Stripe,
+        // use it as a hint (less secure but better UX)
+        if (redirectStatus === 'succeeded') {
+          setStatus('success');
+          try {
+            const wallet = await paymentService.getWalletBalance();
+            updateWallet(wallet);
+            queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+          } catch (err) {
+            console.error('Failed to refresh wallet:', err);
+          }
+        } else {
+          setStatus('failed');
+        }
       }
     };
 
@@ -68,7 +95,7 @@ function WalletSuccessPage() {
   }, []);
 
   return (
-    <AppBackground className="h-full flex items-center justify-center">
+    <AppBackground className="h-full flex items-center justify-center pt-20 pb-10">
       <div className="flex flex-col items-center justify-center gap-6 text-center px-6 max-w-md">
         {status === 'loading' && (
           <>
@@ -84,7 +111,7 @@ function WalletSuccessPage() {
               <CheckCircle2 className="w-10 h-10 text-green-500" />
             </div>
             <h2 className="text-white text-3xl font-bold italic">Congratulations!</h2>
-            {sessionData && (
+            {sessionData && sessionData.coins > 0 && (
               <div className="bg-[#2D2D2D] rounded-xl px-5 py-3 flex items-center gap-2.5">
                 <img src={coinIcon} alt="coin" className="w-6 h-6" />
                 <span className="text-white font-bold text-xl">{sessionData.coins.toLocaleString()}</span>
@@ -160,6 +187,6 @@ function WalletSuccessPage() {
           </>
         )}
       </div>
-    </AppBackground >
+    </AppBackground>
   );
 }
