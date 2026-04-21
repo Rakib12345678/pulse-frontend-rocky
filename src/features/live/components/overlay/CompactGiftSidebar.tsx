@@ -85,11 +85,10 @@ export const CompactGiftSidebar: React.FC = () => {
 
                 try {
                     await channel.sendMessage({
-                        text: `sent ${gift.name} 🎁`,
+                        text: `sent ${gift.name}`,
                         isGiftMessage: true,
                         giftIconUrl: gift.iconUrl,
                         giftName: gift.name,
-                        giftCost: gift.noOfCoin,
                         duration: gift.duration,
                     } as any);
                 } catch (chatErr) {

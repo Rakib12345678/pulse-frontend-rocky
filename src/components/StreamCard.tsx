@@ -81,10 +81,12 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-black/100 via-black/60 to-transparent opacity-90" />
 
         {/* Top Left */}
-        <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-[#FFE9C0] px-3.5 py-1.5 text-xs font-bold text-[#8B5E3C] shadow-lg backdrop-blur-sm border border-white/20">
-          <Users className="h-3.5 w-3.5 fill-[#8B5E3C]" />
-          <span>{viewerCount}</span>
-        </div>
+        {viewerCount !== 0 && viewerCount !== "0" && (
+          <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-[#FFE9C0] px-3.5 py-1.5 text-xs font-bold text-[#8B5E3C] shadow-lg backdrop-blur-sm border border-white/20">
+            <Users className="h-3.5 w-3.5 fill-[#8B5E3C]" />
+            <span>{viewerCount}</span>
+          </div>
+        )}
 
         {/* Cohost Indicator */}
         {primaryCohost && (
@@ -170,10 +172,12 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
       <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-black/10" />
 
-      <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-[#FFE9C0] px-2.5 py-1 text-[11px] font-bold text-[#8B5E3C] shadow-sm">
-        <Users className="h-3 w-3 fill-[#8B5E3C]" />
-        <span>{viewerCount}</span>
-      </div>
+      {viewerCount !== 0 && viewerCount !== "0" && (
+        <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-[#FFE9C0] px-2.5 py-1 text-[11px] font-bold text-[#8B5E3C] shadow-sm">
+          <Users className="h-3 w-3 fill-[#8B5E3C]" />
+          <span>{viewerCount}</span>
+        </div>
+      )}
 
       {cohosts && cohosts.length > 0 ? (
         <div className="absolute right-3 top-3 z-10 flex -space-x-3 items-center">

@@ -30,25 +30,15 @@ function WalletSuccessPage() {
   useEffect(() => {
     const checkStatus = async () => {
       const params = new URLSearchParams(window.location.search);
-
-      // Payment Element flow: Stripe appends payment_intent + redirect_status
-      const paymentIntent = params.get('payment_intent');
-      const redirectStatus = params.get('redirect_status');
-
-      // Checkout Session flow: backend appends session_id
       const sessionId = params.get('session_id');
 
-      // Determine which ID to use for backend verification
-      const verificationId = sessionId || paymentIntent;
-
-      if (!verificationId) {
+      if (!sessionId) {
         setStatus('failed');
         return;
       }
 
       try {
-        // Always verify with backend using session-status API
-        const res = await paymentService.getSessionStatus(verificationId);
+        const res = await paymentService.getSessionStatus(sessionId);
         setSessionData(res);
 
         // Normalize backend status to our UI states
@@ -73,21 +63,7 @@ function WalletSuccessPage() {
         }
       } catch (error) {
         console.error('Failed to check session status:', error);
-
-        // Fallback: If backend call fails but we have redirect_status from Stripe,
-        // use it as a hint (less secure but better UX)
-        if (redirectStatus === 'succeeded') {
-          setStatus('success');
-          try {
-            const wallet = await paymentService.getWalletBalance();
-            updateWallet(wallet);
-            queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
-          } catch (err) {
-            console.error('Failed to refresh wallet:', err);
-          }
-        } else {
-          setStatus('failed');
-        }
+        setStatus('failed');
       }
     };
 
@@ -95,7 +71,7 @@ function WalletSuccessPage() {
   }, []);
 
   return (
-    <AppBackground className="h-full flex items-center justify-center pt-20 pb-10">
+    <AppBackground className="h-full flex items-center justify-center">
       <div className="flex flex-col items-center justify-center gap-6 text-center px-6 max-w-md">
         {status === 'loading' && (
           <>

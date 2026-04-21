@@ -58,23 +58,24 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
 
     return (
         <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <div className="flex flex-wrap gap-4 items-stretch">
                 {streams.map((stream) => (
-                    <StreamCard
-                        variant="standard"
-                        key={stream.callId}
-                        callId={stream.callId}
-                        thumbnailUrl={stream.profileImage || bunnyTeacher}
-                        avatarUrl={stream.profileImage || `https://i.pravatar.cc/150?u=${stream.createdByUserId + 20}`}
-                        streamerName={stream.username || `User ${stream.createdByUserId}`}
-                        viewerCount={formatViewerCount(stream.participantCount)}
-                        followersCount={formatViewerCount(stream.followerCount)}
-                        category={stream.category || 'Live'}
-                        title={stream.title}
-                        isLive={stream.isLive}
-                        cohosts={stream.cohosts}
-                        createdByUserId={stream.createdByUserId}
-                    />
+                    <div key={stream.callId} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] shrink-0 flex">
+                        <StreamCard
+                            variant="explore"
+                            callId={stream.callId}
+                            thumbnailUrl={stream.profileImage || bunnyTeacher}
+                            avatarUrl={stream.profileImage || `https://i.pravatar.cc/150?u=${stream.createdByUserId + 20}`}
+                            streamerName={stream.username || `User ${stream.createdByUserId}`}
+                            viewerCount={formatViewerCount(stream.participantCount)}
+                            followersCount={formatViewerCount(stream.followerCount)}
+                            category={stream.category || 'Live'}
+                            title={stream.title}
+                            isLive={stream.isLive}
+                            cohosts={stream.cohosts}
+                            createdByUserId={stream.createdByUserId}
+                        />
+                    </div>
                 ))}
             </div>
 

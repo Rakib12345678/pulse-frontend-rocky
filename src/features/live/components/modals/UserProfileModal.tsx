@@ -22,18 +22,21 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, X, Loader2, LayoutGrid, Video, ChevronLeft, Ban } from 'lucide-react';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { userService, UserProfile } from '@/features/live/services/user.service';
+import { liveService } from '@/features/live/services/live.service';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
-import { useNavigate } from '@tanstack/react-router';
+
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
+import { ProfilePage } from '@/features/profile';
+import { AppBackground } from '@/components/internal/AppBackground';
 
 export const UserProfileModal: React.FC = () => {
     const { isOpen, username: targetUsername, closeModal, showFullscreen, setShowFullscreen } = useUserProfileStore();
     const { user: currentUser } = useAuthStore();
     const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
-    const navigate = useNavigate();
+
     const isMobile = useIsMobile();
     const { call, isViewer } = useLiveStreamContext();
 
@@ -136,18 +139,34 @@ export const UserProfileModal: React.FC = () => {
 
                 // If we're the host in an active stream, kick the blocked user immediately
                 if (call && !isViewer) {
+                    const streamUserId = String(profile.id);
                     // Revoke publisher permissions (only applies to co-hosts — 404 is expected for regular viewers)
                     try {
                         await call.updateUserPermissions({
-                            user_id: profile.username,
+                            user_id: streamUserId,
                             revoke_permissions: ['send-audio', 'send-video'],
                         });
                     } catch (e) {
                         // 404 = viewer had no publisher permissions — that's fine, continue
                     }
+
+                    // Also revoke co-host role specifically
+                    try {
+                        await call.updateCallMembers({
+                            update_members: [{ user_id: streamUserId, role: 'user' }],
+                        });
+                    } catch (e) { /* ignore */ }
+
+                    // Remove from backend co-host list
+                    try {
+                        if (call.id) {
+                            await liveService.removeCoHost(call.id, profile.username);
+                        }
+                    } catch (e) { /* ignore */ }
+
                     // Always send kicked event so the user's client navigates away
                     try {
-                        await call.sendCustomEvent({ type: 'kicked', userId: profile.username });
+                        await call.sendCustomEvent({ type: 'kicked', userId: streamUserId });
                     } catch (e) {
                         // ignore
                     }
@@ -169,13 +188,7 @@ export const UserProfileModal: React.FC = () => {
 
     const handleViewProfile = () => {
         if (!profile) return;
-        if (isMobile) {
-            // On mobile, open fullscreen inside the drawer flow
-            setShowFullscreen(true);
-        } else {
-            closeModal();
-            navigate({ to: `/profile/${profile.username}` });
-        }
+        setShowFullscreen(true);
     };
 
     const handleReport = () => {
@@ -532,6 +545,32 @@ export const UserProfileModal: React.FC = () => {
         );
     }
 
+    /* ===== DESKTOP FULLSCREEN ===== */
+    if (!isMobile && showFullscreen) {
+        return (
+            <>
+                <div className="fixed inset-0 z-40 pt-[73px]">
+                    <AppBackground>
+                        <button
+                            onClick={() => setShowFullscreen(false)}
+                            className="absolute top-6 left-6 z-50 text-white/70 hover:text-white flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full backdrop-blur-md border border-white/10 transition-colors"
+                        >
+                            <ChevronLeft className="w-5 h-5" /> Back to Live
+                        </button>
+                        {profile ? (
+                            <ProfilePage forcedUsername={profile.username} />
+                        ) : (
+                            <div className="flex h-full items-center justify-center">
+                                <Loader2 className="w-8 h-8 animate-spin text-[#FF8800]" />
+                            </div>
+                        )}
+                    </AppBackground>
+                </div>
+                {BlockConfirmationDrawer}
+            </>
+        );
+    }
+
     /* ===== DESKTOP: Dialog-based Modal ===== */
     return (
         <>
@@ -595,73 +634,45 @@ export const UserProfileModal: React.FC = () => {
                                 </div>
 
                                 <div className="mb-6 mt-4">
-                                    <div className="flex justify-between items-center bg-white/5 rounded-2xl px-8 py-5 w-full border border-white/10">
-                                        <div className="text-center font-bold text-2xl text-white">
-                                            <div className="text-xs text-white/40 uppercase tracking-wider font-medium mb-1">Post</div>
-                                            {profile.postCount ?? 152}
-                                        </div>
-                                        <div className="text-center font-bold text-2xl text-[#FFD580]">
-                                            <div className="text-xs text-white/40 uppercase tracking-wider font-medium mb-1">Followers</div>
+                                    <div className="flex justify-around items-center px-4 py-2 w-full">
+                                        <div className="text-center font-bold text-xl text-[#FFD580]">
+                                            <div className="text-[11px] text-white/40 uppercase tracking-wider font-medium mb-1">Followers</div>
                                             {profile.followerCount >= 1000 ? (profile.followerCount / 1000).toFixed(1) + 'k' : profile.followerCount}
                                         </div>
-                                        <div className="text-center font-bold text-2xl text-[#FFD580]">
-                                            <div className="text-xs text-white/40 uppercase tracking-wider font-medium mb-1">Following</div>
+                                        <div className="text-center font-bold text-xl text-[#FFD580]">
+                                            <div className="text-[11px] text-white/40 uppercase tracking-wider font-medium mb-1">Following</div>
                                             {profile.followingCount >= 1000 ? (profile.followingCount / 1000).toFixed(1) + 'k' : profile.followingCount}
                                         </div>
                                     </div>
                                 </div>
 
                                 {currentUser?.id !== profile.id && (
-                                    <div className="flex flex-col gap-4 w-full mb-2">
-                                        {profile.blockedByMe ? (
-                                            <Button
-                                                className="w-full rounded-full h-12 font-bold text-base bg-[#FF8800] hover:bg-[#FF9922] text-black"
-                                                onClick={handleBlockToggle}
-                                                disabled={isBlockLoading}
-                                            >
-                                                {isBlockLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Unblock User"}
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                className={`w-full rounded-full h-12 font-bold text-base ${profile.followedByMe
-                                                    ? "bg-white/10 hover:bg-white/20 text-white"
-                                                    : "bg-[#FF8800] hover:bg-[#FF9922] text-black"
-                                                    }`}
-                                                onClick={handleFollowToggle}
-                                                disabled={isFollowLoading}
-                                            >
-                                                {isFollowLoading ? <Loader2 className="w-5 h-5 animate-spin" /> :
-                                                    profile.followedByMe ? "Following" : "Follow"}
-                                            </Button>
-                                        )}
+                                    <div className="flex gap-3 px-6 pb-4 w-full">
+                                        <Button
+                                            className={`flex-1 rounded-full h-11 font-bold text-sm ${profile.followedByMe
+                                                ? "bg-white/10 hover:bg-white/20 text-white"
+                                                : "bg-[#FF8800] hover:bg-[#FF9922] text-black"
+                                                }`}
+                                            onClick={handleFollowToggle}
+                                            disabled={isFollowLoading}
+                                        >
+                                            {isFollowLoading ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                                                profile.followedByMe ? "Following" : "+ Follow"}
+                                        </Button>
 
-                                        <div className="flex gap-4 w-full">
-                                            <Button
-                                                variant="outline"
-                                                className="flex-1 rounded-full h-12 font-bold text-base border-[#FF8800] text-[#FF8800] bg-transparent hover:bg-[#FF8800]/10 hover:text-[#FF8800]"
-                                                onClick={handleShare}
-                                            >
-                                                Share Profile
-                                            </Button>
-
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        className="w-12 h-12 rounded-full bg-[#FF8800] hover:bg-[#FF9922] text-black p-0 flex items-center justify-center shrink-0 border-0"
-                                                    >
-                                                        <MoreHorizontal className="w-6 h-6" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-48 bg-[#1a1d24] border-white/10 text-white">
-                                                    <DropdownMenuItem onClick={() => setIsBlockDrawerOpen(true)} className="cursor-pointer hover:bg-white/5 focus:bg-white/5 focus:text-white">
-                                                        {profile.blockedByMe ? "Unblock User" : "Block User"}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={handleReport} className="cursor-pointer hover:bg-white/5 focus:bg-white/5 text-red-400 focus:text-red-400">
-                                                        Report User
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1 rounded-full h-11 font-bold text-sm border-[#FF8800] text-[#FF8800] bg-transparent hover:bg-[#FF8800]/10 hover:text-[#FF8800] flex items-center justify-center gap-1.5"
+                                            onClick={() => profile.blockedByMe ? handleBlockToggle() : setIsBlockDrawerOpen(true)}
+                                            disabled={isBlockLoading}
+                                        >
+                                            {isBlockLoading ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                                                profile.blockedByMe ? "Unblock" : (
+                                                    <>
+                                                        <Ban className="w-4 h-4" /> Block
+                                                    </>
+                                                )}
+                                        </Button>
                                     </div>
                                 )}
                             </div>

@@ -32,51 +32,52 @@ export const ForYouPage: React.FC = () => {
     };
 
     return (
-        <div className="p-4 md:p-6 pb-24">
-            <div className="hidden md:flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold text-white">Creators</h1>
-                <div className="flex items-center gap-2">
-                    <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
-                    {activeTab === 'live' ? (
-                        <Button
-                            onClick={fetchStreams}
-                            variant="ghost"
-                            size="icon"
-                            className="text-white hover:bg-white/10"
-                            disabled={isLoading}
-                        />
-                    ) : (
-                        // placeholder in following tab clicked case
-                        <div className="w-10" />
-                    )}
+        <div className="w-full mt-8 overflow-x-hidden pb-12">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
+                <div className="hidden md:flex items-center justify-between mb-8">
+                    <h1 className="text-3xl font-bold text-white">Creators</h1>
+                    <div className="flex items-center gap-2">
+                        <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
+                        {activeTab === 'live' ? (
+                            <Button
+                                onClick={fetchStreams}
+                                variant="ghost"
+                                size="icon"
+                                className="text-white hover:bg-white/10"
+                                disabled={isLoading}
+                            />
+                        ) : (
+                            // placeholder in following tab clicked case
+                            <div className="w-10" />
+                        )}
+                    </div>
                 </div>
+
+                <div className="md:hidden mb-4">
+                    <TabSwitcher
+                        activeTab={activeTab}
+                        onTabChange={setActiveTab}
+                        className="w-full"
+                    />
+                </div>
+
+                {activeTab === 'following' && !isAuthenticated ? (
+                    <FollowingLoginPrompt onLoginClick={handleLoginClick} />
+                ) : activeTab === 'following' && isAuthenticated ? (
+                    <FollowingEmpty />
+                ) : (
+                    <LiveStreamGrid
+                        streams={streams}
+                        isLoading={isLoading}
+                        isLoadingMore={isLoadingMore}
+                        error={error}
+                        hasMore={hasMore}
+                        hasPaginated={hasPaginated}
+                        loadMoreRef={loadMoreRef}
+                        onRetry={fetchStreams}
+                    />
+                )}
             </div>
-
-            <div className="md:hidden mb-4">
-                <TabSwitcher
-                    activeTab={activeTab}
-                    onTabChange={setActiveTab}
-                    className="w-full"
-                />
-            </div>
-
-            {activeTab === 'following' && !isAuthenticated ? (
-                <FollowingLoginPrompt onLoginClick={handleLoginClick} />
-            ) : activeTab === 'following' && isAuthenticated ? (
-                <FollowingEmpty />
-            ) : (
-                <LiveStreamGrid
-                    streams={streams}
-                    isLoading={isLoading}
-                    isLoadingMore={isLoadingMore}
-                    error={error}
-                    hasMore={hasMore}
-                    hasPaginated={hasPaginated}
-                    loadMoreRef={loadMoreRef}
-                    onRetry={fetchStreams}
-                />
-            )}
-
             <GoLiveButton />
         </div>
     );

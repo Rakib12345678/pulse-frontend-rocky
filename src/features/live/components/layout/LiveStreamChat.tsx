@@ -17,6 +17,7 @@ import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
+import { useNavigate } from '@tanstack/react-router';
 import { StreamerInfoOverlay } from '@/features/live/components/overlay/StreamerInfoOverlay';
 import { liveService } from '@/features/live/services/live.service';
 import { CompactGiftSidebar } from '@/features/live/components/overlay/CompactGiftSidebar';
@@ -442,6 +443,7 @@ const ViewerBottomBar: React.FC = () => {
     const createdBy = useCallCreatedBy();
     const { call } = useLiveStreamContext();
     const { user } = useAuthStore();
+    const navigate = useNavigate();
     const [isMuted, setIsMuted] = useState(false);
 
     const toggleMute = () => {
@@ -487,6 +489,7 @@ const ViewerBottomBar: React.FC = () => {
                     } catch (err) {
                         console.error('[ViewerBottomBar] Failed to disable camera/mic:', err);
                     }
+                    navigate({ to: '/for-you' });
                 })();
                 setRequestStatus('idle');
             }

@@ -99,7 +99,6 @@ export const GiftingGrid: React.FC<{ onClose?: () => void }> = ({ onClose }) => 
                         isGiftMessage: true,
                         giftIconUrl: gift.iconUrl,
                         giftName: gift.name,
-                        giftCost: gift.noOfCoin,
                         duration: gift.duration,
                     } as any);
                 } catch (chatErr) {

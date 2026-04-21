@@ -8,11 +8,15 @@ import { EmptyState } from './components/EmptyState';
 import { LogIn, UserX } from 'lucide-react';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
 
-export const ProfilePage = () => {
+interface ProfilePageProps {
+  forcedUsername?: string;
+}
+
+export const ProfilePage = ({ forcedUsername }: ProfilePageProps = {}) => {
   const params = useParams({ strict: false }) as ProfileRouteParams;
   const [activeTab, setActiveTab] = useState<'moments' | 'pastLive'>('moments');
 
-  const usernameFromUrl = params.username;
+  const usernameFromUrl = forcedUsername || params.username;
   const handleGoLive = useGoLive();
 
   const {
@@ -83,7 +87,7 @@ export const ProfilePage = () => {
 
   return (
     <div className="bg-transparent h-[calc(100vh-73px)] overflow-y-auto scrollbar-hide">
-    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-5 lg:py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-5 lg:py-8">
         <ProfileHeader
           user={displayUser}
           isOwnProfile={isOwnProfile}

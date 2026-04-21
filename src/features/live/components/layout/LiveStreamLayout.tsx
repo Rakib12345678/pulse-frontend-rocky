@@ -65,10 +65,11 @@ const FloatingPiP: React.FC = () => {
     const videoRef = React.useRef<HTMLVideoElement>(null);
 
     const pipParticipant = participants.find((p) => hasVideo(p)) || participants[0];
+    const isMobile = useIsMobile();
 
-    // PiP dimensions (w-28 = 112px, h-44 = 176px)
-    const PIP_W = 112;
-    const PIP_H = 176;
+    // PiP dimensions
+    const PIP_W = isMobile ? 112 : 240;
+    const PIP_H = isMobile ? 176 : 360;
 
     // Attach the raw video stream — only update when stream actually changes
     React.useEffect(() => {
@@ -82,7 +83,13 @@ const FloatingPiP: React.FC = () => {
     // Drag state
     const containerRef = React.useRef<HTMLDivElement>(null);
     const dragState = React.useRef({ isDragging: false, startX: 0, startY: 0, offsetX: 0, offsetY: 0, moved: false });
-    const [pos, setPos] = React.useState({ x: 16, y: 64 }); // default top-left (left:16, top:64)
+    const [pos, setPos] = React.useState({ x: 16, y: 64 }); // default top-left
+
+    React.useEffect(() => {
+        if (!isMobile) {
+            setPos({ x: window.innerWidth - PIP_W - 24, y: window.innerHeight - PIP_H - 24 });
+        }
+    }, [isMobile, PIP_W, PIP_H]);
 
     const clamp = (x: number, y: number) => ({
         x: Math.max(4, Math.min(x, window.innerWidth - PIP_W - 4)),
@@ -123,7 +130,7 @@ const FloatingPiP: React.FC = () => {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             style={{ left: pos.x, top: pos.y, touchAction: 'none' }}
-            className="fixed z-60 w-28 h-44 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border-2 border-white/10 cursor-grab active:cursor-grabbing select-none"
+            className={`fixed z-60 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border-2 border-white/10 cursor-grab active:cursor-grabbing select-none ${isMobile ? 'w-28 h-44' : 'w-[240px] h-[360px]'}`}
         >
             {hasVideo(pipParticipant) ? (
                 <video
@@ -161,8 +168,7 @@ const LiveStreamInner: React.FC<{
     setStreamEnded: (ended: boolean) => void;
 }> = ({ children, isViewer, isGuest, call, isChatVisible, setChatVisible, isGiftingOpen, setIsGiftingOpen, streamEnded, setStreamEnded }) => {
     const { showFullscreen } = useUserProfileStore();
-    const isMobile = useIsMobile();
-    const showPiP = isMobile && showFullscreen;
+    const showPiP = showFullscreen;
 
     // Lock body scroll while live stream is active (prevents mobile scroll that hides navbar)
     useEffect(() => {

@@ -225,9 +225,8 @@ export const ViewerPendingRequestPopup: React.FC = () => {
     return (
         <div className="absolute z-40 bottom-44 left-4 right-4 sm:bottom-20 sm:left-auto sm:right-10 sm:w-80">
             <div
-                onClick={handleCancel}
                 className={cn(
-                    "p-5 rounded-2xl cursor-pointer",
+                    "p-5 rounded-2xl",
                     "bg-[#FF0000] text-white",
                     "shadow-2xl shadow-black/30",
                     "animate-in slide-in-from-bottom-5 duration-300"
@@ -242,13 +241,19 @@ export const ViewerPendingRequestPopup: React.FC = () => {
                     </Avatar>
                     <div className="flex flex-col ml-1">
                         <p className="text-white text-base font-semibold">
-                            @{hostName} <span className="font-normal opacity-90">Decline your Join</span>
+                            @{hostName}
+                        </p>
+                        <p className="text-white/90 text-sm">
+                            Join Request Pending
                         </p>
                     </div>
                 </div>
-                <p className="text-white text-base mt-4 font-normal">
-                    Request for this stream
-                </p>
+                <button
+                    onClick={handleCancel}
+                    className="w-full mt-5 py-3 rounded-full bg-white text-[#FF0000] font-semibold text-[17px] transition-all hover:bg-white/90 active:scale-95 shadow-sm"
+                >
+                    Decline your Join Request
+                </button>
             </div>
         </div>
     );
