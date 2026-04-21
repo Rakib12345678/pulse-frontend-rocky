@@ -75,11 +75,6 @@ export const RecordingLayout: React.FC<RecordingLayoutProps> = ({
         };
     }, []);
 
-    const navigate = useNavigate();
-    const handleBack = () => {
-        navigate({ to: '/profile' });
-    };
-
     return (
         <RecordingContext.Provider value={{
             isViewer: true,
@@ -95,18 +90,7 @@ export const RecordingLayout: React.FC<RecordingLayoutProps> = ({
             isPlaying,
             setIsPlaying
         }}>
-            <div className="fixed inset-0 w-full h-full bg-black overflow-hidden z-[9999]">
-                {/* Fixed Back Button at Top Level */}
-                <div className="fixed top-24 left-8 z-[10000]">
-                    <button
-                        onClick={handleBack}
-                        className="bg-[#FF8800] hover:bg-[#FF8800]/90 text-black font-bold px-6 py-2 rounded-full h-11 shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                        Back
-                    </button>
-                </div>
-
+            <div className="relative w-full h-[calc(100vh-72px)] bg-black overflow-hidden">
                 {children}
                 <UserProfileModal />
             </div>

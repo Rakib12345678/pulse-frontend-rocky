@@ -31,6 +31,9 @@ function MainLayout() {
     const matchRoute = useMatchRoute()
     const isLandingPage = !!matchRoute({ to: '/' })
     const isChatsPage = !!matchRoute({ to: '/chats', fuzzy: true })
+    const isStreamPage = !!matchRoute({ to: '/stream/$id', fuzzy: true })
+    const isLivePage = !!matchRoute({ to: '/live/$id', fuzzy: true })
+    const isImmersivePage = isStreamPage || isLivePage;
 
     useEffect(() => {
         if (isHydrated && !accessToken && refreshToken) {
@@ -63,10 +66,8 @@ function MainLayout() {
         )
 
     return (
-        // <div className="h-screen flex flex-col overflow-hidden text-white">
         <div className="h-screen flex flex-col overflow-hidden">
             <Navbar />
-            {/* <main className="flex-1 min-h-0 overflow-hidden"> */}
             <main className="flex-1 min-h-0 w-full overflow-y-auto flex flex-col">
                 {content}
             </main>

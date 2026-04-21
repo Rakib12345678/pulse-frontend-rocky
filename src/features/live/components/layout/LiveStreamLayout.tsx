@@ -198,6 +198,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     const [isGiftingOpen, setIsGiftingOpen] = useState(false);
     const [streamEnded, setStreamEnded] = useState(false);
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const isTerminatingRef = useRef(false);
     useEffect(() => {
         const handleBeforeUnload = () => {

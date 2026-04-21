@@ -5,7 +5,9 @@ import { Loader2 } from 'lucide-react';
 export const RecordedVideoPlayer: React.FC = () => {
     const {
         recordingMetadata,
-        setIsPlaying
+        setIsPlaying,
+        setCurrentTime,
+        setDuration
     } = useRecordingContext();
 
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -21,8 +23,20 @@ export const RecordedVideoPlayer: React.FC = () => {
         );
     }
 
+    const handleTimeUpdate = () => {
+        if (videoRef.current) {
+            setCurrentTime(videoRef.current.currentTime);
+        }
+    };
+
+    const handleLoadedMetadata = () => {
+        if (videoRef.current) {
+            setDuration(videoRef.current.duration);
+        }
+    };
+
     return (
-        <div className="fixed inset-0 w-full h-full bg-black flex items-center justify-center z-0">
+        <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center z-0">
             <video
                 ref={videoRef}
                 src={recordingMetadata.recordingUrl}
@@ -31,6 +45,8 @@ export const RecordedVideoPlayer: React.FC = () => {
                 controls
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleLoadedMetadata}
             />
         </div>
     );

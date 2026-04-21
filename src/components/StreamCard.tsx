@@ -64,7 +64,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           recordingUrl,
           username: streamerName,
           title,
-          category
+          category,
+          cohosts: cohosts ? JSON.stringify(cohosts) : undefined
         }}
         onClick={handleCardClick}
         className="group relative block w-full aspect-[3/5.2] overflow-hidden rounded-2xl bg-neutral-900 shadow-2xl transition-all duration-500 hover:shadow-orange-900/20 cursor-pointer"
@@ -155,7 +156,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         recordingUrl,
         username: streamerName,
         title,
-        category
+        category,
+        cohosts: cohosts ? JSON.stringify(cohosts) : undefined
       }}
       onClick={handleCardClick}
       className="group relative block w-full aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 shadow-lg transition-all hover:shadow-xl cursor-pointer"
