@@ -17,10 +17,23 @@ export const CheckoutView = () => {
 
             setError(null);
             try {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.delete('stripe_return');
+                currentUrl.searchParams.delete('session_id');
+
+                const successUrl = new URL(currentUrl.toString());
+                successUrl.searchParams.set('stripe_return', 'success');
+
+                const cancelUrl = new URL(currentUrl.toString());
+                cancelUrl.searchParams.set('stripe_return', 'cancel');
+
+                // Persist the package to restore it after redirect for "Add Coins Again" retry functionality
+                localStorage.setItem('pulse_pending_coin_package', JSON.stringify(selectedPackage));
+
                 const response = await paymentService.createCheckoutSession({
                     coinId: Number(selectedPackage.id),
-                    successUrl: `${window.location.origin}/wallet/success`,
-                    cancelUrl: `${window.location.origin}/wallet/cancel`,
+                    successUrl: successUrl.toString(),
+                    cancelUrl: cancelUrl.toString(),
                 });
 
                 if (response.checkoutUrl) {

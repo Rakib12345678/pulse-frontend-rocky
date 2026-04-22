@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import {
-  Bell,
+  // Bell,
   User,
   Plus
 } from 'lucide-react';
@@ -163,16 +163,15 @@ export const Navbar: React.FC = () => {
                   </div>
                 </Button>
 
-                {/* Notifications */}
+                {/* Notifications
                 <Button
                   variant="ghost"
                   size="icon"
                   className="hidden md:flex relative p-2 text-gray-400 hover:text-white transition-colors cursor-pointer hover:bg-transparent h-auto w-auto"
                 >
                   <Bell className="h-6 w-6" />
-                  {/* Notification count later on*/}
                   <span className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-[#0f1117]" />
-                </Button>
+                </Button> */}
 
                 {/* Profile Link */}
                 <Link

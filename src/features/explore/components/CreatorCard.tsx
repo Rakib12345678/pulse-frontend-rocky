@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
+// removed Button import
 import { useToggleFollow } from '@/features/profile/services/profile.service';
 import { Creator } from '../types/explore.types';
 import { toast } from 'sonner';
@@ -107,18 +107,19 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
             </div>
 
             {/* Follow Button */}
-            <Button
+            <button
                 type="button"
                 onClick={handleFollowClick}
                 disabled={isPending || creator.isFollower}
-                style={creator.isFollower ? { backgroundColor: '#262626', backgroundImage: 'none' } : undefined}
-                className={creator.isFollower
-                    ? "w-fit min-w-[124px] px-8 text-gray-500 rounded-full h-11 text-xs font-bold cursor-not-allowed transition-all opacity-100"
-                    : "w-full bg-[#FF8800] text-black hover:bg-[#ff941a] rounded-full h-11 text-xs font-bold cursor-pointer transition-all shadow-lg shadow-orange-900/10"
-                }
+                className={cn(
+                    "w-[120px] h-[48px] rounded-[100px] py-3 px-6 flex items-center justify-center gap-4 text-xs font-bold transition-all shadow-lg",
+                    creator.isFollower
+                        ? "bg-[#262626] text-gray-500 cursor-not-allowed opacity-100"
+                        : "bg-[#FF8800] text-black hover:bg-[#ff941a] shadow-orange-900/10 cursor-pointer"
+                )}
             >
                 {creator.isFollower ? 'Following' : 'Follow'}
-            </Button>
+            </button>
         </div>
     );
 };

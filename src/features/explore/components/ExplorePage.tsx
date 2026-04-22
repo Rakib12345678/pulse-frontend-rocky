@@ -56,7 +56,7 @@ export const ExplorePage: React.FC = () => {
     let sectionCounter = 0;
 
     return (
-        <div className="w-full mt-8 overflow-x-hidden pb-12">
+        <div className="w-full mt-8 overflow-x-hidden">
             {/* Search and Categories - Contained */}
             <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
                 <ExploreSearch
@@ -88,7 +88,6 @@ export const ExplorePage: React.FC = () => {
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     {searchResults.creators.length > 0 && (
                         <ExploreSection
-                            title="Found Users"
                             hasBackground={false}
                         >
                             <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
@@ -203,10 +202,10 @@ export const ExplorePage: React.FC = () => {
                     {/* Popular Weekly */}
                     {exploreData?.popularStreams && exploreData.popularStreams.length > 0 && (
                         <ExploreSection
-                            title="Popular of this week"
+                            title="Popular this week"
                             hasBackground={sectionCounter++ % 2 === 1}
                         >
-                            <div className="flex gap-4 overflow-x-auto pb-6 no-scrollbar items-stretch px-2">
+                            <div className="flex gap-4 overflow-x-auto no-scrollbar items-stretch px-2 pb-32">
                                 {exploreData.popularStreams.map((item) => (
                                     <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
                                         <StreamCard

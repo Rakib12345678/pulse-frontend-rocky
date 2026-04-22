@@ -321,8 +321,8 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         <div className="bg-[#1D1F20] rounded-2xl md:rounded-3xl lg:rounded-3xl xl:rounded-4xl py-1.5 md:py-2.5 lg:py-3 xl:py-4 px-4 md:px-10 lg:px-14 xl:px-20 border border-zinc-800/40 shadow-2xl w-full">
           <div className="flex justify-between items-center w-full">
             {stats.map((stat, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className={cn(
                   "flex flex-col items-center gap-1 md:gap-1.5 flex-1",
                   stat.label !== 'Post' && "cursor-pointer hover:opacity-80 transition-opacity"

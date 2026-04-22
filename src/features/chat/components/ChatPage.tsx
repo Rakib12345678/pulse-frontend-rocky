@@ -174,14 +174,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                     className="relative w-full max-w-240 h-[calc(100vh-1.5rem)] sm:h-[calc(100vh-2rem)] max-h-190 flex overflow-hidden rounded-2xl border border-white/8 shadow-2xl"
                     style={modalBg}
                 >
-                    <div className={cn(
-                        'h-full w-full sm:w-70 md:w-77.5 shrink-0 flex flex-col bg-[#111213]/90 border-r border-white/8',
-                        mobileShowList ? 'flex' : 'hidden sm:flex',
-                    )}>
-                        <div className="flex flex-col flex-1 overflow-hidden px-5 py-5">
-                            {streamReady && <ChatSidebar {...sidebarProps} />}
+                    {user && (
+                        <div className={cn(
+                            'h-full w-full sm:w-70 md:w-77.5 shrink-0 flex flex-col bg-[#111213]/90 border-r border-white/8',
+                            mobileShowList ? 'flex' : 'hidden sm:flex',
+                        )}>
+                            <div className="flex flex-col flex-1 overflow-hidden px-5 py-5">
+                                {streamReady && <ChatSidebar {...sidebarProps} />}
+                            </div>
                         </div>
-                    </div>
+                    )}
                     <div className={cn(
                         'flex-1 min-w-0 flex flex-col overflow-hidden',
                         mobileShowList ? 'hidden sm:flex' : 'flex',
@@ -215,14 +217,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({
 
             {/* DESKTOP */}
             <div className="hidden md:flex flex-1 min-h-0 pb-0">
-                <div
-                    className="flex flex-col shrink-0 w-72 lg:w-90 xl:w-110 overflow-hidden -mb-1px pb-6"
-                    style={{ background: '#111213' }}
-                >
-                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-5 py-5">
-                        {streamReady && <ChatSidebar {...sidebarProps} />}
+                {user && (
+                    <div
+                        className="flex flex-col shrink-0 w-72 lg:w-90 xl:w-110 overflow-hidden -mb-1px pb-6"
+                        style={{ background: '#111213' }}
+                    >
+                        <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-5 py-5">
+                            {streamReady && <ChatSidebar {...sidebarProps} />}
+                        </div>
                     </div>
-                </div>
+                )}
                 <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden -mb-1px">
                     <ChatWindow {...windowProps} />
                 </div>

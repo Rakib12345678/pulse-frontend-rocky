@@ -227,30 +227,29 @@ export const ViewerPendingRequestPopup: React.FC = () => {
             <div
                 className={cn(
                     "p-5 rounded-2xl",
-                    "bg-[#FF0000] text-white",
+                    "bg-[#232323]",
                     "shadow-2xl shadow-black/30",
                     "animate-in slide-in-from-bottom-5 duration-300"
                 )}
             >
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-11 w-11 border-2 border-white/40 shrink-0">
-                        <AvatarImage src={hostImage} alt={hostName} />
-                        <AvatarFallback className="bg-white/20 text-white font-bold text-sm">
-                            {hostName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col ml-1">
-                        <p className="text-white text-base font-semibold">
-                            @{hostName}
-                        </p>
-                        <p className="text-white/90 text-sm">
-                            Join Request Pending
-                        </p>
+                {/* Host info */}
+                <div className="flex flex-col gap-2 mb-6">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12 border border-white/40 shrink-0">
+                            <AvatarImage src={hostImage} alt={hostName} />
+                            <AvatarFallback className="bg-zinc-800 text-white font-bold text-sm">
+                                {hostName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-wrap items-center gap-x-2">
+                            <span className="text-[#a0a0a0] text-[17px]">@{hostName}</span>
+                            <span className="text-white text-[17px] font-medium">Join Request Pending</span>
+                        </div>
                     </div>
                 </div>
                 <button
                     onClick={handleCancel}
-                    className="w-full mt-5 py-3 rounded-full bg-white text-[#FF0000] font-semibold text-[17px] transition-all hover:bg-white/90 active:scale-95 shadow-sm"
+                    className="w-full py-3 rounded-full border-2 border-[#FF0000] text-[#FF0000] font-medium text-[19px] bg-transparent transition-all hover:bg-[#FF0000]/10 active:scale-95"
                 >
                     Decline your Join Request
                 </button>
