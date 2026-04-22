@@ -460,6 +460,33 @@ const ViewerBottomBar: React.FC = () => {
 
     const { requestStatus, setRequestStatus } = useJoinRequestStore();
 
+    // On mount/refresh, check if the current user is already a co-host in the call.
+    // The Zustand store resets to 'idle' on refresh, but the participant data persists
+    // in the Stream call state, so we restore 'approved' status from it.
+    const { useParticipants: useViewerParticipants } = useCallStateHooks();
+    const viewerParticipants = useViewerParticipants();
+
+    useEffect(() => {
+        if (!call || !user || requestStatus !== 'idle') return;
+
+        const myParticipant = viewerParticipants.find(
+            (p: any) => p.userId === String(user.id)
+        );
+
+        if (!myParticipant) return;
+
+        const p = myParticipant as any;
+        const isAlreadyCohost =
+            p.roles?.includes('co_host') ||
+            p.capabilities?.includes('send-audio') ||
+            p.capabilities?.includes('send-video');
+
+        if (isAlreadyCohost) {
+            console.log('[ViewerBottomBar] Detected existing co-host role on mount, restoring approved status');
+            setRequestStatus('approved');
+        }
+    }, [call, user, viewerParticipants, requestStatus, setRequestStatus]);
+
     // Listen for join-response from host
     useEffect(() => {
         if (!call || !user) return;

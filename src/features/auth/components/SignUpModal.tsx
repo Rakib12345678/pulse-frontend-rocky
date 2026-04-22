@@ -1167,7 +1167,7 @@ export const StepDetails = ({
                                     </FormItem>
                                 )} />
                                 <div className="flex flex-col md:flex-row gap-3 md:gap-4 mt-6 md:mt-8 w-full">
-                                    <button type="submit" disabled={isLoading} className="rounded-full bg-[#FF7700] text-[#111213] py-3 px-12 w-full md:w-auto text-sm font-bold hover:bg-[#FF7700] transition-all active:scale-95 disabled:opacity-50 cursor-pointer">
+                                    <button type="submit" disabled={isLoading} className="rounded-full bg-[#FF7700] text-[#111213] h-12 px-12 md:px-18 w-full md:w-auto text-sm font-bold hover:bg-[#FF7700] transition-all active:scale-95 disabled:opacity-50 cursor-pointer">
                                         {isLoading ? <span className="flex items-center justify-center"><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</span> : submitLabel}
                                     </button>
                                     {onCancel && (
