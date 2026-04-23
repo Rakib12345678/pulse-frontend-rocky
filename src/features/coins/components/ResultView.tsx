@@ -85,7 +85,7 @@ export const ResultView = () => {
             )}
 
             <p className="text-[#888888] text-[15px] max-w-[340px] leading-relaxed mt-2">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris massa mauris, for further information connect
+                Your payment could not be processed. Please try again or contact support if the issue persists.
             </p>
 
             <a href="mailto:support@pulselive.com" className="text-[#555555] text-[15px] hover:text-white transition-colors mb-2">
