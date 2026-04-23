@@ -31,14 +31,14 @@ function RecordingPlaybackContent() {
 
 function RecordingPlaybackComponent() {
   const { id } = Route.useParams()
-  const { 
+  const {
     recordingUrl: searchUrl,
     username: searchUsername,
     title: searchTitle,
     category: searchCategory,
     cohosts: searchCohosts
   } = Route.useSearch()
-  
+
   const [metadata, setMetadata] = useState<Partial<FeedStreamItem>>({})
 
   const parsedCohosts = useMemo(() => {
@@ -71,7 +71,7 @@ function RecordingPlaybackComponent() {
             console.error('[Recording] Failed to resolve host username:', profileErr);
           }
         }
-        
+
         setMetadata(data)
       } catch (err) {
         console.error('[Recording] Failed to fetch stream metadata:', err)
@@ -83,8 +83,8 @@ function RecordingPlaybackComponent() {
   const finalRecordingUrl = searchUrl || metadata.recordingUrl || undefined;
 
   return (
-    <RecordingLayout 
-      recordingUrl={finalRecordingUrl} 
+    <RecordingLayout
+      recordingUrl={finalRecordingUrl}
       recordingMetadata={{
         username: searchUsername || metadata.username || undefined,
         title: searchTitle || metadata.title || undefined,

@@ -36,7 +36,7 @@ export const MessageDropdown = ({
             >
                 <Copy className="w-4 h-4 shrink-0" /> Copy
             </button>
-            {isMe && onDelete && (
+            {onDelete && (
                 <button
                     onClick={() => { onDelete(); onClose(); }}
                     className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors border-t border-white/8"

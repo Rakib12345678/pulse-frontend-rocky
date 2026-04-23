@@ -43,7 +43,13 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                     {creator.cohosts.map((cohost, idx) => (
                         <div
                             key={idx}
-                            className="relative transition-transform duration-300 hover:scale-110 hover:z-20"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (cohost.username && !/^\d+$/.test(cohost.username)) {
+                                    navigate({ to: `/profile/${cohost.username}` as any });
+                                }
+                            }}
+                            className="relative transition-transform duration-300 hover:scale-110 hover:z-20 cursor-pointer"
                             style={{ zIndex: creator.cohosts!.length - idx }}
                         >
                             <img

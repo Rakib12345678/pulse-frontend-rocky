@@ -8,18 +8,18 @@ import { TickIcon } from './ChatSidebar';
 import { capitalizeName, formatMsgTime } from '../utils/ChatUtils';
 import type { Message } from '../types/chat.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { getRecentEmojis, saveRecentEmoji, type QuickReaction } from '../utils/EmojiUtils';
+import { getRecentEmojis, saveRecentEmoji, type QuickReaction, getSafeEmojiId } from '../utils/EmojiUtils';
 
 export const isOnlyImage = (text: string, attachments?: any[]) => {
     const hasAttachments = !!(attachments && attachments.length > 0);
     if (!text) return hasAttachments;
     const trimmed = text.trim();
-    
+
     // Detect any bracketed tag containing a URL (language agnostic, handles various brackets)
     const tagRegex = /[\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】]/gi;
     const hasTag = tagRegex.test(trimmed);
     const cleanText = trimmed.replace(tagRegex, '').trim();
-    
+
     // If it has a tag and no other text, it's an only-image message.
     // Also if it's just a raw URL without brackets (sometimes happens in translation)
     const rawUrlRegex = /^https?:\/\/[^\s]+$/i;
@@ -88,13 +88,13 @@ const renderMessageContent = (msg: Message, text: string, isMe: boolean, onImage
     // 2. Handle Images / URLs within brackets or raw URLs
     const tagRegex = /([\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】])/gi;
     const parts = text.split(tagRegex);
-    
+
     return parts.map((part, index) => {
         const trimmedPart = part.trim();
-        const isBracketedTag = (trimmedPart.startsWith('[') || trimmedPart.startsWith('(') || trimmedPart.startsWith('【')) && 
-                              (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('】')) && 
-                              trimmedPart.includes('http');
-        
+        const isBracketedTag = (trimmedPart.startsWith('[') || trimmedPart.startsWith('(') || trimmedPart.startsWith('【')) &&
+            (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('】')) &&
+            trimmedPart.includes('http');
+
         const rawUrlRegex = /^(https?:\/\/[^\s\n\r\]\)\】]+)$/i;
         const isRawUrl = rawUrlRegex.test(trimmedPart);
 
@@ -136,7 +136,7 @@ export const MessageBubble = ({
     message, isMe, translateEnabled, participantName, participantAvatar, myAvatar,
     onDelete, onReact, onDeleteReaction, onCopy, onImageLoad,
 }: MessageBubbleProps) => {
-    
+
 
     // Decide which text to use as the base for rendering
     // Priority: 1. Me -> Original, 2. Normal Translated -> Translated, 3. Special -> pickSpecialContent (prioritizes original)
@@ -190,13 +190,13 @@ export const MessageBubble = ({
     const handleReaction = async (emoji: any) => {
         setQuickReactionOpen(false);
         setFullPickerOpen(false);
-        
+
         // Save to recent list
         saveRecentEmoji(emoji);
-        
-        const type = typeof emoji === 'string' 
-            ? (quickReactions.find(r => r.emoji === emoji)?.id || emoji)
-            : emoji.id;
+
+        const type = typeof emoji === 'string'
+            ? getSafeEmojiId(emoji, quickReactions.find(r => r.emoji === emoji)?.id)
+            : getSafeEmojiId(emoji.native || emoji.emoji, emoji.id);
         const native = typeof emoji === 'string' ? emoji : emoji.native;
 
         const hasReacted = message.reactions?.own.some(r => r.type === type);
@@ -221,7 +221,7 @@ export const MessageBubble = ({
         const filteredEmojis = Array.from(new Set(uniqueEmojis.filter(Boolean)));
 
         return (
-            <div 
+            <div
                 className={cn(
                     "absolute z-50 cursor-pointer active:scale-95 transition-transform left-3",
                     isImage ? '-bottom-1' : '-bottom-2.5'
@@ -247,7 +247,7 @@ export const MessageBubble = ({
                 side === 'left' ? 'left-full ml-3' : 'right-full mr-3'
             )}>
                 <div className="fixed inset-0 -z-10" onClick={() => setShowReactionModal(false)} />
-                <div 
+                <div
                     className="w-[280px] bg-[#1a1c23] border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-3"
                     onClick={e => e.stopPropagation()}
                 >
@@ -272,8 +272,8 @@ export const MessageBubble = ({
                             const emoji = r.emoji || quickReactions.find(qr => qr.id === r.type)?.emoji || r.type;
 
                             return (
-                                <div 
-                                    key={i} 
+                                <div
+                                    key={i}
                                     onClick={isMyReaction ? handleRemove : undefined}
                                     className={cn(
                                         "flex items-center justify-between gap-3 p-2 rounded-xl transition-all group/item",
@@ -323,12 +323,12 @@ export const MessageBubble = ({
             </button>
 
             {quickReactionOpen && !fullPickerOpen && (
-                <div 
+                <div
                     ref={pickerRef}
                     className={cn(
-                    "absolute bottom-0 flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[100] animate-in duration-200",
-                    alignment === 'left' ? 'left-full ml-3' : 'right-full mr-3'
-                )}>
+                        "absolute bottom-0 flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[100] animate-in duration-200",
+                        alignment === 'left' ? 'left-full ml-3' : 'right-full mr-3'
+                    )}>
                     {quickReactions.map(r => (
                         <button
                             key={r.id}
@@ -372,8 +372,8 @@ export const MessageBubble = ({
     if (isMe) {
         const meIsGift = message.isGiftMessage || isGift(message.originalText || '') || isGift(message.text || '');
         const meOnlyImage = !meIsGift && (
-                           isOnlyImage(message.originalText || '', message.attachments) ||
-                           isOnlyImage(message.text || '', message.attachments));
+            isOnlyImage(message.originalText || '', message.attachments) ||
+            isOnlyImage(message.text || '', message.attachments));
 
         return (
             <>
@@ -432,18 +432,16 @@ export const MessageBubble = ({
                                         <TickIcon status={message.status} />
                                     </div>
                                 </div>
-                                {!meIsGift && (
-                                        <button
-                                        onClick={() => setDropdown(v => !v)}
-                                        className={cn(
-                                            'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10 cursor-pointer',
-                                            'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
-                                            (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0',
-                                        )}
-                                    >
-                                        <ChevronDown className="w-3 h-3" />
-                                    </button>
-                                )}
+                                <button
+                                    onClick={() => setDropdown(v => !v)}
+                                    className={cn(
+                                        'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10 cursor-pointer',
+                                        'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
+                                        (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0',
+                                    )}
+                                >
+                                    <ChevronDown className="w-3 h-3" />
+                                </button>
                                 {dropdownOpen && (
                                     <MessageDropdown
                                         isMe
@@ -458,7 +456,7 @@ export const MessageBubble = ({
                                 {renderReactionModal('right')}
                             </div>
                         </div>
-                        
+
                     </div>
                     <Avatar src={myAvatar} alt="me" className="w-8 h-8 sm:w-9 sm:h-9 mt-0.5" />
                 </div>
@@ -469,7 +467,7 @@ export const MessageBubble = ({
     // UI Rendering Logic for Receiver (OTHERS)
     const tIsGift = message.isGiftMessage || isGift(receivedText);
     const tOnlyImage = !tIsGift && (isOnlyImage(receivedText, message.attachments) ||
-                      isOnlyImage(message.text || '', message.attachments));
+        isOnlyImage(message.text || '', message.attachments));
 
     return (
         <div
@@ -525,18 +523,16 @@ export const MessageBubble = ({
                             </div>
                         </div>
 
-                        {!tIsGift && (
-                            <button
-                                onClick={() => setDropdown(v => !v)}
-                                className={cn(
-                                    'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10 cursor-pointer',
-                                    'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
-                                    (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0'
-                                )}
-                            >
-                                <ChevronDown className="w-3 h-3" />
-                            </button>
-                        )}
+                        <button
+                            onClick={() => setDropdown(v => !v)}
+                            className={cn(
+                                'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10 cursor-pointer',
+                                'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
+                                (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0'
+                            )}
+                        >
+                            <ChevronDown className="w-3 h-3" />
+                        </button>
 
                         {dropdownOpen && (
                             <MessageDropdown
@@ -550,7 +546,7 @@ export const MessageBubble = ({
                         {renderFullPicker('left')}
                         {renderReactionModal('left')}
                     </div>
-                        {renderReactionPicker('left')}
+                    {renderReactionPicker('left')}
                 </div>
             </div>
         </div>

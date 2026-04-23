@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Loader2, Search } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { Loader2, Search, UserSearch } from 'lucide-react';
 import { getStreamClient } from '@/features/chat/stream/streamClient';
 import { Avatar } from './Avatar';
 import { getDisplayName, capitalizeName } from '@/features/chat/utils/ChatUtils';
@@ -7,6 +8,7 @@ import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 
 export interface StreamUser {
     id: string;
+    username?: string;
     name?: string;
     image?: string;
     isOnline?: boolean;
@@ -36,36 +38,51 @@ export const UserSearchList = ({
     showInitialList = false,
     hideListInitially = false,
     hideSearchBar = false,
-}: UserSearchListProps) => {
+    initialUsers = [],
+    isLoadingInitial = false,
+}: UserSearchListProps & { initialUsers?: StreamUser[]; isLoadingInitial?: boolean; }) => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<StreamUser[]>([]);
     const [searching, setSearch] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const navigate = useNavigate();
 
     const [hasLoadedInitial, setHasLoadedInitial] = useState(false);
+    const isInitialListSupplied = initialUsers !== undefined;
+
+    // Sync results with initialUsers if provided and no query
+    useEffect(() => {
+        if (!query.trim() && isInitialListSupplied) {
+            setResults(initialUsers);
+            setHasLoadedInitial(true);
+        }
+    }, [initialUsers, query, isInitialListSupplied]);
 
     useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        
+
         if (!query.trim()) {
-            if (showInitialList) {
+            if (showInitialList && !isInitialListSupplied) { // Only fetch if no external list provided AT ALL
                 const fetchInitial = async () => {
                     setSearch(true);
                     try {
                         const client = getStreamClient();
-                        const resp = await client.queryUsers({ 
+                        const resp = await client.queryUsers({
                             id: { $nin: [client.userID!] },
                             name: { $exists: true }
                         } as any, { last_active: -1 }, { limit: 20 });
-
-                        setResults(resp.users
-                            .filter(u => !u.id.startsWith('recording-egress-'))
-                            .map(u => ({
-                                id: u.id,
-                                name: u.name ?? u.id,
-                                image: toAbsoluteUrl((u as any).image ?? ''),
-                                isOnline: (u as any).online
-                            })));
+                        setResults(resp.users.map(u => {
+                                const raw = u as any;
+                                const username = u.username || 
+                                               (u.name && !/^\d+$/.test(u.name) ? u.name : undefined);
+                                return {
+                                    id: u.id,
+                                    username,
+                                    name: raw.fullName ?? raw.full_name ?? u.name  ?? u.id,
+                                    image: toAbsoluteUrl(raw.image ?? ''),
+                                    isOnline: raw.online
+                                };
+                        }));
                     } catch {
                         setResults([]);
                     } finally {
@@ -74,6 +91,8 @@ export const UserSearchList = ({
                     }
                 };
                 fetchInitial();
+            } else if (isInitialListSupplied) {
+                setResults(initialUsers);
             } else {
                 setResults([]);
             }
@@ -99,12 +118,18 @@ export const UserSearchList = ({
                     setResults(
                         resp.users
                             .filter(u => !u.id.startsWith('recording-egress-') && u.name)
-                            .map(u => ({
-                                id:    u.id,
-                                name:  u.name ?? u.id,
-                                image: toAbsoluteUrl((u as any).image ?? ''),
-                                isOnline: (u as any).online
-                            })),
+                            .map(u => {
+                                const raw = u as any;
+                                const username = u.username || 
+                                               (u.name && !/^\d+$/.test(u.name) ? u.name : undefined);
+                                return {
+                                    id: u.id,
+                                    username,
+                                    name: raw.fullName ?? raw.full_name ?? u.name ?? u.id,
+                                    image: toAbsoluteUrl(raw.image ?? ''),
+                                    isOnline: raw.online
+                                };
+                            }),
                     );
                 }
             } catch {
@@ -141,12 +166,30 @@ export const UserSearchList = ({
                 </div>
             )}
 
+            {isLoadingInitial && results.length === 0 && (
+                <div className="flex items-center justify-center py-6">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                </div>
+            )}
+
             <div className={`flex flex-col gap-0.5 overflow-y-auto [&::-webkit-scrollbar]:hidden ${listClassName}`}>
                 {inlineSuccess && (
                     <p className="text-center text-green-400 text-sm py-4">{inlineSuccess}</p>
                 )}
                 {!inlineSuccess && results.length === 0 && query.trim() && !searching && (
-                    <p className="text-center text-gray-500 text-sm py-4">No users found</p>
+                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                            <UserSearch className="w-8 h-8 text-gray-500" />
+                        </div>
+                        <p className="text-white font-bold text-xl mb-2">User doesn't exist</p>
+                        <p className="text-gray-500 text-[15px] mb-8 max-w-[260px] leading-relaxed">We couldn't find any creator with this name.</p>
+                        <button
+                            onClick={() => navigate({ to: '/explore' })}
+                            className="px-8 py-2.5 bg-[#FF7700] text-black font-bold rounded-full active:scale-95 transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+                        >
+                            Find Creator
+                        </button>
+                    </div>
                 )}
                 {!inlineSuccess && results.length === 0 && !query.trim() && !searching && !hideListInitially && (
                     <p className="text-center text-gray-500 text-sm py-4">{emptyMessage}</p>

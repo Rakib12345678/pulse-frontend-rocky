@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { Search, X, Loader2, UserPlus } from 'lucide-react';
 import {
   Dialog,
@@ -38,6 +39,7 @@ export const FollowersFollowingModal = ({
   type,
 }: FollowersFollowingModalProps) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmRemove, setConfirmRemove] = useState<FollowUser | null>(null);
   const [confirmUnfollow, setConfirmUnfollow] = useState<FollowUser | null>(null);
@@ -119,6 +121,13 @@ export const FollowersFollowingModal = ({
     );
   };
 
+  const handleUserClick = (targetUsername: string) => {
+    if (targetUsername && !/^\d+$/.test(targetUsername)) {
+      onClose();
+      navigate({ to: `/profile/${targetUsername}` as any });
+    }
+  };
+
   const ModalWrapper = isMobile ? Drawer : Dialog;
   const ContentWrapper = isMobile ? DrawerContent : DialogContent;
   const HeaderWrapper = isMobile ? DrawerHeader : DialogHeader;
@@ -178,7 +187,12 @@ export const FollowersFollowingModal = ({
                     </Avatar>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-white font-bold text-base group-hover:text-[#FF7700] transition-colors line-clamp-1">{user.username}</span>
+                    <span 
+                      className="text-white font-bold text-base group-hover:text-[#FF7700] transition-colors line-clamp-1 cursor-pointer"
+                      onClick={() => handleUserClick(user.username)}
+                    >
+                      {user.username}
+                    </span>
                     {type === 'followers' && (
                       <button
                         onClick={(e) => { e.stopPropagation(); setConfirmRemove(user); }}

@@ -7,7 +7,7 @@ export const chatService = {
 
     getConversationById: async (channelCid: string): Promise<Conversation> => {
         const client = getStreamClient();
-        const myId   = client.userID ?? '';
+        const myId = client.userID ?? '';
         const [type, id] = channelCid.split(':');
         const channel = client.channel(type, id);
         await channel.watch();
@@ -24,7 +24,7 @@ export const chatService = {
 
         await connectStreamUser(currentUser.id, currentUser.name, currentUser.avatar, chatApiKey, chatToken);
 
-        const client  = getStreamClient();
+        const client = getStreamClient();
         const channel = client.channel(chatChannelType, chatChannelId);
         await channel.watch();
         if (targetUser?.name) {
@@ -52,7 +52,7 @@ export const chatService = {
         });
         const raw = data?.message ?? data;
         return {
-            id: raw?.id   ?? '',
+            id: raw?.id ?? '',
             time: raw?.created_at ?? new Date().toISOString(),
         };
     },
@@ -62,7 +62,7 @@ export const chatService = {
             await api.post('/chat/forward', { targetUserId, text });
         } catch (err: any) {
             if (err?.response?.status === 404) {
-                const client  = getStreamClient();
+                const client = getStreamClient();
                 const channel = client.channel('messaging', { members: [client.userID!, String(targetUserId)] });
                 await channel.create();
                 await channel.sendMessage({ text });
@@ -71,7 +71,7 @@ export const chatService = {
             }
         }
     },
-    
+
     hideOrDeleteConversation: async (channelCid: string): Promise<void> => {
         const client = getStreamClient();
         const [type, id] = channelCid.split(':');

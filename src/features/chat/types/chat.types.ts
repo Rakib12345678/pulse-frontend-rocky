@@ -1,6 +1,7 @@
 export interface ChatUser {
     id: string;
     name: string;
+    username?: string;
     fullName?: string;
     avatar: string;
     isOnline?: boolean;

@@ -9,6 +9,7 @@ import ChatSvg from '@/assets/Group.svg';
 import UserSvg from '@/assets/user.svg';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
+import { useTotalUnreadCount } from '@/features/chat/hooks/useTotalUnreadCount';
 
 // ------ Nav Item ---------
 interface NavItemProps {
@@ -16,9 +17,10 @@ interface NavItemProps {
     label: string;
     customIcon?: React.ReactNode;
     onClick?: () => void;
+    badgeCount?: number;
 }
 
-const NavItem = ({ to, label, customIcon, onClick }: NavItemProps) => {
+const NavItem = ({ to, label, customIcon, onClick, badgeCount = 0 }: NavItemProps) => {
     const { pathname } = useLocation();
     const isActive = pathname === to;
 
@@ -30,7 +32,19 @@ const NavItem = ({ to, label, customIcon, onClick }: NavItemProps) => {
                     isActive && to === '/for-you' ? "bg-[#1D1F20]" : "bg-transparent"
                 )}
             >
-                {customIcon}
+                <div className="relative">
+                    {customIcon}
+                    {badgeCount > 0 && (
+                        <span className={cn(
+                            "absolute -top-2.5 flex h-[17px] items-center justify-center rounded-full bg-[#FF7700] font-black text-white border-1 border-[#111213] shadow-lg z-20 leading-none transition-all duration-200",
+                            badgeCount < 10 
+                                ? "w-[17px] -right-1 text-[11px]" 
+                                : "min-w-[26px] -right-3.5 px-1.5 text-[9.5px]"
+                        )}>
+                            {badgeCount > 999 ? '999+' : badgeCount}
+                        </span>
+                    )}
+                </div>
             </div>
             <span
                 className={cn(
@@ -67,6 +81,7 @@ export const MobileFooter: React.FC = () => {
     const { pathname } = useLocation();
     const { isAuthenticated, accessToken } = useAuthStore();
     const { openModal, setStep, setMode, isOpen: isModalOpen, currentStep } = useSignUpStore();
+    const totalUnreadCount = useTotalUnreadCount();
 
     const isChatWindowOpen = false; // overlay handles coverage via z-index
 
@@ -139,6 +154,7 @@ export const MobileFooter: React.FC = () => {
                 <NavItem
                     to="/chats"
                     label="Chat"
+                    badgeCount={totalUnreadCount}
                     customIcon={
                         <img
                             src={ChatSvg}

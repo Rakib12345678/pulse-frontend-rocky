@@ -4,6 +4,18 @@ export interface QuickReaction {
     emoji: string;
 }
 
+export const getSafeEmojiId = (emoji: string, preferredId?: string): string => {
+    if (preferredId && /^[a-zA-Z0-9_\-\.]+$/.test(preferredId)) return preferredId;
+    if (/^[a-zA-Z0-9_\-\.]+$/.test(emoji)) return emoji;
+    
+    // Convert emoji char to safe hex string
+    const hex = Array.from(emoji)
+        .map(c => c.codePointAt(0)?.toString(16))
+        .filter(Boolean)
+        .join('_');
+    return `emoji_${hex}`;
+};
+
 const DEFAULT_REACTIONS: QuickReaction[] = [
     { id: 'love', emoji: '❤️' },
     { id: 'thumbsup', emoji: '👍' },
@@ -22,7 +34,11 @@ export const getRecentEmojis = (): QuickReaction[] => {
         if (!stored) return DEFAULT_REACTIONS;
         const parsed = JSON.parse(stored) as QuickReaction[];
         if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_REACTIONS;
-        return parsed;
+        // Migration: Ensure all loaded IDs are safe
+        return parsed.map(r => ({
+            ...r,
+            id: getSafeEmojiId(r.emoji, r.id)
+        }));
     } catch (e) {
         console.error('Failed to load recent emojis', e);
         return DEFAULT_REACTIONS;
@@ -38,11 +54,10 @@ export const saveRecentEmoji = (emojiObj: any) => {
 
         if (typeof emojiObj === 'string') {
             emoji = emojiObj;
-            // Best guess for ID if we only have the emoji string
-            id = emojiObj; 
+            id = getSafeEmojiId(emojiObj); 
         } else {
-            emoji = emojiObj.native || emojiObj.emoji; // supports standard and custom emoji structures
-            id = emojiObj.id || emoji;
+            emoji = emojiObj.native || emojiObj.emoji; 
+            id = getSafeEmojiId(emoji, emojiObj.id);
         }
 
         if (!emoji) return;

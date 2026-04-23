@@ -39,7 +39,7 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
 
     // Hunt for original text in various Stream i18n structures if missing
     const i18n = msg.i18n || (msg as any).translations || {};
-    const originalFromI18n = i18n.original_text || i18n.text_en; 
+    const originalFromI18n = i18n.original_text || i18n.text_en;
     const textToUse = msg.original_text || originalFromI18n || msg.text || '';
 
     const attachmentsToUse = uniqueAttachments.length > 0 ? uniqueAttachments : undefined;
@@ -50,7 +50,8 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
         user_id: r.user?.id || r.user_id,
         user: r.user ? {
             id: r.user.id,
-            name: getDisplayName(r.user),
+            username: r.user.username || (r.user.name && !/^\d+$/.test(r.user.name) ? r.user.name : undefined),
+            name: r.user.fullName ?? r.user.full_name ?? r.user.name ?? r.user.id,
             avatar: toAbsoluteUrl(r.user.image),
         } : undefined,
     }));
@@ -86,14 +87,14 @@ export const channelToConversation = (
     myId: string,
     participantNameOverride?: string,
 ): Conversation => {
-    const members     = Object.values(channel.state.members).filter(
+    const members = Object.values(channel.state.members).filter(
         m => (m.user?.id || m.user_id) !== myId,
     );
     const participant = members[0]?.user;
-    const streamUser  = participant as Record<string, any> | undefined;
+    const streamUser = participant as Record<string, any> | undefined;
     const allMsgs = channel.state.messages;
-    const lastMsg = allMsgs.slice().reverse().find(m => 
-        m.text?.trim() !== 'has joined the live' && 
+    const lastMsg = allMsgs.slice().reverse().find(m =>
+        m.text?.trim() !== 'has joined the live' &&
         (m as any).original_text?.trim() !== 'has joined the live'
     );
 
@@ -114,17 +115,17 @@ export const channelToConversation = (
     // Identify and clean image/gift tags even if translated.
     // We check both original and translated text to be safe.
     const imageTagRegex = /\[?[\s\S]*?https?:\/\/[\s\S]*?\]?/i;
-    const giftTagRegex  = /\[?[\s\S]*?GIFT:[\s\S]*?\]?/i;
+    const giftTagRegex = /\[?[\s\S]*?GIFT:[\s\S]*?\]?/i;
 
-    const isImageTag = hasAttachments || 
-                      imageTagRegex.test(lastMsgOriginal) || 
-                      imageTagRegex.test(lastMsgText);
-    
-    const isGiftTag  = giftTagRegex.test(lastMsgOriginal) || 
-                      giftTagRegex.test(lastMsgText);
+    const isImageTag = hasAttachments ||
+        imageTagRegex.test(lastMsgOriginal) ||
+        imageTagRegex.test(lastMsgText);
+
+    const isGiftTag = giftTagRegex.test(lastMsgOriginal) ||
+        giftTagRegex.test(lastMsgText);
 
     if (isGiftTag || (lastMsg as any)?.isGiftMessage) {
-        lastMsgOriginal = `🎁 ${ (lastMsg as any)?.giftName || 'Gift' }`;
+        lastMsgOriginal = `🎁 ${(lastMsg as any)?.giftName || 'Gift'}`;
         lastMsgText = lastMsgOriginal;
     } else if (isImageTag) {
         lastMsgOriginal = '📷 Photo';
@@ -138,6 +139,7 @@ export const channelToConversation = (
         participant: {
             id: participant?.id ?? members[0]?.user_id ?? '',
             name: participantName,
+            username: streamUser?.username || (streamUser?.name && !/^\d+$/.test(streamUser.name) ? streamUser.name : undefined),
             avatar: toAbsoluteUrl(streamUser?.image as string | undefined),
             fullName: (streamUser?.fullName || streamUser?.full_name) as string | undefined,
         },

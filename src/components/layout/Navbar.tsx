@@ -18,13 +18,15 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
 import { useWalletBalance } from '@/features/coins/hooks/useWallet';
 import { AddCoinsModal } from '@/features/coins/components/AddCoinsModal';
+import { useTotalUnreadCount } from '@/features/chat/hooks/useTotalUnreadCount';
 
 interface NavLinkProps {
   to: string;
   label: string;
+  badgeCount?: number;
 }
 
-const NavLink = ({ to, label }: NavLinkProps) => {
+const NavLink = ({ to, label, badgeCount = 0 }: NavLinkProps) => {
   const { pathname } = useLocation();
   const isActive = pathname === to;
 
@@ -32,15 +34,27 @@ const NavLink = ({ to, label }: NavLinkProps) => {
     <Link
       to={to}
       className={cn(
-        "group flex flex-col items-center justify-center px-4 py-2 transition-colors",
+        "group flex flex-col items-center justify-center px-4 py-2 transition-colors relative",
         isActive ? "text-white" : "text-[#888888] hover:text-white"
       )}
     >
-      <span className={cn(
-        "text-[15px] font-medium whitespace-nowrap",
-        isActive ? "text-white" : "text-muted-foreground group-hover:text-white"
-      )}>
-        {label}
+      <span className="relative flex items-center">
+        <span className={cn(
+          "text-[15px] font-medium whitespace-nowrap",
+          isActive ? "text-white" : "text-muted-foreground group-hover:text-white"
+        )}>
+          {label}
+        </span>
+        {badgeCount > 0 && (
+          <span className={cn(
+            "absolute -top-2.5 flex h-[19px] items-center justify-center rounded-full bg-[#FF7700] font-black text-white border-1.5 border-[#0f1117] shadow-xl z-20 leading-none transition-all duration-200",
+            badgeCount < 10 
+              ? "w-[19px] -right-4 text-[11px]" 
+              : "min-w-[30px] -right-6.5 px-2 text-[10px]"
+          )}>
+            {badgeCount > 999 ? '999+' : badgeCount}
+          </span>
+        )}
       </span>
     </Link>
   );
@@ -56,6 +70,7 @@ export const Navbar: React.FC = () => {
   const [hasMounted, setHasMounted] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const isMobile = useIsMobile();
+  const totalUnreadCount = useTotalUnreadCount();
 
   useEffect(() => {
     setHasMounted(true);
@@ -119,7 +134,7 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex flex-row items-center gap-8 lg:gap-16">
             <NavLink to="/for-you" label="For You" />
             <NavLink to="/explore" label="Explore" />
-            <NavLink to="/chats" label="Chats" />
+            <NavLink to="/chats" label="Chats" badgeCount={totalUnreadCount} />
           </div>
 
           {/* ================= RIGHT SECTION: Auth & Profile ================= */}

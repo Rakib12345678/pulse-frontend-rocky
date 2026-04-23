@@ -8,6 +8,8 @@ import { AppBackground } from '@/components/internal/AppBackground'
 import { isPublicRoute } from '@/config/routes'
 import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
 
+import { useStreamInit } from '@/features/chat/stream/useStreamInit'
+
 export const Route = createFileRoute('/_main')({
     head: () => ({
         meta: [
@@ -22,6 +24,7 @@ export const Route = createFileRoute('/_main')({
 })
 
 function MainLayout() {
+    useStreamInit()
     const { authenticate } = useAuth()
     const { accessToken, refreshToken, isAuthenticated } = useAuthStore()
     const isHydrated = useAuthStore(s => s.isHydrated)

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { ChevronLeft, Loader2, Smile, WifiOff, Gift, X, ChevronDown, ChevronUp, ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -68,10 +69,12 @@ interface ChatWindowProps {
     onMarkAsRead: () => void;
 }
 
+
 export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversation, isLoadingConversation = false, onBack, mobileFullscreen = false,
     messages, msgLoading, hasMore, loadMore, onSend, onSendImage, onDelete, onReact, onDeleteReaction, onMarkAsRead,
 }) => {
+    const navigate = useNavigate();
     const { user, wallet } = useAuthStore();
     const { openModal: openCoinsModal } = useCoinsStore();
     const isMobile = useIsMobile();
@@ -129,12 +132,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             delays.forEach(ms => {
                 const t = setTimeout(() => {
                     scrollToBottom('auto');
-                    if (ms >= 150) firstScrollDone.current = conversation.id;
+                    if (ms >= 150) {
+                        firstScrollDone.current = conversation.id;
+                        onMarkAsRead(); // Mark as read once initial scroll/load is done
+                    }
                 }, ms);
                 scrollTimeouts.current.push(t);
             });
         }
-    }, [msgLoading, conversation?.id]);
+    }, [msgLoading, conversation?.id, onMarkAsRead]);
 
     useEffect(() => {
         return () => {
@@ -146,8 +152,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     useEffect(() => {
         if (atBottomRef.current) {
             scrollToBottom('smooth');
+            onMarkAsRead(); // Mark incoming messages as read if we are at the bottom
         }
-    }, [messages.length]);
+    }, [messages.length, onMarkAsRead]);
 
     // Close gift carousel when clicking outside
     useEffect(() => {
@@ -192,6 +199,16 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
         setContextMenu({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleProfileClick = () => {
+        const identifier = conversation?.participant.username;
+        if (identifier) {
+            navigate({
+                to: '/profile/$username',
+                params: { username: identifier.toString() }
+            });
+        }
     };
 
     const handleDraftChange = (val: string) => { setDraftValue(val); setDraft(val); };
@@ -297,27 +314,42 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </button>
-                <div className="relative shrink-0">
-                    <Avatar
-                        src={conversation.participant.avatar}
-                        alt={conversation.participant.name}
-                        className="w-10 h-10 sm:w-11 sm:h-11"
-                    />
-                    {conversation.isOnline && (
-                        <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-green-400 ring-2 ring-[#0d0d0d]" />
+                {/* Participant Info Section */}
+                <div 
+                    onClick={handleProfileClick}
+                    className={cn(
+                        "flex-1 flex items-center gap-2.5 sm:gap-3 min-w-0 group",
+                        conversation.participant.username && "cursor-pointer"
                     )}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-[15px] truncate flex items-center gap-1.5 focus:outline-none outline-none">
-                        {capitalizeName(conversation.participant.name)}
-                    </p>
-                    <p className={cn('text-[11px] font-medium', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
-                        {conversation.isOnline
-                            ? 'Online'
-                            : conversation.lastActive
-                                ? formatLastSeen(conversation.lastActive)
-                                : 'Offline'}
-                    </p>
+                >
+                    <div className="relative shrink-0">
+                        <Avatar
+                            src={conversation.participant.avatar}
+                            alt={conversation.participant.name}
+                            className={cn(
+                                "w-10 h-10 sm:w-11 sm:h-11 transition-transform duration-200",
+                                conversation.participant.username && "group-hover:scale-105"
+                            )}
+                        />
+                        {conversation.isOnline && (
+                            <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-green-400 ring-2 ring-[#0d0d0d]" />
+                        )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className={cn(
+                            "text-white font-bold text-[15px] truncate transition-colors",
+                            conversation.participant.username && "group-hover:text-[#FF7700]"
+                        )}>
+                            {capitalizeName(conversation.participant.name)}
+                        </p>
+                        <p className={cn('text-[11px] font-medium', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
+                            {conversation.isOnline
+                                ? 'Online'
+                                : conversation.lastActive
+                                    ? formatLastSeen(conversation.lastActive)
+                                    : 'Offline'}
+                        </p>
+                    </div>
                 </div>
 
                 {/* Translate toggle (Desktop) */}
@@ -524,7 +556,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
 
             <div className={cn(
-                'shrink-0 border-t border-white/5 md:mb-15 flex flex-col',
+                'shrink-0 border-t border-white/5 md:mb-5 flex flex-col',
                 mobileFullscreen && 'pb-7 md:pb-5',
             )}>
                 <div className="px-2 sm:px-4 lg:px-8 py-4 w-full h-full">

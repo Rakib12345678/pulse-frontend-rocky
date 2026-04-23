@@ -1,5 +1,6 @@
 import React from 'react';
-import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp, UserSearch } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Conversation, MessageStatus } from '../types/chat.types';
@@ -24,8 +25,9 @@ import {
 import { capitalizeName, getDisplayName, formatRelativeTime } from '@/features/chat/utils/ChatUtils';
 import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 import { chatService } from '../services/chat.service';
+import { useFollowers } from '@/features/profile/services/profile.service';
 import { useIsMobile } from '@/hooks/use-mobile';
-import chatGroup  from '@/assets/chatGroup.svg';
+import chatGroup from '@/assets/chatGroup.svg';
 import SearchIcon from '@/assets/Search.svg';
 
 // TickIcon
@@ -75,13 +77,15 @@ const getPinned = (): string[] => {
 const setPinned = (ids: string[]) => sessionStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids));
 
 const NewChatModal = ({
-    onClose, onStartChat, isStarting, conversations, isMobile
+    onClose, onStartChat, isStarting, conversations, isMobile, followers, isLoadingFollowers
 }: {
     onClose: () => void;
     onStartChat: (user: StreamUser) => void;
     isStarting: boolean;
     conversations: Conversation[];
     isMobile: boolean;
+    followers: StreamUser[];
+    isLoadingFollowers: boolean;
 }) => {
     // Get unique participants for recently contacted
     const uniqueRecent = conversations
@@ -146,6 +150,9 @@ const NewChatModal = ({
                         isProcessing={isStarting}
                         hideListInitially={false}
                         showInitialList={true}
+                        initialUsers={followers}
+                        isLoadingInitial={isLoadingFollowers}
+                        hideSearchBar={true}
                     />
                 </div>
             </div>
@@ -155,7 +162,7 @@ const NewChatModal = ({
     if (isMobile) {
         return (
             <Drawer open onOpenChange={onClose}>
-                <DrawerContent 
+                <DrawerContent
                     className="bg-[#111213] border-none text-white h-[85vh] pb-8 overflow-hidden flex flex-col"
                     style={{ background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' }}
                 >
@@ -171,7 +178,7 @@ const NewChatModal = ({
 
     return (
         <Dialog open onOpenChange={onClose}>
-            <DialogContent 
+            <DialogContent
                 className="bg-[#111213] border-white/10 text-white max-w-lg p-0 overflow-hidden flex flex-col h-[600px]"
                 style={{ background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' }}
             >
@@ -195,15 +202,15 @@ const ConfirmDeleteModal = ({
     isDeleting: boolean;
 }) => (
 
-    <div 
+    <div
         onClick={onCancel}
         className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300 cursor-default"
     >
-        <div 
+        <div
             onClick={e => e.stopPropagation()}
             className="relative w-full max-w-[400px] rounded-[32px] shadow-2xl overflow-hidden p-10 flex flex-col items-center text-center backdrop-blur-[354px]"
-            style={{ 
-                background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)' 
+            style={{
+                background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)'
             }}
         >
             <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">Delete Conversation?</h3>
@@ -237,7 +244,7 @@ const ConfirmDeleteModal = ({
 // ConversationDropdown 
 
 const ConversationDropdown = ({
-    isPinned, isMuted, isArchived, 
+    isPinned, isMuted, isArchived,
     onPin, onDelete, onMuteToggle, onArchiveToggle, onClose,
 }: {
     isPinned: boolean;
@@ -449,7 +456,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     const isMobile = useIsMobile();
+    const navigate = useNavigate();
     const { translateEnabled } = useTranslationPreference(myId);
+
+    // Fetch followers for New Chat modal
+    const { data: followersData, isLoading: isLoadingFollowers } = useFollowers(50);
+    const followers: StreamUser[] = (followersData?.pages[0]?.data || []).map(f => ({
+        id: String(f.userId),
+        name: f.fullName || f.username,
+        image: toAbsoluteUrl(f.profileImage),
+        isOnline: false, // Online status not provided by follower API
+    }));
 
     React.useEffect(() => {
         if (!selectionModeId) return;
@@ -516,19 +533,22 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     };
 
     const archivedList = conversations.filter(c => c.isArchived);
-    const normalList   = conversations.filter(c => !c.isArchived);
+    const normalList = conversations.filter(c => !c.isArchived);
 
     const currentList = view === 'archived' ? archivedList : normalList;
 
     const filtered = currentList
         .filter(c => {
-            if (c.id === activeConversationId) return true;
-            if (!c.lastMessage && !c.lastMessageOriginal) return false;
-            return (
+            const matchesSearch =
                 c.participant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 c.participant.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (c.participant.fullName || '').toLowerCase().includes(searchQuery.toLowerCase())
-            );
+                (c.participant.fullName || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+            if (searchQuery.trim()) return matchesSearch;
+
+            if (c.id === activeConversationId) return true;
+            if (!c.lastMessage && !c.lastMessageOriginal) return false;
+            return true;
         })
         .sort((a, b) => {
             const aPin = pinnedIds.includes(a.id) ? 0 : 1;
@@ -623,7 +643,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                     {view === 'archived' ? 'Archived Chats' : 'Chats'}
                                 </h2>
                             </div>
-                            
+
                             <div className="flex items-center gap-1">
                                 {view === 'normal' && (
                                     <button
@@ -695,29 +715,47 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     ) : (
                         <>
                             {filtered.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center gap-10 py-10 px-4 text-center">
-                                    <img src={chatGroup} alt="No chats" className="w-14 h-14 object-contain opacity-80" />
-                                    <div className="flex flex-col gap-1.5">
-                                        <p className="text-white font-bold text-xl">
-                                            {view === 'archived' ? 'No Archived Chats' : 'No Chat History'}
-                                        </p>
-                                        <p className="text-gray-500 text-md leading-relaxed">
-                                            {view === 'archived' 
-                                                ? 'You haven\'t archived any conversations yet.'
-                                                : 'You haven\'t started any conversations yet. Find a creator to chat with!'}
-                                        </p>
-                                    </div>
-                                    {view === 'normal' && (
-                                        <button
-                                            onClick={() => setShowNewChat(true)}
-                                            className="mt-1 px-6 py-2.5 rounded-full bg-[#FF7700] hover:bg-[#ff9922] text-black text-sm font-semibold transition-all active:scale-95 cursor-pointer"
-                                        >
-                                            Find Creator to Chat
-                                        </button>
+                                <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                                    {searchQuery.trim() ? (
+                                        <>
+                                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                                <UserSearch className="w-8 h-8 text-gray-500" />
+                                            </div>
+                                            <p className="text-white font-bold text-xl mb-2">User doesn't exist</p>
+                                            <p className="text-gray-500 text-[15px] mb-8 max-w-[260px] leading-relaxed">We couldn't find any creator with this name.</p>
+                                            <button
+                                                onClick={() => setShowNewChat(true)}
+                                                className="px-8 py-2.5 bg-[#FF7700] text-black font-bold rounded-full active:scale-95 transition-all shadow-lg shadow-orange-500/20 cursor-pointer"
+                                            >
+                                                Find Creator
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <img src={chatGroup} alt="No chats" className="w-14 h-14 object-contain opacity-80 mb-6" />
+                                            <div className="flex flex-col gap-2 mb-8">
+                                                <p className="text-white font-bold text-2xl">
+                                                    {view === 'archived' ? 'No Archived Chats' : 'No Chat History'}
+                                                </p>
+                                                <p className="text-gray-500 text-[15px] leading-relaxed max-w-[280px]">
+                                                    {view === 'archived'
+                                                        ? 'You haven\'t archived any conversations yet.'
+                                                        : 'You haven\'t started any conversations yet. Find a creator to chat with!'}
+                                                </p>
+                                            </div>
+                                            {view === 'normal' && (
+                                                <button
+                                                    onClick={() => setShowNewChat(true)}
+                                                    className="px-6 py-2.5 bg-[#FF7700] hover:bg-[#ff9922] text-black text-sm font-bold rounded-full transition-all active:scale-95 cursor-pointer shadow-lg shadow-orange-500/20"
+                                                >
+                                                    Find Creator to Chat
+                                                </button>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             ) : (
-                                 filtered.map(conv => (
+                                filtered.map(conv => (
                                     <ChatListItem
                                         key={conv.id}
                                         conversation={conv}
@@ -753,6 +791,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     isStarting={isStarting}
                     conversations={conversations}
                     isMobile={isMobile}
+                    followers={followers}
+                    isLoadingFollowers={isLoadingFollowers}
                 />
             )}
             {confirmDelete && (

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Users } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { toast } from 'sonner';
@@ -40,6 +40,18 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   recordingUrl,
 }) => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleProfileClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (streamerName && !/^\d+$/.test(streamerName)) {
+        navigate({ to: `/profile/${streamerName}` as any });
+      }
+    },
+    [navigate, streamerName]
+  );
 
   const handleCardClick = useCallback(
     async (e: React.MouseEvent) => {
@@ -110,8 +122,9 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             <div className="flex items-center gap-2 overflow-hidden flex-1">
               <div className="relative shrink-0">
                 <div
+                  onClick={handleProfileClick}
                   className={cn(
-                    "relative w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-300",
+                    "relative w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 cursor-pointer hover:opacity-80",
                     isLive ? "p-[1px] bg-gradient-to-br from-[#718FF2] via-[#2927C5] to-[#FF471A]" : ""
                   )}
                 >
@@ -127,7 +140,10 @@ export const StreamCard: React.FC<StreamCardProps> = ({
               </div>
 
               <div className="flex flex-col overflow-hidden">
-                <h3 className="truncate text-xm font-bold text-white leading-tight [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%),_0_2px_6px_rgb(0_0_0_/_60%)]">
+                <h3 
+                  onClick={handleProfileClick}
+                  className="truncate text-xm font-bold text-white leading-tight [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%),_0_2px_6px_rgb(0_0_0_/_60%)] cursor-pointer hover:text-orange-400 transition-colors"
+                >
                   @{streamerName}
                 </h3>
                 <p className="truncate text-[9px] font-semibold text-gray-200 tracking-wide leading-normal [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
@@ -218,9 +234,10 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className="relative shrink-0">
               <img
+                onClick={handleProfileClick}
                 src={avatarUrl}
                 alt={streamerName}
-                className="h-10 w-10 rounded-full border-2 border-white object-cover"
+                className="h-10 w-10 rounded-full border-2 border-white object-cover cursor-pointer hover:opacity-80 transition-opacity"
               />
               {isLive && (
                 <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-md bg-red-600 px-1.5 py-0.5 text-[8px] font-bold text-white uppercase leading-none ring-1 ring-white">
@@ -230,7 +247,10 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             </div>
 
             <div className="flex flex-col min-w-0">
-              <h3 className="truncate text-sm font-bold text-white leading-tight">
+              <h3 
+                onClick={handleProfileClick}
+                className="truncate text-sm font-bold text-white leading-tight cursor-pointer hover:text-orange-400 transition-colors"
+              >
                 @{streamerName}
               </h3>
               <p className="truncate text-[10px] font-medium text-gray-300">

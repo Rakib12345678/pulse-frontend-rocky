@@ -34,10 +34,10 @@ export interface UseStreamChatReturn {
     unmuteConversation: (id: string) => void;
 }
 
-const getMuted  = (): string[] => {
+const getMuted = (): string[] => {
     try { return JSON.parse(sessionStorage.getItem(MUTED_STORAGE_KEY) || '[]'); } catch { return []; }
 };
-const setMuted  = (ids: string[]) => sessionStorage.setItem(MUTED_STORAGE_KEY, JSON.stringify(ids));
+const setMuted = (ids: string[]) => sessionStorage.setItem(MUTED_STORAGE_KEY, JSON.stringify(ids));
 
 const getArchived = (): string[] => {
     try { return JSON.parse(sessionStorage.getItem(ARCHIVED_STORAGE_KEY) || '[]'); } catch { return []; }
@@ -55,7 +55,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
     const messages = useMemo(() => {
         const confirmedTexts = new Set(streamMsgs.map(m => m.originalText));
-        const activePending = pendingMessages.filter(pm => 
+        const activePending = pendingMessages.filter(pm =>
             pm.conversationId === activeConvId && !confirmedTexts.has(pm.originalText)
         );
         return [...streamMsgs, ...activePending];
@@ -96,7 +96,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         if (!isStreamConnected()) return;
         try {
             const client = getStreamClient();
-            const chans  = await client.queryChannels(
+            const chans = await client.queryChannels(
                 { type: 'messaging', members: { $in: [client.userID!] } },
                 { last_message_at: -1 },
                 { watch: true, presence: true, limit: 30 },
@@ -152,11 +152,11 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
                 const unreadCount = ch.cid === activeConvId ? 0 : conv.unreadCount;
 
                 const isGift = conv.lastMessageOriginal?.startsWith('GIFT:') || conv.lastMessage?.startsWith('GIFT:');
-                
-                const base: Conversation = { 
-                    ...conv, 
-                    isOnline, 
-                    lastActive, 
+
+                const base: Conversation = {
+                    ...conv,
+                    isOnline,
+                    lastActive,
                     unreadCount,
                     isMuted: mutedIds.includes(ch.cid),
                     isArchived: archivedIds.includes(ch.cid),
@@ -307,13 +307,13 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
             conversationId: activeChannel.cid,
             senderId: myId,
             text: '📷 Image',
-            originalText: '', 
+            originalText: '',
             time: now,
             status: 'pending',
             attachments: [{ type: 'image', imageUrl: '' }], // Triggers meOnlyImage
         };
 
-        
+
         setPendingMessages(prev => [...prev, tempMsg]);
         setOptimisticPreviews(prev => ({
             ...prev,
@@ -322,7 +322,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
         try {
             const response = await activeChannel.sendImage(file);
-            
+
             // Rely on backend relay to avoid duplication
             await chatService.sendMessage({
                 conversationId: activeChannel.cid,
@@ -358,11 +358,13 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
     const deleteMessage = useCallback(async (messageId: string) => {
         if (!activeChannel) return;
         const msg = activeChannel.state.messages.find(m => m.id === messageId);
-        if (msg && (msg.user?.id ?? (msg as any).user_id) !== myId) return;
+        // Remove restriction to allow deleting messages from others (for moderation/local hiding)
+        // if (msg && (msg.user?.id ?? (msg as any).user_id) !== myId) return;
 
         try {
             const client = getStreamClient();
             await client.deleteMessage(messageId, true);
+            syncMessages(activeChannel); // Immediate local sync
         } catch (err) {
             console.error('[StreamChat] failed to delete message', messageId, err);
             throw err;
@@ -374,6 +376,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         if (!activeChannel) return;
         try {
             await activeChannel.sendReaction(messageId, { type: reactionType, ...extra }, { enforce_unique: true });
+            syncMessages(activeChannel); // Immediate local sync
         } catch (err) {
             console.error('[StreamChat] failed to send reaction', messageId, err);
             throw err;
@@ -385,6 +388,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         if (!activeChannel) return;
         try {
             await activeChannel.deleteReaction(messageId, reactionType);
+            syncMessages(activeChannel); // Immediate local sync
         } catch (err) {
             console.error('[StreamChat] failed to delete reaction', messageId, err);
             throw err;
@@ -393,8 +397,11 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
     // ── mark as read ──────────────────────────────────────────────────────────
     const markAsRead = useCallback(() => {
-        activeChannel?.markRead().catch(() => {});
-    }, [activeChannel]);
+        if (!activeChannel) return;
+        activeChannel.markRead()
+            .then(() => syncMessages(activeChannel))
+            .catch(() => { });
+    }, [activeChannel, syncMessages]);
 
     // ── start direct chat ─────────────────────────────────────────────────────
     const startDirectChat = useCallback(async (
