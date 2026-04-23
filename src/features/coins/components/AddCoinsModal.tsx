@@ -61,13 +61,37 @@ export const AddCoinsModal = () => {
     );
 
     if (isMobile) {
+        if (step === 'result') {
+            return (
+                <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
+                    <DialogContent
+                        showCloseButton={false}
+                        className="bg-[#111213] border border-white/10 p-0 w-[92dvw] max-w-[400px] h-auto rounded-[32px] overflow-hidden shadow-2xl focus:outline-none"
+                        style={{ background: 'linear-gradient(180deg, #111213 0%, #0d0d0d 100%)' }}
+                    >
+                        {renderContent(true)}
+                    </DialogContent>
+                </Dialog>
+            );
+        }
+
         return (
-            <Drawer open={isOpen} onOpenChange={(open) => !open && closeModal()}>
+            <Drawer
+                open={isOpen}
+                onOpenChange={(open) => !open && closeModal()}
+                snapPoints={[0.6, 1]}
+                activeSnapPoint={undefined}
+                setActiveSnapPoint={undefined}
+            >
                 <DrawerContent
-                    className="bg-[#111213] border-none text-white max-h-[95vh] h-[95vh] flex flex-col p-0"
-                    style={{ background: 'linear-gradient(180deg, #111213 0%, #0d0d0d 100%)' }}
+                    className="bg-[#111213] border-none text-white flex flex-col p-0 overflow-hidden focus:outline-none"
+                    style={{
+                        background: 'linear-gradient(180deg, #111213 0%, #0d0d0d 100%)',
+                        height: 'auto',
+                        maxHeight: '100dvh'
+                    }}
                 >
-                    <div className="mx-auto mt-2 h-1 w-12 shrink-0 rounded-full bg-white/20" />
+                    <div className="mx-auto mt-3 h-1.5 w-12 shrink-0 rounded-full bg-white/20" />
                     {renderContent(true)}
                 </DrawerContent>
             </Drawer>
@@ -78,7 +102,7 @@ export const AddCoinsModal = () => {
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
             <DialogContent
                 showCloseButton={false}
-                className="bg-transparent border border-white/10 rounded-3xl p-0 sm:max-w-[580px] h-full sm:h-auto max-h-[90vh] overflow-y-auto shadow-2xl"
+                className="bg-transparent border border-white/10 rounded-3xl p-0 sm:max-w-[840px] h-full sm:h-auto max-h-[90vh] overflow-y-auto shadow-2xl focus:outline-none"
             >
                 {renderContent(false)}
             </DialogContent>

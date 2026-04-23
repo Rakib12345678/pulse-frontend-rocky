@@ -58,9 +58,9 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
 
     return (
         <>
-            <div className="flex flex-wrap gap-4 items-stretch">
+            <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {streams.map((stream) => (
-                    <div key={stream.callId} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] shrink-0 flex">
+                    <div key={stream.callId} className="flex w-full">
                         <StreamCard
                             variant="explore"
                             callId={stream.callId}

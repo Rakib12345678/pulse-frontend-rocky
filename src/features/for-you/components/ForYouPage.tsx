@@ -32,8 +32,8 @@ export const ForYouPage: React.FC = () => {
     };
 
     return (
-        <div className="w-full mt-8 overflow-x-hidden pb-12">
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10">
+        <div className="w-full mt-8 overflow-x-hidden pb-12 sm:px-12 md:px-24">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
                 <div className="hidden md:flex items-center justify-between mb-8">
                     <h1 className="text-3xl font-bold text-white">Creators</h1>
                     <div className="flex items-center gap-2">

@@ -12,43 +12,74 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const getPackageMeta = (coin: CoinEntity) => {
+    // Prioritize backend fields
+    if (coin.badge) {
+        return {
+            badge: {
+                text: coin.badge,
+                color: coin.badge.toLowerCase().includes('value') ? 'bg-[#FFD700]' : 'bg-[#00E676]'
+            }
+        };
+    }
+
+    // Fallback to hardcoded mapping for demo/completeness
+    const coins = coin.noOfCoin;
+    if (coins === 1250) return { badge: { text: 'Best Value', color: 'bg-[#FFD700]' } };
+    if (coins === 2500) return { badge: { text: 'Popular', color: 'bg-[#00E676]' } };
+    return { badge: null };
+};
+
 const PackageCard = ({ coin, currency, onBuy, isBuying }: { coin: CoinEntity, currency: string, onBuy: (coinId: number) => void, isBuying: boolean }) => {
     const pricePrefix = currency === 'INR' ? '₹' : '$';
     const displayPrice = currency === 'INR' ? coin.price.toLocaleString() : (coin.price / 83).toFixed(2);
+    const { badge } = getPackageMeta(coin);
 
     return (
-        <div className="relative group">
-            <Button
-                variant="ghost"
-                onClick={() => onBuy(coin.id)}
-                disabled={isBuying}
-                className="w-full h-auto bg-[#1A1C1E] border border-white/10 rounded-2xl p-2.5 sm:p-4 pt-3 sm:pt-5 flex flex-col items-center gap-1.5 sm:gap-2 
-          hover:border-[#FF8800]/50 hover:bg-[#1A1C1E]/80 transition-all cursor-pointer group-hover:shadow-[0_0_20px_rgba(255,136,0,0.1)] disabled:opacity-60"
+        <div className="relative pt-3">
+            {badge && (
+                <div className={`absolute top-0 right-1/2 translate-x-1/2 z-10 ${badge.color} text-black text-[10px] font-bold px-2 py-0.5 rounded-sm flex items-center gap-1 shadow-sm`}>
+                    {badge.text === 'Best Value' ? (
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+                        </svg>
+                    ) : (
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                            <path d="M12 9l4.5 9h-9l4.5 -9" />
+                        </svg>
+                    )}
+                    {badge.text}
+                </div>
+            )}
+            <div
+                onClick={() => !isBuying && onBuy(coin.id)}
+                className={`w-full h-full bg-[#1A1C1E] border border-white/10 rounded-2xl p-4 flex flex-col items-center gap-2 transition-all cursor-pointer hover:border-white/20 active:scale-[0.98] ${isBuying ? 'opacity-60 pointer-events-none' : ''}`}
             >
                 {/* Package Image */}
-                <div className="w-14 h-12 sm:w-24 sm:h-20 flex items-center justify-center">
+                <div className="w-full h-24 flex items-center justify-center relative mb-1">
                     {coin.bannerImage ? (
-                        <img src={coin.bannerImage} alt={`${coin.noOfCoin} coins`} className="max-w-full max-h-full object-contain" />
+                        <img src={coin.bannerImage} alt={`${coin.noOfCoin} coins`} className="max-w-full max-h-full object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]" />
                     ) : (
-                        <img src={coinIcon} alt="coin" className="w-8 h-8 sm:w-12 sm:h-12" />
+                        <img src={coinIcon} alt="coin" className="w-12 h-12" />
                     )}
                 </div>
 
                 {/* Coin Amount */}
-                <div className="flex items-center gap-1 sm:gap-1.5">
-                    <img src={coinIcon} alt="coin" className="w-3.5 h-3.5 sm:w-5 h-5" />
-                    <span className="text-white font-bold text-sm sm:text-lg">{coin.noOfCoin.toLocaleString()}</span>
+                <div className="flex items-center gap-2">
+                    <img src={coinIcon} alt="coin" className="w-5 h-5" />
+                    <span className="text-white font-bold text-lg">{coin.noOfCoin.toLocaleString()}</span>
                 </div>
 
                 {/* Price Button */}
-                <div className="w-full bg-[#FF8800] rounded-lg py-1.5 sm:py-2 px-2 sm:px-4 text-center">
+                <div className="w-full bg-[#FF8800] rounded-xl py-2.5 text-center shadow-[0_4px_10px_rgba(255,136,0,0.2)]">
                     {isBuying ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-black mx-auto" />
+                        <Loader2 className="w-5 h-5 animate-spin text-black mx-auto" />
                     ) : (
-                        <span className="text-black font-bold text-[10px] sm:text-sm">{pricePrefix} {displayPrice}</span>
+                        <span className="text-black font-black text-base">{pricePrefix} {displayPrice}</span>
                     )}
                 </div>
-            </Button>
+            </div>
         </div>
     );
 };
@@ -85,38 +116,40 @@ export const CoinPackageGrid = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 w-full max-w-[800px] mx-auto">
             {/* Header */}
-            <h2 className="text-white text-2xl font-bold italic">Add Coins</h2>
+            <h2 className="text-white text-2xl font-bold">Add Coins</h2>
 
             {/* Balance Bar */}
-            <div className="flex items-center justify-between bg-[#1A1C1E] border border-white/10 rounded-2xl px-5 py-4">
-                <div className="flex items-center gap-2.5">
-                    <span className="text-white text-base">My Coins</span>
-                    <img src={coinIcon} alt="coin" className="w-5 h-5" />
-                    <span className="text-white font-bold text-base">{wallet?.coinBalance ?? 0}</span>
+            <div className="flex items-center justify-between bg-[#1A1C1E] border border-white/5 rounded-2xl px-4 py-3 shadow-md">
+                <div className="flex items-center gap-3">
+                    <span className="text-white/80 text-sm font-medium">My Coins</span>
+                    <div className="flex items-center gap-1.5">
+                        <img src={coinIcon} alt="coin" className="w-5 h-5" />
+                        <span className="text-white font-bold text-base">{wallet?.coinBalance ?? 0}</span>
+                    </div>
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="flex items-center gap-2 bg-[#2D2D2D] border border-white/10 rounded-full px-4 py-2 text-white text-sm cursor-pointer hover:bg-[#3D3D3D] hover:text-white transition-colors focus-visible:ring-0">
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <Button variant="ghost" className="h-9 px-3 bg-[#2D2D2D]/50 border border-white/5 rounded-2xl text-white text-[12px] font-bold flex items-center gap-2 hover:bg-[#3D3D3D] transition-all">
+                            <svg className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                 <polyline points="6 9 12 15 18 9" />
                             </svg>
                             {currency === 'INR' ? '₹ INR' : '$ USD'}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#2D2D2D] border-white/10 text-white min-w-[120px] rounded-xl overflow-hidden p-1 shadow-2xl">
+                    <DropdownMenuContent align="end" className="bg-[#1A1C1E] border-white/10 text-white min-w-[120px] rounded-2xl p-1 shadow-2xl">
                         <DropdownMenuItem
                             onClick={() => setCurrency('INR')}
-                            className="flex items-center gap-2 focus:bg-[#3D3D3D] focus:text-white cursor-pointer py-2 rounded-lg"
+                            className="flex items-center gap-2 focus:bg-[#3D3D3D] focus:text-white cursor-pointer py-2 px-3 rounded-xl"
                         >
-                            <span className="font-medium">₹ INR</span>
+                            <span className="font-bold text-sm">₹ INR</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => setCurrency('USD')}
-                            className="flex items-center gap-2 focus:bg-[#3D3D3D] focus:text-white cursor-pointer py-2 rounded-lg"
+                            className="flex items-center gap-2 focus:bg-[#3D3D3D] focus:text-white cursor-pointer py-2 px-3 rounded-xl"
                         >
-                            <span className="font-medium">$ USD</span>
+                            <span className="font-bold text-sm">$ USD</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -124,13 +157,13 @@ export const CoinPackageGrid = () => {
 
             {/* Packages Grid */}
             {isLoading ? (
-                <div className="flex items-center justify-center py-10">
-                    <Loader2 className="w-6 h-6 animate-spin text-[#FF8800]" />
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#FF8800]" />
                 </div>
             ) : coins.length === 0 ? (
-                <p className="text-gray-400 text-center py-5">No coin packages available</p>
+                <p className="text-gray-400 text-center py-10">No coin packages available</p>
             ) : (
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 pb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-12">
                     {coins.map((coin) => (
                         <PackageCard
                             key={coin.id}

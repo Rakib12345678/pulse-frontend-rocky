@@ -54,7 +54,7 @@ export const TranslateDrawer = ({
 
     const filteredLanguages = useMemo(() => {
         if (!searchQuery.trim()) return languages;
-        return languages.filter(l => 
+        return languages.filter(l =>
             l.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [languages, searchQuery]);
@@ -80,7 +80,7 @@ export const TranslateDrawer = ({
         <Drawer open={open} onOpenChange={onOpenChange}>
             <DrawerContent className="bg-[#121212] border-none rounded-t-[32px] p-6 pb-10 max-h-[90vh] flex flex-col">
                 <div className="mx-auto w-12 h-1.5 bg-white/20 rounded-full mb-6 shrink-0" />
-                
+
                 <DrawerHeader className="items-center text-center p-0 mb-6 flex-shrink-0">
                     <DrawerTitle className="text-2xl font-bold text-white mb-2">Translate Chat</DrawerTitle>
                     <DrawerDescription className="text-gray-400 text-sm leading-relaxed max-w-[320px]">
@@ -120,7 +120,7 @@ export const TranslateDrawer = ({
                                         autoFocus
                                     />
                                     {searchQuery && (
-                                        <button 
+                                        <button
                                             onClick={() => setSearchQuery('')}
                                             className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
                                         >

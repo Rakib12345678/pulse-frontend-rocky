@@ -6,6 +6,8 @@ export interface CoinEntity {
     price: number;
     currency: 'DOLLER' | 'INR';
     bannerImage: string;
+    badge?: string;
+    bonus?: string;
 }
 
 export interface CreateCoinRequest {

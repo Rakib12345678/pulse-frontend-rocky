@@ -1,6 +1,5 @@
 import React from 'react';
 import { Search, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Category } from '../types/explore.types';
 
@@ -31,17 +30,15 @@ export const ExploreSearch: React.FC<ExploreSearchProps> = ({
     };
 
     return (
-        <div className="w-full bg-[#1A1C1E] rounded-2xl p-6 mb-8 border border-white/5 shadow-2xl">
+        <div className="w-full bg-[#1A1C1E] rounded-2xl p-6 mb-8 border border-white/5 shadow-2xl overflow-hidden">
             {/* Search Bar & Button */}
-            <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
-                <div 
-                    className="flex-1 relative w-full"
-                >
+            <div className="flex flex-row items-center gap-3 mb-8">
+                <div className="flex-1 relative min-w-0">
                     <div className="flex items-center bg-[#0F1113] rounded-full px-5 h-12 border border-white/5 focus-within:border-white/20 transition-all w-full shadow-inner">
-                        <Search className="w-4 h-4 text-gray-500 mr-3" />
+                        <Search className="w-4 h-4 text-gray-500 mr-3 shrink-0" />
                         <input
                             type="text"
-                            placeholder="Search Your Favorite Creator"
+                            placeholder="Search Your Favourite Creator"
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value);
@@ -51,26 +48,27 @@ export const ExploreSearch: React.FC<ExploreSearchProps> = ({
                                     onSearch();
                                 }
                             }}
-                            className="flex-1 bg-transparent border-none outline-none text-white text-sm placeholder:text-gray-600 font-medium"
+                            className="flex-1 bg-transparent border-none outline-none text-white text-sm placeholder:text-gray-600 font-medium min-w-0"
                         />
                         {searchQuery.trim() !== '' && (
                             <button
                                 onClick={clearSearch}
-                                className="p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer"
+                                className="p-1 hover:bg-white/10 rounded-full transition-colors cursor-pointer shrink-0"
                             >
                                 <X className="w-4 h-4 text-gray-500 hover:text-white" />
                             </button>
                         )}
                     </div>
                 </div>
-                <Button
+                {/* Circular search button — icon-only on mobile, text label on md+ */}
+                <button
                     type="button"
                     onClick={() => onSearch()}
-                    className="w-full md:w-auto bg-[#FF8800] hover:bg-[#ff9922] text-black font-black rounded-full px-10 h-12 text-sm transition-all cursor-pointer shadow-[0_0_20px_rgba(255,136,0,0.3)] hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border-none"
+                    className="shrink-0 w-12 h-12 md:w-auto md:h-12 md:px-8 bg-[#FF8800] hover:bg-[#ff9922] text-black font-black rounded-full transition-all cursor-pointer shadow-[0_0_20px_rgba(255,136,0,0.3)] hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border-none"
                 >
-                    <Search className="w-4 h-4" />
-                    Search
-                </Button>
+                    <Search className="w-4 h-4 shrink-0" />
+                    <span className="hidden md:inline text-sm">Search</span>
+                </button>
             </div>
 
             {/* Categories */}
