@@ -163,22 +163,51 @@ export const Navbar: React.FC = () => {
             ) : (
               /* LOGGED IN VIEW */
               <>
-                <Button
-                  variant="ghost"
-                  onClick={openCoinsModal}
-                  className="flex items-center gap-3 pl-4 pr-1.5 py-1.5 h-auto rounded-full bg-[#1A1C1E]/80 hover:bg-[#2D2D2D] transition-colors cursor-pointer border-0"
-                >
-                  <span className="hidden sm:inline-block text-white text-[15px] font-medium tracking-wide">My Balance</span>
-                  <div className="flex items-center gap-1.5">
-                    <img src={coinIcon} alt="coin" className="w-5 h-5" />
-                    <span className="text-white text-[15px] font-semibold">{(walletData?.coinBalance ?? wallet?.coinBalance ?? 0).toLocaleString()}</span>
-                  </div>
-                  <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center ml-1">
-                    <Plus className="w-4 h-4 text-white" />
-                  </div>
-                </Button>
+                {/* Mobile Specific - Coin Pill & Plus Button */}
+                <div className="flex md:hidden items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={openCoinsModal}
+                    className="flex items-center gap-2 pl-3 pr-2 py-1.5 h-9 rounded-full bg-[#1A1C1E] hover:bg-[#2D2D2D] transition-colors cursor-pointer border-0"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <img src={coinIcon} alt="coin" className="w-4 h-4" />
+                      <span className="text-white text-sm font-bold">{(walletData?.coinBalance ?? wallet?.coinBalance ?? 0).toLocaleString()}</span>
+                    </div>
+                    <Plus className="w-3.5 h-3.5 text-white/50" />
+                  </Button>
 
-                {/* Notifications
+                  {pathname.startsWith('/chats') && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8.5 h-8.5 rounded-full bg-[#FF7700] hover:bg-[#ff9922] flex items-center justify-center p-0 transition-all active:scale-95 cursor-pointer shadow-lg hover:text-black"
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('open-new-chat'));
+                      }}
+                    >
+                      <Plus className="w-5 h-5 text-black stroke-[3]" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Desktop View - Existing Layout */}
+                <div className="hidden md:flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={openCoinsModal}
+                    className="flex items-center gap-3 pl-4 pr-1.5 py-1.5 h-auto rounded-full bg-[#1A1C1E]/80 hover:bg-[#2D2D2D] transition-colors cursor-pointer border-0"
+                  >
+                    <span className="hidden sm:inline-block text-white text-[15px] font-medium tracking-wide">My Balance</span>
+                    <div className="flex items-center gap-1.5">
+                      <img src={coinIcon} alt="coin" className="w-5 h-5" />
+                      <span className="text-white text-[15px] font-semibold">{(walletData?.coinBalance ?? wallet?.coinBalance ?? 0).toLocaleString()}</span>
+                    </div>
+                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center ml-1">
+                      <Plus className="w-4 h-4 text-white" />
+                    </div>
+                  </Button>
+              {/* Notifications
                 <Button
                   variant="ghost"
                   size="icon"
@@ -189,20 +218,21 @@ export const Navbar: React.FC = () => {
                 </Button> */}
 
                 {/* Profile Link */}
-                <Link
-                  to="/profile"
-                  className="hidden md:flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/10 transition-transform hover:scale-105 active:scale-95 cursor-pointer bg-neutral-800 p-0"
-                >
-                  {user?.profileImage ? (
-                    <img
-                      src={user?.profileImage}
-                      alt={user?.displayName || user?.username || 'User'}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <User className="h-5 w-5 text-white" />
-                  )}
-                </Link>
+                  <Link
+                    to="/profile"
+                    className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/10 transition-transform hover:scale-105 active:scale-95 cursor-pointer bg-neutral-800 p-0"
+                  >
+                    {user?.profileImage ? (
+                      <img
+                        src={user?.profileImage}
+                        alt={user?.displayName || user?.username || 'User'}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-5 w-5 text-white" />
+                    )}
+                  </Link>
+                </div>
               </>
             )}
           </div>

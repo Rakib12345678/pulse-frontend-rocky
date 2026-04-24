@@ -150,10 +150,10 @@ export const UserSearchList = ({
     return (
         <>
             {!shouldHideSearch && (
-                <div className="flex items-center gap-2 px-4 h-11 border border-white/15 rounded-full bg-white/3 focus-within:border-white/30 transition-colors">
+                <div className="flex items-center gap-2 px-4 h-11 border border-white/15 rounded-full bg-white/3 focus-within:border-white/30 transition-colors overflow-hidden shrink-0">
                     <input
                         autoFocus
-                        className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-500"
+                        className="flex-1 min-w-0 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-500"
                         placeholder={placeholder}
                         value={query}
                         onChange={e => setQuery(e.target.value)}
@@ -161,7 +161,7 @@ export const UserSearchList = ({
                     />
                     {searching
                         ? <Loader2 className="w-4 h-4 text-gray-500 shrink-0 animate-spin" />
-                        : <Search className="w-4 h-4 text-gray-500 shrink-0" />
+                        : <Search className="w-4 h-4 text-gray-500 shrink-0 ml-auto" />
                     }
                 </div>
             )}
@@ -206,7 +206,7 @@ export const UserSearchList = ({
                             <Avatar src={user.image || ''} alt={displayName} className="w-10 h-10" />
                             <div className="flex flex-col min-w-0">
                                 <span className="text-white text-sm font-semibold truncate leading-tight">{displayName}</span>
-                                <span className="text-gray-500 text-[10px] mt-0.5 font-medium">{actionLabel}</span>
+                                <span className="text-[#FF7700] text-[10px] mt-0.5 font-medium">{actionLabel}</span>
                             </div>
                             {isProcessing && (
                                 <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-auto shrink-0" />

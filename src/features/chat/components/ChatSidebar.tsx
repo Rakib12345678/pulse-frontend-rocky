@@ -1,15 +1,16 @@
 import React from 'react';
+import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp, Plus, UserSearch } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp, UserSearch } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { Conversation, MessageStatus } from '../types/chat.types';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useTranslationPreference } from '../hooks/useTranslationPreference';
-import { useAuthStore } from '@/features/auth/stores/authStore';
 import { PINNED_STORAGE_KEY } from '@/features/chat/utils/chatConstants';
 import { Avatar } from '@/features/chat/components/Avatar';
 import { UserSearchList, type StreamUser } from '@/features/chat/components/Usersearchlist';
+import { useFollowers } from '@/features/profile/services/profile.service';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import {
     Drawer,
     DrawerContent,
@@ -25,7 +26,6 @@ import {
 import { capitalizeName, getDisplayName, formatRelativeTime } from '@/features/chat/utils/ChatUtils';
 import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 import { chatService } from '../services/chat.service';
-import { useFollowers } from '@/features/profile/services/profile.service';
 import { useIsMobile } from '@/hooks/use-mobile';
 import chatGroup from '@/assets/chatGroup.svg';
 import SearchIcon from '@/assets/Search.svg';
@@ -40,18 +40,18 @@ export const TickIcon = ({ status }: { status?: MessageStatus }) => {
         </svg>
     );
     if (status === 'sent') return (
-        <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" viewBox="0 0 16 10" fill="none">
+        <svg className="w-3.5 h-3.5 text-white/40 shrink-0" viewBox="0 0 16 10" fill="none">
             <path d="M1 5l4 4L15 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
     );
     if (status === 'delivered') return (
-        <svg className="w-4 h-3.5 text-gray-400 shrink-0" viewBox="0 0 20 10" fill="none">
+        <svg className="w-4 h-3.5 text-white/40 shrink-0" viewBox="0 0 20 10" fill="none">
             <path d="M1 5l4 4L15 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M6 5l4 4L20 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
     );
     if (status === 'read') return (
-        <svg className="w-4 h-3.5 text-blue-400 shrink-0" viewBox="0 0 20 10" fill="none">
+        <svg className="w-4 h-3.5 text-blue-500 shrink-0" viewBox="0 0 20 10" fill="none">
             <path d="M1 5l4 4L15 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M6 5l4 4L20 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -77,26 +77,28 @@ const getPinned = (): string[] => {
 const setPinned = (ids: string[]) => sessionStorage.setItem(PINNED_STORAGE_KEY, JSON.stringify(ids));
 
 const NewChatModal = ({
-    onClose, onStartChat, isStarting, conversations, isMobile, followers, isLoadingFollowers
+    onClose, onStartChat, isStarting, conversations, isMobile, userId
 }: {
     onClose: () => void;
     onStartChat: (user: StreamUser) => void;
     isStarting: boolean;
     conversations: Conversation[];
     isMobile: boolean;
-    followers: StreamUser[];
-    isLoadingFollowers: boolean;
+    userId: number;
 }) => {
-    // Get unique participants for recently contacted
+    const { data: followersData, isLoading: isLoadingFollowers } = useFollowers(userId);
+    const followers = followersData?.pages.flatMap(p => p.data) || [];
+    const isLoading = isLoadingFollowers;
+
     const uniqueRecent = conversations
         .map(c => c.participant)
         .filter((p, i, self) => self.findIndex(s => s.id === p.id) === i)
         .slice(0, 10);
 
     const content = (
-        <div className="flex-1 overflow-y-auto pb-4 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto pb-6 custom-scrollbar space-y-6">
             {/* Search Bar */}
-            <div className="px-6 py-4">
+            <div className="px-6 pt-2">
                 <UserSearchList
                     placeholder="Search Creator Name Here..."
                     actionLabel="Tap to Chat"
@@ -109,9 +111,9 @@ const NewChatModal = ({
 
             {/* Recently Contacted */}
             {uniqueRecent.length > 0 && (
-                <div className="mb-6">
-                    <h3 className="px-6 text-sm font-bold text-white mb-4">Recently Contacted</h3>
-                    <div className="flex overflow-x-auto gap-5 px-6 no-scrollbar pb-2">
+                <div className="px-6">
+                    <h3 className="text-sm font-semibold text-gray-400 mb-3 ml-1">Recently Contacted</h3>
+                    <div className="bg-white/5 rounded-[32px] overflow-hidden p-2">
                         {uniqueRecent.map((p) => (
                             <button
                                 key={p.id}
@@ -121,39 +123,70 @@ const NewChatModal = ({
                                     image: p.avatar,
                                     isOnline: p.isOnline
                                 })}
-                                className="flex flex-col items-center gap-2 shrink-0 group focus:outline-none cursor-pointer"
+                                className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 transition-all text-left group cursor-pointer"
                             >
-                                <div className="relative">
-                                    <Avatar src={p.avatar} alt={p.name} className="w-13 h-13 ring-2 ring-white/5 group-hover:ring-white/10 transition-all" />
+                                <div className="relative shrink-0">
+                                    <Avatar src={p.avatar} alt={p.name} className="w-12 h-12" />
                                     {p.isOnline && (
-                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#111213]" />
+                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1a1b1c]" />
                                     )}
                                 </div>
-                                <span className="text-[11px] text-gray-400 font-medium max-w-[60px] truncate">
-                                    {p.name.split(' ')[0]}
-                                </span>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-white text-[15px] font-bold truncate">
+                                        {capitalizeName(p.name)}
+                                    </span>
+                                    <span className="text-gray-500 text-[12px] truncate mt-0.5">
+                                        Tap to continue your conversation...
+                                    </span>
+                                </div>
                             </button>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* All Followers / Following */}
-            <div>
-                <h3 className="px-6 text-sm font-bold text-white mb-2">All Followers</h3>
-                <div className="px-6">
-                    <UserSearchList
-                        placeholder=""
-                        actionLabel="Tap to Chat"
-                        emptyMessage="No followers found"
-                        onSelectUser={onStartChat}
-                        isProcessing={isStarting}
-                        hideListInitially={false}
-                        showInitialList={true}
-                        initialUsers={followers}
-                        isLoadingInitial={isLoadingFollowers}
-                        hideSearchBar={true}
-                    />
+            {/* All Followers */}
+            <div className="px-6">
+                <h3 className="text-sm font-semibold text-gray-400 mb-3 ml-1">All Followers</h3>
+                <div className="bg-white/5 rounded-[32px] overflow-hidden p-2 min-h-[100px]">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-10">
+                            <Loader2 className="w-6 h-6 animate-spin text-[#FF7700]" />
+                        </div>
+                    ) : followers.length > 0 ? (
+                        <div className="flex flex-col">
+                            {followers.map((f: any) => (
+                                <button
+                                    key={f.userId}
+                                    onClick={() => onStartChat({
+                                        id: String(f.userId),
+                                        name: f.username,
+                                        image: f.profileImage,
+                                        isOnline: false
+                                    })}
+                                    disabled={isStarting}
+                                    className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 transition-all text-left disabled:opacity-60 cursor-pointer group"
+                                >
+                                    <Avatar src={f.profileImage || ''} alt={f.username} className="w-12 h-12" />
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-white text-[15px] font-bold truncate">
+                                            {capitalizeName(f.username)}
+                                        </span>
+                                        <span className="text-[#FF7700] text-[11px] font-bold mt-0.5 uppercase tracking-wide">
+                                            Tap to Chat
+                                        </span>
+                                    </div>
+                                    {isStarting && (
+                                        <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-auto shrink-0" />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+                            <p className="text-gray-500 text-sm">No followers found yet.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -356,15 +389,15 @@ const ChatListItem = ({
                     <Avatar
                         src={conversation.participant.avatar}
                         alt={capitalizeName(conversation.participant.name)}
-                        className="w-11 h-11 sm:w-12 sm:h-12"
+                        className="w-[52px] h-[52px] sm:w-[56px] sm:h-[56px]"
                     />
                     {conversation.isOnline && (
                         <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-400 ring-2 ring-[#111213]" />
                     )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 ml-1">
                     <div className="flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-1.5 text-white text-[15px] font-bold truncate">
+                        <span className="flex items-center gap-1.5 text-white text-[16px] font-bold truncate">
                             {capitalizeName(conversation.participant.name)}
                         </span>
                         <div className="flex flex-col items-end gap-1.5 shrink-0 ml-auto">
@@ -459,14 +492,6 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const navigate = useNavigate();
     const { translateEnabled } = useTranslationPreference(myId);
 
-    // Fetch followers for New Chat modal
-    const { data: followersData, isLoading: isLoadingFollowers } = useFollowers(50);
-    const followers: StreamUser[] = (followersData?.pages[0]?.data || []).map(f => ({
-        id: String(f.userId),
-        name: f.fullName || f.username,
-        image: toAbsoluteUrl(f.profileImage),
-        isOnline: false, // Online status not provided by follower API
-    }));
 
     React.useEffect(() => {
         if (!selectionModeId) return;
@@ -478,6 +503,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         document.addEventListener('mousedown', h);
         return () => document.removeEventListener('mousedown', h);
     }, [selectionModeId]);
+
+    React.useEffect(() => {
+        const handleOpenNewChat = () => setShowNewChat(true);
+        window.addEventListener('open-new-chat', handleOpenNewChat);
+        return () => window.removeEventListener('open-new-chat', handleOpenNewChat);
+    }, []);
 
 
     const handlePin = (conv: Conversation) => {
@@ -520,10 +551,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         if (isNaN(targetId)) return;
         const displayName = capitalizeName(getDisplayName(streamUser));
         const avatar = toAbsoluteUrl((streamUser as any).image || '');
+        
+        // Close modal immediately for a better UX
+        setShowNewChat(false);
         setIsStarting(true);
         try {
             const conversation = await onStartDirectChat(targetId, displayName, avatar);
-            setShowNewChat(false);
             onSelect(conversation);
         } catch {
             toast.error('Failed to start chat');
@@ -629,7 +662,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="relative flex items-center justify-between py-1">
+                        <div className="relative flex md:flex items-center justify-between py-1 hidden md:flex">
                             <div className="flex items-center gap-2">
                                 {view === 'archived' && (
                                     <button
@@ -666,7 +699,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                         </div>
                     )}
 
-                    <div className="h-px w-full bg-white/8" />
+                    <div className="h-px w-full bg-white/8 hidden md:block" />
 
                     {view === 'normal' && archivedList.length > 0 && (
                         <button
@@ -693,15 +726,16 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     )}
 
                     {view === 'normal' && (
-                        <div className="flex items-center gap-3 px-5 h-13 border border-white/10 rounded-full bg-white/5 focus-within:border-white/20 transition-all">
+                        <div className="flex items-center gap-2 px-4 h-15 border border-white/10 rounded-2xl bg-white/5 focus-within:border-white/20 transition-all overflow-hidden shrink-0 mt-2 md:mt-0 md:h-12 md:rounded-full">
                             <input
-                                className="flex-1 bg-transparent border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none"
+                                className="flex-1 min-w-0 bg-transparent border-none text-[15px] text-white focus:outline-none placeholder:text-gray-500 outline-none"
                                 placeholder="Search Creator Here..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                style={{ fontSize: '16px' }}
                             />
-                            <img src={SearchIcon} className="w-[18px] h-[18px] shrink-0 opacity-60" alt="Search" />
+                            <div className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 md:bg-transparent">
+                                <img src={SearchIcon} className="w-[18px] h-[18px] shrink-0 opacity-60" alt="Search" />
+                            </div>
                         </div>
                     )}
                 </div>
@@ -791,8 +825,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     isStarting={isStarting}
                     conversations={conversations}
                     isMobile={isMobile}
-                    followers={followers}
-                    isLoadingFollowers={isLoadingFollowers}
+                    userId={Number(myId)}
                 />
             )}
             {confirmDelete && (
@@ -803,6 +836,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     isDeleting={isDeleting}
                 />
             )}
+
+
         </>
     );
 };

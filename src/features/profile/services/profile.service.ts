@@ -53,8 +53,8 @@ const fetchMoments = async (userId: number): Promise<LiveStream[]> => {
 };
 
 // Followers
-const fetchFollowers = async (page = 0, size = 20): Promise<{ data: FollowUser[], hasMore: boolean, page: number }> => {
-  const { data } = await api.get('/users/followers', { params: { page, size } });
+const fetchFollowers = async (userId: number, page = 0, size = 20): Promise<{ data: FollowUser[], hasMore: boolean, page: number }> => {
+  const { data } = await api.get(`/users/${userId}/followers`, { params: { page, size } });
   const content = Array.isArray(data) ? data : data.content || [];
   return {
     data: content,
@@ -64,8 +64,8 @@ const fetchFollowers = async (page = 0, size = 20): Promise<{ data: FollowUser[]
 };
 
 // Following
-const fetchFollowing = async (page = 0, size = 20): Promise<{ data: FollowUser[], hasMore: boolean, page: number }> => {
-  const { data } = await api.get('/users/following', { params: { page, size } });
+const fetchFollowing = async (userId: number, page = 0, size = 20): Promise<{ data: FollowUser[], hasMore: boolean, page: number }> => {
+  const { data } = await api.get(`/users/${userId}/following`, { params: { page, size } });
   const content = Array.isArray(data) ? data : data.content || [];
   return {
     data: content,
@@ -159,23 +159,25 @@ export const useUserLiveStatus = (username?: string, enabled = true) => {
   });
 };
 
-export const useFollowers = (limit = 20) => {
+export const useFollowers = (userId?: number, limit = 20) => {
   return useInfiniteQuery({
-    queryKey: ['followers'],
-    queryFn: ({ pageParam = 0 }) => fetchFollowers(pageParam as number, limit),
+    queryKey: ['followers', userId],
+    queryFn: ({ pageParam = 0 }) => fetchFollowers(userId!, pageParam as number, limit),
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
     initialPageParam: 0,
     staleTime: 5 * 60 * 1000,
+    enabled: !!userId,
   });
 };
 
-export const useFollowing = (limit = 20) => {
+export const useFollowing = (userId?: number, limit = 20) => {
   return useInfiniteQuery({
-    queryKey: ['following'],
-    queryFn: ({ pageParam = 0 }) => fetchFollowing(pageParam as number, limit),
+    queryKey: ['following', userId],
+    queryFn: ({ pageParam = 0 }) => fetchFollowing(userId!, pageParam as number, limit),
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
     initialPageParam: 0,
     staleTime: 5 * 60 * 1000,
+    enabled: !!userId,
   });
 };
 

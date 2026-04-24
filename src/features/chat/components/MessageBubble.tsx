@@ -15,10 +15,12 @@ export const isOnlyImage = (text: string, attachments?: any[]) => {
     if (!text) return hasAttachments;
     const trimmed = text.trim();
 
+
     // Detect any bracketed tag containing a URL (language agnostic, handles various brackets)
     const tagRegex = /[\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】]/gi;
     const hasTag = tagRegex.test(trimmed);
     const cleanText = trimmed.replace(tagRegex, '').trim();
+
 
     // If it has a tag and no other text, it's an only-image message.
     // Also if it's just a raw URL without brackets (sometimes happens in translation)
@@ -89,12 +91,13 @@ const renderMessageContent = (msg: Message, text: string, isMe: boolean, onImage
     const tagRegex = /([\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】])/gi;
     const parts = text.split(tagRegex);
 
+
     return parts.map((part, index) => {
         const trimmedPart = part.trim();
         const isBracketedTag = (trimmedPart.startsWith('[') || trimmedPart.startsWith('(') || trimmedPart.startsWith('【')) &&
             (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('】')) &&
             trimmedPart.includes('http');
-
+        
         const rawUrlRegex = /^(https?:\/\/[^\s\n\r\]\)\】]+)$/i;
         const isRawUrl = rawUrlRegex.test(trimmedPart);
 
@@ -137,7 +140,6 @@ export const MessageBubble = ({
     onDelete, onReact, onDeleteReaction, onCopy, onImageLoad,
 }: MessageBubbleProps) => {
 
-
     // Decide which text to use as the base for rendering
     // Priority: 1. Me -> Original, 2. Normal Translated -> Translated, 3. Special -> pickSpecialContent (prioritizes original)
     const receivedText = isMe
@@ -159,6 +161,10 @@ export const MessageBubble = ({
     const myId = String(useAuthStore.getState().user?.id ?? '');
 
     const handleTouchStart = (e: React.TouchEvent) => {
+        // Option 2: Don't show menu for others' gifts
+        const isGiftMsg = !isMe && (message.isGiftMessage || isGift(receivedText));
+        if (isGiftMsg) return;
+
         timer.current = setTimeout(() => { e.preventDefault(); setDropdown(true); }, 500);
     };
     const cancelLongPress = () => {
@@ -191,12 +197,13 @@ export const MessageBubble = ({
         setQuickReactionOpen(false);
         setFullPickerOpen(false);
 
+
         // Save to recent list
         saveRecentEmoji(emoji);
 
         const type = typeof emoji === 'string'
-            ? getSafeEmojiId(emoji, quickReactions.find(r => r.emoji === emoji)?.id)
-            : getSafeEmojiId(emoji.native || emoji.emoji, emoji.id);
+            ? (quickReactions.find(r => r.emoji === emoji)?.id || emoji)
+            : emoji.id;
         const native = typeof emoji === 'string' ? emoji : emoji.native;
 
         const hasReacted = message.reactions?.own.some(r => r.type === type);
@@ -223,7 +230,7 @@ export const MessageBubble = ({
         return (
             <div
                 className={cn(
-                    "absolute z-50 cursor-pointer active:scale-95 transition-transform left-3",
+                    "absolute z-[10001] cursor-pointer active:scale-95 transition-transform left-3",
                     isImage ? '-bottom-1' : '-bottom-2.5'
                 )}
                 onClick={(e) => { e.stopPropagation(); setShowReactionModal(true); }}
@@ -243,7 +250,7 @@ export const MessageBubble = ({
     const renderReactionModal = (side: 'left' | 'right') => (
         showReactionModal && (
             <div className={cn(
-                "absolute bottom-0 z-[100] animate-in slide-in-from-bottom-1 duration-200",
+                "absolute bottom-0 z-[10001] animate-in slide-in-from-bottom-1 duration-200",
                 side === 'left' ? 'left-full ml-3' : 'right-full mr-3'
             )}>
                 <div className="fixed inset-0 -z-10" onClick={() => setShowReactionModal(false)} />
@@ -326,7 +333,7 @@ export const MessageBubble = ({
                 <div
                     ref={pickerRef}
                     className={cn(
-                        "absolute bottom-0 flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[100] animate-in duration-200",
+                        "absolute bottom-0 flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[10001] animate-in duration-200",
                         alignment === 'left' ? 'left-full ml-3' : 'right-full mr-3'
                     )}>
                     {quickReactions.map(r => (
@@ -353,7 +360,7 @@ export const MessageBubble = ({
     const renderFullPicker = (alignment: 'left' | 'right') => (
         fullPickerOpen && (
             <div className={cn(
-                "absolute bottom-0 z-[100] animate-in fade-in duration-200",
+                "absolute bottom-0 z-[10001] animate-in fade-in duration-200",
                 alignment === 'left' ? 'left-full ml-3' : 'right-full mr-3'
             )}>
                 <div className="fixed inset-0 -z-10" onClick={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }} />
@@ -457,6 +464,7 @@ export const MessageBubble = ({
                             </div>
                         </div>
 
+
                     </div>
                     <Avatar src={myAvatar} alt="me" className="w-8 h-8 sm:w-9 sm:h-9 mt-0.5" />
                 </div>
@@ -523,18 +531,20 @@ export const MessageBubble = ({
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => setDropdown(v => !v)}
-                            className={cn(
-                                'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10 cursor-pointer',
-                                'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
-                                (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0'
-                            )}
-                        >
-                            <ChevronDown className="w-3 h-3" />
-                        </button>
+                        {!tIsGift && (
+                            <button
+                                onClick={() => setDropdown(v => !v)}
+                                className={cn(
+                                    'absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all duration-150 z-10 cursor-pointer',
+                                    'bg-black/20 hover:bg-black/50 text-white/70 hover:text-white',
+                                    (hovered || dropdownOpen) ? 'opacity-100' : 'opacity-0'
+                                )}
+                            >
+                                <ChevronDown className="w-3 h-3" />
+                            </button>
+                        )}
 
-                        {dropdownOpen && (
+                        {dropdownOpen && !tIsGift && (
                             <MessageDropdown
                                 isMe={false}
                                 positionLeft
@@ -542,6 +552,7 @@ export const MessageBubble = ({
                                 onClose={() => setDropdown(false)}
                             />
                         )}
+
                         {renderReactions(tOnlyImage)}
                         {renderFullPicker('left')}
                         {renderReactionModal('left')}

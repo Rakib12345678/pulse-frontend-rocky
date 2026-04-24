@@ -31,12 +31,14 @@ interface FollowersFollowingModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: 'followers' | 'following';
+  userId?: number;
 }
 
 export const FollowersFollowingModal = ({
   isOpen,
   onClose,
   type,
+  userId,
 }: FollowersFollowingModalProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -59,14 +61,14 @@ export const FollowersFollowingModal = ({
     isLoading: isLoadingFollowers,
     fetchNextPage: fetchNextFollowers,
     hasNextPage: hasMoreFollowers
-  } = useFollowers();
+  } = useFollowers(userId);
 
   const {
     data: followingData,
     isLoading: isLoadingFollowing,
     fetchNextPage: fetchNextFollowing,
     hasNextPage: hasMoreFollowing
-  } = useFollowing();
+  } = useFollowing(userId);
 
   const { data: searchResults, isLoading: isSearching } = useSearchCreators(searchQuery);
 

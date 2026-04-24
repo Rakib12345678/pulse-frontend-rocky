@@ -526,7 +526,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {/* Floating Go Live Icon */}
             <div
                 onClick={handleGoLiveClick}
-                className="md:hidden absolute bottom-32 right-2 sm:right-4 z-30 cursor-pointer"
+                className="md:hidden absolute bottom-32 right-2 sm:right-4 z-[10001] cursor-pointer"
             >
                 <img
                     src={LiveIcon}
@@ -600,6 +600,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                 <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                             </button>
                             <button
+                                id="emoji-trigger"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setShowEmoji(v => !v);
@@ -726,7 +727,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {msgToDelete && (
                 <div
                     onClick={() => setMsgToDelete(null)}
-                    className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300 cursor-default"
+                    className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300 cursor-default"
                 >
                     <div
                         onClick={e => e.stopPropagation()}
@@ -770,7 +771,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {/* Context Menu */}
             {contextMenu && (
                 <div
-                    className="fixed z-[9999] bg-[#1a1c23] border border-white/10 rounded-xl shadow-2xl py-1.5 min-w-[160px] backdrop-blur-md animate-in fade-in zoom-in duration-100"
+                    className="fixed z-[10001] bg-[#1a1c23] border border-white/10 rounded-xl shadow-2xl py-1.5 min-w-[160px] backdrop-blur-md animate-in fade-in zoom-in duration-100"
                     style={{ top: contextMenu.y, left: contextMenu.x }}
                 >
                     <button

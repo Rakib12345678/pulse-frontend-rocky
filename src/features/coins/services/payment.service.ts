@@ -69,6 +69,29 @@ export interface EarningHistoryPage {
 
 export type EarningHistoryFilter = 'all' | 'diamond_received' | 'diamond_withdrawn';
 
+export interface PayoutAccountResponse {
+    status: 'NOT_STARTED' | 'ONBOARDING_IN_PROGRESS' | 'REQUIRES_INFORMATION' | 'UNDER_REVIEW' | 'PAYOUTS_ENABLED' | 'DISABLED';
+    bankDetails?: {
+        last4: string;
+        bankName: string;
+    };
+}
+
+export interface OnboardingLinkRequest {
+    returnUrl: string;
+    refreshUrl: string;
+    country: string;
+}
+
+export interface OnboardingLinkResponse {
+    onboardingUrl: string;
+}
+
+export interface WithdrawalRequest {
+    amount: number;
+    currency: string;
+}
+
 export const paymentService = {
     /**
      * Create a Stripe Checkout Session
@@ -136,4 +159,24 @@ export const paymentService = {
             hasMore: raw.length === size,
         };
     },
+
+    /**
+     * Stripe Connect Payouts (Commented out)
+     */
+    /* 
+    getPayoutAccount: async (): Promise<PayoutAccountResponse> => {
+        const response = await api.get('/creator-payouts/account');
+        return response.data;
+    },
+
+    createOnboardingLink: async (data: OnboardingLinkRequest): Promise<OnboardingLinkResponse> => {
+        const response = await api.post('/creator-payouts/account-link', data);
+        return response.data;
+    },
+
+    requestWithdrawal: async (data: WithdrawalRequest): Promise<any> => {
+        const response = await api.post('/creator-payouts/withdrawals', data);
+        return response.data;
+    },
+    */
 };

@@ -102,7 +102,7 @@ export const MobileFooter: React.FC = () => {
     const activeFilter = 'brightness(0) saturate(100%) invert(54%) sepia(93%) saturate(748%) hue-rotate(357deg) brightness(101%) contrast(101%)';
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-300 h-18 w-full border-t border-white/6 bg-[#111213] backdrop-blur-xl md:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 z-300 h-18 w-full border-t border-white/6 bg-black/20 backdrop-blur-2xl md:hidden">
             {/* iOS home indicator */}
             <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-32 h-1 rounded-full bg-white/20" />
 
@@ -137,15 +137,15 @@ export const MobileFooter: React.FC = () => {
                 />
 
                 {/* Go Live FAB */}
-                <div className="flex flex-col items-center justify-center flex-1 h-full border-2 border-[#111213] rounded-full transition-colors">
+                <div className="flex flex-col items-center justify-center flex-1 h-full rounded-full transition-colors">
                     <button
                         onClick={handleGoLiveClick}
-                        className="relative flex items-center justify-center w-14 h-14 rounded-full -mt-15 active:scale-95 transition-transform cursor-pointer"
+                        className="relative flex items-center justify-center w-15 h-15 rounded-full -mt-16 active:scale-95 transition-transform cursor-pointer shadow-[0_4px_20px_rgba(255,119,0,0.4)]"
                     >
                         <img
                             src={LiveVideo}
                             alt="Go Live"
-                            className="h-full w-full rounded-full object-cover border-2 border-[#111213]"
+                            className="h-full w-full rounded-full object-cover"
                         />
                     </button>
                 </div>

@@ -25,12 +25,12 @@ export const EmojiPickerPopup = ({ onSelect, onClose, className, style, isMobile
     }, [onClose]);
 
     const defaultStyle: React.CSSProperties = {
-        '--rgb-background':    '17, 18, 19',
-        '--rgb-input':         '30, 32, 41',
-        '--rgb-color':         '255, 255, 255',
-        '--rgb-accent':        '255, 119, 0',
-        '--rgb-border':        '255, 255, 255',
-        '--color-border':      'rgba(255,255,255,0.08)',
+        '--rgb-background': '17, 18, 19',
+        '--rgb-input': '30, 32, 41',
+        '--rgb-color': '255, 255, 255',
+        '--rgb-accent': '255, 119, 0',
+        '--rgb-border': '255, 255, 255',
+        '--color-border': 'rgba(255,255,255,0.08)',
         '--color-border-over': 'rgba(255,255,255,0.15)',
         width: isMobile ? '100%' : undefined,
         ...style,

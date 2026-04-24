@@ -204,7 +204,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                     className={cn('flex-1 flex flex-col overflow-hidden', mobileShowList ? 'flex' : 'hidden')}
                     style={{ background: '#111213' }}
                 >
-                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-4 py-4">
+                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-3 py-2">
                         {streamReady && <ChatSidebar {...sidebarProps} />}
                     </div>
                 </div>

@@ -155,6 +155,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         isOpen={followModal.isOpen}
         onClose={() => setFollowModal({ ...followModal, isOpen: false })}
         type={followModal.type}
+        userId={user.id}
       />
 
       <div className="bg-[#111213] flex flex-col rounded-2xl p-3 md:p-5 lg:p-6 xl:p-14 border-x-0 border-y-2 md:border-2 border-[#1D1F20] mb-3 md:mb-5 lg:mb-8 xl:mb-15">
