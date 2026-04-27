@@ -102,7 +102,7 @@ export const SuperchatTicker: React.FC = () => {
             newEntries.push({
                 id: msg.id,
                 senderName: getDisplayName(msg.user),
-                senderUsername: (msg.user as any)?.username || '',
+                senderUsername: msg.user?.name || '',
                 senderId: msg.user?.id || '',
                 senderAvatar: (msg.user?.image as string) || 'https://i.pravatar.cc/150',
                 giftIconUrl: (msg as any)?.giftIconUrl || '',

@@ -292,9 +292,8 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             const currentUser = userRef.current;
             const userData = currentUser ? {
                 id: String(currentUser.id),
-                name: currentUser.fullName || currentUser.displayName || currentUser.username || `User ${currentUser.id}`,
+                name: currentUser.username || `User ${currentUser.id}`,
                 image: currentUser.profileImage,
-                username: currentUser.username,
             } : {
                 type: 'anonymous'
             };

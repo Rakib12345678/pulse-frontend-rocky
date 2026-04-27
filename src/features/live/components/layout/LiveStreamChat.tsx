@@ -235,14 +235,14 @@ const LiveStreamMessageList: React.FC = () => {
                             <img
                                 src={msg.user?.image || 'https://i.pravatar.cc/150'}
                                 alt={getDisplayName(msg.user)}
-                                onClick={() => handleUserClick((msg.user as any)?.username || msg.user?.name, msg.user?.id)}
+                                onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
                                 className="w-9 h-9 rounded-full border-2 border-[#FF8800]/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                             />
                             <div className="flex flex-col min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
                                     <span
                                         className="text-xs font-semibold text-[#FF8800] cursor-pointer hover:underline transition-colors"
-                                        onClick={() => handleUserClick((msg.user as any)?.username || msg.user?.name, msg.user?.id)}
+                                        onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
                                     >
                                         @{getDisplayName(msg.user)}
                                     </span>
@@ -272,14 +272,14 @@ const LiveStreamMessageList: React.FC = () => {
                         <img
                             src={msg.user?.image || 'https://i.pravatar.cc/150'}
                             alt={getDisplayName(msg.user)}
-                            onClick={() => handleUserClick((msg.user as any)?.username || msg.user?.name, msg.user?.id)}
+                            onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
                             className="w-8 h-8 rounded-full border-2 border-transparent shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                         />
                         <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span
                                     className="text-sm font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors"
-                                    onClick={() => handleUserClick((msg.user as any)?.username || msg.user?.name, msg.user?.id)}
+                                    onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
                                 >
                                     @{getDisplayName(msg.user)}
                                 </span>
