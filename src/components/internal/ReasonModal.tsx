@@ -210,11 +210,16 @@ export const ReasonModal = ({
 // Pre-configured modals 
 
 const REPORT_OPTIONS = [
-    { id: 'sexual_content', label: 'Sexual Content' },
-    { id: 'reason_2', label: "i don't know" },
-    { id: 'reason_3', label: "i don't know" },
-    { id: 'reason_4', label: "i don't know" },
-    { id: 'others', label: 'Others' },
+    { id: 'harassment', label: 'Bullying or harassment' },
+    { id: 'nudity', label: 'Sexual content / Inappropriate nudity' },
+    { id: 'hate_speech', label: 'Hate or offensive language' },
+    { id: 'violence', label: 'Threats or dangerous behavior' },
+    { id: 'spam', label: 'Spam or fake promotions' },
+    { id: 'impersonation', label: 'Fake profile / Impersonation' },
+    { id: 'fraud', label: 'Scamming or Fraud' },
+    { id: 'underage', label: 'Underage User' },
+    { id: 'self_harm', label: 'Self-harm or disturbing content' },
+    { id: 'others', label: 'Other Reasons' },
 ];
 
 // const DEACTIVATE_OPTIONS = [
@@ -277,6 +282,42 @@ export const DeleteAccountModal = ({
         options={DELETE_OPTIONS}
         confirmLabel="Delete Account"
         confirmIcon={<Trash2 className="w-4 h-4" />}
+        confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
+        isLoading={isLoading}
+        onConfirm={onConfirm}
+        onCancel={onCancel}
+    />
+);
+
+const REPORT_STREAM_OPTIONS = [
+    { id: 'harassment', label: 'Bullying or harassment' },
+    { id: 'nudity', label: 'Sexual content / inappropriate nudity' },
+    { id: 'hate_speech', label: 'Hate or offensive language' },
+    { id: 'violence', label: 'Threats or dangerous behavior' },
+    { id: 'spam', label: 'Spam or fake promotions' },
+    { id: 'impersonation', label: 'Fake profile/impersonation' },
+    { id: 'fraud', label: 'Scamming or fraud' },
+    { id: 'underage', label: 'Underage user' },
+    { id: 'self_harm', label: 'Self-harm or disturbing content' },
+    { id: 'others', label: 'Other Reasons' },
+];
+
+export const ReportStreamModal = ({
+    isOpen,
+    isLoading,
+    onConfirm,
+    onCancel,
+}: {
+    isOpen: boolean;
+    isLoading?: boolean;
+    onConfirm: (reasonId: string, otherText?: string) => void;
+    onCancel: () => void;
+}) => (
+    <ReasonModal
+        isOpen={isOpen}
+        title="Report Stream"
+        options={REPORT_STREAM_OPTIONS}
+        confirmLabel="Submit Report"
         confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
         isLoading={isLoading}
         onConfirm={onConfirm}

@@ -78,7 +78,7 @@ export function LandingPageServer({ children }: LandingPageServerProps) {
                 <Button
                     onClick={handleInteractNow}
                     size="lg"
-                    className="h-14 rounded-full bg-linear-to-r from-indigo-600 to-pink-600 px-10 text-base font-bold text-white shadow-[0_0_20px_rgba(219,39,119,0.3)] transition-all"
+                    className="h-14 rounded-full bg-linear-to-r from-indigo-600 to-pink-600 px-10 text-base font-bold text-white shadow-[0_0_20px_rgba(219,39,119,0.3)] transition-all hover:from-indigo-600 hover:to-pink-600 dark:hover:from-indigo-600 dark:hover:to-pink-600"
                 >
                     <Plus className="mr-2 h-5 w-5" />
                     Interact Now

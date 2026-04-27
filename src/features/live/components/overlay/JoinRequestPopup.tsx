@@ -4,6 +4,7 @@ import {
     useCallStateHooks,
     OwnCapability,
 } from '@stream-io/video-react-sdk';
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useJoinRequestStore } from '@/features/live/stores/joinRequestStore';
@@ -19,8 +20,9 @@ interface JoinRequest {
 
 export const JoinRequestPopup: React.FC = () => {
     const call = useCall();
-    const { useLocalParticipant } = useCallStateHooks();
+    const { useLocalParticipant, useParticipants } = useCallStateHooks();
     const localParticipant = useLocalParticipant();
+    const participants = useParticipants();
     const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
     const isMobile = useIsMobile();
 
@@ -49,8 +51,21 @@ export const JoinRequestPopup: React.FC = () => {
     if (!call || joinRequests.length === 0) return null;
 
     const handleApprove = async (request: JoinRequest) => {
-        try {
+        // Enforce maximum of 3 co-hosts
+        const activeCoHostsCount = participants.filter((p: any) =>
+            !p.roles?.includes('host') &&
+            !p.roles?.includes('admin') &&
+            (p.roles?.includes('co_host') ||
+                p.capabilities?.includes('send-audio') ||
+                p.capabilities?.includes('send-video'))
+        ).length;
 
+        if (activeCoHostsCount >= 3) {
+            toast.error('Maximum limit of 3 co-hosts reached');
+            return;
+        }
+
+        try {
             // Grant permissions and assign the co-host role so they are recognized by all viewers
             await call.updateUserPermissions({
                 user_id: request.userId,
@@ -65,7 +80,6 @@ export const JoinRequestPopup: React.FC = () => {
             });
 
             // Notify the viewer they were accepted
-
             await call.sendCustomEvent({
                 type: 'join-response', userId: request.userId, accepted: true,
             });

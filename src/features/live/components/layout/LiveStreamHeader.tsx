@@ -9,6 +9,7 @@ import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EndLiveModal } from '@/features/live/components/modals/EndLiveModal';
+import { ReportStreamModal } from '@/components/internal/ReasonModal';
 
 import { ParticipantsDialog } from '@/features/live/components/modals/ParticipantsDialog';
 import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
@@ -72,6 +73,7 @@ export const LiveStreamHeader: React.FC = () => {
     const [showDurationPopup, setShowDurationPopup] = React.useState(false);
     const [streamDuration, setStreamDuration] = React.useState(0); // in seconds
     const startTimestampRef = React.useRef<number | null>(null);
+    const [isReportOpen, setIsReportOpen] = React.useState(false);
 
     React.useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -258,7 +260,10 @@ export const LiveStreamHeader: React.FC = () => {
                                                 Interested
                                             </button>
                                             <div className="h-px bg-white/10 w-full" />
-                                            <button className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-b-xl transition-colors">
+                                            <button
+                                                className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-b-xl transition-colors"
+                                                onClick={() => setIsReportOpen(true)}
+                                            >
                                                 Report Stream
                                             </button>
                                         </div>
@@ -373,7 +378,10 @@ export const LiveStreamHeader: React.FC = () => {
                                         Interested
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator className="bg-white/10 my-1" />
-                                    <DropdownMenuItem className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors">
+                                    <DropdownMenuItem
+                                        className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors"
+                                        onClick={() => setIsReportOpen(true)}
+                                    >
                                         Report Stream
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -425,6 +433,16 @@ export const LiveStreamHeader: React.FC = () => {
                     </Button>
                 </DialogContent>
             </Dialog>
+
+            <ReportStreamModal
+                isOpen={isReportOpen}
+                onCancel={() => setIsReportOpen(false)}
+                onConfirm={(reasonId, otherText) => {
+                    console.log('Reported stream with reason:', reasonId, otherText);
+                    toast.success('Stream reported successfully');
+                    setIsReportOpen(false);
+                }}
+            />
         </>
     );
 };

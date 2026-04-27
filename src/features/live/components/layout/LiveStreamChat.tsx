@@ -230,7 +230,7 @@ const LiveStreamMessageList: React.FC = () => {
                     return (
                         <div
                             key={msg.id}
-                            className="flex items-center gap-3 border border-[#494E50] rounded-2xl px-3 py-3"
+                            className="flex items-center gap-3 bg-[#2C2F30] border border-[#494E50] rounded-2xl px-3 py-3"
                         >
                             <img
                                 src={msg.user?.image || 'https://i.pravatar.cc/150'}
