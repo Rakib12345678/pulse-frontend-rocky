@@ -5,6 +5,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import giftBoxLottie from '@/assets/GiftBoxAnimation.lottie';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 
 const DEFAULT_DURATION_SECONDS = 16;
@@ -13,6 +14,7 @@ interface SuperchatEntry {
     id: string;
     senderName: string;
     senderUsername: string;
+    senderId: string;
     senderAvatar: string;
     giftIconUrl: string;
     giftName: string;
@@ -30,18 +32,22 @@ export const SuperchatTicker: React.FC = () => {
     const { openModal: openProfileModal } = useUserProfileStore();
     const { openModal: openLoginModal, setMode } = useSignUpStore();
     const { isGuest, isViewer } = useLiveStreamContext();
+    const { user } = useAuthStore();
 
     if (isViewer) return null;
 
-    const handleUserClick = useCallback((username?: string) => {
-        if (!username) return;
+    const handleUserClick = useCallback((username?: string, userId?: string) => {
+        if (!username && !userId) return;
+        const finalUsername = username || userId;
+        if (!finalUsername) return;
+
         if (isGuest) {
             setMode('login');
             openLoginModal();
-        } else {
-            openProfileModal(username);
+        } else if (String(user?.id) !== userId) {
+            openProfileModal(finalUsername);
         }
-    }, [isGuest, setMode, openLoginModal, openProfileModal]);
+    }, [isGuest, setMode, openLoginModal, openProfileModal, user?.id]);
 
     const fullNameMap = useMemo(() => {
         const map = new Map<string, string>();
@@ -96,7 +102,8 @@ export const SuperchatTicker: React.FC = () => {
             newEntries.push({
                 id: msg.id,
                 senderName: getDisplayName(msg.user),
-                senderUsername: msg.user?.name || '',
+                senderUsername: (msg.user as any)?.username || '',
+                senderId: msg.user?.id || '',
                 senderAvatar: (msg.user?.image as string) || 'https://i.pravatar.cc/150',
                 giftIconUrl: (msg as any)?.giftIconUrl || '',
                 giftName: (msg as any)?.giftName || '',
@@ -144,7 +151,7 @@ export const SuperchatTicker: React.FC = () => {
     );
 };
 
-const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: string) => void }> = ({ entry, onUserClick }) => {
+const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: string, userId?: string) => void }> = ({ entry, onUserClick }) => {
     const animationSpeed = useMemo(() => {
         return Math.max(0.1, Math.min(4, DEFAULT_DURATION_SECONDS / entry.durationSeconds));
     }, [entry.durationSeconds]);
@@ -188,12 +195,12 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
                 <img
                     src={entry.senderAvatar}
                     alt={entry.senderName}
-                    onClick={() => onUserClick(entry.senderUsername)}
+                    onClick={() => onUserClick(entry.senderUsername, entry.senderId)}
                     className="w-8 h-8 rounded-full shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                 />
                 <span
                     className="text-xs font-semibold text-white truncate flex-1 cursor-pointer hover:underline transition-colors"
-                    onClick={() => onUserClick(entry.senderUsername)}
+                    onClick={() => onUserClick(entry.senderUsername, entry.senderId)}
                 >
                     @{entry.senderName}
                 </span>

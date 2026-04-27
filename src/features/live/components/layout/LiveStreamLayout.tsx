@@ -294,6 +294,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 id: String(currentUser.id),
                 name: currentUser.fullName || currentUser.displayName || currentUser.username || `User ${currentUser.id}`,
                 image: currentUser.profileImage,
+                username: currentUser.username,
             } : {
                 type: 'anonymous'
             };
