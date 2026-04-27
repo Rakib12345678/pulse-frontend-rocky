@@ -204,7 +204,6 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     const [isGiftingOpen, setIsGiftingOpen] = useState(false);
     const [streamEnded, setStreamEnded] = useState(false);
     const navigate = useNavigate();
-    const isMobile = useIsMobile();
     const isTerminatingRef = useRef(false);
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -293,7 +292,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             const currentUser = userRef.current;
             const userData = currentUser ? {
                 id: String(currentUser.id),
-                name: currentUser.username || `User ${currentUser.id}`,
+                name: currentUser.fullName || currentUser.displayName || currentUser.username || `User ${currentUser.id}`,
                 image: currentUser.profileImage,
             } : {
                 type: 'anonymous'
@@ -480,7 +479,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
     if (!client || !call || !chatClient) {
         return (
-            <div className="fixed inset-0 flex items-center justify-center bg-[#0f1117] z-[10000] overflow-hidden">
+            <div className="fixed inset-0 flex items-center justify-center bg-[#0f1117] z-10000 overflow-hidden">
                 <Loader2 className="h-10 w-10 animate-spin text-[#FF8800]" />
             </div>
         );

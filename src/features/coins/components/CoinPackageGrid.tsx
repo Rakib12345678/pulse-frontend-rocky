@@ -118,18 +118,9 @@ export const CoinPackageGrid = () => {
     return (
         <div className="flex flex-col gap-6 w-full max-w-[800px] mx-auto">
             {/* Header */}
-            <h2 className="text-white text-2xl font-bold">Add Coins</h2>
-
-            {/* Balance Bar */}
-            <div className="flex items-center justify-between bg-[#1A1C1E] border border-white/5 rounded-2xl px-4 py-3 shadow-md">
-                <div className="flex items-center gap-3">
-                    <span className="text-white/80 text-sm font-medium">My Coins</span>
-                    <div className="flex items-center gap-1.5">
-                        <img src={coinIcon} alt="coin" className="w-5 h-5" />
-                        <span className="text-white font-bold text-base">{wallet?.coinBalance ?? 0}</span>
-                    </div>
-                </div>
-                <DropdownMenu>
+            <div className="flex items-center justify-between">
+                <h2 className="text-white text-2xl font-bold">Add Coins</h2>
+                <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-9 px-3 bg-[#2D2D2D]/50 border border-white/5 rounded-2xl text-white text-[12px] font-bold flex items-center gap-2 hover:bg-[#3D3D3D] transition-all">
                             <svg className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -138,7 +129,10 @@ export const CoinPackageGrid = () => {
                             {currency === 'INR' ? '₹ INR' : '$ USD'}
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-[#1A1C1E] border-white/10 text-white min-w-[120px] rounded-2xl p-1 shadow-2xl">
+                    <DropdownMenuContent
+                        align="end"
+                        className="z-[9999] bg-[#1A1C1E] border-white/10 text-white min-w-[120px] rounded-2xl p-1 shadow-2xl"
+                    >
                         <DropdownMenuItem
                             onClick={() => setCurrency('INR')}
                             className="flex items-center gap-2 focus:bg-[#3D3D3D] focus:text-white cursor-pointer py-2 px-3 rounded-xl"
@@ -153,6 +147,17 @@ export const CoinPackageGrid = () => {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+            </div>
+
+            {/* Balance Bar */}
+            <div className="flex items-center bg-[#1A1C1E] border border-white/5 rounded-2xl px-4 py-3 shadow-md">
+                <div className="flex items-center gap-3">
+                    <span className="text-white/80 text-sm font-medium">My Coins</span>
+                    <div className="flex items-center gap-1.5">
+                        <img src={coinIcon} alt="coin" className="w-5 h-5" />
+                        <span className="text-white font-bold text-base">{wallet?.coinBalance ?? 0}</span>
+                    </div>
+                </div>
             </div>
 
             {/* Packages Grid */}

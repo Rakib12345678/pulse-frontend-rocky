@@ -29,7 +29,9 @@ export const SuperchatTicker: React.FC = () => {
     const processedIdsRef = useRef<Set<string>>(new Set());
     const { openModal: openProfileModal } = useUserProfileStore();
     const { openModal: openLoginModal, setMode } = useSignUpStore();
-    const { isGuest } = useLiveStreamContext();
+    const { isGuest, isViewer } = useLiveStreamContext();
+
+    if (isViewer) return null;
 
     const handleUserClick = useCallback((username?: string) => {
         if (!username) return;
@@ -129,7 +131,7 @@ export const SuperchatTicker: React.FC = () => {
     if (entries.length === 0) return null;
 
     return (
-        <div className="bg-[#2C2F30] border-b border-[#494E50] pt-4 pb-3 px-3">
+        <div className="pt-4 pb-3 px-3">
             <div
                 ref={scrollRef}
                 className="flex gap-2.5 overflow-x-auto scrollbar-hide"

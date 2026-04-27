@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Lock, Heart, SendHorizonal, Share2, Volume2, VolumeX } from 'lucide-react';
+import { Lock, Heart, SendHorizonal, Share2, Volume2, VolumeX, MessageCircle } from 'lucide-react';
 import coinIcon from '@/assets/coin.svg';
 import giftSvg from '@/assets/gift.svg';
 import { useJoinRequestStore } from '@/features/live/stores/joinRequestStore';
@@ -18,7 +18,7 @@ import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
-import { StreamerInfoOverlay } from '@/features/live/components/overlay/StreamerInfoOverlay';
+
 import { liveService } from '@/features/live/services/live.service';
 import { CompactGiftSidebar } from '@/features/live/components/overlay/CompactGiftSidebar';
 import { SuperchatTicker } from '@/features/live/components/overlay/SuperchatTicker';
@@ -46,6 +46,16 @@ export const LiveStreamChat: React.FC = () => {
         () => (call && chatClient) ? chatClient.channel('livestream', call.id) : null,
         [chatClient, call?.id]
     );
+
+    // Eagerly watch the channel so the host's SuperchatTicker has messages immediately
+    // (the <Channel> component lazy-initializes; watching here ensures messages are ready)
+    useEffect(() => {
+        if (!channel) return;
+        channel.watch().catch((err) =>
+            console.error('[LiveStreamChat] Failed to watch channel:', err)
+        );
+    }, [channel]);
+
 
     // Trigger participant sync every 10 seconds (for host only)
     useEffect(() => {
@@ -117,23 +127,35 @@ export const LiveStreamChat: React.FC = () => {
 
     if (!call || !chatClient || !channel) return null;
 
-    const bottomClass = isMobile ? 'bottom-[100px]' : 'bottom-10';
+    // Mobile: viewers need extra room for horizontal gift bar; host just clears the Invite Friends button
+    const bottomClass = isMobile ? (isViewer ? 'bottom-[96px]' : 'bottom-[96px]') : 'bottom-10';
 
     return (
         <Channel key={chatClient.userID || 'anonymous'} channel={channel}>
-            <div className={`absolute ${bottomClass} left-4 right-4 sm:left-10 sm:right-auto sm:w-[360px] max-h-[400px] flex flex-col z-20 rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl`}>
-                {!isViewer && <SuperchatTicker />}
-                <div className="flex-1 flex flex-col bg-[#1D1F20] pt-4 px-4 pb-3 overflow-hidden">
+            {/* Chat messages + input — transparent on mobile, dark card on desktop */}
+            <div
+                className={`absolute ${bottomClass} z-20 flex flex-col
+                    ${isMobile
+                        ? 'left-2 right-2 max-h-[52vh]'
+                        : 'left-10 right-auto w-[360px] max-h-[400px] rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl'
+                    }`}
+            >
+                {/* SuperchatTicker shown for host; hidden for viewers */}
+                <SuperchatTicker />
+
+                <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'pt-2 px-2 pb-1' : 'bg-[#1D1F20] pt-4 px-4 pb-3'}`}>
                     <LiveStreamMessageList />
                     <LiveStreamMessageInput />
                 </div>
                 <JoinMessageSender channel={channel} isViewer={isViewer} userId={user?.id} />
             </div>
-            {/* Viewer: bottom bar with host info + Join Stream */}
+
+            {/* Viewer: horizontal gift sidebar with join button at bottom */}
             {isViewer && <ViewerBottomBar />}
             {/* Host: Invite Friends button */}
             {!isViewer && <HostInviteBar />}
 
+            {/* CompactGiftSidebar handles horizontal gift row on mobile (viewer only) */}
             <CompactGiftSidebar />
 
             <GiftingFeature
@@ -348,51 +370,79 @@ const LiveStreamMessageInput: React.FC = () => {
         }
     };
 
+    const { isGiftingOpen, setIsGiftingOpen, isViewer } = useLiveStreamContext();
+    const isMobile = useIsMobile();
+
+    const isViewerMobile = isMobile && isViewer;
+    // Same dark style for both host and viewer
+    const inputClass = 'bg-[#1D1F20]/90 border-white/10 placeholder:text-white/30 focus:border-white/20';
+
+
     if (isAuthenticated && user) {
         return (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+                {/* Input row */}
                 <div className="flex-1 relative">
                     <input
                         type="text"
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                        placeholder="Add a Comment"
-                        className="w-full h-12 bg-[#2A3A2A]/80 border border-[#C5B358]/60 rounded-full pl-14 pr-14 text-sm text-white focus:outline-none focus:border-[#C5B358] transition-all placeholder:text-[#C5B358]/70"
-
+                        placeholder="Say Something..."
+                        className={`w-full h-11 border rounded-full pl-10 pr-10 text-sm text-white focus:outline-none transition-all backdrop-blur-sm ${inputClass}`}
                     />
-
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    {/* Heart — left inside input */}
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
                         <button
                             onClick={handleSendReaction}
                             className="flex items-center justify-center transition-transform hover:scale-125 active:scale-95"
                             title="Send heart"
                         >
-                            <Heart className="w-6 h-6 text-red-500 fill-red-500 drop-shadow-sm" />
+                            <Heart className="w-5 h-5 text-red-500 fill-red-500 drop-shadow-sm" />
                         </button>
                     </div>
+                    {/* Send — right inside input */}
+                    <button
+                        onClick={handleSendMessage}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all"
+                    >
+                        <SendHorizonal className="w-3.5 h-3.5 text-white/70" strokeWidth={2.5} />
+                    </button>
                 </div>
 
-                <button
-                    onClick={handleSendMessage}
-                    className="w-12 h-12 rounded-full bg-[#E8D5A0] flex items-center justify-center text-[#3A3A2A] hover:bg-[#F0DFA8] hover:scale-105 active:scale-95 transition-all shadow-lg"
-                >
-                    <SendHorizonal className="w-6 h-6" strokeWidth={2.5} />
-                </button>
+                {/* Gift button — mobile viewer only */}
+                {isViewerMobile && (
+                    <button
+                        onClick={() => setIsGiftingOpen(!isGiftingOpen)}
+                        className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border ${isGiftingOpen
+                            ? 'bg-[#FF8800] border-[#FF8800]/50'
+                            : 'bg-white/10 border-white/20 backdrop-blur-sm'
+                            }`}
+                        title="Send a gift"
+                    >
+                        <img src={giftSvg} alt="gift" className={`w-5 h-5 ${isGiftingOpen ? 'brightness-0 invert' : ''}`} />
+                    </button>
+                )}
             </div>
         );
     }
 
     return (
-        <div className="flex items-center cursor-pointer" onClick={openLoginModal}>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={openLoginModal}>
             <div className="flex-1 relative">
-                <div className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#C5B358]/80 flex items-center justify-center">
-                    <Lock className="w-4 h-4 text-[#2A2A1A]" />
+                <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                    <Lock className="w-4 h-4 text-white/30" />
                 </div>
-                <div className="w-full h-12 bg-[#2A3A2A]/80 border border-[#C5B358]/60 rounded-full pl-14 pr-4 flex items-center">
-                    <span className="text-sm text-white/50">Log in to chat</span>
+                <div className={`w-full h-11 border rounded-full pl-10 pr-4 flex items-center backdrop-blur-sm ${inputClass}`}>
+                    <span className="text-sm text-white/40">Say Something...</span>
                 </div>
             </div>
+            {/* Gift placeholder — mobile only */}
+            {isMobile && (
+                <div className="w-11 h-11 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0">
+                    <img src={giftSvg} alt="gift" className="w-5 h-5 opacity-50" />
+                </div>
+            )}
         </div>
     );
 };
@@ -526,9 +576,6 @@ const ViewerBottomBar: React.FC = () => {
 
     if (!createdBy) return null;
 
-    const hostName = (createdBy as any)?.custom?.fields?.fullName?.kind?.stringValue || createdBy.name || createdBy.id || 'Host';
-    const hostUsername = createdBy.name || createdBy.id || 'Host';
-    const hostImage = createdBy.image as string | undefined;
 
     const { openModal, setMode } = useSignUpStore();
     const handleJoinRequest = async () => {
@@ -602,29 +649,16 @@ const ViewerBottomBar: React.FC = () => {
         </button>
     );
 
-    /* ===== MOBILE: streamer card + Join Stream ===== */
+    /* ===== MOBILE: The CompactGiftSidebar handles the bottom bar with Join Stream ===== */
+    // On mobile, we only render the desktop layout here; mobile view is handled by CompactGiftSidebar
     if (isMobile) {
-        return (
-            <div className="absolute bottom-0 left-0 right-0 z-30 px-1 pb-4 pt-2 w-full">
-                <div className="flex items-center gap-0.5 w-full">
-                    <StreamerInfoOverlay
-                        streamerName={hostName}
-                        streamerUsername={hostUsername}
-                        streamerImage={hostImage || undefined}
-                        className="flex-1 bg-[#1a1d27] min-w-0"
-                    />
-                    {joinButton}
-                    {muteButton}
-                    {giftButton}
-                </div>
-            </div>
-        );
+        // Mobile join stream & gifts are in CompactGiftSidebar horizontal bar — nothing to render here
+        return null;
     }
 
     /* ===== DESKTOP: Join Stream button in bottom-right ===== */
     return (
         <div className="absolute bottom-10 right-10 z-30 flex items-center gap-3">
-
             {joinButton}
             {muteButton}
             {giftButton}

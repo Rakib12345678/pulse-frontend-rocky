@@ -12,10 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as MainRouteRouteImport } from './routes/_main/route'
 import { Route as MainStreamRouteRouteImport } from './routes/_main/stream/route'
 import { Route as MainLiveRouteRouteImport } from './routes/_main/live/route'
-import { Route as MainGiftsRouteRouteImport } from './routes/_main/gifts/route'
 import { Route as MainForYouRouteRouteImport } from './routes/_main/for-you/route'
 import { Route as MainExploreRouteRouteImport } from './routes/_main/explore/route'
-import { Route as MainCoinsRouteRouteImport } from './routes/_main/coins/route'
 import { Route as MainChatsRouteRouteImport } from './routes/_main/chats/route'
 import { Route as MainIndexRouteRouteImport } from './routes/_main/index/route'
 import { Route as MainTermsConditionsIndexRouteImport } from './routes/_main/terms-conditions/index'
@@ -46,11 +44,6 @@ const MainLiveRouteRoute = MainLiveRouteRouteImport.update({
   path: '/live',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainGiftsRouteRoute = MainGiftsRouteRouteImport.update({
-  id: '/gifts',
-  path: '/gifts',
-  getParentRoute: () => MainRouteRoute,
-} as any)
 const MainForYouRouteRoute = MainForYouRouteRouteImport.update({
   id: '/for-you',
   path: '/for-you',
@@ -59,11 +52,6 @@ const MainForYouRouteRoute = MainForYouRouteRouteImport.update({
 const MainExploreRouteRoute = MainExploreRouteRouteImport.update({
   id: '/explore',
   path: '/explore',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainCoinsRouteRoute = MainCoinsRouteRouteImport.update({
-  id: '/coins',
-  path: '/coins',
   getParentRoute: () => MainRouteRoute,
 } as any)
 const MainChatsRouteRoute = MainChatsRouteRouteImport.update({
@@ -147,10 +135,8 @@ const MainProfileSettingCoinsRoute = MainProfileSettingCoinsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof MainIndexRouteRoute
   '/chats': typeof MainChatsRouteRoute
-  '/coins': typeof MainCoinsRouteRoute
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
-  '/gifts': typeof MainGiftsRouteRoute
   '/live': typeof MainLiveRouteRouteWithChildren
   '/stream': typeof MainStreamRouteRouteWithChildren
   '/wallet/cancel': typeof MainWalletCancelRouteRoute
@@ -170,10 +156,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof MainIndexRouteRoute
   '/chats': typeof MainChatsRouteRoute
-  '/coins': typeof MainCoinsRouteRoute
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
-  '/gifts': typeof MainGiftsRouteRoute
   '/stream': typeof MainStreamRouteRouteWithChildren
   '/wallet/cancel': typeof MainWalletCancelRouteRoute
   '/wallet/success': typeof MainWalletSuccessRouteRoute
@@ -194,10 +178,8 @@ export interface FileRoutesById {
   '/_main': typeof MainRouteRouteWithChildren
   '/_main/': typeof MainIndexRouteRoute
   '/_main/chats': typeof MainChatsRouteRoute
-  '/_main/coins': typeof MainCoinsRouteRoute
   '/_main/explore': typeof MainExploreRouteRoute
   '/_main/for-you': typeof MainForYouRouteRoute
-  '/_main/gifts': typeof MainGiftsRouteRoute
   '/_main/live': typeof MainLiveRouteRouteWithChildren
   '/_main/stream': typeof MainStreamRouteRouteWithChildren
   '/_main/wallet/cancel': typeof MainWalletCancelRouteRoute
@@ -219,10 +201,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chats'
-    | '/coins'
     | '/explore'
     | '/for-you'
-    | '/gifts'
     | '/live'
     | '/stream'
     | '/wallet/cancel'
@@ -242,10 +222,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chats'
-    | '/coins'
     | '/explore'
     | '/for-you'
-    | '/gifts'
     | '/stream'
     | '/wallet/cancel'
     | '/wallet/success'
@@ -265,10 +243,8 @@ export interface FileRouteTypes {
     | '/_main'
     | '/_main/'
     | '/_main/chats'
-    | '/_main/coins'
     | '/_main/explore'
     | '/_main/for-you'
-    | '/_main/gifts'
     | '/_main/live'
     | '/_main/stream'
     | '/_main/wallet/cancel'
@@ -313,13 +289,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainLiveRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/gifts': {
-      id: '/_main/gifts'
-      path: '/gifts'
-      fullPath: '/gifts'
-      preLoaderRoute: typeof MainGiftsRouteRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
     '/_main/for-you': {
       id: '/_main/for-you'
       path: '/for-you'
@@ -332,13 +301,6 @@ declare module '@tanstack/react-router' {
       path: '/explore'
       fullPath: '/explore'
       preLoaderRoute: typeof MainExploreRouteRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/coins': {
-      id: '/_main/coins'
-      path: '/coins'
-      fullPath: '/coins'
-      preLoaderRoute: typeof MainCoinsRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/chats': {
@@ -478,10 +440,8 @@ const MainStreamRouteRouteWithChildren = MainStreamRouteRoute._addFileChildren(
 interface MainRouteRouteChildren {
   MainIndexRouteRoute: typeof MainIndexRouteRoute
   MainChatsRouteRoute: typeof MainChatsRouteRoute
-  MainCoinsRouteRoute: typeof MainCoinsRouteRoute
   MainExploreRouteRoute: typeof MainExploreRouteRoute
   MainForYouRouteRoute: typeof MainForYouRouteRoute
-  MainGiftsRouteRoute: typeof MainGiftsRouteRoute
   MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
   MainStreamRouteRoute: typeof MainStreamRouteRouteWithChildren
   MainWalletCancelRouteRoute: typeof MainWalletCancelRouteRoute
@@ -499,10 +459,8 @@ interface MainRouteRouteChildren {
 const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainIndexRouteRoute: MainIndexRouteRoute,
   MainChatsRouteRoute: MainChatsRouteRoute,
-  MainCoinsRouteRoute: MainCoinsRouteRoute,
   MainExploreRouteRoute: MainExploreRouteRoute,
   MainForYouRouteRoute: MainForYouRouteRoute,
-  MainGiftsRouteRoute: MainGiftsRouteRoute,
   MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
   MainStreamRouteRoute: MainStreamRouteRouteWithChildren,
   MainWalletCancelRouteRoute: MainWalletCancelRouteRoute,

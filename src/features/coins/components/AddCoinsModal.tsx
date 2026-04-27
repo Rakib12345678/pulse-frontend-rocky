@@ -91,7 +91,6 @@ export const AddCoinsModal = () => {
                         maxHeight: '100dvh'
                     }}
                 >
-                    <div className="mx-auto mt-3 h-1.5 w-12 shrink-0 rounded-full bg-white/20" />
                     {renderContent(true)}
                 </DrawerContent>
             </Drawer>

@@ -829,7 +829,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     </div>
                 )}
 
-                {isChatVisible && !p.isLocalParticipant && (
+                {isChatVisible && !p.isLocalParticipant && !isMobile && (
                     <div className="absolute bottom-4 left-4 right-4">
                         {isViewer && !isMobile ? (
                             <StreamerInfoOverlay
