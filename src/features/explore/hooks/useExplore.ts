@@ -60,6 +60,7 @@ export const useExplore = () => {
                         isFollower: u.isFollowed || u.isFollowing || u.isFollower || u.followedByMe || u.user?.isFollowed || false,
                         followedByMe: u.isFollowed || u.followedByMe || u.isFollowing || u.isFollower || u.user?.isFollowed || false,
                         isLive: u.isLive || u.user?.isLive || false,
+                        callId: u.callId || u.user?.callId || null,
                         participantCount: u.participantCount || 0,
                         cohostCount: u.cohostCount || 0,
                         cohosts: u.cohosts || []

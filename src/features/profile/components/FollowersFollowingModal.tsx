@@ -19,9 +19,11 @@ import {
   useSearchCreators,
   useToggleFollow,
   useBlockUser,
+  useCurrentUser,
+  useRemoveFollower,
 } from '../services/profile.service';
 import type { FollowUser } from '../services/profile.types';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -42,9 +44,15 @@ export const FollowersFollowingModal = ({
 }: FollowersFollowingModalProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+  const { data: currentUser } = useCurrentUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmRemove, setConfirmRemove] = useState<FollowUser | null>(null);
   const [confirmUnfollow, setConfirmUnfollow] = useState<FollowUser | null>(null);
+
+  const isOwnList = useMemo(() => {
+    if (!currentUser || !userId) return false;
+    return Number(currentUser.id) === Number(userId);
+  }, [currentUser, userId]);
 
   // Reset states when modal closes to prevent "sticky" confirmations or old search
   useEffect(() => {
@@ -73,33 +81,42 @@ export const FollowersFollowingModal = ({
   const { data: searchResults, isLoading: isSearching } = useSearchCreators(searchQuery);
 
   const { mutate: toggleFollow } = useToggleFollow();
-  const { mutate: blockUser, isPending: isBlocking } = useBlockUser();
+  // const { mutate: blockUser, isPending: isBlocking } = useBlockUser();
+  const { mutate: removeFollower, isPending: isRemoving } = useRemoveFollower();
 
   const currentList = useMemo(() => {
-    if (searchQuery) return searchResults || [];
     const data = type === 'followers' ? followersData : followingData;
-    const users = data?.pages.flatMap((page) => page.data) || [];
-
-    if (type === 'following') {
-      return users.map(u => ({ ...u, isFollowing: u.isFollowing ?? true }));
-    }
-    return users;
-  }, [searchQuery, searchResults, type, followersData, followingData]);
+    const baseList = data?.pages.flatMap((page) => page.data) || [];
+    
+    if (!searchQuery) return baseList;
+    
+    const query = searchQuery.toLowerCase();
+    return baseList.filter(user => 
+      user.username?.toLowerCase().includes(query) || 
+      user.fullName?.toLowerCase().includes(query) ||
+      (user as any).displayName?.toLowerCase().includes(query)
+    );
+  }, [searchQuery, type, followersData, followingData]);
 
   const isLoading = searchQuery ? isSearching : (type === 'followers' ? isLoadingFollowers : isLoadingFollowing);
 
   const handleToggleFollow = (user: FollowUser) => {
-    if (user.isFollowing) {
+    const uId = user.userId || (user as any).id;
+    const isCurrentlyFollowing = (user.isFollowing || (user as any).isFollower || (user as any).followedByMe)
+      ?? (type === 'following' && isOwnList && !searchQuery);
+
+    if (isCurrentlyFollowing) {
       setConfirmUnfollow(user);
     } else {
-      toggleFollow({ targetUserId: user.userId, followedByMe: false });
+      toggleFollow({ targetUserId: uId, followedByMe: false });
     }
   };
 
   const handleConfirmUnfollow = () => {
     if (!confirmUnfollow) return;
+    const uId = confirmUnfollow.userId || (confirmUnfollow as any).id;
     toggleFollow(
-      { targetUserId: confirmUnfollow.userId, followedByMe: true },
+      { targetUserId: uId, followedByMe: true },
       {
         onSuccess: () => {
           setConfirmUnfollow(null);
@@ -109,24 +126,26 @@ export const FollowersFollowingModal = ({
     );
   };
 
-  const handleConfirmBlock = () => {
+
+  const handleConfirmRemove = () => {
     if (!confirmRemove) return;
-    blockUser(
-      { targetUserId: confirmRemove.userId, blockedByMe: false },
-      {
-        onSuccess: () => {
-          setConfirmRemove(null);
-          toast.success(`User @${confirmRemove.username} blocked and removed`);
-        },
-        onError: () => toast.error('Failed to block user'),
-      }
-    );
+    const uId = confirmRemove.userId || (confirmRemove as any).id;
+    removeFollower(uId, {
+      onSuccess: () => {
+        setConfirmRemove(null);
+        toast.success(`Removed @${confirmRemove.username} from your followers`);
+      },
+      onError: () => toast.error('Failed to remove follower'),
+    });
   };
 
-  const handleUserClick = (targetUsername: string) => {
-    if (targetUsername && !/^\d+$/.test(targetUsername)) {
+  const handleUserClick = (user: FollowUser) => {
+    if (user.isLive && user.callId) {
       onClose();
-      navigate({ to: `/profile/${targetUsername}` as any });
+      window.location.href = `/live/${user.callId}`;
+    } else if (user.username && !/^\d+$/.test(user.username)) {
+      onClose();
+      navigate({ to: `/profile/${user.username}` as any });
     }
   };
 
@@ -177,48 +196,57 @@ export const FollowersFollowingModal = ({
           </div>
         ) : currentList.length > 0 ? (
           <div className="flex flex-col gap-8 pb-8">
-            {currentList.map((user) => (
-              <div key={user.userId} className="flex items-center justify-between group">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Avatar className="w-14 h-14 border border-zinc-50">
-                      <AvatarImage src={user.profileImage} className="object-cover" />
-                      <AvatarFallback className="bg-zinc-800 text-lg font-bold text-white">
-                        {user.username?.[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  <div className="flex flex-col">
-                    <span 
-                      className="text-white font-bold text-base group-hover:text-[#FF7700] transition-colors line-clamp-1 cursor-pointer"
-                      onClick={() => handleUserClick(user.username)}
+            {currentList.map((user) => {
+              const isFollowing = (user.isFollowing || (user as any).isFollower || (user as any).followedByMe)
+                ?? (type === 'following' && isOwnList && !searchQuery);
+              return (
+                <div key={user.userId || (user as any).id} className="flex items-center justify-between group">
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="flex items-center gap-4 cursor-pointer group/item"
+                      onClick={() => handleUserClick(user)}
                     >
-                      {user.username}
-                    </span>
-                    {type === 'followers' && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setConfirmRemove(user); }}
-                        className="text-red-500 text-xs font-bold hover:text-red-400 transition-colors text-left mt-1 cursor-pointer"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
+                      <UserAvatar
+                        src={user.profileImage}
+                        alt={user.username}
+                        isLive={user.isLive}
+                        callId={user.callId}
+                        username={user.username}
+                        size="sm"
+                        clickable={false}
+                        showBadge={false}
+                      />
 
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleToggleFollow(user); }}
-                  className={cn(
-                    "px-8 py-2.5 rounded-full text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap",
-                    user.isFollowing
-                      ? "bg-[#1D1F20] text-gray-400 border border-zinc-700 hover:bg-zinc-800"
-                      : "bg-[#FF7700] text-[#111213] hover:bg-[#ff8c2b]"
-                  )}
-                >
-                  {user.isFollowing ? 'Following' : (type === 'followers' ? 'Follow Back' : 'Follow')}
-                </button>
-              </div>
-            ))}
+                      <div className="flex flex-col">
+                        <span className="text-white font-bold text-base group-hover/item:text-[#FF7700] transition-colors line-clamp-1">
+                          {user.username}
+                        </span>
+                        {isOwnList && type === 'followers' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setConfirmRemove(user); }}
+                            className="text-red-500 text-xs font-bold hover:text-red-400 transition-colors text-left mt-1 cursor-pointer"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleToggleFollow(user); }}
+                    className={cn(
+                      "px-8 py-2.5 rounded-full text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap",
+                      isFollowing
+                        ? "bg-[#1D1F20] text-gray-400 border border-zinc-700 hover:bg-zinc-800"
+                        : "bg-[#FF7700] text-[#111213] hover:bg-[#ff8c2b]"
+                    )}
+                  >
+                    {isFollowing ? 'Following' : (type === 'followers' && isOwnList ? 'Follow Back' : 'Follow')}
+                  </button>
+                </div>
+              );
+            })}
 
             {(type === 'followers' ? hasMoreFollowers : hasMoreFollowing) && (
               <button
@@ -243,12 +271,16 @@ export const FollowersFollowingModal = ({
       </div>
 
       {/* Stacked Confirmation Modals */}
-      <BlockUserModal
+      <ConfirmModal
         isOpen={!!confirmRemove}
+        title={`Remove @${confirmRemove?.username}?`}
+        descriptionPrefix="Are you sure you want to remove"
         username={confirmRemove?.username || ''}
         avatarUrl={confirmRemove?.profileImage}
-        isLoading={isBlocking}
-        onConfirm={handleConfirmBlock}
+        confirmLabel="Remove Follower"
+        confirmClassName="bg-red-600 text-white hover:bg-red-700"
+        isLoading={isRemoving}
+        onConfirm={handleConfirmRemove}
         onCancel={() => setConfirmRemove(null)}
       />
 
@@ -263,6 +295,7 @@ export const FollowersFollowingModal = ({
         onConfirm={handleConfirmUnfollow}
         onCancel={() => setConfirmUnfollow(null)}
       />
+
     </>
   );
 

@@ -4,6 +4,7 @@ import { Users } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/UserAvatar';
 import coHostIcon from '@/assets/co-host.svg';
 
 export interface StreamCardProps {
@@ -21,6 +22,7 @@ export interface StreamCardProps {
   createdByUserId?: string;
   variant?: 'standard' | 'explore';
   recordingUrl?: string;
+  cardClickRedirectToLive?: boolean;
 }
 
 export const StreamCard: React.FC<StreamCardProps> = ({
@@ -38,6 +40,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   createdByUserId,
   variant = 'standard',
   recordingUrl,
+  cardClickRedirectToLive = false,
 }) => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -46,6 +49,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      
       if (streamerName && !/^\d+$/.test(streamerName)) {
         navigate({ to: `/profile/${streamerName}` as any });
       }
@@ -54,31 +58,39 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   );
 
   const handleCardClick = useCallback(
-    async (e: React.MouseEvent) => {
+    (e: React.MouseEvent) => {
       const isHost = user && createdByUserId && String(user.id) === String(createdByUserId);
 
       if (isHost && isLive) {
-        e.preventDefault();
         toast.info("This is your live stream. Please use the rejoin banner to resume hosting.");
+        return;
       }
+
+      if (isLive && cardClickRedirectToLive) {
+        window.location.href = `/live/${callId}`;
+        return;
+      }
+
+      navigate({
+        to: "/stream/$id" as any,
+        params: { id: callId } as any,
+        search: {
+          recordingUrl,
+          username: streamerName,
+          title,
+          category,
+          cohosts: cohosts ? JSON.stringify(cohosts) : undefined
+        } as any
+      });
     },
-    [user, createdByUserId, isLive]
+    [user, createdByUserId, isLive, streamerName, callId, recordingUrl, title, category, cohosts, navigate, cardClickRedirectToLive]
   );
 
   if (variant === 'explore') {
     const primaryCohost = cohosts && cohosts.length > 0 ? cohosts[0] : null;
 
     return (
-      <Link
-        to={isLive ? "/live/$id" : "/stream/$id"}
-        params={{ id: callId }}
-        search={{
-          recordingUrl,
-          username: streamerName,
-          title,
-          category,
-          cohosts: cohosts ? JSON.stringify(cohosts) : undefined
-        }}
+      <div
         onClick={handleCardClick}
         className="group relative block w-full aspect-[3/5.2] overflow-hidden rounded-2xl bg-neutral-900 shadow-2xl transition-all duration-500 hover:shadow-orange-900/20 cursor-pointer"
       >
@@ -120,24 +132,17 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         <div className="absolute bottom-0 left-0 right-0 px-4 pt-5 pb-6 bg-gradient-to-t from-black/80 to-transparent backdrop-blur-[2px]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 overflow-hidden flex-1">
-              <div className="relative shrink-0">
-                <div
-                  onClick={handleProfileClick}
-                  className={cn(
-                    "relative w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 cursor-pointer hover:opacity-80",
-                    isLive ? "p-[1px] bg-gradient-to-br from-[#718FF2] via-[#2927C5] to-[#FF471A]" : ""
-                  )}
-                >
-                  <div className="w-full h-full rounded-full overflow-hidden" title={title || streamerName}>
-                    <img src={avatarUrl} alt={streamerName} className="h-full w-full object-cover" />
-                  </div>
-                </div>
-                {isLive && (
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-[#FF3B30] px-1.5 py-0.5 text-[6px] font-black text-white uppercase tracking-wider shadow-lg border border-white/50 z-20">
-                    Live
-                  </div>
-                )}
-              </div>
+              <UserAvatar
+                src={avatarUrl}
+                alt={streamerName}
+                isLive={isLive}
+                callId={callId}
+                username={streamerName}
+                size="custom"
+                className="w-12 h-12"
+                clickable={true}
+                showBadge={false}
+              />
 
               <div className="flex flex-col overflow-hidden">
                 <h3 
@@ -161,22 +166,13 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             )}
           </div>
         </div>
-      </Link>
+      </div>
     );
   }
 
   // STANDARD VARIANT (LiveCard design)
   return (
-    <Link
-      to={isLive ? "/live/$id" : "/stream/$id"}
-      params={{ id: callId }}
-      search={{
-        recordingUrl,
-        username: streamerName,
-        title,
-        category,
-        cohosts: cohosts ? JSON.stringify(cohosts) : undefined
-      }}
+    <div
       onClick={handleCardClick}
       className="group relative block w-full aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 shadow-lg transition-all hover:shadow-xl cursor-pointer"
     >
@@ -232,19 +228,17 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       <div className="absolute bottom-0 left-0 right-0 p-3">
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="relative shrink-0">
-              <img
-                onClick={handleProfileClick}
+            <UserAvatar
                 src={avatarUrl}
                 alt={streamerName}
-                className="h-10 w-10 rounded-full border-2 border-white object-cover cursor-pointer hover:opacity-80 transition-opacity"
-              />
-              {isLive && (
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rounded-md bg-red-600 px-1.5 py-0.5 text-[8px] font-bold text-white uppercase leading-none ring-1 ring-white">
-                  Live
-                </div>
-              )}
-            </div>
+                isLive={isLive}
+                callId={callId}
+                username={streamerName}
+                size="custom"
+                className="w-10 h-10"
+                clickable={true}
+                showBadge={false}
+            />
 
             <div className="flex flex-col min-w-0">
               <h3 
@@ -268,6 +262,6 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           )}
         </div>
       </div>
-    </Link>
+    </div>
   );
 };

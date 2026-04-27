@@ -13,6 +13,7 @@ import { ReportUserModal } from '@/components/internal/ReasonModal';
 import { SuccessModal } from '@/features/setting/components/SuccessModal';
 import { FollowersFollowingModal } from '@/features/profile/components/FollowersFollowingModal';
 import { cn } from '@/lib/utils';
+import { UserAvatar } from '@/components/UserAvatar';
 
 interface ProfileHeaderProps {
   user: User;
@@ -45,11 +46,6 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
   const isLive = !isOwnProfile && liveStatus?.isLive === true;
   const isBlocked = user.blockedByMe ?? false;
 
-  const handleLiveClick = () => {
-    if (isLive && liveStatus?.callId) {
-      window.location.href = `/live/${liveStatus.callId}`;
-    }
-  };
 
   const stats = [
     { label: 'Post', value: user.postCount ?? 0 },
@@ -162,36 +158,23 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         <div className="flex flex-col md:flex-row gap-3 md:gap-4 lg:gap-6 xl:gap-8 justify-between items-center mb-3 md:mb-5 lg:mb-8 xl:mb-10">
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center text-center md:text-left">
             <div className="relative shrink-0">
-              <div
-                className={`w-32 h-32 md:w-20 md:h-20 lg:w-26 lg:h-26 xl:w-32 xl:h-32 rounded-full p-1 ${isLive ? 'animate-live-ring' : ''}`}
-                style={{
-                  background: 'linear-gradient(77.21deg, #718FF2 0%, #2927C5 53%, #FF471A 100%)',
-                }}
-              >
-                <div className="w-full h-full rounded-full border-[3px] border-black overflow-hidden bg-zinc-900">
-                  <img
-                    src={user.profileImage || '/api/placeholder/128/128'}
-                    alt={user.username}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-
+              <UserAvatar
+                  src={user.profileImage}
+                  alt={user.username}
+                  isLive={isLive}
+                  callId={liveStatus?.callId}
+                  username={user.username}
+                  size="custom"
+                  className="w-32 h-32 md:w-20 md:h-20 lg:w-26 lg:h-26 xl:w-32 xl:h-32"
+                  clickable={true}
+                  showBadge={true}
+              />
               {isOwnProfile && (
                 <button
                   onClick={() => setEditProfileOpen(true)}
-                  className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200 hover:scale-110 transition-transform"
+                  className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200 hover:scale-110 transition-transform z-20"
                 >
                   <img src={cameraLogo} alt="Edit profile" className="w-4 h-4" />
-                </button>
-              )}
-
-              {isLive && (
-                <button
-                  onClick={handleLiveClick}
-                  className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#FF0000] text-white text-[12px] font-bold tracking-widest px-4 py-1 rounded-full shadow-md border border-black whitespace-nowrap cursor-pointer hover:bg-red-500 transition-colors"
-                >
-                  Live
                 </button>
               )}
             </div>

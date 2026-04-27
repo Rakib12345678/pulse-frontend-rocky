@@ -1,0 +1,11 @@
+
+@keyframes live-ring {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-live-ring {
+  animation: live-ring 2s infinite ease-in-out;
+  box-shadow: 0 0 15px rgba(255, 71, 26, 0.4);
+}

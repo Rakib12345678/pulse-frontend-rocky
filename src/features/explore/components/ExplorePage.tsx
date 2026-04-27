@@ -103,6 +103,7 @@ export const ExplorePage: React.FC = () => {
                                                 isFollower: item.isFollower,
                                                 followedByMe: item.followedByMe || item.isFollower || false,
                                                 isLive: item.isLive,
+                                                callId: item.callId,
                                                 category: item.category,
                                                 cohosts: item.cohosts
                                             }}
@@ -127,13 +128,13 @@ export const ExplorePage: React.FC = () => {
                                     <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
                                         <StreamCard
                                             variant="explore"
-                                            callId={item.id.toString()}
                                             thumbnailUrl={item.profileImage || bunnyTeacher}
                                             avatarUrl={item.profileImage || bunnyTeacher}
                                             streamerName={item.username || 'User'}
                                             viewerCount={formatViewerCount(item.participantCount)}
                                             followersCount={formatViewerCount(item.followerCount)}
                                             isLive={item.isLive}
+                                            callId={item.callId || item.id.toString()}
                                             category={item.category}
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}
@@ -162,6 +163,7 @@ export const ExplorePage: React.FC = () => {
                                             isFollower: item.isFollower,
                                             followedByMe: item.followedByMe || item.isFollower || false,
                                             isLive: item.isLive,
+                                            callId: item.callId,
                                             category: item.category,
                                             cohosts: item.cohosts
                                         }} />
@@ -182,13 +184,13 @@ export const ExplorePage: React.FC = () => {
                                     <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
                                         <StreamCard
                                             variant="explore"
-                                            callId={item.id.toString()}
                                             thumbnailUrl={item.profileImage || bunnyTeacher}
                                             avatarUrl={item.profileImage || bunnyTeacher}
                                             streamerName={item.username || 'User'}
                                             viewerCount={formatViewerCount(item.participantCount)}
                                             followersCount={formatViewerCount(item.followerCount)}
                                             isLive={item.isLive}
+                                            callId={item.callId || item.id.toString()}
                                             category={item.category}
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}
@@ -210,13 +212,13 @@ export const ExplorePage: React.FC = () => {
                                     <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
                                         <StreamCard
                                             variant="explore"
-                                            callId={item.id.toString()}
                                             thumbnailUrl={item.profileImage || bunnyTeacher}
                                             avatarUrl={item.profileImage || bunnyTeacher}
                                             streamerName={item.username || 'User'}
                                             viewerCount={formatViewerCount(item.participantCount)}
                                             followersCount={formatViewerCount(item.followerCount)}
                                             isLive={item.isLive}
+                                            callId={item.callId || item.id.toString()}
                                             category={item.category}
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}

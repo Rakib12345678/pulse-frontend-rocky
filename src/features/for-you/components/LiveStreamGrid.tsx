@@ -74,6 +74,7 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
                             isLive={stream.isLive}
                             cohosts={stream.cohosts}
                             createdByUserId={stream.createdByUserId}
+                            cardClickRedirectToLive={true}
                         />
                     </div>
                 ))}

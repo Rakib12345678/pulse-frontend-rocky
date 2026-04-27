@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, X, Loader2, LayoutGrid, Video, ChevronLeft, Ban } from 'lucide-react';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
@@ -205,12 +206,15 @@ export const UserProfileModal: React.FC = () => {
 
                     {profile && (
                         <div className="relative mb-8">
-                            <div className="p-1 rounded-full bg-linear-to-tr from-blue-500 via-purple-500 to-orange-500">
-                                <Avatar className="w-24 h-24 border-4 border-[#111213]">
-                                    <AvatarImage src={profile.profileImage} className="object-cover" />
-                                    <AvatarFallback className="text-2xl bg-neutral-800">{profile.username[0]?.toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                            </div>
+                            <UserAvatar
+                                src={profile.profileImage}
+                                alt={profile.username}
+                                isLive={profile.isLive}
+                                callId={profile.callId}
+                                username={profile.username}
+                                size="xl"
+                                clickable={false}
+                            />
                         </div>
                     )}
 
@@ -264,14 +268,16 @@ export const UserProfileModal: React.FC = () => {
                     ) : profile ? (
                         <div className="flex-1 flex flex-col items-center px-6 pt-6">
                             {/* Avatar */}
-                            <div className="p-[3px] rounded-full bg-[#FF8800] mb-4">
-                                <Avatar className="w-28 h-28 border-4 border-[#0f1117]">
-                                    <AvatarImage src={profile.profileImage} className="object-cover" />
-                                    <AvatarFallback className="text-3xl bg-neutral-800">
-                                        {profile.username[0]?.toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
-                            </div>
+                            <UserAvatar
+                                src={profile.profileImage}
+                                alt={profile.username}
+                                isLive={profile.isLive}
+                                callId={profile.callId}
+                                username={profile.username}
+                                size="custom"
+                                className="w-28 h-28 mb-4"
+                                clickable={false} // Fullscreen view is already the profile
+                            />
 
                             <h2 className="text-xl font-bold text-white mb-1">
                                 {profile.fullName || profile.username}
@@ -447,12 +453,15 @@ export const UserProfileModal: React.FC = () => {
 
                                 {/* Avatar + Info */}
                                 <div className="flex gap-5 items-start px-6 pb-4">
-                                    <div className="p-[2px] rounded-full bg-linear-to-tr from-blue-500 via-purple-500 to-orange-500 shrink-0">
-                                        <Avatar className="w-20 h-20 border-4 border-[#1a1d27]">
-                                            <AvatarImage src={profile.profileImage} className="object-cover" />
-                                            <AvatarFallback className="text-xl bg-neutral-800">{profile.username[0]?.toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                    </div>
+                                    <UserAvatar
+                                        src={profile.profileImage}
+                                        alt={profile.username}
+                                        isLive={profile.isLive}
+                                        callId={profile.callId}
+                                        username={profile.username}
+                                        size="lg"
+                                        clickable={false}
+                                    />
                                     <div className="flex flex-col pt-1 min-w-0">
                                         <h1 className="text-lg font-bold text-white truncate">{profile.fullName || profile.username}</h1>
                                         {profile.location && (
@@ -613,12 +622,15 @@ export const UserProfileModal: React.FC = () => {
                                 </div>
 
                                 <div className="flex gap-6 items-start">
-                                    <div className="p-[2px] rounded-full bg-linear-to-tr from-blue-500 via-purple-500 to-orange-500 shrink-0">
-                                        <Avatar className="w-24 h-24 border-4 border-[#0f1117]">
-                                            <AvatarImage src={profile.profileImage} className="object-cover" />
-                                            <AvatarFallback className="text-2xl bg-neutral-800">{profile.username[0]?.toUpperCase()}</AvatarFallback>
-                                        </Avatar>
-                                    </div>
+                                    <UserAvatar
+                                        src={profile.profileImage}
+                                        alt={profile.username}
+                                        isLive={profile.isLive}
+                                        callId={profile.callId}
+                                        username={profile.username}
+                                        size="xl"
+                                        clickable={false}
+                                    />
 
                                     <div className="flex flex-col pt-2">
                                         <h1 className="text-2xl font-bold text-white mb-1">{profile.fullName || profile.username}</h1>

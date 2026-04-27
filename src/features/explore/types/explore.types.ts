@@ -12,6 +12,7 @@ export interface ExploreItem {
     isFollower: boolean;
     followedByMe?: boolean;
     isLive: boolean;
+    callId?: string | null;
     participantCount: number;
     cohostCount: number;
     cohosts: {
@@ -30,6 +31,7 @@ export interface Creator {
     followedByMe: boolean;
     isFollower: boolean;
     isLive: boolean;
+    callId?: string | null;
     category?: string;
     cohosts?: { username: string; profileImage: string; }[];
 }

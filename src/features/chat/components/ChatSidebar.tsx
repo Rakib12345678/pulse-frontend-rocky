@@ -121,7 +121,9 @@ const NewChatModal = ({
                                     id: p.id,
                                     name: p.name,
                                     image: p.avatar,
-                                    isOnline: p.isOnline
+                                    isOnline: p.isOnline || false,
+                                    isLive: false,
+                                    callId: null
                                 })}
                                 className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 transition-all text-left group cursor-pointer"
                             >
@@ -155,19 +157,23 @@ const NewChatModal = ({
                         </div>
                     ) : followers.length > 0 ? (
                         <div className="flex flex-col">
-                            {followers.map((f: any) => (
-                                <button
-                                    key={f.userId}
-                                    onClick={() => onStartChat({
-                                        id: String(f.userId),
-                                        name: f.username,
-                                        image: f.profileImage,
-                                        isOnline: false
-                                    })}
-                                    disabled={isStarting}
-                                    className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 transition-all text-left disabled:opacity-60 cursor-pointer group"
-                                >
-                                    <Avatar src={f.profileImage || ''} alt={f.username} className="w-12 h-12" />
+                            {followers.map((f: any) => {
+                                const fId = f.userId || f.id;
+                                return (
+                                    <button
+                                        key={fId}
+                                        onClick={() => onStartChat({
+                                            id: String(fId),
+                                            name: f.username,
+                                            image: f.profileImage || '',
+                                            isOnline: false,
+                                            isLive: f.isLive || false,
+                                            callId: f.callId || null
+                                        })}
+                                        disabled={isStarting}
+                                        className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 transition-all text-left disabled:opacity-60 cursor-pointer group"
+                                    >
+                                        <Avatar src={f.profileImage || ''} alt={f.username} className="w-12 h-12" />
                                     <div className="flex flex-col min-w-0">
                                         <span className="text-white text-[15px] font-bold truncate">
                                             {capitalizeName(f.username)}
@@ -179,8 +185,9 @@ const NewChatModal = ({
                                     {isStarting && (
                                         <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-auto shrink-0" />
                                     )}
-                                </button>
-                            ))}
+                                    </button>
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-10 text-center px-4">
@@ -618,9 +625,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                         setSelectionModeId(null);
                                     }}
                                     className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                    title="Mute/Unmute"
+                                    title={conversations.find(c => c.id === selectionModeId)?.isMuted ? "Unmute" : "Mute"}
                                 >
-                                    <BellOff className="w-4.5 h-4.5" />
+                                    {conversations.find(c => c.id === selectionModeId)?.isMuted ? (
+                                        <Bell className="w-4.5 h-4.5" />
+                                    ) : (
+                                        <BellOff className="w-4.5 h-4.5" />
+                                    )}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -629,9 +640,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                         setSelectionModeId(null);
                                     }}
                                     className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                    title="Pin/Unpin"
+                                    title={pinnedIds.includes(selectionModeId!) ? "Unpin" : "Pin"}
                                 >
-                                    <Pin className="w-4.5 h-4.5" />
+                                    <Pin className={cn("w-4.5 h-4.5", pinnedIds.includes(selectionModeId!) && "text-[#FF7700]")} />
                                 </button>
                                 <button
                                     onClick={() => {
@@ -640,7 +651,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                         setSelectionModeId(null);
                                     }}
                                     className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                    title="Archive/Unarchive"
+                                    title={conversations.find(c => c.id === selectionModeId)?.isArchived ? "Unarchive" : "Archive"}
                                 >
                                     {conversations.find(c => c.id === selectionModeId)?.isArchived ? (
                                         <SquareArrowUp className="w-4.5 h-4.5" />

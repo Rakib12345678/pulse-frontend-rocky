@@ -3,9 +3,10 @@ import React from 'react';
 import { useToggleFollow } from '@/features/profile/services/profile.service';
 import { Creator } from '../types/explore.types';
 import { toast } from 'sonner';
-import { User, Heart } from 'lucide-react';
+import { UserAvatar } from '@/components/UserAvatar';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
+import coHostIcon from '@/assets/co-host.svg';
 
 interface CreatorCardProps {
     creator: Creator;
@@ -29,7 +30,9 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
     };
 
     const handleCardClick = () => {
-        navigate({ to: `/profile/${creator.username}` as any });
+        if (creator.username && !/^\d+$/.test(creator.username)) {
+            navigate({ to: `/profile/${creator.username}` as any });
+        }
     };
 
     return (
@@ -57,40 +60,24 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                                 alt={cohost.username}
                                 className="h-9 w-9 rounded-full object-cover bg-zinc-800"
                             />
-                            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFE9C0]">
-                                <Heart className="h-2.5 w-2.5 fill-[#8B5E3C] text-[#8B5E3C]" />
+                            <div className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FFE9C0] border border-white/20">
+                                <img src={coHostIcon} className="h-2.5 w-2.5" alt="co-host" />
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Avatar */}
-            <div
-                className={cn(
-                    "relative w-24 h-24 rounded-full flex items-center justify-center mb-5 shrink-0 transition-all duration-300",
-                    creator.isLive
-                        ? "p-[3px]"
-                        : "border-2 border-[#25282B] group-hover:border-[#FF8800]/50"
-                )}
-                style={creator.isLive ? {
-                    background: 'linear-gradient(74.75deg, #718FF2 -3.56%, #2927C5 52.48%, #FF471A 102.18%)'
-                } : undefined}
-            >
-                <div className="w-full h-full rounded-full overflow-hidden bg-[#1A1C1E]">
-                    {creator.profileImage ? (
-                        <img
-                            src={creator.profileImage}
-                            alt={creator.displayName}
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="w-full h-full bg-[#25282B] flex items-center justify-center">
-                            <User className="w-10 h-10 text-gray-500" />
-                        </div>
-                    )}
-                </div>
-            </div>
+            <UserAvatar
+                src={creator.profileImage}
+                alt={creator.displayName}
+                isLive={creator.isLive}
+                callId={creator.callId}
+                username={creator.username}
+                size="lg"
+                className="mb-5"
+                clickable={true}
+            />
 
             {/* Name & Username */}
             <div className="w-full text-center mb-5">

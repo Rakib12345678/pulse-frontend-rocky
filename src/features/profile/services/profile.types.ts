@@ -21,6 +21,8 @@ export interface User {
   isFollower?: boolean;
   followedByMe?: boolean;
   blockedByMe?: boolean;
+  isLive?: boolean;
+  callId?: string | null;
 }
 
 export interface LiveStream {
@@ -65,7 +67,8 @@ export interface FollowUser {
   userId: number;
   username: string;
   fullName: string;
-  profileImage: string;
+  profileImage?: string;
   isFollowing?: boolean;
+  isLive?: boolean;
+  callId?: string | null;
 }
-

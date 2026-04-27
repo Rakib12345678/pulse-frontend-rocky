@@ -15,6 +15,8 @@ export interface UserProfile {
     createdAt: string;
     followedByMe: boolean;
     blockedByMe: boolean;
+    isLive?: boolean;
+    callId?: string | null;
 }
 
 export const userService = {

@@ -281,9 +281,19 @@ export const useToggleFollow = () => {
           ...oldData,
           pages: oldData.pages.map((page: any) => ({
             ...page,
-            data: page.data.map((user: any) => {
-              if (user.userId === targetUserId) {
-                return { ...user, isFollowing: !followedByMe };
+            data: (page.data || []).map((user: any) => {
+              const uId = user.userId || user.id;
+              if (uId === targetUserId) {
+                const newIsFollowing = !followedByMe;
+                return { 
+                  ...user, 
+                  isFollowing: newIsFollowing,
+                  isFollower: newIsFollowing,
+                  followedByMe: newIsFollowing,
+                  followerCount: newIsFollowing
+                    ? (user.followerCount ?? 0) + 1
+                    : Math.max(0, (user.followerCount ?? 0) - 1)
+                };
               }
               return user;
             }),
@@ -321,34 +331,21 @@ export const useToggleFollow = () => {
       });
 
       // Update followingCount for currentUser
-      queryClient.setQueryData<User>(['currentUser'], (old) => {
-        if (!old || old.id === targetUserId) return old;
-        return {
-          ...old,
-          followingCount: followedByMe
-            ? Math.max(0, (old.followingCount ?? 0) - 1)
-            : (old.followingCount ?? 0) + 1,
-        };
-      });
-
-      // Update Zustand store if the current user is affected
       if (updateUser) {
-        const currentUser = queryClient.getQueryData<User>(['currentUser']);
-        if (currentUser?.id === targetUserId) {
-          updateUser({
-            followedByMe: !followedByMe,
-            followerCount: followedByMe
-              ? Math.max(0, (currentUser.followerCount ?? 0) - 1)
-              : (currentUser.followerCount ?? 0) + 1,
-          });
-        } else if (currentUser) {
-          // Also update the store for the current user's following count
-          updateUser({
-            followingCount: followedByMe
-              ? Math.max(0, (currentUser.followingCount ?? 0) - 1)
-              : (currentUser.followingCount ?? 0) + 1,
-          });
-        }
+        queryClient.setQueryData<User>(['currentUser'], (old) => {
+          if (!old) return old;
+          const newCount = followedByMe
+            ? Math.max(0, (old.followingCount ?? 0) - 1)
+            : (old.followingCount ?? 0) + 1;
+          
+          // Explicitly update store here for immediate UI sync
+          updateUser({ followingCount: newCount });
+          
+          return {
+            ...old,
+            followingCount: newCount,
+          };
+        });
       }
 
       return { previousUserProfile, previousUserByUsernameQueries };
@@ -513,10 +510,24 @@ export const useRemoveFollower = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (targetUserId: number) => {
-      // Assuming this endpoint based on context, will check if it fails
-      await api.post('/users/followers/remove', { targetUserId });
+      await api.post('/users/remove-follower', { destinationUserId: targetUserId });
     },
-    onMutate: async () => {
+    onMutate: async (targetUserId: number) => {
+      await queryClient.cancelQueries({ queryKey: ['followers'] });
+      await queryClient.cancelQueries({ queryKey: ['currentUser'] });
+
+      // Optimistically remove from list
+      queryClient.setQueriesData<any>({ queryKey: ['followers'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page: any) => ({
+            ...page,
+            data: (page.data || []).filter((user: any) => (user.userId || user.id) !== targetUserId),
+          })),
+        };
+      });
+
       // Optimistic update for follower count
       queryClient.setQueryData<User>(['currentUser'], (old) => {
         if (!old) return old;

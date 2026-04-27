@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Loader2, Search, UserSearch } from 'lucide-react';
 import { getStreamClient } from '@/features/chat/stream/streamClient';
-import { Avatar } from './Avatar';
+import { UserAvatar } from '@/components/UserAvatar';
 import { getDisplayName, capitalizeName } from '@/features/chat/utils/ChatUtils';
 import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 
@@ -10,8 +10,10 @@ export interface StreamUser {
     id: string;
     username?: string;
     name?: string;
-    image?: string;
-    isOnline?: boolean;
+    image: string;
+    isOnline: boolean;
+    isLive: boolean;
+    callId: string | null;
 }
 
 interface UserSearchListProps {
@@ -80,7 +82,9 @@ export const UserSearchList = ({
                                     username,
                                     name: raw.fullName ?? raw.full_name ?? u.name  ?? u.id,
                                     image: toAbsoluteUrl(raw.image ?? ''),
-                                    isOnline: raw.online
+                                    isOnline: raw.online,
+                                    isLive: raw.isLive || false,
+                                    callId: raw.callId || null,
                                 };
                         }));
                     } catch {
@@ -127,7 +131,9 @@ export const UserSearchList = ({
                                     username,
                                     name: raw.fullName ?? raw.full_name ?? u.name ?? u.id,
                                     image: toAbsoluteUrl(raw.image ?? ''),
-                                    isOnline: raw.online
+                                    isOnline: raw.online,
+                                    isLive: raw.isLive || false,
+                                    callId: raw.callId || null,
                                 };
                             }),
                     );
@@ -203,7 +209,16 @@ export const UserSearchList = ({
                             disabled={isProcessing}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left disabled:opacity-60 cursor-pointer"
                         >
-                            <Avatar src={user.image || ''} alt={displayName} className="w-10 h-10" />
+                            <UserAvatar
+                                src={user.image || ''}
+                                alt={displayName}
+                                isLive={user.isLive}
+                                callId={user.callId}
+                                username={user.username}
+                                size="md"
+                                clickable={true}
+                                showBadge={false}
+                            />
                             <div className="flex flex-col min-w-0">
                                 <span className="text-white text-sm font-semibold truncate leading-tight">{displayName}</span>
                                 <span className="text-[#FF7700] text-[10px] mt-0.5 font-medium">{actionLabel}</span>
