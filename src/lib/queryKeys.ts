@@ -13,4 +13,8 @@ export const queryKeys = {
         list: () => [...queryKeys.chat.all, 'list'] as const,
         messages: (id: string) => [...queryKeys.chat.all, 'messages', id] as const,
     },
+    reports: {
+        all: ['reports'] as const,
+        reasons: () => [...queryKeys.reports.all, 'reasons'] as const,
+    },
 }

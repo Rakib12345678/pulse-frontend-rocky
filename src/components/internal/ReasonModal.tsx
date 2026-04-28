@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Flag } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useReportReasons } from '@/features/report/services/report.service';
+import type { ReportReason } from '@/features/report/services/report.service';
 import {
     Drawer,
     DrawerContent,
@@ -23,7 +25,8 @@ interface ReasonModalProps {
     confirmLabel: string;
     confirmIcon?: React.ReactNode;
     confirmClassName?: string;
-    othersId?: string;
+    /** IDs of options that require additional text */
+    requiresNoteIds?: string[];
     othersPlaceholder?: string;
     isLoading?: boolean;
     onConfirm: (selectedId: string, otherText?: string) => void;
@@ -36,7 +39,7 @@ const ReasonModalContent = ({
     confirmLabel,
     confirmIcon,
     confirmClassName = 'bg-[#FF7700] text-black hover:bg-[#ff9922]',
-    othersId = 'others',
+    requiresNoteIds = [],
     othersPlaceholder = 'Text',
     isLoading,
     onConfirm,
@@ -50,7 +53,7 @@ const ReasonModalContent = ({
     confirmLabel: string;
     confirmIcon?: React.ReactNode;
     confirmClassName?: string;
-    othersId?: string;
+    requiresNoteIds?: string[];
     othersPlaceholder?: string;
     isLoading?: boolean;
     onConfirm: () => void;
@@ -60,8 +63,8 @@ const ReasonModalContent = ({
     otherText: string;
     setOtherText: (text: string) => void;
 }) => {
-    const isOthers = selected === othersId;
-    const canSubmit = !!selected;
+    const requiresNote = selected ? requiresNoteIds.includes(selected) : false;
+    const canSubmit = !!selected && (!requiresNote || otherText.trim().length > 0);
 
     return (
         <>
@@ -85,8 +88,8 @@ const ReasonModalContent = ({
                     </label>
                 ))}
 
-                {/* Others text area */}
-                {isOthers && (
+                {/* Note text area when selected option requires a note */}
+                {requiresNote && (
                     <div className="mt-1">
                         <textarea
                             value={otherText}
@@ -131,14 +134,14 @@ const ReasonModalContent = ({
     );
 };
 
-export const ReasonModal = ({
+const ReasonModal = ({
     isOpen,
     title,
     options,
     confirmLabel,
     confirmIcon,
     confirmClassName = 'bg-[#FF7700] text-black hover:bg-[#ff9922]',
-    othersId = 'others',
+    requiresNoteIds = [],
     othersPlaceholder = 'Text',
     isLoading,
     onConfirm,
@@ -150,12 +153,12 @@ export const ReasonModal = ({
 
     if (!isOpen) return null;
 
-    const isOthers = selected === othersId;
-    const canSubmit = !!selected;
+    const requiresNote = selected ? requiresNoteIds.includes(selected) : false;
+    const canSubmit = !!selected && (!requiresNote || otherText.trim().length > 0);
 
     const handleConfirm = () => {
         if (!canSubmit) return;
-        onConfirm(selected, isOthers ? otherText : undefined);
+        onConfirm(selected, requiresNote ? otherText : undefined);
     };
 
     const sharedProps = {
@@ -163,7 +166,7 @@ export const ReasonModal = ({
         confirmLabel,
         confirmIcon,
         confirmClassName,
-        othersId,
+        requiresNoteIds,
         othersPlaceholder,
         isLoading,
         onConfirm: handleConfirm,
@@ -207,28 +210,19 @@ export const ReasonModal = ({
     );
 };
 
-// Pre-configured modals 
+// ---- Helper: map API ReportReason[] to ReasonOption[] + requiresNoteIds ----
+const mapReportReasons = (reasons: ReportReason[]) => {
+    const options: ReasonOption[] = reasons.map((r) => ({
+        id: r.value,
+        label: r.label,
+    }));
+    const requiresNoteIds = reasons
+        .filter((r) => r.requiresNote)
+        .map((r) => r.value);
+    return { options, requiresNoteIds };
+};
 
-const REPORT_OPTIONS = [
-    { id: 'harassment', label: 'Bullying or harassment' },
-    { id: 'nudity', label: 'Sexual content / Inappropriate nudity' },
-    { id: 'hate_speech', label: 'Hate or offensive language' },
-    { id: 'violence', label: 'Threats or dangerous behavior' },
-    { id: 'spam', label: 'Spam or fake promotions' },
-    { id: 'impersonation', label: 'Fake profile / Impersonation' },
-    { id: 'fraud', label: 'Scamming or Fraud' },
-    { id: 'underage', label: 'Underage User' },
-    { id: 'self_harm', label: 'Self-harm or disturbing content' },
-    { id: 'others', label: 'Other Reasons' },
-];
-
-// const DEACTIVATE_OPTIONS = [
-//     { id: 'different_account', label: 'I want to use a different account' },
-//     { id: 'I no longer find it useful', label: "I no longer find it useful" },
-//     { id: 'reason_3', label: "i don't know" },
-//     { id: 'reason_4', label: "i don't know" },
-//     { id: 'others', label: 'Others' },
-// ];
+// ---- Pre-configured modals ----
 
 const DELETE_OPTIONS = [
     { id: 'not_useful', label: 'I no longer find it useful' },
@@ -238,7 +232,7 @@ const DELETE_OPTIONS = [
     { id: 'others', label: 'Others' },
 ];
 
-/** Report user modal */
+/** Report user modal — fetches reasons from API */
 export const ReportUserModal = ({
     isOpen,
     username,
@@ -251,18 +245,24 @@ export const ReportUserModal = ({
     isLoading?: boolean;
     onConfirm: (reasonId: string, otherText?: string) => void;
     onCancel: () => void;
-}) => (
-    <ReasonModal
-        isOpen={isOpen}
-        title={`Report @${username}`}
-        options={REPORT_OPTIONS}
-        confirmLabel="Submit Report"
-        confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
-        isLoading={isLoading}
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-    />
-);
+}) => {
+    const { data: reasons, isLoading: isReasonsLoading } = useReportReasons();
+    const { options, requiresNoteIds } = mapReportReasons(reasons ?? []);
+
+    return (
+        <ReasonModal
+            isOpen={isOpen}
+            title={`Report @${username}`}
+            options={options}
+            requiresNoteIds={requiresNoteIds}
+            confirmLabel="Submit Report"
+            confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
+            isLoading={isLoading || isReasonsLoading}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+        />
+    );
+};
 
 /* Delete account modal */
 export const DeleteAccountModal = ({
@@ -289,19 +289,7 @@ export const DeleteAccountModal = ({
     />
 );
 
-const REPORT_STREAM_OPTIONS = [
-    { id: 'harassment', label: 'Bullying or harassment' },
-    { id: 'nudity', label: 'Sexual content / inappropriate nudity' },
-    { id: 'hate_speech', label: 'Hate or offensive language' },
-    { id: 'violence', label: 'Threats or dangerous behavior' },
-    { id: 'spam', label: 'Spam or fake promotions' },
-    { id: 'impersonation', label: 'Fake profile/impersonation' },
-    { id: 'fraud', label: 'Scamming or fraud' },
-    { id: 'underage', label: 'Underage user' },
-    { id: 'self_harm', label: 'Self-harm or disturbing content' },
-    { id: 'others', label: 'Other Reasons' },
-];
-
+/** Report stream modal — fetches reasons from API */
 export const ReportStreamModal = ({
     isOpen,
     isLoading,
@@ -312,15 +300,54 @@ export const ReportStreamModal = ({
     isLoading?: boolean;
     onConfirm: (reasonId: string, otherText?: string) => void;
     onCancel: () => void;
-}) => (
-    <ReasonModal
-        isOpen={isOpen}
-        title="Report Stream"
-        options={REPORT_STREAM_OPTIONS}
-        confirmLabel="Submit Report"
-        confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
-        isLoading={isLoading}
-        onConfirm={onConfirm}
-        onCancel={onCancel}
-    />
-);
+}) => {
+    const { data: reasons, isLoading: isReasonsLoading } = useReportReasons();
+    const { options, requiresNoteIds } = mapReportReasons(reasons ?? []);
+
+    return (
+        <ReasonModal
+            isOpen={isOpen}
+            title="Report Stream"
+            options={options}
+            requiresNoteIds={requiresNoteIds}
+            confirmLabel="Submit Report"
+            confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
+            isLoading={isLoading || isReasonsLoading}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+        />
+    );
+};
+
+/** Report chat message modal — fetches reasons from API */
+export const ReportChatModal = ({
+    isOpen,
+    username,
+    isLoading,
+    onConfirm,
+    onCancel,
+}: {
+    isOpen: boolean;
+    username?: string;
+    isLoading?: boolean;
+    onConfirm: (reasonId: string, otherText?: string) => void;
+    onCancel: () => void;
+}) => {
+    const { data: reasons, isLoading: isReasonsLoading } = useReportReasons();
+    const { options, requiresNoteIds } = mapReportReasons(reasons ?? []);
+
+    return (
+        <ReasonModal
+            isOpen={isOpen}
+            title={username ? `Report @${username}` : 'Report Message'}
+            options={options}
+            requiresNoteIds={requiresNoteIds}
+            confirmLabel="Submit Report"
+            confirmIcon={<Flag className="w-4 h-4" />}
+            confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
+            isLoading={isLoading || isReasonsLoading}
+            onConfirm={onConfirm}
+            onCancel={onCancel}
+        />
+    );
+};

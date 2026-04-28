@@ -25,6 +25,8 @@ import { ChatEmptyState } from './ChatEmptyState';
 import { EmptyConversation } from './EmptyConversation';
 import { TranslateDrawer } from './TranslateDrawer';
 import { TranslateTogglePopover } from './TranslateTogglePopover';
+import { useSubmitReport } from '@/features/report/services/report.service';
+import { ReportChatModal } from '@/components/internal/ReasonModal';
 
 import sendIcon from '@/assets/Send.svg';
 import LiveIcon from '@/assets/Live.svg';
@@ -92,7 +94,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const [pendingImage, setPendingImage] = useState<{ file: File; url: string } | null>(null);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [msgToDelete, setMsgToDelete] = useState<Message | null>(null);
+    const [msgToReport, setMsgToReport] = useState<Message | null>(null);
     const { translateEnabled, setTranslate } = useTranslationPreference(myId);
+    const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const giftRef = useRef<HTMLDivElement>(null);
@@ -315,7 +319,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     <ChevronLeft className="w-5 h-5" />
                 </button>
                 {/* Participant Info Section */}
-                <div 
+                <div
                     onClick={handleProfileClick}
                     className={cn(
                         "flex-1 flex items-center gap-2.5 sm:gap-3 min-w-0 group",
@@ -483,6 +487,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                         onReact={onReact}
                                         onDeleteReaction={onDeleteReaction}
                                         onCopy={handleCopy}
+                                        onReport={msg => setMsgToReport(msg)}
                                         onImageLoad={handleImageLoad}
                                     />
                                 </div>,
@@ -767,6 +772,44 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     </div>
                 </div>
             )}
+
+            {/* Report Chat Message Modal */}
+            <ReportChatModal
+                isOpen={!!msgToReport}
+                username={msgToReport ? conversation.participant.name : undefined}
+                isLoading={isReportPending}
+                onCancel={() => setMsgToReport(null)}
+                onConfirm={(reasonId, otherText) => {
+                    if (!msgToReport) return;
+                    submitReport(
+                        {
+                            reportedUserId: msgToReport.senderId,
+                            contentType: 'CHAT_MESSAGE',
+                            contentId: msgToReport.id,
+                            reason: reasonId,
+                            note: otherText,
+                            contextMetadata: {
+                                last_messages: messages
+                                    .slice(-20)
+                                    .map(m => ({
+                                        sender: m.senderId,
+                                        text: m.text || m.originalText || '',
+                                        sent_at: m.time,
+                                    })),
+                            },
+                        },
+                        {
+                            onSuccess: () => {
+                                toast.success('Message reported successfully');
+                                setMsgToReport(null);
+                            },
+                            onError: () => {
+                                toast.error('Failed to submit report');
+                            },
+                        }
+                    );
+                }}
+            />
 
             {/* Context Menu */}
             {contextMenu && (

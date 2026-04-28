@@ -39,26 +39,41 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
     const { markActive, markInactive, pruneStale, clear: clearPresence } = useParticipantPresenceStore();
 
+    const [knownCoHostIds, setKnownCoHostIds] = useState<Set<string>>(new Set());
+
     useEffect(() => {
-        if (!call || !isHost) return;
+        if (!call) return;
 
         const unsubscribe = call.on('custom', (event: any) => {
             const customData = event?.custom;
-            const senderUserId = event?.user?.id;
-            if (!senderUserId) return;
+            
+            if (isHost) {
+                const senderUserId = event?.user?.id;
+                if (senderUserId) {
+                    if (customData?.type === 'presence-heartbeat') {
+                        markActive(senderUserId);
+                    } else if (customData?.type === 'presence-inactive') {
+                        markInactive(senderUserId);
+                    }
+                }
+            }
 
-            if (customData?.type === 'presence-heartbeat') {
-                markActive(senderUserId);
-            } else if (customData?.type === 'presence-inactive') {
-                markInactive(senderUserId);
+            if (customData?.type === 'join-response' && customData?.accepted) {
+                setKnownCoHostIds(prev => new Set(prev).add(customData.userId));
+            } else if (customData?.type === 'kicked') {
+                setKnownCoHostIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(customData.userId);
+                    return next;
+                });
             }
         });
 
-        const pruneInterval = setInterval(pruneStale, 5000);
+        const pruneInterval = isHost ? setInterval(pruneStale, 5000) : undefined;
 
         return () => {
             unsubscribe();
-            clearInterval(pruneInterval);
+            if (pruneInterval) clearInterval(pruneInterval);
             clearPresence();
         };
     }, [call, isHost, markActive, markInactive, pruneStale, clearPresence]);
@@ -83,15 +98,19 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
     // Filter participants: show host always, others only if co-hosts and actively connected
     const activeParticipants = participants.filter((p: any) => {
-        if (p.connectionQuality === 'offline' || !p.sessionId) return false;
+        if (!p.sessionId) return false;
         if (p.isLocalParticipant && !isViewer) return true;
         if (creatorId && p.userId === creatorId) return true;
 
-        const isCoHostRole = p.roles?.includes('co_host') || p.roles?.includes('admin') || p.roles?.includes('host');
+        const isCoHostRole = p.roles?.includes('co_host') || p.roles?.includes('admin') || p.roles?.includes('host') || knownCoHostIds.has(p.userId);
         const hasCapabilities = p.capabilities?.includes('send-audio') || p.capabilities?.includes('send-video');
+        const isPublishing = hasVideo(p) || hasAudio(p) || (p.publishedTracks && p.publishedTracks.length > 0);
 
-        // Removed `hasActiveTracks` check so co-hosts are always visible even if mic/camera are initially off
-        return isCoHostRole || hasCapabilities;
+        const isActiveCoHost = isCoHostRole || hasCapabilities || isPublishing;
+
+        if (p.connectionQuality === 'offline' && !isActiveCoHost) return false;
+
+        return isActiveCoHost;
     });
 
     // Sort: host (creator or local) first, then co-hosts

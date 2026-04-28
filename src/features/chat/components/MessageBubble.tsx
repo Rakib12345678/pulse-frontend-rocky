@@ -132,12 +132,13 @@ interface MessageBubbleProps {
     onReact: (messageId: string, type: string, extra?: any) => Promise<void>;
     onDeleteReaction?: (messageId: string, type: string) => Promise<void>;
     onCopy: (msg: Message) => void;
+    onReport?: (msg: Message) => void;
     onImageLoad?: () => void;
 }
 
 export const MessageBubble = ({
     message, isMe, translateEnabled, participantName, participantAvatar, myAvatar,
-    onDelete, onReact, onDeleteReaction, onCopy, onImageLoad,
+    onDelete, onReact, onDeleteReaction, onCopy, onReport, onImageLoad,
 }: MessageBubbleProps) => {
 
     // Decide which text to use as the base for rendering
@@ -549,6 +550,7 @@ export const MessageBubble = ({
                                 isMe={false}
                                 positionLeft
                                 onCopy={() => onCopy(message)}
+                                onReport={() => onReport?.(message)}
                                 onClose={() => setDropdown(false)}
                             />
                         )}

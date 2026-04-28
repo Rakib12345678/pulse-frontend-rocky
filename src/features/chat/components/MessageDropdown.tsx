@@ -1,17 +1,18 @@
 import { useEffect, useRef } from 'react';
-import { Copy, Trash2 } from 'lucide-react';
+import { Copy, Trash2, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MessageDropdownProps {
     isMe: boolean;
     onDelete?: () => void;
     onCopy: () => void;
+    onReport?: () => void;
     onClose: () => void;
     positionLeft?: boolean;
 }
 
 export const MessageDropdown = ({
-    isMe, onDelete, onCopy, onClose, positionLeft,
+    isMe, onDelete, onCopy, onReport, onClose, positionLeft,
 }: MessageDropdownProps) => {
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -32,10 +33,18 @@ export const MessageDropdown = ({
         )}>
             <button
                 onClick={() => { onCopy(); onClose(); }}
-                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors border-t border-white/8"
+                className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors"
             >
                 <Copy className="w-4 h-4 shrink-0" /> Copy
             </button>
+            {!isMe && onReport && (
+                <button
+                    onClick={() => { onReport(); onClose(); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-200 hover:bg-white/8 transition-colors border-t border-white/8"
+                >
+                    <Flag className="w-4 h-4 shrink-0" /> Report
+                </button>
+            )}
             {onDelete && (
                 <button
                     onClick={() => { onDelete(); onClose(); }}

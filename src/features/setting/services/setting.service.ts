@@ -48,25 +48,6 @@ export const useUnblockUser = () => {
   });
 };
 
-// Report a user
-interface ReportUserPayload {
-  targetUserId: number;
-  reasonId: string;
-  otherText?: string;
-}
-
-export const useReportUser = () => {
-  return useMutation<void, unknown, ReportUserPayload>({
-    mutationFn: async ({ targetUserId, reasonId, otherText }) => {
-      await api.post('/users/report', {
-        targetUserId,
-        reason: reasonId,
-        ...(otherText ? { description: otherText } : {}),
-      });
-    },
-  });
-};
-
 // Delete account
 interface DeletePayload {
   reasonId: string;

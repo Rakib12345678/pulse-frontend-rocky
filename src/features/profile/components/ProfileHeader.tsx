@@ -7,8 +7,8 @@ import cameraLogo from "@/assets/Camera.png"
 import { toast } from 'sonner';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
 import { EditProfile } from '@/features/profile/components/EditProfile';
-import { useReportUser } from '@/features/setting/services/setting.service';
-import { BlockUserModal } from '@/components/internal/ConfirmModal';
+import { useSubmitReport } from '@/features/report/services/report.service';
+import { BlockUserModal, ErrorModal, ReportSuccessModal } from '@/components/internal/ConfirmModal';
 import { ReportUserModal } from '@/components/internal/ReasonModal';
 import { SuccessModal } from '@/features/setting/components/SuccessModal';
 import { FollowersFollowingModal } from '@/features/profile/components/FollowersFollowingModal';
@@ -26,6 +26,9 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
+  const [showBlockSuccess, setShowBlockSuccess] = useState(false);
+  const [showBlockError, setShowBlockError] = useState(false);
+  const [blockErrorMessage, setBlockErrorMessage] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
   const [showReportSuccess, setShowReportSuccess] = useState(false);
   const [followModal, setFollowModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
@@ -35,7 +38,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 
   const { mutate: toggleFollow, isPending } = useToggleFollow();
   const { mutate: toggleBlock, isPending: isBlockPending } = useBlockUser();
-  const { mutate: reportUser, isPending: isReportPending } = useReportUser();
+  const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
   const handleGoLiveClick = useGoLive();
 
   const { data: liveStatus } = useUserLiveStatus(
@@ -66,15 +69,20 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
       { targetUserId: user.id, blockedByMe: isBlocked },
       {
         onSuccess: () => {
-          toast.success(isBlocked ? 'User unblocked' : 'User blocked');
           setShowBlockModal(false);
           setActionMenuOpen(false);
+          setShowBlockSuccess(true);
           if (!isBlocked) {
             navigate({ to: '/profile' });
           }
         },
-        onError: () => {
-          toast.error(isBlocked ? 'Failed to unblock user' : 'Failed to block user');
+        onError: (error: any) => {
+          const message =
+            error?.response?.data?.message ||
+            (isBlocked ? 'Failed to unblock user' : 'Failed to block user');
+          setBlockErrorMessage(message);
+          setShowBlockModal(false);
+          setShowBlockError(true);
         },
       }
     );
@@ -82,8 +90,14 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 
   // Report
   const handleReportConfirm = (reasonId: string, otherText?: string) => {
-    reportUser(
-      { targetUserId: user.id, reasonId, otherText },
+    submitReport(
+      {
+        reportedUserId: user.id,
+        contentType: 'USER_PROFILE',
+        contentId: String(user.id),
+        reason: reasonId,
+        note: otherText,
+      },
       {
         onSuccess: () => {
           setShowReportModal(false);
@@ -129,13 +143,37 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         onCancel={() => setShowBlockModal(false)}
       />
 
-      {/* Report success modal */}
+      {/* Block success modal */}
       <SuccessModal
+        isOpen={showBlockSuccess}
+        title={isBlocked ? `Unblocked @${user.username ?? ''}` : `Blocked @${user.username ?? ''}`}
+        description={isBlocked ? `${user.username ?? ''} was unblocked successfully.` : `${user.username ?? ''} was blocked successfully.`}
+        buttonLabel="Done"
+        onAction={() => setShowBlockSuccess(false)}
+      />
+
+      {/* Block error modal */}
+      <ErrorModal
+        isOpen={showBlockError}
+        message={blockErrorMessage}
+        onClose={() => setShowBlockError(false)}
+      />
+
+      {/* Report success modal */}
+      <ReportSuccessModal
         isOpen={showReportSuccess}
-        title={`You Reported @${user.username ?? ''} Successfully`}
-        description="Lorem ipsum dolor sit amet, consectetur adipiscing elit. In elementum odio turpis, eget dictum felis fringilla non."
-        buttonLabel="Explore More"
-        onAction={() => setShowReportSuccess(false)}
+        username={user.username ?? ''}
+        avatarUrl={user.profileImage}
+        isBlocked={isBlocked}
+        isBlockPending={isBlockPending}
+        onBlock={() => {
+          setShowReportSuccess(false);
+          setShowBlockModal(true);
+        }}
+        onMute={() => {
+          toast.info('Mute feature coming soon');
+        }}
+        onDone={() => setShowReportSuccess(false)}
       />
 
       {/* Report modal */}

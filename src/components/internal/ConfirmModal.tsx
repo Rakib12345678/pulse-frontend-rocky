@@ -235,6 +235,124 @@ export const BlockUserModal = ({
     />
 );
 
+/* Error modal — shows backend error messages */
+export const ErrorModal = ({
+    isOpen,
+    message,
+    onClose,
+}: {
+    isOpen: boolean;
+    message: string;
+    onClose: () => void;
+}) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+            <div className="relative bg-[#1e2028] rounded-2xl p-10 w-full max-w-md mx-4 shadow-2xl flex flex-col items-center text-center">
+                {/* Error icon */}
+                <div className="mb-5 w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+
+                <h3 className="text-white text-2xl font-bold leading-snug mb-4">Something went wrong</h3>
+
+                <p className="text-gray-400 text-sm leading-relaxed mb-8">{message}</p>
+
+                <button
+                    onClick={onClose}
+                    className="w-40 py-3.5 rounded-full bg-[#FF7700] text-black text-sm font-bold hover:bg-[#ff9922] transition-all active:scale-95 cursor-pointer"
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    );
+};
+
+/* Report success modal — shows after a successful report with Mute/Block actions */
+export const ReportSuccessModal = ({
+    isOpen,
+    username,
+    avatarUrl,
+    isBlocked,
+    isBlockPending,
+    onBlock,
+    onMute,
+    onDone,
+}: {
+    isOpen: boolean;
+    username: string;
+    avatarUrl?: string;
+    isBlocked?: boolean;
+    isBlockPending?: boolean;
+    onBlock: () => void;
+    onMute: () => void;
+    onDone: () => void;
+}) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/70" onClick={onDone} />
+            <div className="relative bg-[#1e2028] rounded-2xl p-10 w-full max-w-md mx-4 shadow-2xl flex flex-col items-center text-center">
+                {/* User avatar */}
+                <div className="mb-5 flex justify-center">
+                    {avatarUrl ? (
+                        <img
+                            src={avatarUrl}
+                            alt={username}
+                            className="w-24 h-24 rounded-full object-cover"
+                            style={{
+                                border: '3px solid transparent',
+                                background: 'linear-gradient(#18191f, #18191f) padding-box, linear-gradient(135deg, #7b2ff7, #ff7700) border-box',
+                            }}
+                        />
+                    ) : (
+                        <div
+                            className="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold text-white"
+                            style={{
+                                border: '3px solid transparent',
+                                background: 'linear-gradient(#3a3a3a, #3a3a3a) padding-box, linear-gradient(135deg, #7b2ff7, #ff7700) border-box',
+                            }}
+                        >
+                            {username?.[0]?.toUpperCase()}
+                        </div>
+                    )}
+                </div>
+
+                <h3 className="text-white text-2xl font-bold leading-snug mb-2">
+                    You Reported @{username} Successfully
+                </h3>
+
+                <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                    We appreciate you helping us keep PulseLive Safe.
+                </p>
+
+                {/* Action buttons — single row */}
+                <div className="flex gap-3 w-full">
+                    <button
+                        onClick={onMute}
+                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] text-sm font-bold hover:bg-white/5 transition-all active:scale-95 cursor-pointer"
+                    >
+                        Mute User
+                    </button>
+                    <button
+                        onClick={onBlock}
+                        disabled={isBlockPending}
+                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-[#FF7700] text-black text-sm font-bold hover:bg-[#ff9922] transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                    >
+                        {isBlocked ? 'Unblock User' : 'Block User'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 /* Unblock-only modal */
 export const UnblockUserModal = ({
     isOpen,

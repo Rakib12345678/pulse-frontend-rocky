@@ -9,6 +9,7 @@ import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EndLiveModal } from '@/features/live/components/modals/EndLiveModal';
+import { useSubmitReport } from '@/features/report/services/report.service';
 import { ReportStreamModal } from '@/components/internal/ReasonModal';
 
 import { ParticipantsDialog } from '@/features/live/components/modals/ParticipantsDialog';
@@ -37,6 +38,7 @@ export const LiveStreamHeader: React.FC = () => {
     const session = useCallSession();
     const participants = useParticipants();
     const createdBy = useCallCreatedBy();
+    const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
 
     // Compute presence-aware participant count (excludes inactive viewers)
     const { getActiveUserIds } = useParticipantPresenceStore();
@@ -436,11 +438,27 @@ export const LiveStreamHeader: React.FC = () => {
 
             <ReportStreamModal
                 isOpen={isReportOpen}
+                isLoading={isReportPending}
                 onCancel={() => setIsReportOpen(false)}
                 onConfirm={(reasonId, otherText) => {
-                    console.log('Reported stream with reason:', reasonId, otherText);
-                    toast.success('Stream reported successfully');
-                    setIsReportOpen(false);
+                    submitReport(
+                        {
+                            reportedUserId: createdBy?.id || '',
+                            contentType: 'LIVE_STREAM',
+                            contentId: streamData?.callId || '',
+                            reason: reasonId,
+                            note: otherText,
+                        },
+                        {
+                            onSuccess: () => {
+                                toast.success('Stream reported successfully');
+                                setIsReportOpen(false);
+                            },
+                            onError: () => {
+                                toast.error('Failed to submit report');
+                            },
+                        }
+                    );
                 }}
             />
         </>
