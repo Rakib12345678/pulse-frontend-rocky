@@ -88,10 +88,15 @@ export const JoinRequestPopup: React.FC = () => {
             if (call.id) {
                 await liveService.addCoHost(call.id, request.userName);
             }
+
+            // Only remove the request from UI on full success
+            setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
+            toast.success(`@${request.userName} is now a co-host!`);
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to grant permissions:', err);
+            setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
+            toast.error(`Failed to approve @${request.userName}. Please try again.`);
         }
-        setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
     };
 
     const handleDecline = async (request: JoinRequest) => {

@@ -453,36 +453,65 @@ const LiveStreamMessageInput: React.FC = () => {
 // Component to handle sending the join message
 const JoinMessageSender: React.FC<{ channel: StreamChannel; isViewer: boolean; userId?: number }> = ({ channel, isViewer, userId }) => {
     const joinSentRef = useRef(false);
+    const startSentRef = useRef(false);
 
     useEffect(() => {
-        if (!channel || !isViewer || !userId) return;
+        if (!channel || !userId) return;
 
-        const sessionKey = `pulse_joined_${channel.id}`;
-        const hasJoined = sessionStorage.getItem(sessionKey);
+        if (isViewer) {
+            const sessionKey = `pulse_joined_${channel.id}`;
+            const hasJoined = sessionStorage.getItem(sessionKey);
 
-        // Both guards must pass: sessionStorage (cross-mount) and ref (same-mount)
-        if (hasJoined || joinSentRef.current) return;
+            // Both guards must pass: sessionStorage (cross-mount) and ref (same-mount)
+            if (hasJoined || joinSentRef.current) return;
 
-        joinSentRef.current = true;
-        sessionStorage.setItem(sessionKey, 'true');
+            joinSentRef.current = true;
+            sessionStorage.setItem(sessionKey, 'true');
 
-        const sendJoinEvent = async () => {
-            try {
-                if (!channel.initialized) {
-                    await channel.watch();
+            const sendJoinEvent = async () => {
+                try {
+                    if (!channel.initialized) {
+                        await channel.watch();
+                    }
+                    await channel.sendMessage({
+                        text: 'has joined the live',
+                        isJoinMessage: true
+                    } as any);
+                } catch (err) {
+                    console.error('Failed to send join message:', err);
+                    // Reset both guards so the next render can retry
+                    joinSentRef.current = false;
+                    sessionStorage.removeItem(sessionKey);
                 }
-                await channel.sendMessage({
-                    text: 'has joined the live',
-                    isJoinMessage: true
-                } as any);
-            } catch (err) {
-                console.error('Failed to send join message:', err);
-                // Reset both guards so the next render can retry
-                joinSentRef.current = false;
-                sessionStorage.removeItem(sessionKey);
-            }
-        };
-        sendJoinEvent();
+            };
+            sendJoinEvent();
+        } else {
+            // Host: send "started the livestream" message
+            const sessionKey = `pulse_started_${channel.id}`;
+            const hasStarted = sessionStorage.getItem(sessionKey);
+
+            if (hasStarted || startSentRef.current) return;
+
+            startSentRef.current = true;
+            sessionStorage.setItem(sessionKey, 'true');
+
+            const sendStartEvent = async () => {
+                try {
+                    if (!channel.initialized) {
+                        await channel.watch();
+                    }
+                    await channel.sendMessage({
+                        text: 'has started the livestream',
+                        isJoinMessage: true
+                    } as any);
+                } catch (err) {
+                    console.error('Failed to send start message:', err);
+                    startSentRef.current = false;
+                    sessionStorage.removeItem(sessionKey);
+                }
+            };
+            sendStartEvent();
+        }
     }, [channel, isViewer, userId]);
 
     return null;
