@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Flag } from 'lucide-react';
+import { Trash2, Flag, AlarmClock } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useReportReasons } from '@/features/report/services/report.service';
 import type { ReportReason } from '@/features/report/services/report.service';
@@ -401,5 +401,165 @@ export const ReportChatModal = ({
             onConfirm={onConfirm}
             onCancel={onCancel}
         />
+    );
+};
+
+export const ReportLimitModal = ({
+    isOpen,
+    onTryLater,
+    onExplore,
+}: {
+    isOpen: boolean;
+    onTryLater: () => void;
+    onExplore: () => void;
+}) => {
+    const isMobile = useIsMobile();
+
+    if (!isOpen) return null;
+
+    const content = (
+        <div className="flex flex-col items-center text-center">
+            <div className="relative mb-6 w-24 h-24 flex items-center justify-center">
+                <AlarmClock className="w-full h-full text-[#8c8c8c]" strokeWidth={1.5} />
+                <div
+                    className="absolute bg-[#FF0000] rounded-full flex items-center justify-center"
+                    style={{
+                        width: '60%',
+                        height: '60%',
+                        top: '54%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                    }}
+                >
+                    <span className="text-white text-4xl font-black font-sans relative z-10 mb-1">!</span>
+                </div>
+            </div>
+
+            <h2 className="text-white text-2xl font-bold mb-3">Report Limit Reached</h2>
+            <p className="text-gray-400 text-[15px] mb-8">
+                You've reported too many times. Try later.
+            </p>
+
+            <div className="flex gap-4 w-full mt-2">
+                <button
+                    onClick={onTryLater}
+                    className="flex-1 py-3.5 rounded-full bg-[#FF7700] text-black text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                >
+                    Try Later
+                </button>
+                <button
+                    onClick={onExplore}
+                    className="flex-1 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-[15px] font-bold hover:bg-white/5 transition-all cursor-pointer"
+                >
+                    Explore
+                </button>
+            </div>
+        </div>
+    );
+
+    if (isMobile) {
+        return (
+            <Drawer open={isOpen} onOpenChange={(open: boolean) => !open && onTryLater()}>
+                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-[100005]">
+                    <DrawerHeader className="pt-2 pb-4 sr-only">
+                        <DrawerTitle>Report Limit Reached</DrawerTitle>
+                        <DrawerDescription>You've reported too many times. Try later.</DrawerDescription>
+                    </DrawerHeader>
+                    {content}
+                </DrawerContent>
+            </Drawer>
+        );
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onTryLater()}>
+            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-[100005]">
+                <DialogTitle className="sr-only">Report Limit Reached</DialogTitle>
+                {content}
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+export const ReportSuccessModal = ({
+    isOpen,
+    username,
+    type,
+    onMute,
+    onBlock,
+    onExplore,
+    onClose,
+}: {
+    isOpen: boolean;
+    username: string;
+    type: 'chat' | 'other';
+    onMute?: () => void;
+    onBlock?: () => void;
+    onExplore?: () => void;
+    onClose: () => void;
+}) => {
+    const isMobile = useIsMobile();
+
+    if (!isOpen) return null;
+
+    const content = (
+        <div className="flex flex-col items-center text-center">
+            <h2 className="text-white text-2xl font-bold mb-6 leading-snug">
+                You Reported @{username} <br />
+                Successfully
+            </h2>
+            <p className="text-gray-400 text-[15px] mb-8 leading-relaxed max-w-[280px]">
+                We appreciate you helping us keep PulseLive Safe.
+            </p>
+
+            {type === 'chat' ? (
+                <div className="flex gap-4 w-full mt-2">
+                    <button
+                        onClick={() => { onMute?.(); onClose(); }}
+                        className="flex-1 py-3.5 rounded-full bg-[#FF7700] text-black text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                    >
+                        Mute User
+                    </button>
+                    <button
+                        onClick={() => { onBlock?.(); onClose(); }}
+                        className="flex-1 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-[15px] font-bold hover:bg-white/5 transition-all cursor-pointer"
+                    >
+                        Block User
+                    </button>
+                </div>
+            ) : (
+                <div className="w-full flex justify-center mt-2">
+                    <button
+                        onClick={() => { onExplore?.(); onClose(); }}
+                        className="px-8 py-3.5 rounded-full bg-[#FF7700] text-black text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                    >
+                        Explore More
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+
+    if (isMobile) {
+        return (
+            <Drawer open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
+                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-[100005]">
+                    <DrawerHeader className="pt-2 pb-4 sr-only">
+                        <DrawerTitle>Report Successful</DrawerTitle>
+                        <DrawerDescription>You have successfully reported {username}</DrawerDescription>
+                    </DrawerHeader>
+                    {content}
+                </DrawerContent>
+            </Drawer>
+        );
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-[100005]">
+                <DialogTitle className="sr-only">Report Successful</DialogTitle>
+                {content}
+            </DialogContent>
+        </Dialog>
     );
 };

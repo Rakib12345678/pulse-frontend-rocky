@@ -10,7 +10,7 @@ import { useLiveStreamContext } from '@/features/live/components/layout/LiveStre
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EndLiveModal } from '@/features/live/components/modals/EndLiveModal';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { ReportStreamModal, TargetUserOption } from '@/components/internal/ReasonModal';
+import { ReportStreamModal, TargetUserOption, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
 
 import { ParticipantsDialog } from '@/features/live/components/modals/ParticipantsDialog';
 import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
@@ -76,6 +76,8 @@ export const LiveStreamHeader: React.FC = () => {
     const [streamDuration, setStreamDuration] = React.useState(0); // in seconds
     const startTimestampRef = React.useRef<number | null>(null);
     const [isReportOpen, setIsReportOpen] = React.useState(false);
+    const [showReportSuccess, setShowReportSuccess] = React.useState(false);
+    const [showReportLimitModal, setShowReportLimitModal] = React.useState(false);
 
     React.useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -467,15 +469,39 @@ export const LiveStreamHeader: React.FC = () => {
                         },
                         {
                             onSuccess: () => {
-                                toast.success('Stream reported successfully');
                                 setIsReportOpen(false);
+                                setShowReportSuccess(true);
                             },
-                            onError: () => {
-                                toast.error('Failed to submit report');
+                            onError: (error: any) => {
+                                if (error?.response?.status === 429) {
+                                    setIsReportOpen(false);
+                                    setShowReportLimitModal(true);
+                                } else {
+                                    toast.error('Failed to submit report');
+                                }
                             },
                         }
                     );
                 }}
+            />
+
+            <ReportLimitModal
+                isOpen={showReportLimitModal}
+                onTryLater={() => setShowReportLimitModal(false)}
+                onExplore={() => {
+                    setShowReportLimitModal(false);
+                }}
+            />
+
+            <ReportSuccessModal
+                isOpen={showReportSuccess}
+                username={hostName}
+                type="other"
+                onExplore={() => {
+                    setShowReportSuccess(false);
+                    handleLeaveStream();
+                }}
+                onClose={() => setShowReportSuccess(false)}
             />
         </>
     );

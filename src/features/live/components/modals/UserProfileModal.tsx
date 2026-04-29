@@ -33,8 +33,7 @@ import { useLiveStreamContext } from '@/features/live/components/layout/LiveStre
 import { ProfilePage } from '@/features/profile';
 import { AppBackground } from '@/components/internal/AppBackground';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { ReportUserModal } from '@/components/internal/ReasonModal';
-import { ReportSuccessModal } from '@/components/internal/ConfirmModal';
+import { ReportUserModal, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
 
 export const UserProfileModal: React.FC = () => {
     const { isOpen, username: targetUsername, closeModal, showFullscreen, setShowFullscreen } = useUserProfileStore();
@@ -51,6 +50,7 @@ export const UserProfileModal: React.FC = () => {
     const [isBlockDrawerOpen, setIsBlockDrawerOpen] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showReportSuccess, setShowReportSuccess] = useState(false);
+    const [showReportLimitModal, setShowReportLimitModal] = useState(false);
 
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
 
@@ -225,8 +225,13 @@ export const UserProfileModal: React.FC = () => {
                     setShowReportModal(false);
                     setShowReportSuccess(true);
                 },
-                onError: () => {
-                    toast.error('Failed to submit report');
+                onError: (error: any) => {
+                    if (error?.response?.status === 429) {
+                        setShowReportModal(false);
+                        setShowReportLimitModal(true);
+                    } else {
+                        toast.error('Failed to submit report');
+                    }
                 },
             }
         );
@@ -283,17 +288,12 @@ export const UserProfileModal: React.FC = () => {
             <ReportSuccessModal
                 isOpen={showReportSuccess}
                 username={profile?.username ?? ''}
-                avatarUrl={profile?.profileImage}
-                isBlocked={profile?.blockedByMe ?? false}
-                isBlockPending={isBlockLoading}
-                onBlock={() => {
+                type="other"
+                onExplore={() => {
                     setShowReportSuccess(false);
-                    setIsBlockDrawerOpen(true);
+                    closeModal();
                 }}
-                onMute={() => {
-                    toast.info('Mute feature coming soon');
-                }}
-                onDone={() => setShowReportSuccess(false)}
+                onClose={() => setShowReportSuccess(false)}
             />
 
             <ReportUserModal
@@ -302,6 +302,15 @@ export const UserProfileModal: React.FC = () => {
                 isLoading={isReportPending}
                 onConfirm={handleReportConfirm}
                 onCancel={() => setShowReportModal(false)}
+            />
+
+            <ReportLimitModal
+                isOpen={showReportLimitModal}
+                onTryLater={() => setShowReportLimitModal(false)}
+                onExplore={() => {
+                    setShowReportLimitModal(false);
+                    closeModal();
+                }}
             />
         </>
     );

@@ -26,12 +26,13 @@ import {
 import { capitalizeName, getDisplayName, formatRelativeTime } from '@/features/chat/utils/ChatUtils';
 import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 import { chatService } from '../services/chat.service';
+import { userService } from '@/features/live/services/user.service';
 import { useIsMobile } from '@/hooks/use-mobile';
 import chatGroup from '@/assets/chatGroup.svg';
 import SearchIcon from '@/assets/Search.svg';
 import { getStreamClient } from '../stream/streamClient';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { ReportChatModal } from '@/components/internal/ReasonModal';
+import { ReportChatModal, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
 
 // TickIcon
 
@@ -508,6 +509,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const [pinnedIds, setPinnedIds] = React.useState<string[]>(getPinned);
     const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
     const [reportConversation, setReportConversation] = React.useState<Conversation | null>(null);
+    const [reportedSuccessConv, setReportedSuccessConv] = React.useState<Conversation | null>(null);
+    const [showReportLimitModal, setShowReportLimitModal] = React.useState(false);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     const isMobile = useIsMobile();
@@ -668,11 +671,16 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             },
             {
                 onSuccess: () => {
-                    toast.success('Conversation reported successfully');
+                    setReportedSuccessConv(reportConversation);
                     setReportConversation(null);
                 },
-                onError: () => {
-                    toast.error('Failed to submit report');
+                onError: (error: any) => {
+                    if (error?.response?.status === 429) {
+                        setReportConversation(null);
+                        setShowReportLimitModal(true);
+                    } else {
+                        toast.error('Failed to submit report');
+                    }
                 },
             }
         );
@@ -1031,6 +1039,36 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     onConfirm={handleReportConfirm}
                 />
             )}
+
+            <ReportLimitModal
+                isOpen={showReportLimitModal}
+                onTryLater={() => setShowReportLimitModal(false)}
+                onExplore={() => {
+                    setShowReportLimitModal(false);
+                }}
+            />
+
+            <ReportSuccessModal
+                isOpen={!!reportedSuccessConv}
+                username={reportedSuccessConv?.participant.name || ''}
+                type="chat"
+                onMute={() => {
+                    if (reportedSuccessConv) {
+                        handleMuteToggle(reportedSuccessConv);
+                    }
+                }}
+                onBlock={async () => {
+                    if (reportedSuccessConv) {
+                        try {
+                            await userService.blockUser(Number(reportedSuccessConv.participant.id));
+                            toast.success(`Blocked @${reportedSuccessConv.participant.name}`);
+                        } catch (error) {
+                            toast.error('Failed to block user');
+                        }
+                    }
+                }}
+                onClose={() => setReportedSuccessConv(null)}
+            />
 
         </>
     );

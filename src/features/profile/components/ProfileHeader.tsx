@@ -8,8 +8,8 @@ import { toast } from 'sonner';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
 import { EditProfile } from '@/features/profile/components/EditProfile';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { BlockUserModal, ErrorModal, ReportSuccessModal } from '@/components/internal/ConfirmModal';
-import { ReportUserModal } from '@/components/internal/ReasonModal';
+import { BlockUserModal, ErrorModal } from '@/components/internal/ConfirmModal';
+import { ReportUserModal, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
 import { SuccessModal } from '@/features/setting/components/SuccessModal';
 import { FollowersFollowingModal } from '@/features/profile/components/FollowersFollowingModal';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
   const [blockErrorMessage, setBlockErrorMessage] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
   const [showReportSuccess, setShowReportSuccess] = useState(false);
+  const [showReportLimitModal, setShowReportLimitModal] = useState(false);
   const [followModal, setFollowModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
     isOpen: false,
     type: 'followers',
@@ -104,8 +105,14 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
           setActionMenuOpen(false);
           setShowReportSuccess(true);
         },
-        onError: () => {
-          toast.error('Failed to submit report');
+        onError: (error: any) => {
+          if (error?.response?.status === 429) {
+            setShowReportModal(false);
+            setActionMenuOpen(false);
+            setShowReportLimitModal(true);
+          } else {
+            toast.error('Failed to submit report');
+          }
         },
       }
     );
@@ -163,17 +170,11 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
       <ReportSuccessModal
         isOpen={showReportSuccess}
         username={user.username ?? ''}
-        avatarUrl={user.profileImage}
-        isBlocked={isBlocked}
-        isBlockPending={isBlockPending}
-        onBlock={() => {
+        type="other"
+        onExplore={() => {
           setShowReportSuccess(false);
-          setShowBlockModal(true);
         }}
-        onMute={() => {
-          toast.info('Mute feature coming soon');
-        }}
-        onDone={() => setShowReportSuccess(false)}
+        onClose={() => setShowReportSuccess(false)}
       />
 
       {/* Report modal */}
@@ -183,6 +184,14 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         isLoading={isReportPending}
         onConfirm={handleReportConfirm}
         onCancel={() => setShowReportModal(false)}
+      />
+
+      <ReportLimitModal
+        isOpen={showReportLimitModal}
+        onTryLater={() => setShowReportLimitModal(false)}
+        onExplore={() => {
+          setShowReportLimitModal(false);
+        }}
       />
 
       <FollowersFollowingModal

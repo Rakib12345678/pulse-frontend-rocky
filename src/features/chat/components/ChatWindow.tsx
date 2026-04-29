@@ -26,7 +26,8 @@ import { EmptyConversation } from './EmptyConversation';
 import { TranslateDrawer } from './TranslateDrawer';
 import { TranslateTogglePopover } from './TranslateTogglePopover';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { ReportChatModal } from '@/components/internal/ReasonModal';
+import { userService } from '@/features/live/services/user.service';
+import { ReportChatModal, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
 
 import sendIcon from '@/assets/Send.svg';
 import LiveIcon from '@/assets/Live.svg';
@@ -95,6 +96,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
     const [msgToDelete, setMsgToDelete] = useState<Message | null>(null);
     const [msgToReport, setMsgToReport] = useState<Message | null>(null);
+    const [reportedSuccessInfo, setReportedSuccessInfo] = useState<{ id: string; name: string } | null>(null);
+    const [showReportLimitModal, setShowReportLimitModal] = useState(false);
     const { translateEnabled, setTranslate } = useTranslationPreference(myId);
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
 
@@ -800,15 +803,51 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         },
                         {
                             onSuccess: () => {
-                                toast.success('Message reported successfully');
+                                setReportedSuccessInfo({
+                                    id: conversation.participant.id,
+                                    name: conversation.participant.name
+                                });
                                 setMsgToReport(null);
                             },
-                            onError: () => {
-                                toast.error('Failed to submit report');
+                            onError: (error: any) => {
+                                if (error?.response?.status === 429) {
+                                    setMsgToReport(null);
+                                    setShowReportLimitModal(true);
+                                } else {
+                                    toast.error('Failed to submit report');
+                                }
                             },
                         }
                     );
                 }}
+            />
+
+            <ReportLimitModal
+                isOpen={showReportLimitModal}
+                onTryLater={() => setShowReportLimitModal(false)}
+                onExplore={() => {
+                    setShowReportLimitModal(false);
+                }}
+            />
+
+            <ReportSuccessModal
+                isOpen={!!reportedSuccessInfo}
+                username={reportedSuccessInfo?.name || ''}
+                type="chat"
+                onMute={() => {
+                    toast.info('Mute feature coming soon');
+                }}
+                onBlock={async () => {
+                    if (reportedSuccessInfo) {
+                        try {
+                            await userService.blockUser(Number(reportedSuccessInfo.id));
+                            toast.success(`Blocked @${reportedSuccessInfo.name}`);
+                        } catch (error) {
+                            toast.error('Failed to block user');
+                        }
+                    }
+                }}
+                onClose={() => setReportedSuccessInfo(null)}
             />
 
             {/* Context Menu */}
