@@ -7,6 +7,11 @@ import {
     DrawerTitle,
     DrawerDescription,
 } from '@/components/ui/drawer';
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 interface ConfirmModalProps {
     isOpen: boolean;
@@ -169,14 +174,13 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
 
     /* ---- Desktop: Centered Modal ---- */
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/70" onClick={onCancel} />
-            <div className="relative bg-[#1D1F20] border border-white/10 rounded-3xl px-8 py-10 w-full max-w-md mx-4 shadow-2xl flex flex-col items-center text-center">
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+            <DialogContent showCloseButton={false} className="bg-[#1D1F20] border-white/10 rounded-3xl px-8 py-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center">
                 <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
-                <h3 className="text-white text-2xl font-bold mb-8 leading-snug">{title}</h3>
+                <DialogTitle className="text-white text-2xl font-bold mb-8 leading-snug">{title}</DialogTitle>
                 <ConfirmModalContent onCancel={onCancel} confirmLabel={confirmLabel} confirmIcon={confirmIcon} confirmClassName={confirmClassName} cancelLabel={cancelLabel} isLoading={isLoading} onConfirm={onConfirm} {...rest} />
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -248,9 +252,8 @@ export const ErrorModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-            <div className="relative bg-[#1e2028] rounded-2xl p-10 w-full max-w-md mx-4 shadow-2xl flex flex-col items-center text-center">
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent showCloseButton={false} className="bg-[#1e2028] border-white/10 rounded-2xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center">
                 {/* Error icon */}
                 <div className="mb-5 w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
                     <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -258,7 +261,7 @@ export const ErrorModal = ({
                     </svg>
                 </div>
 
-                <h3 className="text-white text-2xl font-bold leading-snug mb-4">Something went wrong</h3>
+                <DialogTitle className="text-white text-2xl font-bold leading-snug mb-4">Something went wrong</DialogTitle>
 
                 <p className="text-gray-400 text-sm leading-relaxed mb-8">{message}</p>
 
@@ -268,8 +271,8 @@ export const ErrorModal = ({
                 >
                     Close
                 </button>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -296,9 +299,8 @@ export const ReportSuccessModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/70" onClick={onDone} />
-            <div className="relative bg-[#1e2028] rounded-2xl p-10 w-full max-w-md mx-4 shadow-2xl flex flex-col items-center text-center">
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onDone()}>
+            <DialogContent showCloseButton={false} className="bg-[#1e2028] border-white/10 rounded-2xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center">
                 {/* User avatar */}
                 <div className="mb-5 flex justify-center">
                     {avatarUrl ? (
@@ -324,9 +326,9 @@ export const ReportSuccessModal = ({
                     )}
                 </div>
 
-                <h3 className="text-white text-2xl font-bold leading-snug mb-2">
+                <DialogTitle className="text-white text-2xl font-bold leading-snug mb-2">
                     You Reported @{username} Successfully
-                </h3>
+                </DialogTitle>
 
                 <p className="text-gray-400 text-sm leading-relaxed mb-8">
                     We appreciate you helping us keep PulseLive Safe.
@@ -348,8 +350,8 @@ export const ReportSuccessModal = ({
                         {isBlocked ? 'Unblock User' : 'Block User'}
                     </button>
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 

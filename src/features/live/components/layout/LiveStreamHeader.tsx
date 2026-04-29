@@ -10,7 +10,7 @@ import { useLiveStreamContext } from '@/features/live/components/layout/LiveStre
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EndLiveModal } from '@/features/live/components/modals/EndLiveModal';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { ReportStreamModal } from '@/components/internal/ReasonModal';
+import { ReportStreamModal, TargetUserOption } from '@/components/internal/ReasonModal';
 
 import { ParticipantsDialog } from '@/features/live/components/modals/ParticipantsDialog';
 import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
@@ -198,6 +198,21 @@ export const LiveStreamHeader: React.FC = () => {
 
     const isHost = !!streamData;
     const hostName = createdBy?.name || createdBy?.id || 'Host';
+
+    const usersToReport = React.useMemo(() => {
+        const users: TargetUserOption[] = [];
+        if (createdBy) {
+            users.push({ id: createdBy.id, username: hostName, isHost: true });
+        }
+        participants.forEach((p: any) => {
+            const isParticipantHost = p.roles?.includes('host') || p.roles?.includes('admin') || p.userId === createdBy?.id;
+            const isCoHost = p.roles?.includes('co_host') || p.capabilities?.includes('send-audio') || p.capabilities?.includes('send-video');
+            if (!isParticipantHost && isCoHost) {
+                users.push({ id: p.userId, username: p.name || p.userId, isHost: false });
+            }
+        });
+        return users;
+    }, [createdBy, participants, hostName]);
 
     /* ========== MOBILE HEADER ========== */
     return (
@@ -439,11 +454,12 @@ export const LiveStreamHeader: React.FC = () => {
             <ReportStreamModal
                 isOpen={isReportOpen}
                 isLoading={isReportPending}
+                usersToReport={usersToReport}
                 onCancel={() => setIsReportOpen(false)}
-                onConfirm={(reasonId, otherText) => {
+                onConfirm={(reasonId, otherText, reportedUserId) => {
                     submitReport(
                         {
-                            reportedUserId: createdBy?.id || '',
+                            reportedUserId: reportedUserId || createdBy?.id || '',
                             contentType: 'LIVE_STREAM',
                             contentId: streamData?.callId || '',
                             reason: reasonId,

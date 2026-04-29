@@ -32,6 +32,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 import { ProfilePage } from '@/features/profile';
 import { AppBackground } from '@/components/internal/AppBackground';
+import { useSubmitReport } from '@/features/report/services/report.service';
+import { ReportUserModal } from '@/components/internal/ReasonModal';
+import { ReportSuccessModal } from '@/components/internal/ConfirmModal';
 
 export const UserProfileModal: React.FC = () => {
     const { isOpen, username: targetUsername, closeModal, showFullscreen, setShowFullscreen } = useUserProfileStore();
@@ -46,6 +49,10 @@ export const UserProfileModal: React.FC = () => {
     const [isFollowLoading, setIsFollowLoading] = useState(false);
     const [isBlockLoading, setIsBlockLoading] = useState(false);
     const [isBlockDrawerOpen, setIsBlockDrawerOpen] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [showReportSuccess, setShowReportSuccess] = useState(false);
+
+    const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
 
     useEffect(() => {
         if (isOpen && targetUsername) {
@@ -193,7 +200,36 @@ export const UserProfileModal: React.FC = () => {
     };
 
     const handleReport = () => {
-        toast.info("Report functionality coming soon");
+        if (!currentUser) {
+            closeModal();
+            setMode('login');
+            setStep('input');
+            openLoginModal();
+            return;
+        }
+        setShowReportModal(true);
+    };
+
+    const handleReportConfirm = (reasonId: string, otherText?: string) => {
+        if (!profile) return;
+        submitReport(
+            {
+                reportedUserId: profile.id,
+                contentType: 'USER_PROFILE',
+                contentId: String(profile.id),
+                reason: reasonId,
+                note: otherText,
+            },
+            {
+                onSuccess: () => {
+                    setShowReportModal(false);
+                    setShowReportSuccess(true);
+                },
+                onError: () => {
+                    toast.error('Failed to submit report');
+                },
+            }
+        );
     };
 
     const BlockConfirmationDrawer = (
@@ -240,6 +276,34 @@ export const UserProfileModal: React.FC = () => {
                 </div>
             </DrawerContent>
         </Drawer>
+    );
+
+    const ReportModals = (
+        <>
+            <ReportSuccessModal
+                isOpen={showReportSuccess}
+                username={profile?.username ?? ''}
+                avatarUrl={profile?.profileImage}
+                isBlocked={profile?.blockedByMe ?? false}
+                isBlockPending={isBlockLoading}
+                onBlock={() => {
+                    setShowReportSuccess(false);
+                    setIsBlockDrawerOpen(true);
+                }}
+                onMute={() => {
+                    toast.info('Mute feature coming soon');
+                }}
+                onDone={() => setShowReportSuccess(false)}
+            />
+
+            <ReportUserModal
+                isOpen={showReportModal}
+                username={profile?.username ?? ''}
+                isLoading={isReportPending}
+                onConfirm={handleReportConfirm}
+                onCancel={() => setShowReportModal(false)}
+            />
+        </>
     );
 
     if (!isOpen) return null;
@@ -404,6 +468,7 @@ export const UserProfileModal: React.FC = () => {
                     )}
                 </div>
                 {BlockConfirmationDrawer}
+                {ReportModals}
             </>
         );
     }
@@ -550,6 +615,7 @@ export const UserProfileModal: React.FC = () => {
                     </DrawerContent>
                 </Drawer>
                 {BlockConfirmationDrawer}
+                {ReportModals}
             </>
         );
     }
@@ -576,6 +642,7 @@ export const UserProfileModal: React.FC = () => {
                     </AppBackground>
                 </div>
                 {BlockConfirmationDrawer}
+                {ReportModals}
             </>
         );
     }
@@ -724,6 +791,7 @@ export const UserProfileModal: React.FC = () => {
                 </DialogContent>
             </Dialog>
             {BlockConfirmationDrawer}
+            {ReportModals}
         </>
     );
 };

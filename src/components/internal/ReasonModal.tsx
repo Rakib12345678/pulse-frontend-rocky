@@ -10,8 +10,27 @@ import {
     DrawerTitle,
     DrawerDescription,
 } from '@/components/ui/drawer';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 // ---- Types ----
+
+export interface TargetUserOption {
+    id: string;
+    username: string;
+    isHost?: boolean;
+}
+
 
 interface ReasonOption {
     id: string;
@@ -22,6 +41,7 @@ interface ReasonModalProps {
     isOpen: boolean;
     title: string;
     options: ReasonOption[];
+    usersToReport?: TargetUserOption[];
     confirmLabel: string;
     confirmIcon?: React.ReactNode;
     confirmClassName?: string;
@@ -29,7 +49,7 @@ interface ReasonModalProps {
     requiresNoteIds?: string[];
     othersPlaceholder?: string;
     isLoading?: boolean;
-    onConfirm: (selectedId: string, otherText?: string) => void;
+    onConfirm: (selectedId: string, otherText?: string, reportedUserId?: string) => void;
     onCancel: () => void;
 }
 
@@ -48,6 +68,9 @@ const ReasonModalContent = ({
     setSelected,
     otherText,
     setOtherText,
+    usersToReport,
+    selectedUser,
+    setSelectedUser,
 }: {
     options: ReasonOption[];
     confirmLabel: string;
@@ -62,12 +85,33 @@ const ReasonModalContent = ({
     setSelected: (id: string) => void;
     otherText: string;
     setOtherText: (text: string) => void;
+    usersToReport?: TargetUserOption[];
+    selectedUser: string;
+    setSelectedUser: (id: string) => void;
 }) => {
+    const hasUsers = usersToReport && usersToReport.length > 0;
     const requiresNote = selected ? requiresNoteIds.includes(selected) : false;
-    const canSubmit = !!selected && (!requiresNote || otherText.trim().length > 0);
+    const canSubmit = !!selected && (!requiresNote || otherText.trim().length > 0) && (!hasUsers || !!selectedUser);
 
     return (
         <>
+            {hasUsers && (
+                <div className="mb-6">
+                    <Select value={selectedUser} onValueChange={setSelectedUser}>
+                        <SelectTrigger className="w-full bg-transparent border border-white/10 text-white hover:border-white/30 h-[52px] rounded-xl focus:ring-0 focus:ring-offset-0 px-4">
+                            <SelectValue placeholder="Select User Here" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[#18191f] border-white/10 text-white rounded-xl max-h-[200px] z-[10005]">
+                            {usersToReport.map((u) => (
+                                <SelectItem key={u.id} value={u.id} className="hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer py-3 px-4">
+                                    {u.username} {u.isHost ? '(Host)' : '(Co-host)'}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
+
             {/* Options */}
             <div className="flex flex-col gap-4 mb-8">
                 {options.map((opt) => (
@@ -138,6 +182,7 @@ const ReasonModal = ({
     isOpen,
     title,
     options,
+    usersToReport,
     confirmLabel,
     confirmIcon,
     confirmClassName = 'bg-[#FF7700] text-black hover:bg-[#ff9922]',
@@ -149,16 +194,18 @@ const ReasonModal = ({
 }: ReasonModalProps) => {
     const [selected, setSelected] = useState<string>('');
     const [otherText, setOtherText] = useState('');
+    const [selectedUser, setSelectedUser] = useState<string>('');
     const isMobile = useIsMobile();
 
     if (!isOpen) return null;
 
+    const hasUsers = usersToReport && usersToReport.length > 0;
     const requiresNote = selected ? requiresNoteIds.includes(selected) : false;
-    const canSubmit = !!selected && (!requiresNote || otherText.trim().length > 0);
+    const canSubmit = !!selected && (!requiresNote || otherText.trim().length > 0) && (!hasUsers || !!selectedUser);
 
     const handleConfirm = () => {
         if (!canSubmit) return;
-        onConfirm(selected, requiresNote ? otherText : undefined);
+        onConfirm(selected, requiresNote ? otherText : undefined, hasUsers ? selectedUser : undefined);
     };
 
     const sharedProps = {
@@ -175,6 +222,9 @@ const ReasonModal = ({
         setSelected,
         otherText,
         setOtherText,
+        usersToReport,
+        selectedUser,
+        setSelectedUser,
     };
 
     /* ---- Mobile: Bottom Drawer ---- */
@@ -199,14 +249,13 @@ const ReasonModal = ({
 
     /* ---- Desktop: Centered Modal ---- */
     return (
-        <div className="fixed inset-0 z-400 flex items-center justify-center" style={{ zIndex: 9999 }}>
-            <div className="absolute inset-0 bg-black/70" onClick={onCancel} />
-            <div className="relative bg-[#18191f] border border-white/10 rounded-2xl px-10 py-8 w-full max-w-lg mx-4 shadow-2xl">
-                <h3 className="text-white text-xl font-bold mb-6 text-center leading-snug">{title}</h3>
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-2xl px-10 py-8 w-full max-w-lg shadow-2xl">
+                <DialogTitle className="text-white text-xl font-bold mb-6 text-center leading-snug">{title}</DialogTitle>
                 <div className="h-px bg-white/10 mb-5 -mx-8" />
                 <ReasonModalContent {...sharedProps} />
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -293,12 +342,14 @@ export const DeleteAccountModal = ({
 export const ReportStreamModal = ({
     isOpen,
     isLoading,
+    usersToReport,
     onConfirm,
     onCancel,
 }: {
     isOpen: boolean;
     isLoading?: boolean;
-    onConfirm: (reasonId: string, otherText?: string) => void;
+    usersToReport?: TargetUserOption[];
+    onConfirm: (reasonId: string, otherText?: string, reportedUserId?: string) => void;
     onCancel: () => void;
 }) => {
     const { data: reasons, isLoading: isReasonsLoading } = useReportReasons();
@@ -309,6 +360,7 @@ export const ReportStreamModal = ({
             isOpen={isOpen}
             title="Report Stream"
             options={options}
+            usersToReport={usersToReport}
             requiresNoteIds={requiresNoteIds}
             confirmLabel="Submit Report"
             confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"

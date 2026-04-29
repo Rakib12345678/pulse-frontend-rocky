@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp, Plus, UserSearch } from 'lucide-react';
+import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp, Plus, UserSearch, Flag } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -29,6 +29,9 @@ import { chatService } from '../services/chat.service';
 import { useIsMobile } from '@/hooks/use-mobile';
 import chatGroup from '@/assets/chatGroup.svg';
 import SearchIcon from '@/assets/Search.svg';
+import { getStreamClient } from '../stream/streamClient';
+import { useSubmitReport } from '@/features/report/services/report.service';
+import { ReportChatModal } from '@/components/internal/ReasonModal';
 
 // TickIcon
 
@@ -285,7 +288,7 @@ const ConfirmDeleteModal = ({
 
 const ConversationDropdown = ({
     isPinned, isMuted, isArchived,
-    onPin, onDelete, onMuteToggle, onArchiveToggle, onClose,
+    onPin, onDelete, onMuteToggle, onArchiveToggle, onReport, onClose,
 }: {
     isPinned: boolean;
     isMuted: boolean;
@@ -294,6 +297,7 @@ const ConversationDropdown = ({
     onDelete: () => void;
     onMuteToggle: () => void;
     onArchiveToggle: () => void;
+    onReport: () => void;
     onClose: () => void;
 }) => {
     const ref = React.useRef<HTMLDivElement>(null);
@@ -332,6 +336,12 @@ const ConversationDropdown = ({
                 )}
                 {isArchived ? 'Unarchive Chat' : 'Archive Chat'}
             </button>
+            <button
+                onClick={e => { e.stopPropagation(); onReport(); onClose(); }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-200 hover:bg-white/8 transition-colors cursor-pointer"
+            >
+                <Flag className="w-3.5 h-3.5 shrink-0 text-gray-400" /> Report Chat
+            </button>
             <div className="h-px bg-white/8 my-1" />
             <button
                 onClick={e => { e.stopPropagation(); onDelete(); onClose(); }}
@@ -346,11 +356,11 @@ const ConversationDropdown = ({
 // ChatListItem
 
 const ChatListItem = ({
-    conversation, isActive, isPinned, myId, translateEnabled, isMobile,
-    onClick, onDeleteRequest, onPinToggle, onMuteToggle, onArchiveToggle, onSelectionMode,
+    conversation, isSelected, isPinned, myId, translateEnabled, isMobile,
+    onClick, onDeleteRequest, onPinToggle, onMuteToggle, onArchiveToggle, onReport, onSelectionToggle,
 }: {
     conversation: Conversation;
-    isActive: boolean;
+    isSelected: boolean;
     isPinned: boolean;
     myId: string;
     translateEnabled: boolean;
@@ -360,7 +370,8 @@ const ChatListItem = ({
     onPinToggle: (c: Conversation) => void;
     onMuteToggle: (c: Conversation) => void;
     onArchiveToggle: (c: Conversation) => void;
-    onSelectionMode: (id: string) => void;
+    onReport: (c: Conversation) => void;
+    onSelectionToggle: (id: string) => void;
 }) => {
     const [open, setOpen] = React.useState(false);
 
@@ -376,12 +387,12 @@ const ChatListItem = ({
             className="relative"
             onDoubleClick={e => {
                 e.preventDefault();
-                if (isMobile) onSelectionMode(conversation.id);
+                if (isMobile) onSelectionToggle(conversation.id);
                 else setOpen(v => !v);
             }}
             onContextMenu={e => {
                 e.preventDefault();
-                if (isMobile) onSelectionMode(conversation.id);
+                if (isMobile) onSelectionToggle(conversation.id);
                 else setOpen(v => !v);
             }}
         >
@@ -389,7 +400,7 @@ const ChatListItem = ({
                 onClick={onClick}
                 className={cn(
                     'w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all text-left group cursor-pointer',
-                    isActive ? 'bg-white/5' : 'hover:bg-white/5',
+                    isSelected ? 'bg-white/5' : 'hover:bg-white/5',
                 )}
             >
                 <div className="relative shrink-0">
@@ -449,6 +460,7 @@ const ChatListItem = ({
                     onPin={() => onPinToggle(conversation)}
                     onMuteToggle={() => onMuteToggle(conversation)}
                     onArchiveToggle={() => onArchiveToggle(conversation)}
+                    onReport={() => onReport(conversation)}
                     onDelete={() => { onDeleteRequest(conversation); setOpen(false); }}
                     onClose={() => setOpen(false)}
                 />
@@ -489,27 +501,31 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const [searchQuery, setSearchQuery] = React.useState('');
     const [showNewChat, setShowNewChat] = React.useState(false);
     const [confirmDelete, setConfirmDelete] = React.useState<Conversation | null>(null);
+    const [confirmDeleteMultiple, setConfirmDeleteMultiple] = React.useState<boolean>(false);
+    const [pendingDeleteIds, setPendingDeleteIds] = React.useState<string[]>([]);
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [isStarting, setIsStarting] = React.useState(false);
     const [pinnedIds, setPinnedIds] = React.useState<string[]>(getPinned);
-    const [selectionModeId, setSelectionModeId] = React.useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+    const [reportConversation, setReportConversation] = React.useState<Conversation | null>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     const isMobile = useIsMobile();
     const navigate = useNavigate();
     const { translateEnabled } = useTranslationPreference(myId);
+    const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
 
 
     React.useEffect(() => {
-        if (!selectionModeId) return;
+        if (selectedIds.length === 0) return;
         const h = (e: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setSelectionModeId(null);
+                setSelectedIds([]);
             }
         };
         document.addEventListener('mousedown', h);
         return () => document.removeEventListener('mousedown', h);
-    }, [selectionModeId]);
+    }, [selectedIds]);
 
     React.useEffect(() => {
         const handleOpenNewChat = () => setShowNewChat(true);
@@ -526,6 +542,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         toast.success(alreadyPinned ? 'Conversation unpinned' : 'Conversation pinned');
     };
 
+    const handlePinMultiple = () => {
+        const allPinned = selectedIds.every(id => pinnedIds.includes(id));
+        const next = allPinned
+            ? pinnedIds.filter(id => !selectedIds.includes(id))
+            : [...new Set([...pinnedIds, ...selectedIds])];
+        setPinnedIds(next);
+        setPinned(next);
+        toast.success(allPinned ? `${selectedIds.length} conversations unpinned` : `${selectedIds.length} conversations pinned`);
+        setSelectedIds([]);
+    };
+
     const handleMuteToggle = (conv: Conversation) => {
         if (conv.isMuted) onUnmute(conv.id);
         else onMute(conv.id);
@@ -536,6 +563,36 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         if (conv.isArchived) onUnarchive(conv.id);
         else onArchive(conv.id);
         toast.success(conv.isArchived ? 'Chat unarchived' : 'Chat archived');
+    };
+
+    const handleArchiveMultiple = () => {
+        const allArchived = selectedIds.every(id => {
+            const conv = conversations.find(c => c.id === id);
+            return conv?.isArchived;
+        });
+        selectedIds.forEach(id => {
+            if (allArchived) onUnarchive(id);
+            else onArchive(id);
+        });
+        toast.success(allArchived ? `${selectedIds.length} conversations unarchived` : `${selectedIds.length} conversations archived`);
+        setSelectedIds([]);
+    };
+
+    const handleDeleteMultipleConfirmed = async () => {
+        const idsToDelete = pendingDeleteIds;
+        setIsDeleting(true);
+        try {
+            await Promise.all(idsToDelete.map(id => chatService.hideOrDeleteConversation(id)));
+            idsToDelete.forEach(id => onConversationDeleted?.(id));
+            setConfirmDeleteMultiple(false);
+            setPendingDeleteIds([]);
+            toast.success(`${idsToDelete.length} conversations deleted`);
+        } catch (e) {
+            console.error('[ChatSidebar] Bulk delete failed:', e);
+            toast.error('Failed to delete conversations');
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleDeleteConfirmed = async (conv: Conversation) => {
@@ -572,6 +629,61 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         }
     };
 
+    const handleReportConfirm = async (reasonId: string, otherText?: string) => {
+        if (!reportConversation) return;
+
+        let lastMessages: { sender: string; text: string; sent_at: string }[] = [];
+
+        try {
+            // Fetch the channel and get the latest 20 messages
+            const client = getStreamClient();
+            const [type, id] = reportConversation.id.split(':');
+            const channel = client.channel(type, id);
+            await channel.watch();
+
+            const channelMsgs = channel.state.messages;
+            // Get at most the latest 20 messages
+            const recentMessages = channelMsgs.slice(-20);
+
+            lastMessages = recentMessages.map(m => ({
+                sender: m.user?.id || m.user_id || '',
+                text: m.text || '',
+                sent_at: (m.created_at ? new Date(m.created_at).toISOString() : new Date().toISOString()),
+            }));
+        } catch (err) {
+            console.error('[ChatSidebar] Failed to fetch recent messages for report:', err);
+            // Proceed with empty last_messages — metadata is optional
+        }
+
+        submitReport(
+            {
+                reportedUserId: reportConversation.participant.id,
+                contentType: 'CHAT_MESSAGE',
+                contentId: reportConversation.id,
+                reason: reasonId,
+                note: otherText,
+                contextMetadata: {
+                    last_messages: lastMessages,
+                },
+            },
+            {
+                onSuccess: () => {
+                    toast.success('Conversation reported successfully');
+                    setReportConversation(null);
+                },
+                onError: () => {
+                    toast.error('Failed to submit report');
+                },
+            }
+        );
+    };
+
+    const handleSelectionToggle = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
     const archivedList = conversations.filter(c => c.isArchived);
     const normalList = conversations.filter(c => !c.isArchived);
 
@@ -602,68 +714,92 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
         });
 
+    const selectedConversations = selectedIds
+        .map(id => conversations.find(c => c.id === id))
+        .filter((c): c is Conversation => !!c);
+
     return (
         <>
             <div ref={containerRef} className={cn('flex flex-col h-full overflow-hidden', className)}>
 
                 {/* Header */}
                 <div className="shrink-0 flex flex-col gap-3">
-                    {selectionModeId ? (
+                    {selectedIds.length > 0 ? (
                         <div className="relative flex items-center justify-between py-1 px-1">
                             <button
-                                onClick={() => setSelectionModeId(null)}
+                                onClick={() => setSelectedIds([])}
                                 className="w-8 h-8 flex items-center justify-center rounded-lg text-white hover:bg-white/8 transition-colors cursor-pointer"
                             >
                                 <ChevronLeft className="w-5 h-5" />
                             </button>
 
                             <div className="flex items-center gap-5">
+                                {/* Mute — only when exactly 1 selected */}
+                                {selectedIds.length === 1 && (
+                                    <button
+                                        onClick={() => {
+                                            const conv = selectedConversations[0];
+                                            if (conv) {
+                                                handleMuteToggle(conv);
+                                                setSelectedIds([]);
+                                            }
+                                        }}
+                                        className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                                        title={selectedConversations[0]?.isMuted ? "Unmute" : "Mute"}
+                                    >
+                                        {selectedConversations[0]?.isMuted ? (
+                                            <Bell className="w-4.5 h-4.5" />
+                                        ) : (
+                                            <BellOff className="w-4.5 h-4.5" />
+                                        )}
+                                    </button>
+                                )}
+                                {/* Pin — always visible for any selection */}
                                 <button
-                                    onClick={() => {
-                                        const conv = conversations.find(c => c.id === selectionModeId);
-                                        if (conv) handleMuteToggle(conv);
-                                        setSelectionModeId(null);
-                                    }}
+                                    onClick={handlePinMultiple}
                                     className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                    title={conversations.find(c => c.id === selectionModeId)?.isMuted ? "Unmute" : "Mute"}
+                                    title="Pin/Unpin"
                                 >
-                                    {conversations.find(c => c.id === selectionModeId)?.isMuted ? (
-                                        <Bell className="w-4.5 h-4.5" />
-                                    ) : (
-                                        <BellOff className="w-4.5 h-4.5" />
-                                    )}
+                                    <Pin className="w-4.5 h-4.5" />
                                 </button>
+                                {/* Archive — always visible for any selection */}
                                 <button
-                                    onClick={() => {
-                                        const conv = conversations.find(c => c.id === selectionModeId);
-                                        if (conv) handlePin(conv);
-                                        setSelectionModeId(null);
-                                    }}
+                                    onClick={handleArchiveMultiple}
                                     className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                    title={pinnedIds.includes(selectionModeId!) ? "Unpin" : "Pin"}
+                                    title="Archive/Unarchive"
                                 >
-                                    <Pin className={cn("w-4.5 h-4.5", pinnedIds.includes(selectionModeId!) && "text-[#FF7700]")} />
+                                    <SquareArrowDown className="w-4.5 h-4.5" />
                                 </button>
+                                {/* Report — only when exactly 1 selected */}
+                                {selectedIds.length === 1 && (
+                                    <button
+                                        onClick={() => {
+                                            const conv = selectedConversations[0];
+                                            if (conv) {
+                                                setReportConversation(conv);
+                                                setSelectedIds([]);
+                                            }
+                                        }}
+                                        className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                                        title="Report"
+                                    >
+                                        <Flag className="w-4.5 h-4.5" />
+                                    </button>
+                                )}
+                                {/* Delete — always visible for any selection */}
                                 <button
                                     onClick={() => {
-                                        const conv = conversations.find(c => c.id === selectionModeId);
-                                        if (conv) handleArchiveToggle(conv);
-                                        setSelectionModeId(null);
-                                    }}
-                                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                    title={conversations.find(c => c.id === selectionModeId)?.isArchived ? "Unarchive" : "Archive"}
-                                >
-                                    {conversations.find(c => c.id === selectionModeId)?.isArchived ? (
-                                        <SquareArrowUp className="w-4.5 h-4.5" />
-                                    ) : (
-                                        <SquareArrowDown className="w-4.5 h-4.5" />
-                                    )}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        const conv = conversations.find(c => c.id === selectionModeId);
-                                        if (conv) setConfirmDelete(conv);
-                                        setSelectionModeId(null);
+                                        if (selectedIds.length === 1) {
+                                            const conv = selectedConversations[0];
+                                            if (conv) {
+                                                setConfirmDelete(conv);
+                                                setSelectedIds([]);
+                                            }
+                                        } else {
+                                            setPendingDeleteIds(selectedIds);
+                                            setSelectedIds([]);
+                                            setConfirmDeleteMultiple(true);
+                                        }
                                     }}
                                     className="text-red-500 hover:text-red-400 transition-colors cursor-pointer"
                                     title="Delete"
@@ -804,23 +940,24 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                     <ChatListItem
                                         key={conv.id}
                                         conversation={conv}
-                                        isActive={activeConversationId === conv.id || selectionModeId === conv.id}
+                                        isSelected={selectedIds.includes(conv.id)}
                                         isPinned={pinnedIds.includes(conv.id)}
                                         myId={myId}
                                         translateEnabled={translateEnabled}
                                         isMobile={isMobile}
                                         onClick={() => {
-                                            if (selectionModeId) {
-                                                setSelectionModeId(null);
+                                            if (selectedIds.length > 0) {
+                                                handleSelectionToggle(conv.id);
                                                 return;
                                             }
                                             onSelect(conv);
                                         }}
                                         onDeleteRequest={c => setConfirmDelete(c)}
+                                        onReport={c => setReportConversation(c)}
                                         onPinToggle={c => handlePin(c)}
                                         onMuteToggle={c => handleMuteToggle(c)}
                                         onArchiveToggle={c => handleArchiveToggle(c)}
-                                        onSelectionMode={id => setSelectionModeId(id)}
+                                        onSelectionToggle={handleSelectionToggle}
                                     />
                                 ))
                             )}
@@ -847,7 +984,53 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     isDeleting={isDeleting}
                 />
             )}
+            {confirmDeleteMultiple && (
+                <div
+                    onClick={() => { setConfirmDeleteMultiple(false); setPendingDeleteIds([]); }}
+                    className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300 cursor-default"
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        className="relative w-full max-w-[400px] rounded-[32px] shadow-2xl overflow-hidden p-10 flex flex-col items-center text-center backdrop-blur-[354px]"
+                        style={{
+                            background: 'linear-gradient(228deg, rgba(69, 26, 26, 0.5) 0%, rgba(26, 28, 30, 0.15) 42%), rgba(18, 18, 18, 0.9)'
+                        }}
+                    >
+                        <h3 className="text-2xl font-bold text-white mb-4 tracking-tight">Delete Conversations?</h3>
+                        <p className="text-gray-400 text-sm mb-10 leading-relaxed max-w-[280px]">
+                            Are you sure you want to delete {pendingDeleteIds.length} conversations? This cannot be undone.
+                        </p>
 
+                        <div className="flex items-center gap-4 w-full justify-center">
+                            <button
+                                onClick={handleDeleteMultipleConfirmed}
+                                disabled={isDeleting}
+                                className="flex-1 h-14 rounded-full bg-[#FF7700] text-black font-extrabold text-base hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-orange-500/20"
+                            >
+                                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                Delete
+                            </button>
+                            <button
+                                onClick={() => { setConfirmDeleteMultiple(false); setPendingDeleteIds([]); }}
+                                disabled={isDeleting}
+                                className="flex-1 h-14 rounded-full border-2 border-[#FF7700] text-[#FF7700] font-extrabold text-base hover:bg-[#FF7700]/5 transition-all active:scale-95 disabled:opacity-50 cursor-pointer bg-transparent"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {reportConversation && (
+                <ReportChatModal
+                    isOpen={!!reportConversation}
+                    username={reportConversation.participant.name}
+                    isLoading={isReportPending}
+                    onCancel={() => setReportConversation(null)}
+                    onConfirm={handleReportConfirm}
+                />
+            )}
 
         </>
     );

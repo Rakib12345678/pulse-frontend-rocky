@@ -9,6 +9,11 @@ import { FollowingEmpty } from '@/features/for-you/components/FollowingEmpty';
 import { LiveStreamGrid } from '@/features/for-you/components/LiveStreamGrid';
 import { GoLiveButton } from '@/features/for-you/components/GoLiveButton';
 
+let isInitialPageLoad = true;
+setTimeout(() => {
+    isInitialPageLoad = false;
+}, 1000);
+
 export const ForYouPage: React.FC = () => {
     const { isAuthenticated } = useAuthStore();
     const { openModal: openSignUpModal, setStep, setMode } = useSignUpStore();
@@ -30,6 +35,36 @@ export const ForYouPage: React.FC = () => {
         setStep('welcome');
         openSignUpModal();
     };
+
+    // Add cleanup for lingering media tracks when landing on the ForYou page
+    React.useEffect(() => {
+        const stopMediaTracks = async () => {
+            // The browser automatically stops all tracks on a full page reload.
+            // We only need to run this hack during client-side navigation.
+            if (isInitialPageLoad) return;
+
+            try {
+                // First check if permissions are already granted to avoid unnecessary prompts
+                const camPermission = await navigator.permissions.query({ name: 'camera' as PermissionName }).catch(() => null);
+                const micPermission = await navigator.permissions.query({ name: 'microphone' as PermissionName }).catch(() => null);
+
+                const canAccessCamera = camPermission?.state === 'granted';
+                const canAccessMic = micPermission?.state === 'granted';
+
+                if (canAccessCamera || canAccessMic) {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: canAccessCamera,
+                        audio: canAccessMic
+                    });
+                    stream.getTracks().forEach(track => track.stop());
+                }
+            } catch (err) {
+                // Ignore errors
+            }
+        };
+
+        stopMediaTracks();
+    }, []);
 
     return (
         <div className="w-full mt-8 overflow-x-hidden pb-12 sm:px-12 md:px-24">

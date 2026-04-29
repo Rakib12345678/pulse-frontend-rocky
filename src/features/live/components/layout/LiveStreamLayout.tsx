@@ -452,15 +452,15 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 }
 
                 if (!isTerminatingRef.current) {
-                    const { isEndingStream } = useGoLiveStore.getState();
+                    // const { isEndingStream } = useGoLiveStore.getState();
 
-                    if (!isEndingStream) {
-                        liveService.endLiveStream(_callId, false).catch((err) => {
-                            console.error('Failed to end live stream on navigate away:', err);
-                        });
-                    }
+                    // if (!isEndingStream) {
+                    //     liveService.endLiveStream(_callId, false).catch((err) => {
+                    //         console.error('Failed to end live stream on navigate away:', err);
+                    //     });
+                    // }
 
-                    // Always reset the store when actually navigating away
+                    // // Always reset the store when actually navigating away
                     useGoLiveStore.getState().reset();
                 }
             }
