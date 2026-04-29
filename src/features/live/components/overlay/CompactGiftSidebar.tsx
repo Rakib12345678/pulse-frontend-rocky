@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useJoinRequestStore } from '@/features/live/stores/joinRequestStore';
 import { useNavigate } from '@tanstack/react-router';
+import { MAX_COHOSTS } from '@/features/live/components/overlay/JoinRequestPopup';
 
 export const CompactGiftSidebar: React.FC = () => {
     const queryClient = useQueryClient();
@@ -172,6 +173,15 @@ export const CompactGiftSidebar: React.FC = () => {
         if (isCohost) setRequestStatus('approved');
     }, [call, user, viewerParticipants, requestStatus, setRequestStatus]);
 
+    // Compute stage-full state
+    const stageCreatorId = call?.state.createdBy?.id;
+    const currentCoHostCount = viewerParticipants.filter((p: any) => {
+        if (p.userId === stageCreatorId) return false;
+        return p.roles?.includes('co_host') || p.roles?.includes('admin') ||
+            p.capabilities?.includes('send-video');
+    }).length;
+    const isStageFull = currentCoHostCount >= MAX_COHOSTS;
+
     // Hide for non-viewers
     if (!isViewer) return null;
 
@@ -216,6 +226,10 @@ export const CompactGiftSidebar: React.FC = () => {
     const joinBtn = requestStatus === 'approved' ? (
         <span className="px-5 py-3 rounded-full text-sm font-bold text-green-400 bg-green-400/10 shrink-0">
             Joined
+        </span>
+    ) : isStageFull ? (
+        <span className="px-5 py-3 rounded-full text-sm font-bold text-white/40 bg-white/10 shrink-0 cursor-not-allowed">
+            Stage Full
         </span>
     ) : (
         <button

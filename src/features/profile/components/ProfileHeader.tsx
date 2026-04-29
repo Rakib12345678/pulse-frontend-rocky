@@ -197,15 +197,15 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center text-center md:text-left">
             <div className="relative shrink-0">
               <UserAvatar
-                src={user.profileImage}
-                alt={user.username}
-                isLive={isLive}
-                callId={liveStatus?.callId}
-                username={user.username}
-                size="custom"
-                className="w-32 h-32 md:w-20 md:h-20 lg:w-26 lg:h-26 xl:w-32 xl:h-32"
-                clickable={true}
-                showBadge={true}
+                  src={user.profileImage}
+                  alt={user.username}
+                  isLive={isLive}
+                  callId={liveStatus?.callId}
+                  username={user.username}
+                  size="custom"
+                  className="w-32 h-32 md:w-20 md:h-20 lg:w-26 lg:h-26 xl:w-32 xl:h-32"
+                  clickable={true}
+                  showBadge={true}
               />
               {isOwnProfile && (
                 <button

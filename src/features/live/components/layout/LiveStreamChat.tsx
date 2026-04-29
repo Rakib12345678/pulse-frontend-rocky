@@ -22,6 +22,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { liveService } from '@/features/live/services/live.service';
 import { CompactGiftSidebar } from '@/features/live/components/overlay/CompactGiftSidebar';
 import { SuperchatTicker } from '@/features/live/components/overlay/SuperchatTicker';
+import { MAX_COHOSTS } from '@/features/live/components/overlay/JoinRequestPopup';
 
 // Type guard for gift messages
 const isGiftMsg = (msg: any): boolean => !!msg?.isGiftMessage;
@@ -606,6 +607,15 @@ const ViewerBottomBar: React.FC = () => {
         return () => { unsubscribe(); };
     }, [call, user, setRequestStatus]);
 
+    // Compute stage-full state from current participants
+    const stageCreatorId = call?.state.createdBy?.id;
+    const currentCoHostCount = viewerParticipants.filter((p: any) => {
+        if (p.userId === stageCreatorId) return false;
+        return p.roles?.includes('co_host') || p.roles?.includes('admin') ||
+            p.capabilities?.includes('send-video');
+    }).length;
+    const isStageFull = currentCoHostCount >= MAX_COHOSTS;
+
     if (!createdBy) return null;
 
 
@@ -667,6 +677,10 @@ const ViewerBottomBar: React.FC = () => {
     const joinButton = requestStatus === 'approved' ? (
         <span className={`rounded-full text-sm font-bold text-green-400 bg-green-400/10 shrink-0 ${isMobile ? 'px-4 py-3' : 'px-8 py-3 rounded-full'}`}>
             Joined
+        </span>
+    ) : isStageFull ? (
+        <span className={`rounded-full text-sm font-bold text-white/40 bg-white/10 shrink-0 cursor-not-allowed ${isMobile ? 'px-4 py-3' : 'px-8 py-3 rounded-full'}`}>
+            Stage Full
         </span>
     ) : (
         <button

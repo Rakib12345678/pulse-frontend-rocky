@@ -12,6 +12,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { liveService } from '@/features/live/services/live.service';
 
+export const MAX_COHOSTS = 3;
+
 interface JoinRequest {
     userId: string;
     userName: string;
@@ -25,6 +27,18 @@ export const JoinRequestPopup: React.FC = () => {
     const participants = useParticipants();
     const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
     const isMobile = useIsMobile();
+
+    // Count current active co-hosts (exclude the host/creator)
+    const creatorId = call?.state.createdBy?.id;
+    const currentCoHostCount = participants.filter((p: any) => {
+        if (p.userId === creatorId) return false; // skip host
+        if (p.userId === localParticipant?.userId && !p.roles?.includes('co_host')) return false;
+        const isCoHost = p.roles?.includes('co_host') || p.roles?.includes('admin') ||
+            p.capabilities?.includes('send-video');
+        return isCoHost;
+    }).length;
+
+    const isStageFull = currentCoHostCount >= MAX_COHOSTS;
 
     useEffect(() => {
         if (!call) return;
@@ -51,17 +65,25 @@ export const JoinRequestPopup: React.FC = () => {
     if (!call || joinRequests.length === 0) return null;
 
     const handleApprove = async (request: JoinRequest) => {
-        // Enforce maximum of 3 co-hosts
-        const activeCoHostsCount = participants.filter((p: any) =>
-            !p.roles?.includes('host') &&
-            !p.roles?.includes('admin') &&
-            (p.roles?.includes('co_host') ||
-                p.capabilities?.includes('send-audio') ||
-                p.capabilities?.includes('send-video'))
-        ).length;
+        // Enforce max co-host limit (re-check at approval time in case someone joined since render)
+        const liveCoHostCount = participants.filter((p: any) => {
+            if (p.userId === creatorId) return false;
+            if (p.userId === localParticipant?.userId && !p.roles?.includes('co_host')) return false;
+            return p.roles?.includes('co_host') || p.roles?.includes('admin') ||
+                p.capabilities?.includes('send-video');
+        }).length;
 
-        if (activeCoHostsCount >= 3) {
-            toast.error('Maximum limit of 3 co-hosts reached');
+        if (liveCoHostCount >= MAX_COHOSTS) {
+            toast.error(`Stage is full (max ${MAX_COHOSTS} co-hosts). Remove someone first.`);
+            // Auto-decline the request so the viewer knows
+            try {
+                await call.sendCustomEvent({
+                    type: 'join-response', userId: request.userId, accepted: false,
+                });
+            } catch (err) {
+                console.error('[JoinRequestPopup] Failed to send stage-full decline:', err);
+            }
+            setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
             return;
         }
 
@@ -89,13 +111,10 @@ export const JoinRequestPopup: React.FC = () => {
                 await liveService.addCoHost(call.id, request.userName);
             }
 
-            // Only remove the request from UI on full success
-            setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
-            toast.success(`@${request.userName} is now a co-host!`);
+            toast.success(`@${request.userName} joined as co-host`);
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to grant permissions:', err);
-            setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
-            toast.error(`Failed to approve @${request.userName}. Please try again.`);
+            toast.error(`Failed to add @${request.userName} as co-host`);
         }
     };
 
@@ -105,8 +124,10 @@ export const JoinRequestPopup: React.FC = () => {
             await call.sendCustomEvent({
                 type: 'join-response', userId: request.userId, accepted: false,
             });
+            toast(`Declined @${request.userName}'s request`);
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to send decline:', err);
+            toast.error(`Failed to decline @${request.userName}'s request`);
         }
         setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
     };
@@ -139,13 +160,25 @@ export const JoinRequestPopup: React.FC = () => {
                         </div>
                     </div>
 
+                    {/* Stage count indicator */}
+                    {isStageFull && (
+                        <div className="text-xs text-amber-400/80 mb-2 text-center">
+                            Stage full ({currentCoHostCount}/{MAX_COHOSTS} co-hosts) — remove someone to accept
+                        </div>
+                    )}
+
                     {/* Action buttons */}
                     <div className="flex gap-4">
                         <button
                             onClick={() => handleApprove(request)}
-                            className="flex-1 py-3 rounded-full bg-[#FF7B00] text-black font-medium text-[19px] transition-all hover:bg-[#ff8822] active:scale-95"
+                            disabled={isStageFull}
+                            className={`flex-1 py-3 rounded-full font-medium text-[19px] transition-all active:scale-95 ${
+                                isStageFull
+                                    ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                                    : 'bg-[#FF7B00] text-black hover:bg-[#ff8822]'
+                            }`}
                         >
-                            Accept
+                            {isStageFull ? 'Stage Full' : 'Accept'}
                         </button>
                         <button
                             onClick={() => handleDecline(request)}

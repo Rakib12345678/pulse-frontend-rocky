@@ -284,7 +284,7 @@ const ConfirmDeleteModal = ({
 );
 
 
-// ConversationDropdown 
+// ConversationDropdown
 
 const ConversationDropdown = ({
     isPinned, isMuted, isArchived,
@@ -469,7 +469,7 @@ const ChatListItem = ({
     );
 };
 
-// ChatSidebar 
+// ChatSidebar
 interface ChatSidebarProps {
     conversations: Conversation[];
     isLoading: boolean;
@@ -615,7 +615,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         if (isNaN(targetId)) return;
         const displayName = capitalizeName(getDisplayName(streamUser));
         const avatar = toAbsoluteUrl((streamUser as any).image || '');
-        
+
         // Close modal immediately for a better UX
         setShowNewChat(false);
         setIsStarting(true);

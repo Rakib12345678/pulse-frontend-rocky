@@ -28,7 +28,8 @@ export const RecordedStreamHeader: React.FC = () => {
     const navigate = useNavigate();
 
     const hostName = recordingMetadata?.username || null;
-    const cohostsCount = recordingMetadata?.cohosts?.length || 0;
+    const cohosts = recordingMetadata?.cohosts || [];
+    const cohostsCount = cohosts.length;
     const totalStreamers = (hostName ? 1 : 0) + cohostsCount;
     
     // Display total streamers (Host + Cohosts) instead of viewer count
