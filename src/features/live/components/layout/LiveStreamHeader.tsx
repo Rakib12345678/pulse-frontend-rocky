@@ -461,7 +461,7 @@ export const LiveStreamHeader: React.FC = () => {
                         {
                             reportedUserId: reportedUserId || createdBy?.id || '',
                             contentType: 'LIVE_STREAM',
-                            contentId: streamData?.callId || '',
+                            contentId: streamData?.callId || call?.id || '',
                             reason: reasonId,
                             note: otherText,
                         },
