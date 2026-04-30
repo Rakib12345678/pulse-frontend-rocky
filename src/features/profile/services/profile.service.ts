@@ -255,7 +255,6 @@ export const useToggleFollow = () => {
             return {
               ...c,
               followedByMe: !followedByMe,
-              isFollower: !followedByMe,
               isFollowed: !followedByMe,
               followerCount: followedByMe
                 ? Math.max(0, (c.followerCount ?? 0) - 1)
@@ -288,11 +287,7 @@ export const useToggleFollow = () => {
                 return { 
                   ...user, 
                   isFollowing: newIsFollowing,
-                  isFollower: newIsFollowing,
                   followedByMe: newIsFollowing,
-                  followerCount: newIsFollowing
-                    ? (user.followerCount ?? 0) + 1
-                    : Math.max(0, (user.followerCount ?? 0) - 1)
                 };
               }
               return user;
@@ -313,7 +308,6 @@ export const useToggleFollow = () => {
             return {
               ...c,
               followedByMe: !followedByMe,
-              isFollower: !followedByMe,
               isFollowed: !followedByMe,
               followerCount: followedByMe
                 ? Math.max(0, (c.followerCount ?? 0) - 1)

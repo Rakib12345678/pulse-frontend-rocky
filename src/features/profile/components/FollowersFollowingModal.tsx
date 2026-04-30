@@ -18,7 +18,6 @@ import {
   useFollowing,
   useSearchCreators,
   useToggleFollow,
-  useBlockUser,
   useCurrentUser,
   useRemoveFollower,
 } from '../services/profile.service';
@@ -27,7 +26,9 @@ import { UserAvatar } from '@/components/UserAvatar';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ConfirmModal, BlockUserModal } from '@/components/internal/ConfirmModal';
+import { ConfirmModal } from '@/components/internal/ConfirmModal';
+import { chatService } from '@/features/chat/services/chat.service';
+import { SESSION_ACTIVE_KEY } from '@/features/chat/utils/chatConstants';
 
 interface FollowersFollowingModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ export const FollowersFollowingModal = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmRemove, setConfirmRemove] = useState<FollowUser | null>(null);
   const [confirmUnfollow, setConfirmUnfollow] = useState<FollowUser | null>(null);
+  const [isMessaging, setIsMessaging] = useState<number | null>(null);
 
   const isOwnList = useMemo(() => {
     if (!currentUser || !userId) return false;
@@ -78,7 +80,7 @@ export const FollowersFollowingModal = ({
     hasNextPage: hasMoreFollowing
   } = useFollowing(userId);
 
-  const { data: searchResults, isLoading: isSearching } = useSearchCreators(searchQuery);
+  const { isLoading: isSearching } = useSearchCreators(searchQuery);
 
   const { mutate: toggleFollow } = useToggleFollow();
   // const { mutate: blockUser, isPending: isBlocking } = useBlockUser();
@@ -100,10 +102,14 @@ export const FollowersFollowingModal = ({
 
   const isLoading = searchQuery ? isSearching : (type === 'followers' ? isLoadingFollowers : isLoadingFollowing);
 
+  // isFollowing = I follow this user | isFollower = this user follows me
+  const getIsFollowingBack = (user: FollowUser) => {
+    return !!user.isFollowing;
+  };
+
   const handleToggleFollow = (user: FollowUser) => {
     const uId = user.userId || (user as any).id;
-    const isCurrentlyFollowing = (user.isFollowing || (user as any).isFollower || (user as any).followedByMe)
-      ?? (type === 'following' && isOwnList && !searchQuery);
+    const isCurrentlyFollowing = getIsFollowingBack(user);
 
     if (isCurrentlyFollowing) {
       setConfirmUnfollow(user);
@@ -126,6 +132,32 @@ export const FollowersFollowingModal = ({
     );
   };
 
+  const handleMessage = async (user: FollowUser) => {
+    if (!currentUser) return;
+    const uId = user.userId || (user as any).id;
+    setIsMessaging(uId);
+    try {
+        const { channelCid } = await chatService.startDirectChat(
+            uId,
+            { 
+              id: String(currentUser.id), 
+              name: currentUser.fullName || currentUser.username || '', 
+              avatar: currentUser.profileImage || '' 
+            },
+            { 
+              name: user.fullName || user.username || '', 
+              avatar: user.profileImage || '' 
+            }
+        );
+        sessionStorage.setItem(SESSION_ACTIVE_KEY, channelCid);
+        onClose();
+        navigate({ to: '/chats' as any });
+    } catch (error) {
+        toast.error('Failed to start chat');
+    } finally {
+        setIsMessaging(null);
+    }
+  };
 
   const handleConfirmRemove = () => {
     if (!confirmRemove) return;
@@ -197,10 +229,13 @@ export const FollowersFollowingModal = ({
         ) : currentList.length > 0 ? (
           <div className="flex flex-col gap-8 pb-8">
             {currentList.map((user) => {
-              const isFollowing = (user.isFollowing || (user as any).isFollower || (user as any).followedByMe)
-                ?? (type === 'following' && isOwnList && !searchQuery);
+              const uId = user.userId || (user as any).id;
+              const isSelf = currentUser && Number(currentUser.id) === Number(uId);
+              const isFollowing = getIsFollowingBack(user);
+              const showFollowBack = !!user.isFollower && !isFollowing;
+              const isMutual = isFollowing && !!user.isFollower;
               return (
-                <div key={user.userId || (user as any).id} className="flex items-center justify-between group">
+                <div key={uId} className="flex items-center justify-between group">
                   <div className="flex items-center gap-4">
                     <div
                       className="flex items-center gap-4 cursor-pointer group/item"
@@ -233,17 +268,32 @@ export const FollowersFollowingModal = ({
                     </div>
                   </div>
 
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleToggleFollow(user); }}
-                    className={cn(
-                      "px-8 py-2.5 rounded-full text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap",
-                      isFollowing
-                        ? "bg-[#1D1F20] text-gray-400 border border-zinc-700 hover:bg-zinc-800"
-                        : "bg-[#FF7700] text-[#111213] hover:bg-[#ff8c2b]"
-                    )}
-                  >
-                    {isFollowing ? 'Following' : (type === 'followers' && isOwnList ? 'Follow Back' : 'Follow')}
-                  </button>
+                  {!isSelf && (
+                    isMutual ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleMessage(user); }}
+                        disabled={isMessaging === uId}
+                        className={cn(
+                          "px-8 py-2.5 rounded-full text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap",
+                          "bg-[#1D1F20] text-gray-300 border border-zinc-700 hover:bg-zinc-800 hover:text-white"
+                        )}
+                      >
+                        {isMessaging === uId ? 'Wait...' : 'Message'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleToggleFollow(user); }}
+                        className={cn(
+                          "px-8 py-2.5 rounded-full text-sm font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap",
+                          isFollowing
+                            ? "bg-[#1D1F20] text-gray-400 border border-zinc-700 hover:bg-zinc-800"
+                            : "bg-[#FF7700] text-[#111213] hover:bg-[#ff8c2b]"
+                        )}
+                      >
+                        {isFollowing ? 'Following' : (showFollowBack ? 'Follow Back' : 'Follow')}
+                      </button>
+                    )
+                  )}
                 </div>
               );
             })}

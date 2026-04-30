@@ -33,12 +33,16 @@ export const ChatPage: React.FC<ChatPageProps> = ({
 
     const [streamReady, setStreamReady] = useState(false);
 
-    // Reset state whenever the logged-in user changes
+    // Reset state only if the logged-in user ACTUALLY switches accounts
+    const previousMyId = useRef(myId);
     useEffect(() => {
-        setStreamReady(false);
-        setLocalConvId(null);
-        setDisplayConversation(null);
-        clearSession();
+        if (previousMyId.current && myId && previousMyId.current !== myId) {
+            setStreamReady(false);
+            setLocalConvId(null);
+            setDisplayConversation(null);
+            clearSession();
+        }
+        previousMyId.current = myId;
     }, [myId]);
 
     useEffect(() => {

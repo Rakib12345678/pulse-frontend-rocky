@@ -69,6 +69,7 @@ export interface FollowUser {
   fullName: string;
   profileImage?: string;
   isFollowing?: boolean;
+  isFollower?: boolean;
   isLive?: boolean;
   callId?: string | null;
 }

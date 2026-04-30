@@ -442,12 +442,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 </div>
             </div>
 
-            {/* Messages */}
             <div
                 className="flex-1 min-h-0 overflow-y-auto overscroll-none px-2 sm:px-4 lg:px-8 pt-4 pb-10 sm:pt-5 flex flex-col [&::-webkit-scrollbar]:hidden bg-transparent relative"
                 onContextMenu={handleContextMenu}
             >
-                <div className="flex flex-col gap-3 sm:gap-4 mx-auto w-full">
+                <div className={cn(
+                    "flex flex-col gap-3 sm:gap-4 mx-auto w-full",
+                    visibleMessages.length === 0 && !msgLoading && "flex-1"
+                )}>
 
                     {hasMore && (
                         <div className="flex justify-center">

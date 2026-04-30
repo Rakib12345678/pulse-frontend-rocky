@@ -1,6 +1,6 @@
 import React from 'react';
 // removed Button import
-import { useToggleFollow } from '@/features/profile/services/profile.service';
+import { useToggleFollow, useCurrentUser } from '@/features/profile/services/profile.service';
 import { Creator } from '../types/explore.types';
 import { toast } from 'sonner';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -14,6 +14,8 @@ interface CreatorCardProps {
 
 export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
     const { mutate: toggleFollow, isPending } = useToggleFollow();
+    const { data: currentUser } = useCurrentUser();
+    const isSelf = currentUser && Number(currentUser.id) === Number(creator.id);
     const navigate = useNavigate();
 
     const handleFollowClick = (e: React.MouseEvent) => {
@@ -100,19 +102,25 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
             </div>
 
             {/* Follow Button */}
-            <button
-                type="button"
-                onClick={handleFollowClick}
-                disabled={isPending || creator.isFollower}
-                className={cn(
-                    "w-[120px] h-[48px] rounded-[100px] py-3 px-6 flex items-center justify-center gap-4 text-xs font-bold transition-all shadow-lg",
-                    creator.isFollower
-                        ? "bg-[#262626] text-gray-500 cursor-not-allowed opacity-100"
-                        : "bg-[#FF8800] text-black hover:bg-[#ff941a] shadow-orange-900/10 cursor-pointer"
-                )}
-            >
-                {creator.isFollower ? 'Following' : 'Follow'}
-            </button>
+            {!isSelf ? (
+                <button
+                    type="button"
+                    onClick={handleFollowClick}
+                    disabled={isPending || creator.isFollower}
+                    className={cn(
+                        "w-[120px] h-[48px] rounded-[100px] py-3 px-6 flex items-center justify-center gap-4 text-xs font-bold transition-all shadow-lg",
+                        creator.isFollower
+                            ? "bg-[#262626] text-gray-500 cursor-not-allowed opacity-100"
+                            : "bg-[#FF8800] text-black hover:bg-[#ff941a] shadow-orange-900/10 cursor-pointer"
+                    )}
+                >
+                    {creator.isFollower ? 'Following' : 'Follow'}
+                </button>
+            ) : (
+                <div className="w-[120px] h-[48px] rounded-[100px] py-3 px-6 flex items-center justify-center gap-4 text-xs font-bold bg-[#262626] text-gray-500 cursor-default opacity-100 transition-all shadow-lg">
+                    You
+                </div>
+            )}
         </div>
     );
 };
