@@ -9,11 +9,13 @@ import { useGoLive } from '@/features/profile/hooks/useGoLive';
 import { EditProfile } from '@/features/profile/components/EditProfile';
 import { useSubmitReport } from '@/features/report/services/report.service';
 import { BlockUserModal, ErrorModal } from '@/components/internal/ConfirmModal';
-import { ReportUserModal, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
+import { ReportUserModal, ReportLimitModal, ReportSuccessModal, ReportFailureModal } from '@/components/internal/ReasonModal';
 import { SuccessModal } from '@/features/setting/components/SuccessModal';
 import { FollowersFollowingModal } from '@/features/profile/components/FollowersFollowingModal';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 
 interface ProfileHeaderProps {
   user: User;
@@ -32,6 +34,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [showReportSuccess, setShowReportSuccess] = useState(false);
   const [showReportLimitModal, setShowReportLimitModal] = useState(false);
+  const [failedReportData, setFailedReportData] = useState<{ reasonId: string; otherText?: string } | null>(null);
   const [followModal, setFollowModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
     isOpen: false,
     type: 'followers',
@@ -41,6 +44,19 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
   const { mutate: toggleBlock, isPending: isBlockPending } = useBlockUser();
   const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
   const handleGoLiveClick = useGoLive();
+  const { user: currentUser } = useAuthStore();
+  const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
+
+  const handleReportClick = () => {
+    if (!currentUser) {
+      setMode('login');
+      setStep('input');
+      openLoginModal();
+      return;
+    }
+    setShowReportModal(true);
+    setActionMenuOpen(false);
+  };
 
   const { data: liveStatus } = useUserLiveStatus(
     !isOwnProfile ? (user.username ?? undefined) : undefined,
@@ -111,7 +127,9 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
             setActionMenuOpen(false);
             setShowReportLimitModal(true);
           } else {
-            toast.error('Failed to submit report');
+            setFailedReportData({ reasonId, otherText });
+            setShowReportModal(false);
+            setActionMenuOpen(false);
           }
         },
       }
@@ -192,6 +210,17 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         onExplore={() => {
           setShowReportLimitModal(false);
         }}
+      />
+
+      <ReportFailureModal
+        isOpen={!!failedReportData}
+        onTryAgain={() => {
+          if (failedReportData) {
+            handleReportConfirm(failedReportData.reasonId, failedReportData.otherText);
+            setFailedReportData(null);
+          }
+        }}
+        onCancel={() => setFailedReportData(null)}
       />
 
       <FollowersFollowingModal
@@ -334,7 +363,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                           </button>
                           <div className="h-px bg-zinc-800 mx-2" />
                           <button
-                            onClick={() => { setShowReportModal(true); setActionMenuOpen(false); }}
+                            onClick={handleReportClick}
                             className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
                           >
                             Report User

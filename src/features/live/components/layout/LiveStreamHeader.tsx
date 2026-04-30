@@ -10,7 +10,9 @@ import { useLiveStreamContext } from '@/features/live/components/layout/LiveStre
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EndLiveModal } from '@/features/live/components/modals/EndLiveModal';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { ReportStreamModal, TargetUserOption, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
+import { ReportStreamModal, TargetUserOption, ReportLimitModal, ReportSuccessModal, ReportFailureModal } from '@/components/internal/ReasonModal';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 
 import { ParticipantsDialog } from '@/features/live/components/modals/ParticipantsDialog';
 import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
@@ -39,6 +41,18 @@ export const LiveStreamHeader: React.FC = () => {
     const participants = useParticipants();
     const createdBy = useCallCreatedBy();
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
+    const { user: currentUser } = useAuthStore();
+    const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
+
+    const handleReportClick = () => {
+        if (!currentUser) {
+            setMode('login');
+            setStep('input');
+            openLoginModal();
+            return;
+        }
+        setIsReportOpen(true);
+    };
 
     // Compute presence-aware participant count (excludes inactive viewers)
     const { getActiveUserIds } = useParticipantPresenceStore();
@@ -77,6 +91,7 @@ export const LiveStreamHeader: React.FC = () => {
     const startTimestampRef = React.useRef<number | null>(null);
     const [isReportOpen, setIsReportOpen] = React.useState(false);
     const [showReportSuccess, setShowReportSuccess] = React.useState(false);
+    const [failedReportData, setFailedReportData] = React.useState<{ reportedUserId: string, reasonId: string, otherText?: string } | null>(null);
     const [showReportLimitModal, setShowReportLimitModal] = React.useState(false);
 
     React.useEffect(() => {
@@ -281,7 +296,7 @@ export const LiveStreamHeader: React.FC = () => {
                                             <div className="h-px bg-white/10 w-full" />
                                             <button
                                                 className="text-left px-4 py-4 text-xl font-medium hover:bg-white/10 rounded-b-xl transition-colors"
-                                                onClick={() => setIsReportOpen(true)}
+                                                onClick={handleReportClick}
                                             >
                                                 Report Stream
                                             </button>
@@ -399,7 +414,7 @@ export const LiveStreamHeader: React.FC = () => {
                                     <DropdownMenuSeparator className="bg-white/10 my-1" />
                                     <DropdownMenuItem
                                         className="cursor-pointer px-4 py-3 text-[16px] font-medium hover:bg-white/10 focus:bg-white/10 focus:text-white rounded-lg transition-colors"
-                                        onClick={() => setIsReportOpen(true)}
+                                        onClick={handleReportClick}
                                     >
                                         Report Stream
                                     </DropdownMenuItem>
@@ -477,7 +492,8 @@ export const LiveStreamHeader: React.FC = () => {
                                     setIsReportOpen(false);
                                     setShowReportLimitModal(true);
                                 } else {
-                                    toast.error('Failed to submit report');
+                                    setFailedReportData({ reportedUserId: reportedUserId || createdBy?.id || '', reasonId, otherText });
+                                    setIsReportOpen(false);
                                 }
                             },
                         }
@@ -502,6 +518,37 @@ export const LiveStreamHeader: React.FC = () => {
                     handleLeaveStream();
                 }}
                 onClose={() => setShowReportSuccess(false)}
+            />
+
+            <ReportFailureModal
+                isOpen={!!failedReportData}
+                onTryAgain={() => {
+                    if (failedReportData) {
+                        submitReport(
+                            {
+                                reportedUserId: failedReportData.reportedUserId,
+                                contentType: 'LIVE_STREAM',
+                                contentId: streamData?.callId || call?.id || '',
+                                reason: failedReportData.reasonId,
+                                note: failedReportData.otherText,
+                            },
+                            {
+                                onSuccess: () => {
+                                    setShowReportSuccess(true);
+                                },
+                                onError: (error: any) => {
+                                    if (error?.response?.status === 429) {
+                                        setShowReportLimitModal(true);
+                                    } else {
+                                        setFailedReportData({ reportedUserId: failedReportData.reportedUserId, reasonId: failedReportData.reasonId, otherText: failedReportData.otherText });
+                                    }
+                                },
+                            }
+                        );
+                        setFailedReportData(null);
+                    }
+                }}
+                onCancel={() => setFailedReportData(null)}
             />
         </>
     );

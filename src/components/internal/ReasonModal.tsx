@@ -504,7 +504,7 @@ export const ReportSuccessModal = ({
 
     const content = (
         <div className="flex flex-col items-center text-center">
-            <h2 className="text-white text-2xl font-bold mb-6 leading-snug">
+            <h2 className="text-white text-2xl font-bold mb-6 leading-snug p-2">
                 You Reported @{username} <br />
                 Successfully
             </h2>
@@ -558,6 +558,73 @@ export const ReportSuccessModal = ({
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-[100005]">
                 <DialogTitle className="sr-only">Report Successful</DialogTitle>
+                {content}
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+export const ReportFailureModal = ({
+    isOpen,
+    onTryAgain,
+    onCancel,
+}: {
+    isOpen: boolean;
+    onTryAgain: () => void;
+    onCancel: () => void;
+}) => {
+    const isMobile = useIsMobile();
+
+    if (!isOpen) return null;
+
+    const content = (
+        <div className="flex flex-col items-center text-center p-2">
+            <svg width="84" height="74" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-6">
+                <path d="M42.3 6.4C45.9 -0.1 54.1 -0.1 57.7 6.4L95.7 75.4C99.2 81.7 94.3 89.5 87 89.5H13C5.7 89.5 0.8 81.7 4.3 75.4L42.3 6.4Z" fill="#FF0000" />
+                <path d="M46 25L48 55H52L54 25H46Z" fill="white" />
+                <rect x="47" y="62" width="6" height="8" fill="white" />
+            </svg>
+
+            <h2 className="text-white text-2xl font-bold mb-4">Report Failed</h2>
+            <p className="text-gray-400 text-[15px] mb-8 leading-relaxed max-w-[280px]">
+                Your report could not be submitted at this time. Please try again later.
+            </p>
+
+            <div className="flex gap-4 w-full">
+                <button
+                    onClick={onTryAgain}
+                    className="flex-1 py-3.5 rounded-full bg-[#FF7700] text-black text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                >
+                    Try Again
+                </button>
+                <button
+                    onClick={onCancel}
+                    className="flex-1 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-[15px] font-bold hover:bg-white/5 transition-all cursor-pointer"
+                >
+                    Cancel
+                </button>
+            </div>
+        </div>
+    );
+
+    if (isMobile) {
+        return (
+            <Drawer open={isOpen} onOpenChange={(open: boolean) => !open && onCancel()}>
+                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-[100005]">
+                    <DrawerHeader className="pt-3 pb-4 sr-only">
+                        <DrawerTitle>Report Failed</DrawerTitle>
+                        <DrawerDescription>Your report failed to submit.</DrawerDescription>
+                    </DrawerHeader>
+                    {content}
+                </DrawerContent>
+            </Drawer>
+        );
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-[100005]">
+                <DialogTitle className="sr-only">Report Failed</DialogTitle>
                 {content}
             </DialogContent>
         </Dialog>

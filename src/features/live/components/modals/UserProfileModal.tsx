@@ -33,7 +33,7 @@ import { useLiveStreamContext } from '@/features/live/components/layout/LiveStre
 import { ProfilePage } from '@/features/profile';
 import { AppBackground } from '@/components/internal/AppBackground';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { ReportUserModal, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
+import { ReportUserModal, ReportLimitModal, ReportSuccessModal, ReportFailureModal } from '@/components/internal/ReasonModal';
 
 export const UserProfileModal: React.FC = () => {
     const { isOpen, username: targetUsername, closeModal, showFullscreen, setShowFullscreen } = useUserProfileStore();
@@ -50,6 +50,7 @@ export const UserProfileModal: React.FC = () => {
     const [isBlockDrawerOpen, setIsBlockDrawerOpen] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [showReportSuccess, setShowReportSuccess] = useState(false);
+    const [failedReportData, setFailedReportData] = useState<{ reasonId: string; otherText?: string } | null>(null);
     const [showReportLimitModal, setShowReportLimitModal] = useState(false);
 
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
@@ -230,7 +231,8 @@ export const UserProfileModal: React.FC = () => {
                         setShowReportModal(false);
                         setShowReportLimitModal(true);
                     } else {
-                        toast.error('Failed to submit report');
+                        setFailedReportData({ reasonId, otherText });
+                        setShowReportModal(false);
                     }
                 },
             }
@@ -311,6 +313,17 @@ export const UserProfileModal: React.FC = () => {
                     setShowReportLimitModal(false);
                     closeModal();
                 }}
+            />
+
+            <ReportFailureModal
+                isOpen={!!failedReportData}
+                onTryAgain={() => {
+                    if (failedReportData) {
+                        handleReportConfirm(failedReportData.reasonId, failedReportData.otherText);
+                        setFailedReportData(null);
+                    }
+                }}
+                onCancel={() => setFailedReportData(null)}
             />
         </>
     );

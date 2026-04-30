@@ -18,6 +18,7 @@ import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
 import { ChangeLanguageModal } from './ChangeLanguageModal';
 import { DateSeparator } from './DateSeparator';
 import { GiftCarousel } from './GiftCarousel';
+import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { EmojiPickerPopup } from './EmojiPickerPopup';
 import { MessageBubble } from './MessageBubble';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -27,7 +28,7 @@ import { TranslateDrawer } from './TranslateDrawer';
 import { TranslateTogglePopover } from './TranslateTogglePopover';
 import { useSubmitReport } from '@/features/report/services/report.service';
 import { userService } from '@/features/live/services/user.service';
-import { ReportChatModal, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
+import { ReportChatModal, ReportLimitModal, ReportSuccessModal, ReportFailureModal } from '@/components/internal/ReasonModal';
 
 import sendIcon from '@/assets/Send.svg';
 import LiveIcon from '@/assets/Live.svg';
@@ -97,9 +98,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const [msgToDelete, setMsgToDelete] = useState<Message | null>(null);
     const [msgToReport, setMsgToReport] = useState<Message | null>(null);
     const [reportedSuccessInfo, setReportedSuccessInfo] = useState<{ id: string; name: string } | null>(null);
+    const [failedReportData, setFailedReportData] = useState<Message | null>(null);
     const [showReportLimitModal, setShowReportLimitModal] = useState(false);
     const { translateEnabled, setTranslate } = useTranslationPreference(myId);
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
+    const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
+
+    const handleReportMessage = (msg: Message) => {
+        if (!user) {
+            setMode('login');
+            setStep('input');
+            openLoginModal();
+            return;
+        }
+        setMsgToReport(msg);
+    };
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const giftRef = useRef<HTMLDivElement>(null);
@@ -492,7 +505,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                         onReact={onReact}
                                         onDeleteReaction={onDeleteReaction}
                                         onCopy={handleCopy}
-                                        onReport={msg => setMsgToReport(msg)}
+                                        onReport={msg => handleReportMessage(msg)}
                                         onImageLoad={handleImageLoad}
                                     />
                                 </div>,
@@ -816,7 +829,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                     setMsgToReport(null);
                                     setShowReportLimitModal(true);
                                 } else {
-                                    toast.error('Failed to submit report');
+                                    setFailedReportData(msgToReport);
+                                    setMsgToReport(null);
                                 }
                             },
                         }
@@ -850,6 +864,17 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     }
                 }}
                 onClose={() => setReportedSuccessInfo(null)}
+            />
+
+            <ReportFailureModal
+                isOpen={!!failedReportData}
+                onTryAgain={() => {
+                    if (failedReportData) {
+                        setMsgToReport(failedReportData);
+                        setFailedReportData(null);
+                    }
+                }}
+                onCancel={() => setFailedReportData(null)}
             />
 
             {/* Context Menu */}

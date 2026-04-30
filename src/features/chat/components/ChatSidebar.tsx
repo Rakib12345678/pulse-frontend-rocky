@@ -11,6 +11,7 @@ import { Avatar } from '@/features/chat/components/Avatar';
 import { UserSearchList, type StreamUser } from '@/features/chat/components/Usersearchlist';
 import { useFollowers } from '@/features/profile/services/profile.service';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import {
     Drawer,
     DrawerContent,
@@ -32,7 +33,7 @@ import chatGroup from '@/assets/chatGroup.svg';
 import SearchIcon from '@/assets/Search.svg';
 import { getStreamClient } from '../stream/streamClient';
 import { useSubmitReport } from '@/features/report/services/report.service';
-import { ReportChatModal, ReportLimitModal, ReportSuccessModal } from '@/components/internal/ReasonModal';
+import { ReportChatModal, ReportLimitModal, ReportSuccessModal, ReportFailureModal } from '@/components/internal/ReasonModal';
 
 // TickIcon
 
@@ -178,17 +179,17 @@ const NewChatModal = ({
                                         className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl hover:bg-white/5 transition-all text-left disabled:opacity-60 cursor-pointer group"
                                     >
                                         <Avatar src={f.profileImage || ''} alt={f.username} className="w-12 h-12" />
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="text-white text-[15px] font-bold truncate">
-                                            {capitalizeName(f.username)}
-                                        </span>
-                                        <span className="text-[#FF7700] text-[11px] font-bold mt-0.5 uppercase tracking-wide">
-                                            Tap to Chat
-                                        </span>
-                                    </div>
-                                    {isStarting && (
-                                        <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-auto shrink-0" />
-                                    )}
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-white text-[15px] font-bold truncate">
+                                                {capitalizeName(f.username)}
+                                            </span>
+                                            <span className="text-[#FF7700] text-[11px] font-bold mt-0.5 uppercase tracking-wide">
+                                                Tap to Chat
+                                            </span>
+                                        </div>
+                                        {isStarting && (
+                                            <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-auto shrink-0" />
+                                        )}
                                     </button>
                                 );
                             })}
@@ -510,6 +511,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
     const [reportConversation, setReportConversation] = React.useState<Conversation | null>(null);
     const [reportedSuccessConv, setReportedSuccessConv] = React.useState<Conversation | null>(null);
+    const [failedReportData, setFailedReportData] = React.useState<{ conversation: Conversation, reasonId: string, otherText?: string } | null>(null);
     const [showReportLimitModal, setShowReportLimitModal] = React.useState(false);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -517,6 +519,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const navigate = useNavigate();
     const { translateEnabled } = useTranslationPreference(myId);
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
+    const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
+
+    const handleReportClick = (conv: Conversation) => {
+        if (!user) {
+            setMode('login');
+            setStep('input');
+            openLoginModal();
+            return;
+        }
+        setReportConversation(conv);
+    };
 
 
     React.useEffect(() => {
@@ -679,7 +692,8 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                         setReportConversation(null);
                         setShowReportLimitModal(true);
                     } else {
-                        toast.error('Failed to submit report');
+                        setFailedReportData({ conversation: reportConversation, reasonId, otherText });
+                        setReportConversation(null);
                     }
                 },
             }
@@ -784,7 +798,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                         onClick={() => {
                                             const conv = selectedConversations[0];
                                             if (conv) {
-                                                setReportConversation(conv);
+                                                handleReportClick(conv);
                                                 setSelectedIds([]);
                                             }
                                         }}
@@ -961,7 +975,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                             onSelect(conv);
                                         }}
                                         onDeleteRequest={c => setConfirmDelete(c)}
-                                        onReport={c => setReportConversation(c)}
+                                        onReport={c => handleReportClick(c)}
                                         onPinToggle={c => handlePin(c)}
                                         onMuteToggle={c => handleMuteToggle(c)}
                                         onArchiveToggle={c => handleArchiveToggle(c)}
@@ -1068,6 +1082,17 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     }
                 }}
                 onClose={() => setReportedSuccessConv(null)}
+            />
+
+            <ReportFailureModal
+                isOpen={!!failedReportData}
+                onTryAgain={() => {
+                    if (failedReportData) {
+                        setReportConversation(failedReportData.conversation);
+                        setFailedReportData(null);
+                    }
+                }}
+                onCancel={() => setFailedReportData(null)}
             />
 
         </>
