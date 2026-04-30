@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp, Plus, UserSearch, Flag } from 'lucide-react';
+import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp, UserSearch, Flag } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -24,9 +24,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
-import { capitalizeName, getDisplayName, formatRelativeTime } from '@/features/chat/utils/ChatUtils';
+import { getDisplayName, formatRelativeTime, capitalizeName } from '@/features/chat/utils/ChatUtils';
 import { toAbsoluteUrl } from '@/features/chat/utils/chat';
 import { chatService } from '../services/chat.service';
+import { mediaService } from '@/features/auth/services/media.service';
 import { userService } from '@/features/live/services/user.service';
 import { useIsMobile } from '@/hooks/use-mobile';
 import chatGroup from '@/assets/chatGroup.svg';
@@ -446,7 +447,7 @@ const ChatListItem = ({
                         <span className={cn(
                             'text-xs truncate font-medium',
                             conversation.lastMessageStatus === 'pending' ? 'text-yellow-400/70' : 'text-gray-400',
-                            conversation.isGiftMessage && 'animate-bounce !text-[#FF7700] font-medium'
+                            conversation.isGiftMessage && 'animate-bounce text-[#FF7700]! font-medium'
                         )}>
                             {preview}
                         </span>
@@ -513,10 +514,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const [reportedSuccessConv, setReportedSuccessConv] = React.useState<Conversation | null>(null);
     const [failedReportData, setFailedReportData] = React.useState<{ conversation: Conversation, reasonId: string, otherText?: string } | null>(null);
     const [showReportLimitModal, setShowReportLimitModal] = React.useState(false);
+    const [isUploadingFiles, setIsUploadingFiles] = React.useState(false);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     const isMobile = useIsMobile();
-    const navigate = useNavigate();
+    // const navigate = useNavigate(); // Temporarily commenting out if unused
     const { translateEnabled } = useTranslationPreference(myId);
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
     const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
@@ -645,7 +647,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
         }
     };
 
-    const handleReportConfirm = async (reasonId: string, otherText?: string) => {
+    const handleReportConfirm = async (reasonId: string, otherText?: string, reportedUserId?: string, files?: File[]) => {
         if (!reportConversation) return;
 
         let lastMessages: { sender: string; text: string; sent_at: string }[] = [];
@@ -671,13 +673,27 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             // Proceed with empty last_messages — metadata is optional
         }
 
+        let imageUrls: string[] = [];
+        if (files && files.length > 0) {
+            try {
+                setIsUploadingFiles(true);
+                imageUrls = await mediaService.uploadBatchFiles('IMAGE', files);
+            } catch (err) {
+                console.error('[ChatSidebar] Failed to upload files:', err);
+                toast.error('Failed to upload images. Proceeding with report.');
+            } finally {
+                setIsUploadingFiles(false);
+            }
+        }
+
         submitReport(
             {
-                reportedUserId: reportConversation.participant.id,
+                reportedUserId: reportedUserId || reportConversation.participant.id,
                 contentType: 'CHAT_MESSAGE',
                 contentId: reportConversation.id,
                 reason: reasonId,
                 note: otherText,
+                imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
                 contextMetadata: {
                     last_messages: lastMessages,
                 },
@@ -1009,7 +1025,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
             {confirmDeleteMultiple && (
                 <div
                     onClick={() => { setConfirmDeleteMultiple(false); setPendingDeleteIds([]); }}
-                    className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300 cursor-default"
+                    className="fixed inset-0 z-10000 flex items-center justify-center bg-black/40 p-4 animate-in fade-in duration-300 cursor-default"
                 >
                     <div
                         onClick={e => e.stopPropagation()}
@@ -1048,7 +1064,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 <ReportChatModal
                     isOpen={!!reportConversation}
                     username={reportConversation.participant.name}
-                    isLoading={isReportPending}
+                    isLoading={isReportPending || isUploadingFiles}
                     onCancel={() => setReportConversation(null)}
                     onConfirm={handleReportConfirm}
                 />

@@ -19,6 +19,7 @@ export interface SubmitReportPayload {
     contentId: string;
     reason: string;
     note?: string;
+    imageUrls?: string[];
     contextMetadata?: Record<string, unknown>;
 }
 

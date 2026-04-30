@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Trash2, Flag, AlarmClock } from 'lucide-react';
+import { Trash2, Flag, AlarmClock, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useReportReasons } from '@/features/report/services/report.service';
 import type { ReportReason } from '@/features/report/services/report.service';
@@ -49,8 +50,9 @@ interface ReasonModalProps {
     requiresNoteIds?: string[];
     othersPlaceholder?: string;
     isLoading?: boolean;
-    onConfirm: (selectedId: string, otherText?: string, reportedUserId?: string) => void;
+    onConfirm: (selectedId: string, otherText?: string, reportedUserId?: string, files?: File[]) => void;
     onCancel: () => void;
+    allowMedia?: boolean;
 }
 
 /* Shared content for both modal and drawer */
@@ -71,6 +73,9 @@ const ReasonModalContent = ({
     usersToReport,
     selectedUser,
     setSelectedUser,
+    files,
+    setFiles,
+    allowMedia = false,
 }: {
     options: ReasonOption[];
     confirmLabel: string;
@@ -85,9 +90,12 @@ const ReasonModalContent = ({
     setSelected: (id: string) => void;
     otherText: string;
     setOtherText: (text: string) => void;
+    files: File[];
+    setFiles: React.Dispatch<React.SetStateAction<File[]>>;
     usersToReport?: TargetUserOption[];
     selectedUser: string;
     setSelectedUser: (id: string) => void;
+    allowMedia?: boolean;
 }) => {
     const hasUsers = usersToReport && usersToReport.length > 0;
     const requiresNote = selected ? requiresNoteIds.includes(selected) : false;
@@ -101,7 +109,7 @@ const ReasonModalContent = ({
                         <SelectTrigger className="w-full bg-transparent border border-white/10 text-white hover:border-white/30 h-[52px] rounded-xl focus:ring-0 focus:ring-offset-0 px-4">
                             <SelectValue placeholder="Select User Here" />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#18191f] border-white/10 text-white rounded-xl max-h-[200px] z-[10005]">
+                        <SelectContent className="bg-[#18191f] border-white/10 text-white rounded-xl max-h-[200px] z-10005">
                             {usersToReport.map((u) => (
                                 <SelectItem key={u.id} value={u.id} className="hover:bg-white/10 focus:bg-white/10 focus:text-white cursor-pointer py-3 px-4">
                                     {u.username} {u.isHost ? '(Host)' : '(Co-host)'}
@@ -134,7 +142,7 @@ const ReasonModalContent = ({
 
                 {/* Note text area when selected option requires a note */}
                 {requiresNote && (
-                    <div className="mt-1">
+                    <div className="mt-1 flex flex-col bg-[#0f1117] border border-white/10 rounded-xl focus-within:border-white/30 transition-colors overflow-hidden p-2">
                         <textarea
                             value={otherText}
                             onChange={(e) => {
@@ -148,10 +156,42 @@ const ReasonModalContent = ({
                                 }, 300);
                             }}
                             placeholder={othersPlaceholder}
-                            className="w-full bg-[#0f1117] border border-white/10 rounded-xl p-3 text-white text-sm placeholder-gray-600 resize-none focus:outline-none focus:border-white/30 transition-colors"
-                            rows={4}
+                            className="w-full bg-transparent p-2 text-white text-sm placeholder-gray-600 resize-none focus:outline-none"
+                            rows={3}
                         />
-                        <p className="text-right text-gray-600 text-xs mt-1">{otherText.length}/100</p>
+                        <div className="flex items-center justify-between px-2 pt-2 mt-1">
+                            <div className="flex items-center gap-2 flex-wrap max-w-[80%]">
+                                {allowMedia && (
+                                    <label className="cursor-pointer shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors text-gray-300">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            accept="image/*,video/*"
+                                            className="hidden"
+                                            onChange={(e) => {
+                                                const newFiles = Array.from(e.target.files || []);
+                                                if (files.length + newFiles.length > 10) {
+                                                     toast.error('Maximum 10 files allowed');
+                                                     return;
+                                                }
+                                                setFiles((prev: File[]) => [...prev, ...newFiles].slice(0, 10));
+                                                e.target.value = '';
+                                            }}
+                                        />
+                                        <span className="text-[14px] font-bold pb-0.5">@</span>
+                                    </label>
+                                )}
+                                {allowMedia && files.map((f: File, i: number) => (
+                                    <div key={i} className="flex items-center gap-1 bg-[#f0e8d5] text-black rounded-full px-2.5 py-1 text-[11px] font-medium max-w-[120px]">
+                                        <span className="truncate">{f.name}</span>
+                                        <button onClick={() => setFiles((prev: File[]) => prev.filter((_: File, idx: number) => idx !== i))} className="shrink-0 hover:text-red-500 cursor-pointer">
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-right text-gray-600 text-xs shrink-0 self-end">{otherText.length}/100</p>
+                        </div>
                     </div>
                 )}
             </div>
@@ -191,9 +231,11 @@ const ReasonModal = ({
     isLoading,
     onConfirm,
     onCancel,
+    allowMedia,
 }: ReasonModalProps) => {
     const [selected, setSelected] = useState<string>('');
     const [otherText, setOtherText] = useState('');
+    const [files, setFiles] = useState<File[]>([]);
     const [selectedUser, setSelectedUser] = useState<string>('');
     const isMobile = useIsMobile();
 
@@ -205,7 +247,7 @@ const ReasonModal = ({
 
     const handleConfirm = () => {
         if (!canSubmit) return;
-        onConfirm(selected, requiresNote ? otherText : undefined, hasUsers ? selectedUser : undefined);
+        onConfirm(selected, requiresNote ? otherText : undefined, hasUsers ? selectedUser : undefined, requiresNote ? files : undefined);
     };
 
     const sharedProps = {
@@ -222,9 +264,12 @@ const ReasonModal = ({
         setSelected,
         otherText,
         setOtherText,
+        files,
+        setFiles,
         usersToReport,
         selectedUser,
         setSelectedUser,
+        allowMedia,
     };
 
     /* ---- Mobile: Bottom Drawer ---- */
@@ -292,7 +337,7 @@ export const ReportUserModal = ({
     isOpen: boolean;
     username: string;
     isLoading?: boolean;
-    onConfirm: (reasonId: string, otherText?: string) => void;
+    onConfirm: (reasonId: string, otherText?: string, reportedUserId?: string, files?: File[]) => void;
     onCancel: () => void;
 }) => {
     const { data: reasons, isLoading: isReasonsLoading } = useReportReasons();
@@ -322,7 +367,7 @@ export const DeleteAccountModal = ({
 }: {
     isOpen: boolean;
     isLoading?: boolean;
-    onConfirm: (reasonId: string, otherText?: string) => void;
+    onConfirm: (reasonId: string, otherText?: string, reportedUserId?: string, files?: File[]) => void;
     onCancel: () => void;
 }) => (
     <ReasonModal
@@ -349,7 +394,7 @@ export const ReportStreamModal = ({
     isOpen: boolean;
     isLoading?: boolean;
     usersToReport?: TargetUserOption[];
-    onConfirm: (reasonId: string, otherText?: string, reportedUserId?: string) => void;
+    onConfirm: (reasonId: string, otherText?: string, reportedUserId?: string, files?: File[]) => void;
     onCancel: () => void;
 }) => {
     const { data: reasons, isLoading: isReasonsLoading } = useReportReasons();
@@ -382,7 +427,7 @@ export const ReportChatModal = ({
     isOpen: boolean;
     username?: string;
     isLoading?: boolean;
-    onConfirm: (reasonId: string, otherText?: string) => void;
+    onConfirm: (reasonId: string, otherText?: string, reportedUserId?: string, files?: File[]) => void;
     onCancel: () => void;
 }) => {
     const { data: reasons, isLoading: isReasonsLoading } = useReportReasons();
@@ -400,6 +445,7 @@ export const ReportChatModal = ({
             isLoading={isLoading || isReasonsLoading}
             onConfirm={onConfirm}
             onCancel={onCancel}
+            allowMedia={true}
         />
     );
 };
@@ -460,7 +506,7 @@ export const ReportLimitModal = ({
     if (isMobile) {
         return (
             <Drawer open={isOpen} onOpenChange={(open: boolean) => !open && onTryLater()}>
-                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-[100005]">
+                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-100005">
                     <DrawerHeader className="pt-2 pb-4 sr-only">
                         <DrawerTitle>Report Limit Reached</DrawerTitle>
                         <DrawerDescription>You've reported too many times. Try later.</DrawerDescription>
@@ -473,7 +519,7 @@ export const ReportLimitModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onTryLater()}>
-            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-[100005]">
+            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-100005">
                 <DialogTitle className="sr-only">Report Limit Reached</DialogTitle>
                 {content}
             </DialogContent>
@@ -543,7 +589,7 @@ export const ReportSuccessModal = ({
     if (isMobile) {
         return (
             <Drawer open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-[100005]">
+                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-100005">
                     <DrawerHeader className="pt-2 pb-4 sr-only">
                         <DrawerTitle>Report Successful</DrawerTitle>
                         <DrawerDescription>You have successfully reported {username}</DrawerDescription>
@@ -556,7 +602,7 @@ export const ReportSuccessModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-[100005]">
+            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-100005">
                 <DialogTitle className="sr-only">Report Successful</DialogTitle>
                 {content}
             </DialogContent>
@@ -610,7 +656,7 @@ export const ReportFailureModal = ({
     if (isMobile) {
         return (
             <Drawer open={isOpen} onOpenChange={(open: boolean) => !open && onCancel()}>
-                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-[100005]">
+                <DrawerContent className="bg-[#18191f] border-t border-white/10 rounded-t-3xl px-6 pb-8 z-100005">
                     <DrawerHeader className="pt-3 pb-4 sr-only">
                         <DrawerTitle>Report Failed</DrawerTitle>
                         <DrawerDescription>Your report failed to submit.</DrawerDescription>
@@ -623,7 +669,7 @@ export const ReportFailureModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-[100005]">
+            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-100005">
                 <DialogTitle className="sr-only">Report Failed</DialogTitle>
                 {content}
             </DialogContent>

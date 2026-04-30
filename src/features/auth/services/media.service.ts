@@ -21,6 +21,42 @@ export const mediaService = {
     },
 
     /**
+     * Generates presigned URLs for multiple file uploads to S3 in a single request.
+     */
+    batchGeneratePresignedUrls: async (path: UploadPath, files: File[]): Promise<{ files: PresignedUrlResponse[] }> => {
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('files', file);
+        });
+
+        const response = await api.post('/media/upload/batch', formData, {
+            params: { path },
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            }
+        });
+        return response.data;
+    },
+
+    /**
+     * Uploads multiple files to S3 by generating presigned URLs and uploading them concurrently.
+     * Returns an array of full URLs of the uploaded files.
+     */
+    uploadBatchFiles: async (path: UploadPath, files: File[]): Promise<string[]> => {
+        if (!files || files.length === 0) return [];
+
+        const presignedData = await mediaService.batchGeneratePresignedUrls(path, files);
+        
+        const uploadPromises = files.map((file, index) => {
+            const presignedInfo = presignedData.files[index];
+            return mediaService.uploadFileToS3(presignedInfo.uploadUrl, file).then(() => presignedInfo.fullUrl);
+        });
+
+        const fullUrls = await Promise.all(uploadPromises);
+        return fullUrls;
+    },
+
+    /**
      * Uploads a file to S3 using a presigned URL.
      * Uses fetch with ArrayBuffer to ensure the binary data is sent correctly as the request body.
      */

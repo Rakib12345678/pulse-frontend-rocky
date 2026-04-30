@@ -28,6 +28,7 @@ import { TranslateDrawer } from './TranslateDrawer';
 import { TranslateTogglePopover } from './TranslateTogglePopover';
 import { useSubmitReport } from '@/features/report/services/report.service';
 import { userService } from '@/features/live/services/user.service';
+import { mediaService } from '@/features/auth/services/media.service';
 import { ReportChatModal, ReportLimitModal, ReportSuccessModal, ReportFailureModal } from '@/components/internal/ReasonModal';
 
 import sendIcon from '@/assets/Send.svg';
@@ -100,6 +101,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const [reportedSuccessInfo, setReportedSuccessInfo] = useState<{ id: string; name: string } | null>(null);
     const [failedReportData, setFailedReportData] = useState<Message | null>(null);
     const [showReportLimitModal, setShowReportLimitModal] = useState(false);
+    const [isUploadingFiles, setIsUploadingFiles] = useState(false);
     const { translateEnabled, setTranslate } = useTranslationPreference(myId);
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
     const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
@@ -438,7 +440,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             <PopoverContent
                                 align="end"
                                 sideOffset={12}
-                                className="w-auto p-0 bg-transparent border-none shadow-none z-[10000]"
+                                className="w-auto p-0 bg-transparent border-none shadow-none z-10000"
                             >
                                 <button
                                     onClick={() => {
@@ -549,7 +551,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             {/* Floating Go Live Icon */}
             <div
                 onClick={handleGoLiveClick}
-                className="md:hidden absolute bottom-32 right-2 sm:right-4 z-[10001] cursor-pointer"
+                className="md:hidden absolute bottom-32 right-2 sm:right-4 z-10001 cursor-pointer"
             >
                 <img
                     src={LiveIcon}
@@ -585,7 +587,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 <div className="px-2 sm:px-4 lg:px-8 py-4 w-full h-full">
                     <div className="w-full flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 relative">
                         {showEmoji && !isMobile && (
-                            <div className="absolute bottom-full right-0 mb-4 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200 lg:mr-8 sm:mr-4">
+                            <div className="absolute bottom-full right-0 mb-4 z-100 animate-in fade-in slide-in-from-bottom-2 duration-200 lg:mr-8 sm:mr-4">
                                 <EmojiPickerPopup
                                     onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
                                     onClose={() => setShowEmoji(false)}
@@ -594,7 +596,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                             </div>
                         )}
                         <div className={cn(
-                            'flex-[4] flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
+                            'flex-4 flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
                             !isInternetConnected
                                 ? 'border-yellow-500/30 focus-within:border-yellow-500/50'
                                 : 'border-white/15 focus-within:border-white/30',
@@ -718,7 +720,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
                 {/* Mobile Emoji Picker (Below Input, True 100% Width) */}
                 {showEmoji && isMobile && (
-                    <div className="w-full z-[100] animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="w-full z-100 animate-in slide-in-from-bottom-2 duration-300">
                         <EmojiPickerPopup
                             isMobile
                             onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
@@ -795,17 +797,32 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             <ReportChatModal
                 isOpen={!!msgToReport}
                 username={msgToReport ? conversation.participant.name : undefined}
-                isLoading={isReportPending}
+                isLoading={isReportPending || isUploadingFiles}
                 onCancel={() => setMsgToReport(null)}
-                onConfirm={(reasonId, otherText) => {
+                onConfirm={async (reasonId, otherText, reportedUserId, files) => {
                     if (!msgToReport) return;
+
+                    let imageUrls: string[] = [];
+                    if (files && files.length > 0) {
+                        try {
+                            setIsUploadingFiles(true);
+                            imageUrls = await mediaService.uploadBatchFiles('IMAGE', files);
+                        } catch (err) {
+                            console.error('[ChatWindow] Failed to upload files:', err);
+                            toast.error('Failed to upload images. Proceeding with report.');
+                        } finally {
+                            setIsUploadingFiles(false);
+                        }
+                    }
+
                     submitReport(
                         {
-                            reportedUserId: msgToReport.senderId,
+                            reportedUserId: reportedUserId || msgToReport.senderId,
                             contentType: 'CHAT_MESSAGE',
                             contentId: msgToReport.id,
                             reason: reasonId,
                             note: otherText,
+                            imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
                             contextMetadata: {
                                 last_messages: messages
                                     .slice(-20)
