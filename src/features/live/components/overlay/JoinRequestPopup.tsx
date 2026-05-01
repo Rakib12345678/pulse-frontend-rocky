@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     useCall,
     useCallStateHooks,
@@ -11,8 +11,7 @@ import { useJoinRequestStore } from '@/features/live/stores/joinRequestStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { liveService } from '@/features/live/services/live.service';
-
-export const MAX_COHOSTS = 3;
+import { countCohosts, MAX_COHOSTS } from '@/features/live/utils/cohost';
 
 interface JoinRequest {
     userId: string;
@@ -28,16 +27,12 @@ export const JoinRequestPopup: React.FC = () => {
     const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
     const isMobile = useIsMobile();
 
-    // Count current active co-hosts (exclude the host/creator)
-    const creatorId = call?.state.createdBy?.id;
-    const currentCoHostCount = participants.filter((p: any) => {
-        if (p.userId === creatorId) return false; // skip host
-        if (p.userId === localParticipant?.userId && !p.roles?.includes('co_host')) return false;
-        const isCoHost = p.roles?.includes('co_host') || p.roles?.includes('admin') ||
-            p.capabilities?.includes('send-video');
-        return isCoHost;
-    }).length;
+    // Track approvals currently in-flight to prevent race conditions
+    // where multiple concurrent approvals let more than MAX_COHOSTS in.
+    const approvingCountRef = useRef(0);
 
+    const creatorId = call?.state.createdBy?.id;
+    const currentCoHostCount = countCohosts(participants, creatorId, localParticipant?.userId);
     const isStageFull = currentCoHostCount >= MAX_COHOSTS;
 
     useEffect(() => {
@@ -65,15 +60,16 @@ export const JoinRequestPopup: React.FC = () => {
     if (!call || joinRequests.length === 0) return null;
 
     const handleApprove = async (request: JoinRequest) => {
-        // Enforce max co-host limit (re-check at approval time in case someone joined since render)
-        const liveCoHostCount = participants.filter((p: any) => {
-            if (p.userId === creatorId) return false;
-            if (p.userId === localParticipant?.userId && !p.roles?.includes('co_host')) return false;
-            return p.roles?.includes('co_host') || p.roles?.includes('admin') ||
-                p.capabilities?.includes('send-video');
-        }).length;
+        // Optimistically remove the request from the UI
+        setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
 
-        if (liveCoHostCount >= MAX_COHOSTS) {
+        // Include in-flight approvals so concurrent approvals don't exceed the max
+        approvingCountRef.current += 1;
+        const liveCoHostCount = countCohosts(participants, creatorId, localParticipant?.userId);
+        const effectiveCount = liveCoHostCount + approvingCountRef.current;
+
+        if (effectiveCount > MAX_COHOSTS) {
+            approvingCountRef.current -= 1;
             toast.error(`Stage is full (max ${MAX_COHOSTS} co-hosts). Remove someone first.`);
             // Auto-decline the request so the viewer knows
             try {
@@ -83,7 +79,6 @@ export const JoinRequestPopup: React.FC = () => {
             } catch (err) {
                 console.error('[JoinRequestPopup] Failed to send stage-full decline:', err);
             }
-            setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
             return;
         }
 
@@ -115,6 +110,9 @@ export const JoinRequestPopup: React.FC = () => {
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to grant permissions:', err);
             toast.error(`Failed to add @${request.userName} as co-host`);
+            // Optional: could add it back to joinRequests here if we wanted the host to retry
+        } finally {
+            approvingCountRef.current -= 1;
         }
     };
 

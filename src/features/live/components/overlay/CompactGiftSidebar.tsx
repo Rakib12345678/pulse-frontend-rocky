@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useJoinRequestStore } from '@/features/live/stores/joinRequestStore';
 import { useNavigate } from '@tanstack/react-router';
-import { MAX_COHOSTS } from '@/features/live/components/overlay/JoinRequestPopup';
+import { MAX_COHOSTS } from '@/features/live/utils/cohost';
 
 export const CompactGiftSidebar: React.FC = () => {
     const queryClient = useQueryClient();

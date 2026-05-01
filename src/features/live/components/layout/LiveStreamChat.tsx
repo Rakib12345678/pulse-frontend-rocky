@@ -22,7 +22,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { liveService } from '@/features/live/services/live.service';
 import { CompactGiftSidebar } from '@/features/live/components/overlay/CompactGiftSidebar';
 import { SuperchatTicker } from '@/features/live/components/overlay/SuperchatTicker';
-import { MAX_COHOSTS } from '@/features/live/components/overlay/JoinRequestPopup';
+import { countCohosts, MAX_COHOSTS } from '@/features/live/utils/cohost';
 
 // Type guard for gift messages
 const isGiftMsg = (msg: any): boolean => !!msg?.isGiftMessage;
@@ -609,11 +609,7 @@ const ViewerBottomBar: React.FC = () => {
 
     // Compute stage-full state from current participants
     const stageCreatorId = call?.state.createdBy?.id;
-    const currentCoHostCount = viewerParticipants.filter((p: any) => {
-        if (p.userId === stageCreatorId) return false;
-        return p.roles?.includes('co_host') || p.roles?.includes('admin') ||
-            p.capabilities?.includes('send-video');
-    }).length;
+    const currentCoHostCount = countCohosts(viewerParticipants, stageCreatorId);
     const isStageFull = currentCoHostCount >= MAX_COHOSTS;
 
     if (!createdBy) return null;
@@ -628,6 +624,13 @@ const ViewerBottomBar: React.FC = () => {
         }
 
         if (requestStatus !== 'idle' || !call) return;
+
+        // Pre-check: don't send join request if stage is already full
+        if (isStageFull) {
+            toast.error('Stage is full (max co-hosts reached)');
+            return;
+        }
+
         try {
             console.log('[JoinStream] Sending custom join-request event...');
             setRequestStatus('pending');
