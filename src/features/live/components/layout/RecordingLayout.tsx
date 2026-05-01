@@ -90,7 +90,7 @@ export const RecordingLayout: React.FC<RecordingLayoutProps> = ({
             isPlaying,
             setIsPlaying
         }}>
-            <div className="relative w-full h-[calc(100vh-72px)] bg-black overflow-hidden">
+            <div className="relative w-full h-[calc(100dvh-144px)] md:h-[calc(100dvh-72px)] bg-black overflow-hidden">
                 {children}
                 <UserProfileModal />
             </div>

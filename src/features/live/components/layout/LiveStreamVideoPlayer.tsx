@@ -260,7 +260,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                 )}
 
                 {!participantHasAudio && !(isMobile && !isViewer) && (
-                    <div className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-red-500/80 backdrop-blur-md flex items-center justify-center border border-red-400/50">
+                    <div className={`absolute z-10 w-8 h-8 rounded-full bg-red-500/80 backdrop-blur-md flex items-center justify-center border border-red-400/50 ${isMobile ? 'top-24 right-4' : 'top-3 right-3'}`}>
                         <MicOff className="w-4 h-4 text-white" />
                     </div>
                 )}

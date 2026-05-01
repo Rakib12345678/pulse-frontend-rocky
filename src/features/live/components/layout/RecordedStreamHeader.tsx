@@ -59,14 +59,18 @@ export const RecordedStreamHeader: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 bg-[#FF0000] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(255,0,0,0.3)]">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider border border-white/10 bg-white/5 text-white">
+                            <span>{formatTime(displayTime)}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 bg-[#FF0000] px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(255,0,0,0.3)]">
                             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                             Recorded
                         </div>
 
                         <button
                             onClick={() => setIsParticipantsOpen(true)}
-                            className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/10"
+                            className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10"
                         >
                             <User className="w-3.5 h-3.5 text-white/70" />
                             <span className="text-[10px] font-bold text-white">{displayParticipantCount}</span>
@@ -81,12 +85,6 @@ export const RecordedStreamHeader: React.FC = () => {
                         onNavigate={(username) => navigate({ to: `/profile/${username}` })}
                         isMobile={isMobile}
                     />
-                </div>
-
-                <div className="fixed top-[135px] left-4 z-20 flex flex-col gap-3">
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider border border-white/10 bg-white/5 text-white w-fit">
-                        <span>{formatTime(displayTime)}</span>
-                    </div>
                 </div>
             </>
         );

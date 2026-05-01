@@ -40,8 +40,9 @@ export const RecordedVideoPlayer: React.FC = () => {
             <video
                 ref={videoRef}
                 src={recordingMetadata.recordingUrl}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
                 autoPlay
+                playsInline
                 controls
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}

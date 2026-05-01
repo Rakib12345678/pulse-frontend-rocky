@@ -9,6 +9,10 @@ import { capitalizeName, formatMsgTime } from '../utils/ChatUtils';
 import type { Message } from '../types/chat.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { getRecentEmojis, saveRecentEmoji, type QuickReaction, getSafeEmojiId } from '../utils/EmojiUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Drawer, DrawerContent, DrawerTitle, DrawerHeader } from '@/components/ui/drawer';
+import { Dialog, DialogContent, DialogTitle, DialogHeader } from '@/components/ui/dialog';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
 export const isOnlyImage = (text: string, attachments?: any[]) => {
     const hasAttachments = !!(attachments && attachments.length > 0);
@@ -160,6 +164,7 @@ export const MessageBubble = ({
     const pickerRef = useRef<HTMLDivElement>(null);
     const isPending = message.status === 'pending';
     const myId = String(useAuthStore.getState().user?.id ?? '');
+    const isMobile = useIsMobile();
 
     const handleTouchStart = (e: React.TouchEvent) => {
         // Option 2: Don't show menu for others' gifts
@@ -248,8 +253,81 @@ export const MessageBubble = ({
         );
     };
 
-    const renderReactionModal = (side: 'left' | 'right') => (
-        showReactionModal && (
+    const renderReactionModal = (side: 'left' | 'right') => {
+        if (!showReactionModal) return null;
+
+        const content = (
+            <div className={cn("flex flex-col gap-2", isMobile ? "p-4 bg-[#1a1c23]" : "")}>
+                {message.reactions?.latest.map((r, i) => {
+                    if (!r.user) return null;
+                    const isMyReaction = String(r.user_id) === myId;
+                    const isRemoving = removingReaction === r.type && isMyReaction;
+                    const handleRemove = async (e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        if (isMyReaction && onDeleteReaction && !removingReaction) {
+                            setRemovingReaction(r.type);
+                            try {
+                                await onDeleteReaction(message.id, r.type);
+                                setShowReactionModal(false);
+                            } finally {
+                                setRemovingReaction(null);
+                            }
+                        }
+                    };
+
+                    const emoji = r.emoji || quickReactions.find(qr => qr.id === r.type)?.emoji || r.type;
+
+                    return (
+                        <div
+                            key={i}
+                            onClick={isMyReaction ? handleRemove : undefined}
+                            className={cn(
+                                "flex items-center justify-between gap-3 transition-all group/item",
+                                isMobile ? "p-3 rounded-2xl" : "p-2 rounded-xl",
+                                isMyReaction ? "cursor-pointer hover:bg-[#FF7700]/10 border border-transparent hover:border-[#FF7700]/20" : "hover:bg-white/5"
+                            )}
+                        >
+                            <div className="flex items-center gap-3 min-w-0">
+                                <Avatar src={r.user.avatar} alt={r.user.name} className={cn("shrink-0 border border-white/5", isMobile ? "w-10 h-10" : "w-8 h-8")} />
+                                <div className="flex flex-col min-w-0">
+                                    <span className={cn("font-semibold text-white truncate", isMobile ? "text-[15px]" : "text-[13px]")}>
+                                        {isMyReaction ? 'You' : capitalizeName(r.user.name)}
+                                    </span>
+                                    {isMyReaction && (
+                                        <span className={cn("text-gray-500 group-hover/item:text-[#FF7700] transition-colors", isMobile ? "text-[12px]" : "text-[10px]")}>
+                                            {isRemoving ? 'Removing...' : 'Click to Remove'}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            {isRemoving ? (
+                                <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin text-[#FF7700] shrink-0" />
+                            ) : (
+                                <span className="text-2xl md:text-lg shrink-0">{emoji}</span>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+
+        if (isMobile) {
+            return (
+                <Drawer open={showReactionModal} onOpenChange={setShowReactionModal}>
+                    <DrawerContent className="bg-[#111213] border-none text-white max-h-[85vh] rounded-t-[32px]">
+                        <div className="mx-auto mt-2 h-1 w-12 shrink-0 rounded-full bg-white/20" />
+                        <DrawerHeader className="pb-2">
+                            <DrawerTitle className="text-center text-lg font-bold text-white">Reactions</DrawerTitle>
+                        </DrawerHeader>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar pb-6">
+                            {content}
+                        </div>
+                    </DrawerContent>
+                </Drawer>
+            );
+        }
+
+        return (
             <div className={cn(
                 "absolute bottom-0 z-[10001] animate-in slide-in-from-bottom-1 duration-200",
                 side === 'left' ? 'left-full ml-3' : 'right-full mr-3'
@@ -259,122 +337,153 @@ export const MessageBubble = ({
                     className="w-[280px] bg-[#1a1c23] border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-3"
                     onClick={e => e.stopPropagation()}
                 >
-                    <div className="flex flex-col gap-2">
-                        {message.reactions?.latest.map((r, i) => {
-                            if (!r.user) return null;
-                            const isMyReaction = String(r.user_id) === myId;
-                            const isRemoving = removingReaction === r.type && isMyReaction;
-                            const handleRemove = async (e: React.MouseEvent) => {
-                                e.stopPropagation();
-                                if (isMyReaction && onDeleteReaction && !removingReaction) {
-                                    setRemovingReaction(r.type);
-                                    try {
-                                        await onDeleteReaction(message.id, r.type);
-                                        setShowReactionModal(false);
-                                    } finally {
-                                        setRemovingReaction(null);
-                                    }
-                                }
-                            };
-
-                            const emoji = r.emoji || quickReactions.find(qr => qr.id === r.type)?.emoji || r.type;
-
-                            return (
-                                <div
-                                    key={i}
-                                    onClick={isMyReaction ? handleRemove : undefined}
-                                    className={cn(
-                                        "flex items-center justify-between gap-3 p-2 rounded-xl transition-all group/item",
-                                        isMyReaction ? "cursor-pointer hover:bg-[#FF7700]/10 border border-transparent hover:border-[#FF7700]/20" : "hover:bg-white/5"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <Avatar src={r.user.avatar} alt={r.user.name} className="w-8 h-8 shrink-0 border border-white/5" />
-                                        <div className="flex flex-col min-w-0">
-                                            <span className="text-[13px] font-semibold text-white truncate">
-                                                {isMyReaction ? 'You' : capitalizeName(r.user.name)}
-                                            </span>
-                                            {isMyReaction && (
-                                                <span className="text-[10px] text-gray-500 group-hover/item:text-[#FF7700] transition-colors">
-                                                    {isRemoving ? 'Removing...' : 'Click to Remove'}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {isRemoving ? (
-                                        <Loader2 className="w-4 h-4 animate-spin text-[#FF7700] shrink-0" />
-                                    ) : (
-                                        <span className="text-lg shrink-0">{emoji}</span>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                    {content}
                 </div>
             </div>
-        )
-    );
+        );
+    };
 
-    const renderReactionPicker = (alignment: 'left' | 'right') => (
-        <div className={cn("relative flex items-center z-40", alignment === 'right' ? 'mr-1' : 'ml-1')}>
-            <button
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setQuickReactionOpen(v => !v);
-                }}
-                className={cn(
-                    "w-6 h-6 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/50 text-gray-400 hover:text-white transition-all shadow-sm cursor-pointer",
-                    (hovered || quickReactionOpen || fullPickerOpen) ? 'opacity-100' : 'opacity-0'
-                )}
-            >
-                <Smile className="w-4 h-4" />
-            </button>
-
-            {quickReactionOpen && !fullPickerOpen && (
-                <div
-                    ref={pickerRef}
-                    className={cn(
-                        "absolute bottom-0 flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[10001] animate-in duration-200",
-                        alignment === 'left' ? 'left-full ml-3' : 'right-full mr-3'
-                    )}>
-                    {quickReactions.map(r => (
-                        <button
-                            key={r.id}
-                            onClick={(e2) => { e2.stopPropagation(); handleReaction(r.emoji); }}
-                            className="text-lg sm:text-xl hover:scale-125 transition-transform active:scale-95 px-0.5 cursor-pointer"
-                        >
-                            {r.emoji}
-                        </button>
-                    ))}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setFullPickerOpen(true); }}
-                        className="w-7 h-7 ml-1 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors shadow-inner cursor-pointer"
-                    >
-                        <Plus className="w-4 h-4 text-white font-bold" />
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-
-    // SHARED PICKER MODAL
-    const renderFullPicker = (alignment: 'left' | 'right') => (
-        fullPickerOpen && (
+    const renderReactionPicker = (alignment: 'left' | 'right') => {
+        const pickerContent = (
             <div className={cn(
-                "absolute bottom-0 z-[10001] animate-in fade-in duration-200",
-                alignment === 'left' ? 'left-full ml-3' : 'right-full mr-3'
+                "flex items-center gap-1.5",
+                isMobile ? "justify-center w-full" : ""
             )}>
-                <div className="fixed inset-0 -z-10" onClick={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }} />
-                <EmojiPickerPopup
-                    onSelect={handleReaction}
-                    onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
-                    className="relative shadow-2xl border border-white/10 rounded-2xl shadow-orange-500/10 scale-90 sm:scale-100 origin-bottom"
-                />
+                {quickReactions.map(r => (
+                    <button
+                        key={r.id}
+                        onClick={(e2) => { e2.stopPropagation(); handleReaction(r.emoji); }}
+                        className="text-lg sm:text-xl hover:scale-125 transition-transform active:scale-95 px-0.5 cursor-pointer"
+                    >
+                        {r.emoji}
+                    </button>
+                ))}
+                <button
+                    onClick={(e) => { e.stopPropagation(); setFullPickerOpen(true); }}
+                    className="w-7 h-7 ml-1 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors shadow-inner cursor-pointer"
+                >
+                    <Plus className="w-4 h-4 text-white font-bold" />
+                </button>
             </div>
-        )
-    );
+        );
+
+        return (
+            <div className={cn("relative flex items-center z-40", alignment === 'right' ? 'mr-1' : 'ml-1')}>
+                {isMobile ? (
+                    <>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setQuickReactionOpen(v => !v);
+                            }}
+                            className={cn(
+                                "w-6 h-6 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/50 text-gray-400 hover:text-white transition-all shadow-sm cursor-pointer",
+                                (hovered || quickReactionOpen || fullPickerOpen) ? 'opacity-100' : 'opacity-0'
+                            )}
+                        >
+                            <Smile className="w-4 h-4" />
+                        </button>
+
+                        {quickReactionOpen && !fullPickerOpen && (
+                            <div
+                                ref={pickerRef}
+                                className="flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[10001] animate-in duration-200 fade-in zoom-in-95 fixed bottom-[100px] left-1/2 -translate-x-1/2"
+                            >
+                                {pickerContent}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <Popover open={quickReactionOpen} onOpenChange={setQuickReactionOpen}>
+                        <PopoverTrigger asChild>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
+                                className={cn(
+                                    "w-6 h-6 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/50 text-gray-400 hover:text-white transition-all shadow-sm cursor-pointer",
+                                    (hovered || quickReactionOpen || fullPickerOpen) ? 'opacity-100' : 'opacity-0'
+                                )}
+                            >
+                                <Smile className="w-4 h-4" />
+                            </button>
+                        </PopoverTrigger>
+
+                        {quickReactionOpen && !fullPickerOpen && (
+                            <PopoverContent
+                                side="top"
+                                align={alignment === 'left' ? 'start' : 'end'}
+                                sideOffset={8}
+                                className="w-auto p-0 border-none bg-transparent shadow-none z-[10001]"
+                            >
+                                <div className="flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl animate-in duration-200 fade-in zoom-in-95">
+                                    {pickerContent}
+                                </div>
+                            </PopoverContent>
+                        )}
+                    </Popover>
+                )}
+            </div>
+        );
+    };
+
+    const renderFullPicker = (alignment: 'left' | 'right') => {
+        if (!fullPickerOpen) return null;
+
+        if (isMobile) {
+            return (
+                <Drawer open={fullPickerOpen} onOpenChange={(open) => {
+                    if (!open) {
+                        setFullPickerOpen(false);
+                        setQuickReactionOpen(false);
+                    }
+                }}>
+                    <DrawerContent className="bg-[#111213] border-none px-4 pb-6 max-h-[85vh] rounded-t-[32px]">
+                        <div className="mx-auto mt-2 mb-4 h-1 w-12 shrink-0 rounded-full bg-white/20" />
+                        <EmojiPickerPopup
+                            isMobile={isMobile}
+                            onSelect={handleReaction}
+                            onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
+                            className="w-full bg-transparent shadow-none"
+                        />
+                    </DrawerContent>
+                </Drawer>
+            );
+        }
+
+        return (
+            <Popover open={fullPickerOpen} onOpenChange={(open) => {
+                if (!open) {
+                    setFullPickerOpen(false);
+                    setQuickReactionOpen(false);
+                }
+            }}>
+                <PopoverTrigger asChild>
+                    <div className={cn("absolute bottom-0 w-0 h-0", alignment === 'left' ? 'right-0' : 'left-0')} />
+                </PopoverTrigger>
+                <PopoverContent
+                    side={alignment === 'left' ? 'right' : 'left'}
+                    align="end"
+                    sideOffset={12}
+                    className="w-auto p-0 border-none bg-transparent shadow-none z-[10001]"
+                    onInteractOutside={() => {
+                        setFullPickerOpen(false);
+                        setQuickReactionOpen(false);
+                    }}
+                >
+                    <EmojiPickerPopup
+                        onSelect={handleReaction}
+                        onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
+                        className="shadow-2xl border border-white/10 rounded-2xl shadow-orange-500/10 scale-90 sm:scale-100 origin-bottom"
+                    />
+                </PopoverContent>
+            </Popover>
+        );
+    };
 
     if (isSystemEvent) return null;
+
+    const hasReactions = !!(message.reactions && message.reactions.counts && Object.keys(message.reactions.counts).length > 0);
 
     // UI Rendering Logic for Sender (ME)
     if (isMe) {
@@ -386,7 +495,7 @@ export const MessageBubble = ({
         return (
             <>
                 <div
-                    className="flex items-start justify-end gap-2.5 ml-auto"
+                    className={cn("flex items-start justify-end gap-2.5 ml-auto", hasReactions ? "mb-4" : "")}
                     onMouseEnter={() => setHovered(true)}
                     onMouseLeave={() => setHovered(false)}
                     onTouchStart={handleTouchStart}
@@ -480,7 +589,7 @@ export const MessageBubble = ({
 
     return (
         <div
-            className="flex items-start gap-2.5 mr-auto"
+            className={cn("flex items-start gap-2.5 mr-auto", hasReactions ? "mb-4" : "")}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             onTouchStart={handleTouchStart}

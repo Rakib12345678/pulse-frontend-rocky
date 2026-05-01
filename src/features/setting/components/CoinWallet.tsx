@@ -68,16 +68,11 @@ export const CoinWallet = () => {
     const currentUsername = (useAuthStore.getState() as any)?.user?.username ?? '';
 
     return (
-        <div className="min-h-[calc(100vh-80px)] bg-transparent flex items-start justify-center md:px-8 py-6 md:py-10">
+        <div className="h-[calc(100dvh-80px)] md:min-h-[calc(100vh-80px)] md:h-auto w-full bg-transparent flex items-start justify-center md:px-8 py-4 md:py-10">
             <div
-                className="relative w-full overflow-hidden flex flex-col"
+                className="relative w-full h-full md:h-[calc(100vh-160px)] md:min-h-[70vh] overflow-hidden flex flex-col rounded-[20px] border border-white/10 bg-[#161616] shadow-[0_8px_64px_0_rgba(0,0,0,0.6)]"
                 style={{
                     maxWidth: 1136,
-                    height: 'calc(100vh - 160px)',
-                    borderRadius: 20,
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: '#161616',
-                    boxShadow: '0 8px 64px 0 rgba(0,0,0,0.6)',
                 }}
             >
                 {/* Ambient blobs */}
@@ -90,9 +85,11 @@ export const CoinWallet = () => {
                     style={{ width: 220, height: 220, bottom: -110, left: -110, background: '#3E2AB5', filter: 'blur(354px)', mixBlendMode: 'color-dodge' }}
                 />
 
-                <div className="relative z-10 w-full mx-auto px-5 pt-6 md:px-10 md:pt-10 pb-0 text-white shrink-0">
+                {/* Fixed Top Section */}
+                {/* Fixed Top Section */}
+                <div className="relative z-10 w-full mx-auto text-white shrink-0 flex flex-col">
                     {/* Header */}
-                    <div className="flex items-center gap-4 mb-6">
+                    <div className="flex items-center gap-4 mb-4 md:mb-6 px-5 pt-6 md:px-10 md:pt-10 pb-0">
                         <button
                             onClick={() => navigate({ to: '/profile/setting' })}
                             className="w-10 h-10 md:w-9 md:h-9 rounded-full bg-[#1D1F20] flex items-center justify-center hover:bg-[#252830] transition-colors cursor-pointer shrink-0"
@@ -103,7 +100,7 @@ export const CoinWallet = () => {
                         <div className="ml-auto">
                             <button
                                 onClick={() => openModal()}
-                                className="bg-[#FF7700] hover:bg-[#ff8800] text-black font-semibold rounded-full px-5 py-2 text-sm transition-colors cursor-pointer"
+                                className="bg-[#FF7700] hover:bg-[#ff8800] text-black font-semibold rounded-full px-4 py-1.5 md:px-5 md:py-2 text-[11px] md:text-sm transition-colors cursor-pointer whitespace-nowrap"
                             >
                                 Add More Coins
                             </button>
@@ -113,37 +110,37 @@ export const CoinWallet = () => {
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar relative z-10 w-full text-white">
-                    <div className="px-5 md:px-10 pt-6">
-                        {/* Balance Card */}
-                        <div className="mb-8">
+                <div className="flex-1 overflow-y-auto custom-scrollbar relative z-10 w-full text-white pt-2">
+                    {/* Balance Card */}
+                    <div className="px-5 md:px-10 pt-4 md:pt-6 shrink-0">
+                        <div className="mb-4 md:mb-8">
                             {/* Coins */}
-                            <div className="bg-[#1a1c24] rounded-2xl p-6 border border-white/5 flex justify-between items-center w-full">
-                                <span className="text-white font-medium text-lg">My Coins</span>
+                            <div className="bg-[#1a1c24] rounded-2xl p-5 md:p-6 border border-white/5 flex justify-between items-center w-full">
+                                <span className="text-white font-medium text-base md:text-lg">My Coins</span>
                                 <div className="flex items-center gap-2">
                                     {isLoadingBalance ? (
                                         <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                                     ) : (
                                         <>
                                             <div className="w-5 h-5 rounded-full bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.3)]" />
-                                            <span className="text-white font-bold text-xl">{coinBalance.toLocaleString()}</span>
+                                            <span className="text-white font-bold text-lg md:text-xl">{coinBalance.toLocaleString()}</span>
                                         </>
                                     )}
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div className="h-px bg-white/5 w-full mb-8 relative z-10" />
+                    <div className="h-px bg-white/5 w-full mb-4 md:mb-8 relative z-10 shrink-0" />
 
-                    {/* History Section */}
-                    <div className="mb-6 shrink-0 relative z-10">
-                        <h2 className="text-white font-bold text-xl mb-6 px-5 md:px-10">History</h2>
-                        <div className="flex gap-3 flex-wrap px-5 md:px-10">
+                    {/* History Section Tabs */}
+                    <div className="mb-4 md:mb-6 shrink-0 relative z-10">
+                        <h2 className="text-white font-bold text-lg md:text-xl mb-4 md:mb-6 px-5 md:px-10">History</h2>
+                        <div className="flex gap-2 md:gap-3 flex-nowrap overflow-x-auto custom-scrollbar pb-2 px-5 md:px-10">
                             {TABS.map((tab) => (
                                 <button
                                     key={tab.filter}
                                     onClick={() => setActiveFilter(tab.filter)}
-                                    className={`px-8 py-2.5 rounded-full font-medium text-sm transition-colors cursor-pointer ${activeFilter === tab.filter
+                                    className={`px-5 md:px-8 py-2 md:py-2.5 rounded-full font-medium text-xs md:text-sm transition-colors cursor-pointer shrink-0 whitespace-nowrap ${activeFilter === tab.filter
                                         ? 'bg-gray-400 text-black border-transparent'
                                         : 'bg-transparent border border-white/20 text-gray-400 hover:text-white'
                                         }`}
@@ -152,7 +149,7 @@ export const CoinWallet = () => {
                                 </button>
                             ))}
                         </div>
-                        <div className="h-px bg-white/5 w-full mt-8" />
+                        <div className="h-px bg-white/5 w-full mt-4 md:mt-8" />
                     </div>
 
                     {/* History List */}

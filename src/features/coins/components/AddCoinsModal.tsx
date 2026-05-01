@@ -26,7 +26,7 @@ export const AddCoinsModal = () => {
     const renderContent = (isMobileView: boolean) => (
         <AppBackground
             displayRings={false}
-            className={`h-full w-full ${isMobileView ? '' : 'sm:rounded-3xl'} flex flex-col pt-8`}
+            className={`h-full w-full ${isMobileView ? '' : 'sm:rounded-3xl'} flex flex-col`}
             innerClassName="flex flex-col overflow-hidden flex-1 min-h-0"
         >
             {/* Accessibility — hidden title */}
@@ -42,17 +42,19 @@ export const AddCoinsModal = () => {
                 </>
             )}
 
-            {/* Close Button */}
-            <Button
-                variant="ghost"
-                onClick={closeModal}
-                className="absolute top-4 right-4 z-50 w-7 h-7 p-0 rounded-full bg-red-500 flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
-            >
-                <X className="w-4 h-4 text-white" />
-            </Button>
+            {/* Fixed Header Area for Close Button */}
+            <div className="w-full flex justify-end items-center p-4 pt-6 shrink-0 relative z-50">
+                <Button
+                    variant="ghost"
+                    onClick={closeModal}
+                    className="w-7 h-7 p-0 rounded-full bg-red-500 flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer shadow-lg"
+                >
+                    <X className="w-4 h-4 text-white stroke-[3px]" />
+                </Button>
+            </div>
 
             {/* Content */}
-            <div className={`${isMobileView ? 'px-6' : 'px-18'} py-6 pt-0 flex-1 overflow-y-auto min-h-0 pb-8`}>
+            <div className={`${isMobileView ? 'px-6' : 'px-16'} py-2 flex-1 overflow-y-auto min-h-0 pb-8 custom-scrollbar`}>
                 {step === 'select' && <CoinPackageGrid />}
                 {step === 'checkout' && <CheckoutView />}
                 {step === 'result' && <ResultView />}
@@ -79,16 +81,13 @@ export const AddCoinsModal = () => {
             <Drawer
                 open={isOpen}
                 onOpenChange={(open) => !open && closeModal()}
-                snapPoints={[0.6, 1]}
-                activeSnapPoint={undefined}
-                setActiveSnapPoint={undefined}
             >
                 <DrawerContent
                     className="bg-[#111213] border-none text-white flex flex-col p-0 overflow-hidden focus:outline-none"
                     style={{
                         background: 'linear-gradient(180deg, #111213 0%, #0d0d0d 100%)',
-                        height: 'auto',
-                        maxHeight: '100dvh'
+                        height: '85dvh',
+                        maxHeight: '85dvh'
                     }}
                 >
                     {renderContent(true)}

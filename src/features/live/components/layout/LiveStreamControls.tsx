@@ -52,9 +52,9 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
     // Co-host: viewer with publish permissions
     if (isCoHost) {
         if (isMobile) {
-            // Mobile co-host: mic + cam top-right (same position as host)
+            // Mobile co-host: mic + cam shifted left to be in a row with the header '...' menu
             return (
-                <div className="absolute top-3 right-4 flex gap-2 z-20">
+                <div className="absolute top-5 right-[64px] flex flex-row gap-2 z-20">
                     <button
                         onClick={toggleMicrophone}
                         className={cn(
@@ -123,7 +123,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
     // Host: mic + cam controls
     if (isMobile) {
         return (
-            <div className="absolute top-3 right-4 flex gap-2 z-20">
+            <div className="absolute top-5 right-4 flex flex-row gap-2 z-20">
                 <button
                     onClick={toggleMicrophone}
                     className={cn(

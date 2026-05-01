@@ -102,7 +102,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         />
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/100 via-black/60 to-transparent opacity-90" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
         {/* Top Left */}
         {viewerCount !== 0 && viewerCount !== "0" && (
@@ -139,7 +139,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 callId={callId}
                 username={streamerName}
                 size="custom"
-                className="w-12 h-12"
+                className="w-10 h-10"
                 clickable={true}
                 showBadge={false}
               />
@@ -147,7 +147,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
               <div className="flex flex-col overflow-hidden">
                 <h3 
                   onClick={handleProfileClick}
-                  className="truncate text-xm font-bold text-white leading-tight [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%),_0_2px_6px_rgb(0_0_0_/_60%)] cursor-pointer hover:text-orange-400 transition-colors"
+                  className="truncate text-sm font-bold text-white leading-tight [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%),_0_2px_6px_rgb(0_0_0_/_60%)] cursor-pointer hover:text-orange-400 transition-colors"
                 >
                   @{streamerName}
                 </h3>
@@ -158,8 +158,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             </div>
 
             {category && (
-              <div className="shrink-0">
-                <div className="rounded-2xl bg-white/10 px-3 py-1 text-[9px] font-bold text-white/90 backdrop-blur-xl border border-white/10 shadow-lg capitalize">
+              <div className="shrink-0 max-w-[40%]">
+                <div className="truncate rounded-2xl bg-white/10 px-2 py-1 text-[9px] font-bold text-white/90 backdrop-blur-xl border border-white/10 shadow-lg capitalize">
                   {category}
                 </div>
               </div>

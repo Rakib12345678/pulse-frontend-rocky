@@ -206,8 +206,9 @@ export const ExplorePage: React.FC = () => {
                         <ExploreSection
                             title="Popular this week"
                             hasBackground={sectionCounter++ % 2 === 1}
+                            className="!pb-20 md:!pb-4 !mb-0"
                         >
-                            <div className="flex gap-4 overflow-x-auto no-scrollbar items-stretch px-2 pb-32">
+                            <div className="flex gap-4 overflow-x-auto no-scrollbar items-stretch px-2 pb-4">
                                 {exploreData.popularStreams.map((item) => (
                                     <div key={item.id} className="w-[175px] sm:w-[215px] md:w-[240px] xl:w-[266px] flex-shrink-0 flex">
                                         <StreamCard

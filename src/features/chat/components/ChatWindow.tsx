@@ -9,6 +9,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { Switch } from '@/components/ui/switch';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { Avatar } from '@/features/chat/components/Avatar';
 import { capitalizeName, formatLastSeen, getDayKey, getDateLabel } from '@/features/chat/utils/ChatUtils';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
@@ -586,14 +587,31 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             )}>
                 <div className="px-2 sm:px-4 lg:px-8 py-4 w-full h-full">
                     <div className="w-full flex items-center gap-2 sm:gap-3 lg:gap-4 min-w-0 relative">
-                        {showEmoji && !isMobile && (
-                            <div className="absolute bottom-full right-0 mb-4 z-100 animate-in fade-in slide-in-from-bottom-2 duration-200 lg:mr-8 sm:mr-4">
-                                <EmojiPickerPopup
-                                    onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
-                                    onClose={() => setShowEmoji(false)}
-                                    className="shadow-2xl border border-white/10 rounded-2xl scale-90 sm:scale-100 origin-bottom-right"
-                                />
-                            </div>
+                        {showEmoji && (
+                            isMobile ? (
+                                <Drawer open={showEmoji} onOpenChange={setShowEmoji}>
+                                    <DrawerContent className="bg-[#111213] border-none px-4 pb-6 max-h-[85vh] rounded-t-[32px]">
+                                        <div className="mx-auto mt-2 mb-4 h-1 w-12 shrink-0 rounded-full bg-white/20" />
+                                        <EmojiPickerPopup
+                                            isMobile={isMobile}
+                                            onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
+                                            onClose={() => setShowEmoji(false)}
+                                            className="w-full bg-transparent shadow-none"
+                                        />
+                                    </DrawerContent>
+                                </Drawer>
+                            ) : (
+                                <div className={cn(
+                                    "absolute bottom-full z-100 animate-in fade-in slide-in-from-bottom-2 duration-200 right-0 mb-4 lg:mr-8 sm:mr-4"
+                                )}>
+                                    <EmojiPickerPopup
+                                        isMobile={isMobile}
+                                        onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
+                                        onClose={() => setShowEmoji(false)}
+                                        className="shadow-2xl border border-white/10 rounded-2xl scale-90 sm:scale-100 origin-bottom-right"
+                                    />
+                                </div>
+                            )
                         )}
                         <div className={cn(
                             'flex-4 flex items-center gap-2 px-3 sm:px-4 h-11 sm:h-12 bg-[#111213] border rounded-full transition-colors',
@@ -718,17 +736,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     </div>
                 </div>
 
-                {/* Mobile Emoji Picker (Below Input, True 100% Width) */}
-                {showEmoji && isMobile && (
-                    <div className="w-full z-100 animate-in slide-in-from-bottom-2 duration-300">
-                        <EmojiPickerPopup
-                            isMobile
-                            onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
-                            onClose={() => setShowEmoji(false)}
-                            className="w-full relative shadow-none"
-                        />
-                    </div>
-                )}
+                {/* Mobile Emoji Picker previously rendered here and caused overflow issues */}
             </div>
 
             {showLangModal && (

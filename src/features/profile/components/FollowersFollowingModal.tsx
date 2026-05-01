@@ -307,6 +307,16 @@ export const FollowersFollowingModal = ({
               </button>
             )}
           </div>
+        ) : searchQuery.trim() ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="text-gray-600 mb-6">
+              <div className="w-24 h-24 mx-auto mb-6 bg-zinc-800/30 rounded-full flex items-center justify-center shadow-2xl">
+                <Search className="w-10 h-10 opacity-20 text-[#FF7700]" />
+              </div>
+              <p className="text-2xl font-extrabold text-white mb-2">No user found</p>
+              <p className="text-gray-500 font-medium">We couldn't find anyone matching "{searchQuery}"</p>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="text-gray-600 mb-6">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, SquareArrowDown, SquareArrowUp, UserSearch, Flag } from 'lucide-react';
+import { Loader2, WifiOff, SquarePen, X, Pin, Trash2, ChevronLeft, BellOff, Bell, Archive, ArchiveRestore, UserSearch, Flag } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -333,9 +333,9 @@ const ConversationDropdown = ({
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-200 hover:bg-white/8 transition-colors cursor-pointer group"
             >
                 {isArchived ? (
-                    <SquareArrowUp className="w-3.5 h-3.5 shrink-0 text-gray-400 group-hover:text-white transition-colors" />
+                    <ArchiveRestore className="w-3.5 h-3.5 shrink-0 text-gray-400 group-hover:text-white transition-colors" />
                 ) : (
-                    <SquareArrowDown className="w-3.5 h-3.5 shrink-0 text-gray-400 group-hover:text-white transition-colors" />
+                    <Archive className="w-3.5 h-3.5 shrink-0 text-gray-400 group-hover:text-white transition-colors" />
                 )}
                 {isArchived ? 'Unarchive Chat' : 'Archive Chat'}
             </button>
@@ -758,8 +758,14 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
 
     return (
         <>
-            <div ref={containerRef} className={cn('flex flex-col h-full overflow-hidden', className)}>
-
+            <div 
+                ref={containerRef} 
+                className={cn(
+                    'flex flex-col overflow-hidden bg-[#111213]',
+                    (isMobile && view === 'archived') ? 'fixed inset-0 z-[1000] px-4 pt-4 sm:pt-6 pb-2' : 'h-full',
+                    className
+                )}
+            >
                 {/* Header */}
                 <div className="shrink-0 flex flex-col gap-3">
                     {selectedIds.length > 0 ? (
@@ -804,9 +810,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                                 <button
                                     onClick={handleArchiveMultiple}
                                     className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                                    title="Archive/Unarchive"
+                                    title={view === 'archived' ? "Unarchive" : "Archive"}
                                 >
-                                    <SquareArrowDown className="w-4.5 h-4.5" />
+                                    {view === 'archived' ? (
+                                        <ArchiveRestore className="w-4.5 h-4.5" />
+                                    ) : (
+                                        <Archive className="w-4.5 h-4.5" />
+                                    )}
                                 </button>
                                 {/* Report — only when exactly 1 selected */}
                                 {selectedIds.length === 1 && (
@@ -847,22 +857,30 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="relative flex md:flex items-center justify-between py-1 hidden md:flex">
+                        <div className={cn("relative items-center justify-between py-1", isMobile && view === 'normal' ? "hidden md:flex" : "flex")}>
                             <div className="flex items-center gap-2">
                                 {view === 'archived' && (
                                     <button
                                         onClick={() => setView('normal')}
                                         className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
                                     >
-                                        <ChevronLeft className="w-4 h-4" />
+                                        <ChevronLeft className="w-5 h-5" />
                                     </button>
                                 )}
-                                <h2 className="text-white text-sm sm:text-base font-semibold tracking-wide">
+                                <h2 className="text-white text-base sm:text-lg font-bold tracking-wide">
                                     {view === 'archived' ? 'Archived Chats' : 'Chats'}
                                 </h2>
                             </div>
 
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-2">
+                                {view === 'archived' && (
+                                    <button
+                                        onClick={() => setShowNewChat(true)}
+                                        className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FF7700] text-black hover:opacity-90 transition-opacity cursor-pointer shadow-lg shadow-orange-500/20"
+                                    >
+                                        <SquarePen className="w-4 h-4" />
+                                    </button>
+                                )}
                                 {view === 'normal' && (
                                     <button
                                         onClick={() => setShowNewChat(true)}
@@ -892,7 +910,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             className="w-full h-15 flex items-center gap-4 px-5 rounded-2xl bg-white/5 hover:bg-white/10 transition-all text-left cursor-pointer"
                         >
                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
-                                <SquareArrowDown className="w-5 h-5 text-gray-400" />
+                                <Archive className="w-5 h-5 text-gray-400" />
                             </div>
                             <div className="flex-1 flex items-center justify-between min-w-0">
                                 <span className="text-white text-sm font-semibold">Archive Chats</span>
