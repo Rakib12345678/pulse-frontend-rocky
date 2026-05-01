@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
+import type { OnboardingState } from '@/features/auth/stores/authStore';
 
 export function useAuth() {
     const setAuth = useAuthStore((s) => s.setAuth);
@@ -28,21 +29,30 @@ export function useAuth() {
                 newUser: data.newUser
             });
 
-            if (data.newUser) {
-                // New user - continue with signup flow at age step
-                setSignUpStep('age');
-                toast.success("Account created! Please verify your age.");
+            const onboardingState: OnboardingState | undefined = data.user?.onboardingState;
+
+            if (onboardingState && onboardingState !== 'COMPLETED') {
+                // User has a pending onboarding step — route them to the correct step.
+                if (onboardingState === 'EIGHTEEN_PLUS_UPDATE') {
+                    setSignUpStep('age');
+                } else if (onboardingState === 'PROFILE_DETAILS') {
+                    setSignUpStep('details');
+                } else if (onboardingState === 'INTEREST_UPDATE') {
+                    setSignUpStep('interests');
+                }
+                if (data.newUser) {
+                    toast.success("Account created! Please complete your profile.");
+                }
             } else {
-                // Existing user - close modal and navigate to home
+                // Onboarding complete — close modal and optionally navigate
                 closeSignUp();
-                console.log('useAuth: onSuccess', { newUser: data.newUser, redirect: data.redirect });
+                console.log('useAuth: onSuccess', { newUser: data.newUser, redirect: data.redirect, onboardingState });
                 if (data.redirect !== false) {
                     console.log('useAuth: Redirecting to /for-you');
                     navigate({ to: '/for-you' });
                 } else {
                     console.log('useAuth: Redirect suppressed');
                 }
-                // Only show welcome back toast if it's an explicit login action (redirect is true)
                 if (data.redirect !== false) {
                     toast.success("Welcome back!");
                 }

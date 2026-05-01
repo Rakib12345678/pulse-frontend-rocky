@@ -748,25 +748,15 @@ const StepAge = () => {
         setIsAdult(isAdult);
         setIsLoading(true);
         try {
-            if (isAdult) {
-                await authService.updateAgeConsent(true);
-            }
+            // Always send the explicit boolean — backend needs both true and false
+            await authService.updateAgeConsent(isAdult);
             useAuthStore.getState().updateUser({ eighteenPlus: isAdult });
-            if (isAdult) {
-                if (onAgeVerified) {
-                    onAgeVerified();
-                    closeModal();
-                    reset();
-                } else {
-                    setStep('details');
-                }
+            if (onAgeVerified) {
+                if (isAdult) onAgeVerified();
+                closeModal();
+                reset();
             } else {
-                if (onAgeVerified) {
-                    closeModal();
-                    reset();
-                } else {
-                    setStep('details');
-                }
+                setStep('details');
             }
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Failed to update age consent");

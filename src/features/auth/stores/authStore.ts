@@ -6,6 +6,12 @@ export interface Wallet {
   diamondBalance: number;
 }
 
+export type OnboardingState =
+  | 'EIGHTEEN_PLUS_UPDATE'
+  | 'PROFILE_DETAILS'
+  | 'INTEREST_UPDATE'
+  | 'COMPLETED';
+
 export interface User {
   id: number;
   email: string;
@@ -27,6 +33,7 @@ export interface User {
   coins?: number;
   followedByMe?: boolean;
   preferredLanguage?: string;
+  onboardingState?: OnboardingState;
 }
 
 interface AuthState {
