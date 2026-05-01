@@ -18,6 +18,7 @@ import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
+import { cn } from '@/lib/utils';
 
 import { liveService } from '@/features/live/services/live.service';
 import { CompactGiftSidebar } from '@/features/live/components/overlay/CompactGiftSidebar';
@@ -176,6 +177,7 @@ const LiveStreamMessageList: React.FC = () => {
     const { useParticipants: useParticipantsList } = useCallStateHooks();
     const participants = useParticipantsList();
     const { user } = useAuthStore();
+    const isMobile = useIsMobile();
 
     // Build a lookup map: userId -> fullName from custom fields
     const fullNameMap = useMemo(() => {
@@ -214,7 +216,10 @@ const LiveStreamMessageList: React.FC = () => {
 
     return (
         <div
-            className="flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-hide pr-1"
+            className={cn(
+                "flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-hide pr-1",
+                isMobile && "max-w-[70%]"
+            )}
             style={{
                 maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 100%)',
                 WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 100%)',
@@ -277,25 +282,24 @@ const LiveStreamMessageList: React.FC = () => {
                             className="w-8 h-8 rounded-full border-2 border-transparent shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                         />
                         <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="text-sm break-words leading-relaxed">
                                 <span
-                                    className="text-sm font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors"
+                                    className="font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors mr-1.5"
                                     onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
                                 >
                                     @{getDisplayName(msg.user)}
                                 </span>
-                                {typeof msg.text === 'string' && msg.text.split('\n').length > 1 && (
+                                {typeof msg.text === 'string' && msg.text.split('\n').length > 1 ? (
                                     <>
-                                        <span className="text-sm font-bold text-white mt-0.5">
+                                        <span className="font-bold text-white">
                                             {msg.text.split('\n')[0]}
                                         </span>
-                                        <p className="text-sm text-white/80 mt-1 leading-relaxed">
+                                        <span className="block text-white/80 mt-1 whitespace-pre-wrap">
                                             {msg.text.split('\n').slice(1).join('\n')}
-                                        </p>
+                                        </span>
                                     </>
-                                )}
-                                {typeof msg.text === 'string' && msg.text.split('\n').length === 1 && (
-                                    <span className={`text-sm font-bold ${(msg as any).isJoinMessage ? 'text-white/50 italic' : 'text-white'}`}>
+                                ) : (
+                                    <span className={`font-bold ${(msg as any).isJoinMessage ? 'text-white/50 italic' : 'text-white'}`}>
                                         {msg.text}
                                     </span>
                                 )}

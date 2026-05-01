@@ -13,8 +13,11 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
     isViewer = false,
 }) => {
     const { useCameraState, useMicrophoneState, useHasPermissions } = useCallStateHooks();
-    const { camera, isMute: isCameraMuted } = useCameraState();
-    const { microphone, isMute: isMicMuted } = useMicrophoneState();
+    const { camera, status: cameraStatus } = useCameraState();
+    const { microphone, status: micStatus } = useMicrophoneState();
+
+    const isCameraMuted = cameraStatus !== 'enabled';
+    const isMicMuted = micStatus !== 'enabled';
 
     // Check if local participant has been granted send permissions
     const canSendAudio = useHasPermissions(OwnCapability.SEND_AUDIO);
@@ -37,11 +40,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
 
     const toggleMicrophone = async () => {
         try {
-            if (isMicMuted) {
-                await microphone.enable();
-            } else {
-                await microphone.disable();
-            }
+            await microphone.toggle();
         } catch (error) {
             console.error('Failed to toggle microphone:', error);
         }
@@ -58,10 +57,10 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                     <button
                         onClick={toggleMicrophone}
                         className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border",
+                            "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border shadow-lg",
                             !isMicMuted
                                 ? "bg-white/10 border-white/10 text-white hover:bg-white/20"
-                                : "bg-red-500 border-red-400/50 text-white hover:bg-red-600"
+                                : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
                         )}
                         title={isMicMuted ? "Unmute mic" : "Mute mic"}
                     >
@@ -70,10 +69,10 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                     <button
                         onClick={toggleCamera}
                         className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border",
+                            "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border shadow-lg",
                             !isCameraMuted
                                 ? "bg-white/10 border-white/10 text-white hover:bg-white/20"
-                                : "bg-red-500 border-red-400/50 text-white hover:bg-red-600"
+                                : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
                         )}
                         title={isCameraMuted ? "Start camera" : "Stop camera"}
                     >
@@ -92,7 +91,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                         "w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
                         !isCameraMuted
                             ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
-                            : "bg-red-500 border-red-400/50 text-white hover:bg-red-600 ring-4 ring-red-500/10"
+                            : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] ring-4 ring-red-500/10 shadow-[0_0_20px_rgba(255,0,0,0.4)]"
                     )}
                     title={isCameraMuted ? "Start camera" : "Stop camera"}
                 >
@@ -105,7 +104,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                         "w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
                         !isMicMuted
                             ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
-                            : "bg-red-500 border-red-400/50 text-white hover:bg-red-600 ring-4 ring-red-500/10"
+                            : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] ring-4 ring-red-500/10 shadow-[0_0_20px_rgba(255,0,0,0.4)]"
                     )}
                     title={isMicMuted ? "Unmute mic" : "Mute mic"}
                 >
@@ -127,10 +126,10 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                 <button
                     onClick={toggleMicrophone}
                     className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border",
+                        "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border shadow-lg",
                         !isMicMuted
                             ? "bg-white/10 border-white/10 text-white hover:bg-white/20"
-                            : "bg-red-500 border-red-400/50 text-white hover:bg-red-600"
+                            : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
                     )}
                 >
                     {!isMicMuted ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
@@ -138,10 +137,10 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                 <button
                     onClick={toggleCamera}
                     className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border",
+                        "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border shadow-lg",
                         !isCameraMuted
                             ? "bg-white/10 border-white/10 text-white hover:bg-white/20"
-                            : "bg-red-500 border-red-400/50 text-white hover:bg-red-600"
+                            : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
                     )}
                 >
                     {!isCameraMuted ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}

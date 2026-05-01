@@ -52,6 +52,10 @@ export const JoinRequestPopup: React.FC = () => {
                 });
             } else if (customData?.type === 'cancel-join-request') {
                 setJoinRequests((prev) => prev.filter((r) => r.userId !== customData.userId));
+            } else if (customData?.type === 'join-response') {
+                // If host sends a join-response (accept or decline), remove the request
+                // from the popup. This handles any race where the request was re-added.
+                setJoinRequests((prev) => prev.filter((r) => r.userId !== customData.userId));
             }
         });
         return () => { unsubscribe(); };
@@ -71,7 +75,7 @@ export const JoinRequestPopup: React.FC = () => {
         if (effectiveCount > MAX_COHOSTS) {
             approvingCountRef.current -= 1;
             toast.error(`Stage is full (max ${MAX_COHOSTS} co-hosts). Remove someone first.`);
-            // Auto-decline the request so the viewer knows
+            // Auto-decline the request
             try {
                 await call.sendCustomEvent({
                     type: 'join-response', userId: request.userId, accepted: false,
@@ -83,7 +87,7 @@ export const JoinRequestPopup: React.FC = () => {
         }
 
         try {
-            // Grant permissions and assign the co-host role so they are recognized by all viewers
+            // Grant permissions and assign the co-host role
             await call.updateUserPermissions({
                 user_id: request.userId,
                 grant_permissions: [
@@ -91,7 +95,6 @@ export const JoinRequestPopup: React.FC = () => {
                     OwnCapability.SEND_VIDEO,
                 ],
             });
-            // Also explicitly upgrade their role to 'co-host'
             await call.updateCallMembers({
                 update_members: [{ user_id: request.userId, role: 'co_host' }],
             });
@@ -107,6 +110,8 @@ export const JoinRequestPopup: React.FC = () => {
             }
 
             toast.success(`@${request.userName} joined as co-host`);
+            // Remove request from local list to close the popup
+            setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to grant permissions:', err);
             toast.error(`Failed to add @${request.userName} as co-host`);
