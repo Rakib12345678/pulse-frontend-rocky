@@ -1,9 +1,16 @@
-
+import { ChevronLeft } from 'lucide-react';
 
 const RefundPolicyPage = () => {
     return (
         <div className="min-h-screen text-gray-200 p-6 pb-18 md:p-12">
             <div className="max-w-4xl mx-auto">
+                <button
+                    onClick={() => window.history.back()}
+                    className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors mb-6 cursor-pointer py-3 px-4 -ml-1"
+                >
+                    <ChevronLeft className="w-7 h-7" />
+                    <span className="text-lg font-semibold">Back</span>
+                </button>
                 <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Refund Policy</h1>
                 <p className="text-sm text-gray-400 mb-10">Effective Date: 26th March 2026 | Last Updated: 27th March 2026</p>
 
@@ -22,7 +29,7 @@ const RefundPolicyPage = () => {
                         <h2 className="text-xl md:text-2xl font-semibold text-white">2. Coin Purchases</h2>
                         <ul className="list-disc pl-6 space-y-2">
                             <li>Coins are digital items that are delivered instantly upon successful payment</li>
-                            <li>Once credited to a user’s account, Coin purchases are non-refundable and non-exchangeable</li>
+                            <li>Once credited to a user's account, Coin purchases are non-refundable and non-exchangeable</li>
                             <li>Coins cannot be redeemed for cash or transferred to another user</li>
                         </ul>
                     </section>
@@ -85,7 +92,7 @@ const RefundPolicyPage = () => {
 
                     <section className="space-y-4 border-t border-white/5 pt-8">
                         <h2 className="text-xl md:text-2xl font-semibold text-white">8. Exceptional Circumstances</h2>
-                        <p>Refunds may be granted solely at the Company’s discretion in exceptional situations, including:</p>
+                        <p>Refunds may be granted solely at the Company's discretion in exceptional situations, including:</p>
                         <ul className="list-disc pl-6 space-y-2">
                             <li>System-wide technical failures</li>
                             <li>Verified billing errors</li>

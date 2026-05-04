@@ -116,7 +116,7 @@ export const LiveStreamChat: React.FC = () => {
             }
         };
 
-        const intervalId = setInterval(syncParticipants, 15000);
+        const intervalId = setInterval(syncParticipants, 10000);
 
         // Also run immediately on mount (or after 25s if that was intentional, but user said "after 10s each")
         // We'll run it once immediately to start the cycle.

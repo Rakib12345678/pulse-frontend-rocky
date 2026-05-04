@@ -1,15 +1,22 @@
-
+import { ChevronLeft } from 'lucide-react';
 
 const TermsConditionsPage = () => {
     return (
         <div className="min-h-screen text-gray-200 p-6 pb-18 md:p-12">
             <div className="max-w-4xl mx-auto">
+                <button
+                    onClick={() => window.history.back()}
+                    className="flex items-center gap-3 text-white transition-colors mb-6 cursor-pointer py-3 px-4 -ml-1"
+                >
+                    <ChevronLeft className="w-7 h-7" />
+                    <span className="text-lg font-bold">Back</span>
+                </button>
                 <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Terms & Conditions</h1>
                 <p className="text-sm text-gray-400 mb-10">Effective Date: 26th March 2026 | Last Updated: 27th March 2026</p>
 
                 <div className="space-y-8 text-base md:text-lg leading-relaxed text-gray-300">
                     <section className="space-y-4">
-                        <p>These Terms & Conditions (“Terms”) govern access to and use of the PulseLive platform, including all related applications, websites, services, and features (collectively, the “Platform”).</p>
+                        <p>These Terms & Conditions ("Terms") govern access to and use of the PulseLive platform, including all related applications, websites, services, and features (collectively, the "Platform").</p>
                         <p>By accessing or using the Platform, you acknowledge that you have read, understood, and agree to be bound by these Terms.</p>
                     </section>
 
@@ -59,7 +66,7 @@ const TermsConditionsPage = () => {
                                 <ul className="list-disc pl-6 space-y-2">
                                     <li>Diamonds are not a form of currency or stored value instrument</li>
                                     <li>Diamonds cannot be transferred between users</li>
-                                    <li>Diamonds are redeemable only through the Platform’s authorised payout mechanisms, subject to applicable conditions</li>
+                                    <li>Diamonds are redeemable only through the Platform's authorised payout mechanisms, subject to applicable conditions</li>
                                 </ul>
                             </div>
                         </div>
@@ -88,7 +95,7 @@ const TermsConditionsPage = () => {
 
                     <section className="space-y-4 border-t border-white/5 pt-8">
                         <h2 className="text-xl md:text-2xl font-semibold text-white">7. Platform Fees and Revenue Share</h2>
-                        <p>The Company retains a portion of the value associated with virtual gifts as a service fee. The remaining value is credited to creators in the form of Diamonds. The applicable fee structure may be modified at the Company’s discretion.</p>
+                        <p>The Company retains a portion of the value associated with virtual gifts as a service fee. The remaining value is credited to creators in the form of Diamonds. The applicable fee structure may be modified at the Company's discretion.</p>
                     </section>
 
                     <section className="space-y-4 border-t border-white/5 pt-8">
@@ -131,7 +138,7 @@ const TermsConditionsPage = () => {
 
                     <section className="space-y-4 border-t border-white/5 pt-8">
                         <h2 className="text-xl md:text-2xl font-semibold text-white">12. Disclaimer of Warranties</h2>
-                        <p>The Platform is provided on an “as is” and “as available” basis without warranties of any kind, whether express or implied.</p>
+                        <p>The Platform is provided on an "as is" and "as available" basis without warranties of any kind, whether express or implied.</p>
                     </section>
 
                     <section className="space-y-4 border-t border-white/5 pt-8">

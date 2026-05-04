@@ -93,6 +93,11 @@ export const MobileFooter: React.FC = () => {
 
     const handleProfileClick = () => {
         if (!isLoggedIn) {
+            const { pausedForLegal, resumeModal } = useSignUpStore.getState();
+            if (pausedForLegal) {
+                resumeModal();
+                return;
+            }
             setMode('login');
             setStep('welcome');
             openModal();

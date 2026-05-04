@@ -1,15 +1,22 @@
-
+import { ChevronLeft } from 'lucide-react';
 
 const PrivacyPolicyPage = () => {
     return (
         <div className="min-h-screen text-gray-200 p-6 pb-18 md:p-12">
             <div className="max-w-4xl mx-auto">
+                <button
+                    onClick={() => window.history.back()}
+                    className="flex items-center gap-3 text-white transition-colors mb-6 cursor-pointer py-3 px-4 -ml-1"
+                >
+                    <ChevronLeft className="w-7 h-7" />
+                    <span className="text-lg font-bold">Back</span>
+                </button>
                 <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Privacy Policy</h1>
                 <p className="text-sm text-gray-400 mb-10">Effective Date: 26th March 2026 | Last Updated: 27th March 2026</p>
 
                 <div className="space-y-8 text-base md:text-lg leading-relaxed text-gray-300">
                     <section className="space-y-4">
-                        <p>PulseLive (“Company”, “we”, “our”, or “us”) is committed to safeguarding the privacy and integrity of personal data entrusted to us. This Privacy Policy outlines the manner in which we collect, use, disclose, and protect information in connection with the use of our platform, including our applications, websites, and related services.</p>
+                        <p>PulseLive ("Company", "we", "our", or "us") is committed to safeguarding the privacy and integrity of personal data entrusted to us. This Privacy Policy outlines the manner in which we collect, use, disclose, and protect information in connection with the use of our platform, including our applications, websites, and related services.</p>
                         <p>By accessing or using PulseLive, you acknowledge that you have read and understood this Privacy Policy and agree to the practices described herein.</p>
                     </section>
 
@@ -110,7 +117,7 @@ const PrivacyPolicyPage = () => {
 
                     <section className="space-y-4 border-t border-white/5 pt-8">
                         <h2 className="text-xl md:text-2xl font-semibold text-white">7. Cross-Border Data Transfers</h2>
-                        <p>Given the global nature of our services, personal data may be transferred to and processed in jurisdictions outside the user’s country of residence. Where such transfers occur, we implement appropriate safeguards to ensure compliance with applicable data protection laws.</p>
+                        <p>Given the global nature of our services, personal data may be transferred to and processed in jurisdictions outside the user's country of residence. Where such transfers occur, we implement appropriate safeguards to ensure compliance with applicable data protection laws.</p>
                     </section>
 
                     <section className="space-y-4 border-t border-white/5 pt-8">
@@ -142,7 +149,7 @@ const PrivacyPolicyPage = () => {
                     </section>
 
                     <section className="space-y-4 border-t border-white/5 pt-8">
-                        <h2 className="text-xl md:text-2xl font-semibold text-white">11. Children’s Privacy</h2>
+                        <h2 className="text-xl md:text-2xl font-semibold text-white">11. Children's Privacy</h2>
                         <p>PulseLive is not intended for individuals under the age of 18. We do not knowingly collect personal data from minors. If we become aware of such a collection, appropriate steps will be taken to delete the information.</p>
                     </section>
 

@@ -8,11 +8,11 @@ import type { OnboardingState } from '@/features/auth/stores/authStore';
 
 export function useAuth() {
     const setAuth = useAuthStore((s) => s.setAuth);
-    
+
     // Sign Up Store Actions
     const closeSignUp = useSignUpStore((s) => s.closeModal);
     const setSignUpStep = useSignUpStore((s) => s.setStep);
-    
+
     const navigate = useNavigate();
 
     const processAuth = useMutation({
@@ -40,9 +40,6 @@ export function useAuth() {
                 } else if (onboardingState === 'INTEREST_UPDATE') {
                     setSignUpStep('interests');
                 }
-                if (data.newUser) {
-                    toast.success("Account created! Please complete your profile.");
-                }
             } else {
                 // Onboarding complete — close modal and optionally navigate
                 closeSignUp();
@@ -64,8 +61,8 @@ export function useAuth() {
         }
     });
 
-    return { 
-        authenticate: processAuth.mutate, 
-        isLoading: processAuth.isPending 
+    return {
+        authenticate: processAuth.mutate,
+        isLoading: processAuth.isPending
     };
 }

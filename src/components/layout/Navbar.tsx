@@ -62,7 +62,7 @@ const NavLink = ({ to, label, badgeCount = 0 }: NavLinkProps) => {
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, user, wallet, clearAuth, accessToken } = useAuthStore();
+  const { isAuthenticated, user, wallet, clearAuth, accessToken, isNewUser } = useAuthStore();
   const { data: walletData } = useWalletBalance();
   const { reset: resetSignUp } = useSignUpStore();
   const { openModal: openCoinsModal } = useCoinsStore();
@@ -76,17 +76,27 @@ export const Navbar: React.FC = () => {
     setHasMounted(true);
   }, []);
 
-  const { openModal, setStep, setMode, isOpen: isModalOpen, currentStep } = useSignUpStore();
+  const { openModal, setStep, setMode, isOpen: isModalOpen, currentStep, pausedForLegal, resumeModal } = useSignUpStore();
 
   const shouldHide = isMobile && isModalOpen && currentStep !== 'welcome';
 
   const handleSignUpClick = () => {
+    if (pausedForLegal) {
+      resumeModal();
+      navigate({ to: '/for-you' });
+      return;
+    }
     setMode('signup');
     setStep('welcome');
     openModal();
   };
 
   const handleLoginClick = () => {
+    if (pausedForLegal) {
+      resumeModal();
+      navigate({ to: '/for-you' });
+      return;
+    }
     setMode('login');
     setStep('input');
     openModal();
@@ -100,7 +110,7 @@ export const Navbar: React.FC = () => {
   };
 
 
-  const isLoggedIn = isAuthenticated && !!accessToken;
+  const isLoggedIn = isAuthenticated && !!accessToken && !isNewUser;
   const { pathname } = useLocation();
 
   if (shouldHide) return null;

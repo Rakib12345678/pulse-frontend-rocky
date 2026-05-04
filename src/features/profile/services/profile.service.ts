@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import type { User, LiveStream, LiveStatus, FollowUser } from '@/features/profile/services/profile.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -87,12 +88,37 @@ const fetchUserLiveStatus = async (username: string): Promise<LiveStatus> => {
 };
 
 export const useCurrentUser = () => {
+  const queryClient = useQueryClient();
+  const authUser = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const userId = authUser?.id;
+  const prevUserIdRef = useRef<number | undefined>(userId);
+
+  // When the user ID changes (login/logout with different account),
+  // purge all stale profile-related cached queries so the UI
+  // immediately fetches fresh data instead of showing the previous user's data.
+  useEffect(() => {
+    const prevId = prevUserIdRef.current;
+    if (prevId !== undefined && prevId !== userId) {
+      queryClient.removeQueries({ queryKey: ['currentUser'] });
+      queryClient.removeQueries({ queryKey: ['userProfile'] });
+      queryClient.removeQueries({ queryKey: ['userByUsername'] });
+      queryClient.removeQueries({ queryKey: ['pastLiveStreams'] });
+      queryClient.removeQueries({ queryKey: ['globalPastLiveStreams'] });
+      queryClient.removeQueries({ queryKey: ['moments'] });
+      queryClient.removeQueries({ queryKey: ['followers'] });
+      queryClient.removeQueries({ queryKey: ['following'] });
+      queryClient.removeQueries({ queryKey: ['userLiveStatus'] });
+    }
+    prevUserIdRef.current = userId;
+  }, [userId, queryClient]);
+
   return useQuery({
-    queryKey: ['currentUser'],
+    queryKey: ['currentUser', userId],
     queryFn: fetchCurrentUser,
     staleTime: 5 * 60 * 1000,
     retry: false,
-
+    enabled: isAuthenticated && !!userId,
   });
 };
 
@@ -326,7 +352,7 @@ export const useToggleFollow = () => {
 
       // Update followingCount for currentUser
       if (updateUser) {
-        queryClient.setQueryData<User>(['currentUser'], (old) => {
+        queryClient.setQueriesData<User>({ queryKey: ['currentUser'] }, (old) => {
           if (!old) return old;
           const newCount = followedByMe
             ? Math.max(0, (old.followingCount ?? 0) - 1)
@@ -361,7 +387,8 @@ export const useToggleFollow = () => {
       queryClient.setQueryData<User>(['userProfile', variables.targetUserId], data);
 
       // Update Zustand if current user is affected
-      const currentUser = queryClient.getQueryData<User>(['currentUser']);
+      const currentUserId = useAuthStore.getState().user?.id;
+      const currentUser = currentUserId ? queryClient.getQueryData<User>(['currentUser', currentUserId]) : undefined;
       if (currentUser?.id === variables.targetUserId) {
         updateUser(data);
       }
@@ -427,7 +454,7 @@ export const useBlockUser = () => {
 
       // Decrement counts for currentUser if blocking
       if (!blockedByMe) {
-        queryClient.setQueryData<User>(['currentUser'], (old) => {
+        queryClient.setQueriesData<User>({ queryKey: ['currentUser'] }, (old) => {
           if (!old) return old;
           return {
             ...old,
@@ -479,7 +506,7 @@ export const useUpdateProfile = () => {
 
     onSuccess: (updatedUser) => {
       // 1. Update the 'currentUser' query cache immediately
-      queryClient.setQueryData(['currentUser'], updatedUser);
+      queryClient.setQueriesData({ queryKey: ['currentUser'] }, updatedUser);
 
       // 2. Update the 'userProfile' cache if we have an ID
       if (updatedUser.id) {
@@ -523,7 +550,7 @@ export const useRemoveFollower = () => {
       });
 
       // Optimistic update for follower count
-      queryClient.setQueryData<User>(['currentUser'], (old) => {
+      queryClient.setQueriesData<User>({ queryKey: ['currentUser'] }, (old) => {
         if (!old) return old;
         return {
           ...old,

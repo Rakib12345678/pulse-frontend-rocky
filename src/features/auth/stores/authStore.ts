@@ -48,6 +48,7 @@ interface AuthState {
   updateUser: (userData: Partial<User>) => void;
   updateWallet: (walletData: Partial<Wallet>) => void;
   clearAuth: () => void;
+  setAuthenticated: (val: boolean) => void;
   setHydrated: () => void;
 }
 
@@ -67,7 +68,9 @@ export const useAuthStore = create<AuthState>()(
         user: payload.user,
         wallet: payload.wallet,
         isNewUser: payload.newUser,
-        isAuthenticated: true,
+        isAuthenticated: !payload.user?.onboardingState ||
+          payload.user?.onboardingState === 'COMPLETED' ||
+          payload.user?.onboardingState === 'INTEREST_UPDATE',
       }),
 
       updateUser: (userData) => set((state) => ({
@@ -77,6 +80,8 @@ export const useAuthStore = create<AuthState>()(
       updateWallet: (walletData) => set((state) => ({
         wallet: state.wallet ? { ...state.wallet, ...walletData } : (walletData as Wallet)
       })),
+
+      setAuthenticated: (val) => set({ isAuthenticated: val }),
 
       clearAuth: () => set({
         accessToken: null,

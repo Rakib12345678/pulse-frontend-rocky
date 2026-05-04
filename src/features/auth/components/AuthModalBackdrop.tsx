@@ -16,6 +16,13 @@ export const AuthModalBackdrop: React.FC<AuthModalBackdropProps> = ({
   currentStep,
 }) => {
   const isFloating = currentStep === 'welcome';
+  const canCloseOnBackdrop = currentStep === 'welcome' || currentStep === 'input';
+
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && canCloseOnBackdrop) {
+      onClose();
+    }
+  };
 
   return (
     <>
@@ -24,7 +31,7 @@ export const AuthModalBackdrop: React.FC<AuthModalBackdropProps> = ({
         // Welcome step: centred floating card with mini glows
         <div
           className="fixed inset-0 z-200 flex flex-col items-center justify-center p-6 md:hidden bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={(e) => e.target === e.currentTarget && onClose()}
+          onClick={handleBackdropClick}
         >
           <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-[#0d0a09]">
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -56,7 +63,7 @@ export const AuthModalBackdrop: React.FC<AuthModalBackdropProps> = ({
       {/* ══ DESKTOP ══ */}
       <div
         className="hidden md:flex fixed inset-0 z-200 items-center justify-center bg-black/75 backdrop-blur-md p-4"
-        onClick={(e) => e.target === e.currentTarget && onClose()}
+        onClick={handleBackdropClick}
       >
         <div
           className={cn(
