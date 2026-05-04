@@ -6,6 +6,7 @@ import type { User } from '@/features/profile/services/profile.types';
 import cameraLogo from "@/assets/Camera.png"
 import { toast } from 'sonner';
 import { useGoLive } from '@/features/profile/hooks/useGoLive';
+import { userService } from '@/features/live/services/user.service';
 import { EditProfile } from '@/features/profile/components/EditProfile';
 import { useSubmitReport } from '@/features/report/services/report.service';
 import { BlockUserModal, ErrorModal } from '@/components/internal/ConfirmModal';
@@ -188,8 +189,18 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
       <ReportSuccessModal
         isOpen={showReportSuccess}
         username={user.username ?? ''}
-        type="other"
-        onExplore={() => {
+        type="chat"
+        onMute={() => {
+          toast.success(`@${user.username ?? ''} has been muted`);
+          setShowReportSuccess(false);
+        }}
+        onBlock={async () => {
+          try {
+            await userService.blockUser(user.id);
+            toast.success(`Blocked @${user.username ?? ''}`);
+          } catch {
+            toast.error('Failed to block user');
+          }
           setShowReportSuccess(false);
         }}
         onClose={() => setShowReportSuccess(false)}
@@ -235,15 +246,15 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center text-center md:text-left">
             <div className="relative shrink-0">
               <UserAvatar
-                  src={user.profileImage}
-                  alt={user.username}
-                  isLive={isLive}
-                  callId={liveStatus?.callId}
-                  username={user.username}
-                  size="custom"
-                  className="w-32 h-32 md:w-20 md:h-20 lg:w-26 lg:h-26 xl:w-32 xl:h-32"
-                  clickable={true}
-                  showBadge={true}
+                src={user.profileImage}
+                alt={user.username}
+                isLive={isLive}
+                callId={liveStatus?.callId}
+                username={user.username}
+                size="custom"
+                className="w-32 h-32 md:w-20 md:h-20 lg:w-26 lg:h-26 xl:w-32 xl:h-32"
+                clickable={true}
+                showBadge={true}
               />
               {isOwnProfile && (
                 <button

@@ -83,7 +83,7 @@ const ConfirmModalContent = ({
     <>
         {/* Description */}
         {descriptionPrefix && username && (
-            <p className="text-gray-400 text-md mb-4 leading-relaxed text-center">
+            <p className="text-gray-400 text-md leading-relaxed text-center">
                 {descriptionPrefix}{' '}
                 <span className="text-white font-semibold">@{username}</span>
             </p>
@@ -147,7 +147,7 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
                 <div className="relative bg-[#1D1F20] border border-white/10 rounded-[24px] w-full max-w-sm p-8 flex flex-col items-center text-center">
                     <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
 
-                    <h3 className="text-white text-2xl font-bold mb-8 leading-snug">{title}</h3>
+                    <h3 className="text-white text-2xl font-bold mb-1 leading-snug">{title}</h3>
 
                     {/* Stacked buttons */}
                     <div className="flex flex-col gap-4 w-full">
@@ -177,7 +177,7 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
         <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
             <DialogContent showCloseButton={false} className="bg-[#1D1F20] border-white/10 rounded-3xl px-8 py-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center">
                 <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
-                <DialogTitle className="text-white text-2xl font-bold mb-8 leading-snug">{title}</DialogTitle>
+                <DialogTitle className="text-white text-2xl font-bold leading-snug">{title}</DialogTitle>
                 <ConfirmModalContent onCancel={onCancel} confirmLabel={confirmLabel} confirmIcon={confirmIcon} confirmClassName={confirmClassName} cancelLabel={cancelLabel} isLoading={isLoading} onConfirm={onConfirm} {...rest} />
             </DialogContent>
         </Dialog>
@@ -300,7 +300,7 @@ export const ReportSuccessModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onDone()}>
-            <DialogContent showCloseButton={false} className="bg-[#1e2028] border-white/10 rounded-2xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center">
+            <DialogContent showCloseButton={false} className="bg-[#1e2028] border-white/10 rounded-2xl px-6 py-10 w-full max-w-2xl shadow-2xl flex flex-col items-center text-center">
                 {/* User avatar */}
                 <div className="mb-5 flex justify-center">
                     {avatarUrl ? (
@@ -335,19 +335,19 @@ export const ReportSuccessModal = ({
                 </p>
 
                 {/* Action buttons — single row */}
-                <div className="flex gap-3 w-full">
+                <div className="flex gap-6 w-full">
                     <button
                         onClick={onMute}
-                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] text-sm font-bold hover:bg-white/5 transition-all active:scale-95 cursor-pointer"
+                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] text-lg font-bold hover:bg-white/5 transition-all active:scale-95 cursor-pointer"
                     >
-                        Mute User
+                        Mute
                     </button>
                     <button
                         onClick={onBlock}
                         disabled={isBlockPending}
-                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-[#FF7700] text-black text-sm font-bold hover:bg-[#ff9922] transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                        className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-full bg-[#FF7700] text-black text-lg font-bold hover:bg-[#ff9922] transition-all active:scale-95 cursor-pointer disabled:opacity-60"
                     >
-                        {isBlocked ? 'Unblock User' : 'Block User'}
+                        {isBlocked ? 'Unblock' : 'Block'}
                     </button>
                 </div>
             </DialogContent>

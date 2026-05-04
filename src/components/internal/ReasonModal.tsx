@@ -171,8 +171,8 @@ const ReasonModalContent = ({
                                             onChange={(e) => {
                                                 const newFiles = Array.from(e.target.files || []);
                                                 if (files.length + newFiles.length > 10) {
-                                                     toast.error('Maximum 10 files allowed');
-                                                     return;
+                                                    toast.error('Maximum 10 files allowed');
+                                                    return;
                                                 }
                                                 setFiles((prev: File[]) => [...prev, ...newFiles].slice(0, 10));
                                                 e.target.value = '';
@@ -550,27 +550,26 @@ export const ReportSuccessModal = ({
 
     const content = (
         <div className="flex flex-col items-center text-center">
-            <h2 className="text-white text-2xl font-bold mb-6 leading-snug p-2">
-                You Reported @{username} <br />
-                Successfully
+            <h2 className="text-white text-2xl font-bold mb-6 leading-snug">
+                You Reported @{username} Successfully
             </h2>
-            <p className="text-gray-400 text-[15px] mb-8 leading-relaxed max-w-[280px]">
+            <p className="text-gray-400 text-[20px] mb-8 leading-relaxed max-w-[280px]">
                 We appreciate you helping us keep PulseLive Safe.
             </p>
 
             {type === 'chat' ? (
-                <div className="flex gap-4 w-full mt-2">
+                <div className="flex gap-6 w-full mt-2">
                     <button
                         onClick={() => { onMute?.(); onClose(); }}
-                        className="flex-1 py-3.5 rounded-full bg-[#FF7700] text-black text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                        className="flex-1 py-3.5 rounded-full bg-[#FF7700] text-black text-lg font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
                     >
-                        Mute User
+                        Mute
                     </button>
                     <button
                         onClick={() => { onBlock?.(); onClose(); }}
-                        className="flex-1 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-[15px] font-bold hover:bg-white/5 transition-all cursor-pointer"
+                        className="flex-1 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-lg font-bold hover:bg-white/5 transition-all cursor-pointer"
                     >
-                        Block User
+                        Block
                     </button>
                 </div>
             ) : (
@@ -602,7 +601,7 @@ export const ReportSuccessModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl p-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center z-100005">
+            <DialogContent showCloseButton={false} className="bg-[#18191f] border-white/10 rounded-3xl px-6 py-10 w-full max-w-2xl shadow-2xl flex flex-col items-center text-center z-100005">
                 <DialogTitle className="sr-only">Report Successful</DialogTitle>
                 {content}
             </DialogContent>
@@ -632,7 +631,7 @@ export const ReportFailureModal = ({
             </svg>
 
             <h2 className="text-white text-2xl font-bold mb-4">Report Failed</h2>
-            <p className="text-gray-400 text-[15px] mb-8 leading-relaxed max-w-[280px]">
+            <p className="text-gray-400 text-[20px] mb-8 leading-relaxed max-w-[280px]">
                 Your report could not be submitted at this time. Please try again later.
             </p>
 
