@@ -13,7 +13,7 @@ import { liveService } from '@/features/live/services/live.service';
 import kick from '@/assets/kick.svg';
 import { cn } from '@/lib/utils';
 import { useParticipantPresence } from '@/features/live/hooks/useParticipantPresence';
-import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
+import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
@@ -37,7 +37,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     // --- Participant Presence ---
     useParticipantPresence(call, isViewer);
 
-    const { markActive, markInactive, pruneStale, clear: clearPresence } = useParticipantPresenceStore();
+    const { setHidden, setVisible, clear } = useViewerVisibilityStore();
 
     const [knownCoHostIds, setKnownCoHostIds] = useState<Set<string>>(new Set());
 
@@ -46,15 +46,16 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
         const unsubscribe = call.on('custom', (event: any) => {
             const customData = event?.custom;
-            
-            if (isHost) {
-                const senderUserId = event?.user?.id;
-                if (senderUserId) {
-                    if (customData?.type === 'presence-heartbeat') {
-                        markActive(senderUserId);
-                    } else if (customData?.type === 'presence-inactive') {
-                        markInactive(senderUserId);
-                    }
+            const senderUserId = event?.user?.id;
+
+            if (!senderUserId) return;
+
+            // Only the Host processes visibility events to save client memory on viewers' devices
+            if (isHost && customData?.type === 'viewer-visibility') {
+                if (customData.isVisible) {
+                    setVisible(senderUserId);
+                } else {
+                    setHidden(senderUserId);
                 }
             }
 
@@ -69,14 +70,11 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             }
         });
 
-        const pruneInterval = isHost ? setInterval(pruneStale, 5000) : undefined;
-
         return () => {
             unsubscribe();
-            if (pruneInterval) clearInterval(pruneInterval);
-            clearPresence();
+            clear(); // Reset when stream unmounts
         };
-    }, [call, isHost, markActive, markInactive, pruneStale, clearPresence]);
+    }, [call, isHost, setHidden, setVisible, clear]);
 
     // ── ROLE DEBUGGING ──────────────────────────────────────────────────────────
     // This logs every participant's exact roles so you can confirm what role names

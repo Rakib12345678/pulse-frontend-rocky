@@ -1,86 +1,34 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect } from 'react';
 import type { Call } from '@stream-io/video-react-sdk';
 
 /**
- * Hook that sends presence heartbeat events to the Stream call
- * while the user's tab/page is visible. Stops when hidden/blurred
- * (screen lock, tab switch, app background).
- *
- * Only used by viewers — hosts/co-hosts are always shown.
+ * Event-Driven Visibility Tracking.
+ * Sends a single event when the tab is hidden or shown.
+ * Does NOT disconnect the user from the video/audio feed.
  */
-export function useParticipantPresence(call: Call | null, enabled: boolean) {
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const isVisibleRef = useRef(true);
-
-    const sendHeartbeat = useCallback(() => {
-        if (!call) return;
-        call.sendCustomEvent({
-            type: 'presence-heartbeat',
-        }).catch((err) => {
-            console.error('[useParticipantPresence] Failed to send heartbeat:', err);
-        });
-    }, [call]);
-
-    const sendInactive = useCallback(() => {
-        if (!call) return;
-        call.sendCustomEvent({
-            type: 'presence-inactive',
-        }).catch((err) => {
-            console.error('[useParticipantPresence] Failed to send inactive:', err);
-        });
-    }, [call]);
-
-    const startHeartbeat = useCallback(() => {
-        if (intervalRef.current) return;
-        // Send one immediately
-        sendHeartbeat();
-        intervalRef.current = setInterval(sendHeartbeat, 5000);
-    }, [sendHeartbeat]);
-
-    const stopHeartbeat = useCallback(() => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-    }, []);
-
+export function useParticipantPresence(call: Call | null, isViewer: boolean) {
     useEffect(() => {
-        if (!enabled || !call) return;
+        // Only viewers/co-hosts report their visibility. Hosts don't need to.
+        if (!call || !isViewer) return;
 
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                isVisibleRef.current = false;
-                stopHeartbeat();
-                sendInactive();
-            } else {
-                isVisibleRef.current = true;
-                startHeartbeat();
-            }
+            const isVisible = document.visibilityState === 'visible';
+
+            call.sendCustomEvent({
+                type: 'viewer-visibility',
+                isVisible: isVisible,
+            }).catch((err) => {
+                console.error('[Visibility] Failed to send state:', err);
+            });
         };
 
-        const handleBlur = () => {
-            isVisibleRef.current = false;
-            stopHeartbeat();
-            sendInactive();
-        };
-
-        const handleFocus = () => {
-            isVisibleRef.current = true;
-            startHeartbeat();
-        };
-
-        // Start heartbeating immediately
-        startHeartbeat();
+        // Send initial state immediately when they join
+        handleVisibilityChange();
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('blur', handleBlur);
-        window.addEventListener('focus', handleFocus);
 
         return () => {
-            stopHeartbeat();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('blur', handleBlur);
-            window.removeEventListener('focus', handleFocus);
         };
-    }, [enabled, call, startHeartbeat, stopHeartbeat, sendInactive]);
+    }, [call, isViewer]);
 }

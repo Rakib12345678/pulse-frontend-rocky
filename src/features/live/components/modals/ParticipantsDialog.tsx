@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { userService } from '@/features/live/services/user.service';
-import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
+import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
 
 // Helper to extract fullName from participant custom fields
 const getFullName = (p: any): string =>
@@ -25,9 +25,8 @@ export const ParticipantsDialog: React.FC = () => {
         return p.connectionQuality !== 'offline' && !!p.sessionId && !isCreator;
     });
 
-    // Only show participants who have an active presence heartbeat
-    const { getActiveUserIds } = useParticipantPresenceStore();
-    const activeUserIds = new Set(getActiveUserIds());
+    // Filter out users who have minimized the app
+    const { hiddenUsers } = useViewerVisibilityStore();
     const activeParticipants = connectedParticipants.filter((p: any) => {
         // Always show the local participant (self)
         if (p.isLocalParticipant) return true;
@@ -36,8 +35,8 @@ export const ParticipantsDialog: React.FC = () => {
             p.capabilities?.includes('send-audio') ||
             p.capabilities?.includes('send-video');
         if (isCoHost) return true;
-        // Regular viewers: only show if they have an active heartbeat
-        return activeUserIds.has(p.userId);
+        // Filter out users who have minimized the app
+        return !hiddenUsers.has(p.userId);
     });
     const { user } = useAuthStore();
     const { openModal } = useUserProfileStore();

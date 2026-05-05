@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 const getPersistedStreamData = (): { callId: string; callType: string; token: string } | null => {
     try {
-        const stored = localStorage.getItem("pulse_host_stream");
+        const stored = sessionStorage.getItem("pulse_host_stream");
         return stored ? JSON.parse(stored) : null;
     } catch {
         return null;
@@ -126,17 +126,17 @@ export const useGoLiveStore = create<GoLiveState>((set, get) => ({
     setLoading: (loading) => set({ isLoading: loading }),
     setStreamData: (data) => {
         if (data) {
-            localStorage.setItem("pulse_host_stream", JSON.stringify(data));
+            sessionStorage.setItem("pulse_host_stream", JSON.stringify(data));
             localStorage.removeItem("pulse_host_left_at");
         } else {
-            localStorage.removeItem("pulse_host_stream");
+            sessionStorage.removeItem("pulse_host_stream");
         }
         set({ streamData: data });
     },
     setEndingStream: (ending) => set({ isEndingStream: ending }),
 
     reset: () => {
-        localStorage.removeItem("pulse_host_stream");
+        sessionStorage.removeItem("pulse_host_stream");
         localStorage.removeItem("pulse_host_left_at");
         set({
             streamTitle: '',

@@ -3,7 +3,7 @@ import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { userService } from '@/features/live/services/user.service';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
+import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
 import { Loader2 } from 'lucide-react';
 
 const getFullName = (p: any): string =>
@@ -18,8 +18,7 @@ export const MobileParticipantPopup: React.FC<MobileParticipantPopupProps> = ({ 
     const participants = useParticipants();
     const createdBy = useCallCreatedBy();
     const { user } = useAuthStore();
-    const { getActiveUserIds } = useParticipantPresenceStore();
-    const activeUserIds = new Set(getActiveUserIds());
+    const { hiddenUsers } = useViewerVisibilityStore();
 
     const connectedParticipants = participants.filter((p: any) => {
         const isCreator = p.roles?.includes('host') || p.roles?.includes('admin') || p.userId === createdBy?.id;
@@ -32,7 +31,7 @@ export const MobileParticipantPopup: React.FC<MobileParticipantPopupProps> = ({ 
             p.capabilities?.includes('send-audio') ||
             p.capabilities?.includes('send-video');
         if (isCoHost) return true;
-        return activeUserIds.has(p.userId);
+        return !hiddenUsers.has(p.userId);
     });
 
     const [followStatuses, setFollowStatuses] = useState<Record<number, boolean>>({});

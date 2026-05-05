@@ -15,7 +15,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 
 import { ParticipantsDialog } from '@/features/live/components/modals/ParticipantsDialog';
-import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
+import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import {
     Drawer,
@@ -54,9 +54,11 @@ export const LiveStreamHeader: React.FC = () => {
         setIsReportOpen(true);
     };
 
-    // Compute presence-aware participant count (excludes inactive viewers)
-    const { getActiveUserIds } = useParticipantPresenceStore();
-    const activeUserIds = new Set(getActiveUserIds());
+    // STRICT SECURITY: Verify they are the actual creator, not just a co-host
+    const isTrueCreator = createdBy?.id === String(currentUser?.id);
+
+    // Compute presence-aware participant count (excludes hidden viewers)
+    const { hiddenUsers } = useViewerVisibilityStore();
     const displayCount = participants.filter((p: any) => {
         // Exclude the creator (host) from the viewer count
         const isCreator = p.roles?.includes('host') || p.roles?.includes('admin') || p.userId === createdBy?.id;
@@ -69,8 +71,8 @@ export const LiveStreamHeader: React.FC = () => {
             p.capabilities?.includes('send-audio') ||
             p.capabilities?.includes('send-video');
         if (isCoHost) return true;
-        // Regular viewers: only count if they have an active heartbeat
-        return activeUserIds.has(p.userId);
+        // Viewers: Only count them if their ID is NOT in the hiddenUsers Set
+        return !hiddenUsers.has(p.userId);
     }).length;
     const isMobile = useIsMobile();
 
@@ -318,7 +320,7 @@ export const LiveStreamHeader: React.FC = () => {
                             {isChatVisible ? <Eye className="w-4 h-4 text-white/70" /> : <EyeOff className="w-4 h-4 text-white/70" />}
                         </button>
 
-                        {isHost && displayCount !== 0 && (
+                        {isTrueCreator && displayCount !== 0 && (
                             <Dialog>
                                 <DialogTrigger asChild>
                                     <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all cursor-pointer">
@@ -374,7 +376,7 @@ export const LiveStreamHeader: React.FC = () => {
                             </div>
                         )}
 
-                        {isHost && displayCount !== 0 && (
+                        {isTrueCreator && displayCount !== 0 && (
                             <Dialog>
                                 <DialogTrigger asChild>
                                     <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition-all">
