@@ -501,6 +501,7 @@ export const MessageBubble = ({
                     onTouchStart={handleTouchStart}
                     onTouchEnd={cancelLongPress}
                     onTouchMove={cancelLongPress}
+                    onContextMenu={(e) => e.preventDefault()}
                 >
                     <div className="flex flex-col gap-1 items-end min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -595,6 +596,7 @@ export const MessageBubble = ({
             onTouchStart={handleTouchStart}
             onTouchEnd={cancelLongPress}
             onTouchMove={cancelLongPress}
+            onContextMenu={(e) => e.preventDefault()}
         >
             <Avatar src={participantAvatar} alt={participantName} className="w-8 h-8 sm:w-9 sm:h-9 mt-0.5" />
             <div className="flex flex-col gap-1 min-w-0">

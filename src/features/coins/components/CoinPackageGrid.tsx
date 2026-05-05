@@ -120,7 +120,7 @@ export const CoinPackageGrid = () => {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h2 className="text-white text-2xl font-bold">Add Coins</h2>
-                <DropdownMenu modal={false}>
+                <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-9 px-3 bg-[#2D2D2D]/50 border border-white/5 rounded-2xl text-white text-[12px] font-bold flex items-center gap-2 hover:bg-[#3D3D3D] transition-all">
                             <svg className="w-3.5 h-3.5 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -131,7 +131,7 @@ export const CoinPackageGrid = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         align="end"
-                        className="z-[9999] bg-[#1A1C1E] border-white/10 text-white min-w-[120px] rounded-2xl p-1 shadow-2xl"
+                        className="z-[11000] bg-[#1A1C1E] border-white/10 text-white min-w-[120px] rounded-2xl p-1 shadow-2xl"
                     >
                         <DropdownMenuItem
                             onClick={() => setCurrency('INR')}

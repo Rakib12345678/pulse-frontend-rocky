@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { exploreService } from '../services/explore.service';
 import { ExploreData, ExploreSearchResponse } from '../types/explore.types';
 
 export const useExplore = () => {
+    const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategories, setActiveCategories] = useState<string[]>(['All Category']);
 
@@ -78,7 +79,9 @@ export const useExplore = () => {
     });
 
     const handleSearch = () => {
-        // Query will refetch automatically on searchQuery change
+        if (searchQuery.trim()) {
+            queryClient.invalidateQueries({ queryKey: ['exploreSearch', searchQuery.trim()] });
+        }
     };
 
     const toggleCategory = (category: string) => {

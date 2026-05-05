@@ -34,11 +34,6 @@ export interface UseStreamChatReturn {
     unmuteConversation: (id: string) => void;
 }
 
-const getMuted = (): string[] => {
-    try { return JSON.parse(sessionStorage.getItem(MUTED_STORAGE_KEY) || '[]'); } catch { return []; }
-};
-const setMuted = (ids: string[]) => sessionStorage.setItem(MUTED_STORAGE_KEY, JSON.stringify(ids));
-
 const getArchived = (): string[] => {
     try { return JSON.parse(sessionStorage.getItem(ARCHIVED_STORAGE_KEY) || '[]'); } catch { return []; }
 };
@@ -63,7 +58,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
     const [msgLoading, setMsgLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const [mutedIds, setMutedIds] = useState<string[]>(getMuted);
+    const [mutedIds, setMutedIds] = useState<string[]>([]);
     const [archivedIds, setArchivedIds] = useState<string[]>(getArchived);
 
     const activeChannel = useMemo(() => (
@@ -117,6 +112,13 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         if (!streamReady) return;
         const client = getStreamClient();
         const forceResync = () => setChannels(prev => [...prev]);
+        const syncMutes = (event?: any) => {
+            const mutes = event?.me?.channel_mutes || (client as any).user?.channel_mutes || [];
+            const ids = mutes.map((m: any) => m.channel?.cid).filter((cid: any): cid is string => !!cid);
+            setMutedIds(ids);
+        };
+
+        syncMutes();
 
         const subs = [
             client.on('message.new', reloadChannels),
@@ -127,6 +129,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
             client.on('notification.mark_read', forceResync),
             client.on('notification.added_to_channel', reloadChannels),
             client.on('notification.message_new', reloadChannels),
+            client.on('notification.channel_mutes_updated', syncMutes),
             client.on('channel.deleted', reloadChannels),
             client.on('channel.hidden', reloadChannels),
             client.on('reaction.new', forceResync),
@@ -422,21 +425,40 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
     }, [myId, reloadChannels]);
 
     // ── mute/archive helpers ──────────────────────────────────────────────────
-    const muteConversation = useCallback((id: string) => {
-        setMutedIds(prev => {
-            if (prev.includes(id)) return prev;
-            const next = [...prev, id];
-            setMuted(next);
-            return next;
-        });
+    const muteConversation = useCallback(async (cid: string) => {
+        console.log('[StreamChat] muteConversation triggered for:', cid);
+        if (!isStreamConnected()) {
+            console.warn('[StreamChat] Cannot mute: stream not connected');
+            return;
+        }
+        try {
+            const client = getStreamClient();
+            const [type, id] = cid.split(':');
+            console.log('[StreamChat] Calling channel.mute() for:', type, id);
+            const channel = client.channel(type, id);
+            await channel.mute();
+            console.log('[StreamChat] channel.mute() call completed');
+        } catch (err) {
+            console.error('[StreamChat] mute failed', cid, err);
+        }
     }, []);
 
-    const unmuteConversation = useCallback((id: string) => {
-        setMutedIds(prev => {
-            const next = prev.filter(mid => mid !== id);
-            setMuted(next);
-            return next;
-        });
+    const unmuteConversation = useCallback(async (cid: string) => {
+        console.log('[StreamChat] unmuteConversation triggered for:', cid);
+        if (!isStreamConnected()) {
+            console.warn('[StreamChat] Cannot unmute: stream not connected');
+            return;
+        }
+        try {
+            const client = getStreamClient();
+            const [type, id] = cid.split(':');
+            console.log('[StreamChat] Calling channel.unmute() for:', type, id);
+            const channel = client.channel(type, id);
+            await channel.unmute();
+            console.log('[StreamChat] channel.unmute() call completed');
+        } catch (err) {
+            console.error('[StreamChat] unmute failed', cid, err);
+        }
     }, []);
 
     const archiveConversation = useCallback((id: string) => {

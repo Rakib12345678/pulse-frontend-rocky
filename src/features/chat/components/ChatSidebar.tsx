@@ -572,8 +572,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     };
 
     const handleMuteToggle = (conv: Conversation) => {
-        if (conv.isMuted) onUnmute(conv.id);
-        else onMute(conv.id);
+        if (conv.isMuted) {
+            onUnmute(conv.id);
+        } else {
+            onMute(conv.id);
+        }
         toast.success(conv.isMuted ? 'Chat unmuted' : 'Chat muted');
     };
 

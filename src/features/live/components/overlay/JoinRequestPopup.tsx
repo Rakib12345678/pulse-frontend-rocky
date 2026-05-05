@@ -158,7 +158,7 @@ export const JoinRequestPopup: React.FC = () => {
                             </Avatar>
                             <div className="flex flex-wrap items-center gap-x-2">
                                 <span className="text-[#a0a0a0] text-[17px]">@{request.userName}</span>
-                                <span className="text-white text-[17px] font-medium">wants to join you on this live stream</span>
+                                <span className="text-white text-[17px] font-medium cursor-pointer">wants to join your live stream.</span>
                             </div>
                         </div>
                     </div>
@@ -278,7 +278,7 @@ export const ViewerPendingRequestPopup: React.FC = () => {
     };
 
     return (
-        <div className="absolute z-40 bottom-44 left-4 right-4 sm:bottom-20 sm:left-auto sm:right-10 sm:w-80">
+        <div className="absolute z-40 bottom-48 left-4 right-4 sm:bottom-25 sm:left-auto sm:right-10 sm:w-80">
             <div
                 className={cn(
                     "p-5 rounded-2xl",
@@ -304,9 +304,9 @@ export const ViewerPendingRequestPopup: React.FC = () => {
                 </div>
                 <button
                     onClick={handleCancel}
-                    className="w-full py-3 rounded-full border-2 border-[#FF0000] text-[#FF0000] font-medium text-[19px] bg-transparent transition-all hover:bg-[#FF0000]/10 active:scale-95"
+                    className="w-full py-3 rounded-full border-2 border-[#FF0000] text-[#FF0000] font-medium text-[19px] bg-transparent transition-all hover:bg-[#FF0000]/10 active:scale-95 cursor-pointer"
                 >
-                    Decline your Join Request
+                    Cancel Request to Join
                 </button>
             </div>
         </div>
