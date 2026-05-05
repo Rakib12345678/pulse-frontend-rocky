@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { userService } from '@/features/live/services/user.service';
-import { RefreshCw } from 'lucide-react';
 import { useParticipantPresenceStore } from '@/features/live/stores/participantPresenceStore';
 
 // Helper to extract fullName from participant custom fields
@@ -78,41 +77,6 @@ export const ParticipantsDialog: React.FC = () => {
         fetchFollowStatuses();
     }, [participants, user]);
 
-    const [isRefreshing, setIsRefreshing] = useState(false);
-
-    const handleRefresh = async () => {
-        if (!user || activeParticipants.length === 0) return;
-        setIsRefreshing(true);
-
-        // Clear the ref so we fetch everyone again
-        fetchedIdsRef.current.clear();
-
-        const usersToCheck = activeParticipants
-            .filter(p => !p.isLocalParticipant)
-            .map(p => ({
-                userId: parseInt(p.userId, 10),
-                username: p.name || "",
-            }))
-            .filter(u => !isNaN(u.userId) && u.username);
-
-        if (usersToCheck.length > 0) {
-            usersToCheck.forEach(u => fetchedIdsRef.current.add(u.userId));
-            try {
-                const statuses = await userService.getFollowStatuses(usersToCheck);
-                const newStatuses: Record<number, boolean> = {};
-                statuses.forEach((status) => {
-                    newStatuses[status.userId] = status.isFollowing;
-                });
-                setFollowStatuses(newStatuses);
-            } catch (error) {
-                console.error('Failed to fetch follow statuses:', error);
-                usersToCheck.forEach(u => fetchedIdsRef.current.delete(u.userId));
-            }
-        }
-
-        setIsRefreshing(false);
-    };
-
     const toggleFollow = async (e: React.MouseEvent, targetUserId: number) => {
         e.stopPropagation();
         if (loadingFollow[targetUserId] || !user) return;
@@ -138,14 +102,6 @@ export const ParticipantsDialog: React.FC = () => {
         <DialogContent className="sm:max-w-[380px] bg-[#0f1117] border-white/5 text-white fixed top-[50%] right-6 left-auto translate-x-0 translate-y-[-50%] rounded-2xl max-h-[70vh]">
             <DialogHeader className="flex flex-row items-center justify-between">
                 <DialogTitle className="text-xl font-bold mt-2">Participants ({activeParticipants.length})</DialogTitle>
-                <button
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                    className="p-2 hover:bg-white/10 rounded-full transition-colors mr-6" // mr-6 to not overlap with the original dialog close button
-                    title="Refresh List"
-                >
-                    <RefreshCw className={cn("w-4 h-4 text-gray-400", isRefreshing && "animate-spin")} />
-                </button>
             </DialogHeader>
             <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                 <div className="space-y-4">

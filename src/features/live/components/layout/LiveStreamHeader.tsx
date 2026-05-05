@@ -318,7 +318,7 @@ export const LiveStreamHeader: React.FC = () => {
                             {isChatVisible ? <Eye className="w-4 h-4 text-white/70" /> : <EyeOff className="w-4 h-4 text-white/70" />}
                         </button>
 
-                        {isHost && (
+                        {isHost && displayCount !== 0 && (
                             <Dialog>
                                 <DialogTrigger asChild>
                                     <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/20 transition-all cursor-pointer">
@@ -374,7 +374,7 @@ export const LiveStreamHeader: React.FC = () => {
                             </div>
                         )}
 
-                        {isHost && (
+                        {isHost && displayCount !== 0 && (
                             <Dialog>
                                 <DialogTrigger asChild>
                                     <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 cursor-pointer hover:bg-white/20 transition-all">

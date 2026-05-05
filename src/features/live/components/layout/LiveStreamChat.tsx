@@ -583,7 +583,7 @@ const ViewerBottomBar: React.FC = () => {
                 console.log('[ViewerBottomBar] Got join response:', customData);
                 setRequestStatus(customData.accepted ? 'approved' : 'declined');
                 if (customData.accepted) {
-                    toast.success('Host accepted your join request!');
+                    //toast.success('Host accepted your join request!');
                     // Note: co-hosts join with mic and camera off by default.
                     // They can manually enable them using the controls.
                     console.log('[ViewerBottomBar] Now a co-host — mic/camera remain off');
@@ -595,7 +595,6 @@ const ViewerBottomBar: React.FC = () => {
             // Handle being kicked by the host
             if (customData?.type === 'kicked' && customData?.userId === String(user.id)) {
                 console.log('[ViewerBottomBar] Kicked by host');
-                toast.error('You have been removed from the stream');
                 (async () => {
                     try {
                         await call.camera.disable();
@@ -723,13 +722,13 @@ const ViewerBottomBar: React.FC = () => {
 const HostInviteBar: React.FC = () => {
     const isMobile = useIsMobile();
 
-    const handleInvite = () => {
+    const handleInvite = async () => {
         const url = window.location.href;
-        navigator.clipboard.writeText(url);
-        if (navigator.share) {
-            navigator.share({ title: 'Join my live stream!', url }).catch(() => { });
-        } else {
+        try {
+            await navigator.clipboard.writeText(url);
             toast.success('Stream link copied!');
+        } catch (err) {
+            toast.error('Failed to copy link');
         }
     };
 
