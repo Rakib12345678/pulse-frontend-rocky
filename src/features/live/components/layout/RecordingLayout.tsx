@@ -15,7 +15,8 @@ interface RecordingContextValue {
         username?: string;
         title?: string;
         category?: string;
-        recordingUrl?: string;
+        mobileVideoUrl?: string;
+        thumbnailUrl?: string;
         cohosts?: { username: string; profileImage: string; status: string }[];
         participantCount?: number;
     };
@@ -46,7 +47,8 @@ export const useRecordingContext = () => useContext(RecordingContext);
 
 interface RecordingLayoutProps {
     children: React.ReactNode;
-    recordingUrl?: string;
+    mobileVideoUrl?: string;
+    thumbnailUrl?: string;
     recordingMetadata?: {
         username?: string;
         title?: string;
@@ -58,7 +60,8 @@ interface RecordingLayoutProps {
 
 export const RecordingLayout: React.FC<RecordingLayoutProps> = ({
     children,
-    recordingUrl,
+    mobileVideoUrl,
+    thumbnailUrl,
     recordingMetadata
 }) => {
     const { user } = useAuthStore();
@@ -82,7 +85,7 @@ export const RecordingLayout: React.FC<RecordingLayoutProps> = ({
             isChatVisible,
             setChatVisible,
             isRecording: true,
-            recordingMetadata: { ...recordingMetadata, recordingUrl },
+            recordingMetadata: { ...recordingMetadata, mobileVideoUrl, thumbnailUrl },
             currentTime,
             setCurrentTime,
             duration,

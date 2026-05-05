@@ -12,7 +12,7 @@ export const RecordedVideoPlayer: React.FC = () => {
 
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    if (!recordingMetadata?.recordingUrl) {
+    if (!recordingMetadata?.mobileVideoUrl) {
         return (
             <div className="flex h-screen w-full items-center justify-center bg-black">
                 <div className="flex flex-col items-center gap-4">
@@ -39,7 +39,7 @@ export const RecordedVideoPlayer: React.FC = () => {
         <div className="absolute inset-0 w-full h-full bg-black flex items-center justify-center z-0">
             <video
                 ref={videoRef}
-                src={recordingMetadata.recordingUrl}
+                src={recordingMetadata.mobileVideoUrl}
                 className="w-full h-full object-contain"
                 autoPlay
                 playsInline

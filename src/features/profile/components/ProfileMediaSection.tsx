@@ -173,7 +173,8 @@ export const ProfileMediaSection = ({
                       isLive={item.isLive ?? false}
                       cohosts={item.cohosts}
                       createdByUserId={item.createdByUserId}
-                      recordingUrl={item.recordingUrl}
+                      mobileVideoUrl={item.mobileVideoUrl}
+                      // thumbnailUrl={item.thumbnailUrl || item.thumbnail || item.profileImage || item.avatar}
                     />
                   )}
                 </div>

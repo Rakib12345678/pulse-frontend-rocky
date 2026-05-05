@@ -8,7 +8,8 @@ import { useEffect, useState, useMemo } from 'react'
 import api from '@/lib/api'
 
 const recordingSearchSchema = z.object({
-  recordingUrl: z.string().optional().nullable(),
+  mobileVideoUrl: z.string().optional().nullable(),
+  thumbnailUrl: z.string().optional().nullable(),
   username: z.string().optional().nullable(),
   title: z.string().optional().nullable(),
   category: z.string().optional().nullable(),
@@ -32,7 +33,8 @@ function RecordingPlaybackContent() {
 function RecordingPlaybackComponent() {
   const { id } = Route.useParams()
   const {
-    recordingUrl: searchUrl,
+    mobileVideoUrl: searchMobileUrl,
+    thumbnailUrl: searchThumbnailUrl,
     username: searchUsername,
     title: searchTitle,
     category: searchCategory,
@@ -80,19 +82,21 @@ function RecordingPlaybackComponent() {
     fetchMetadata()
   }, [id])
 
-  const finalRecordingUrl = searchUrl || metadata.recordingUrl || undefined;
+  const finalMobileUrl = searchMobileUrl || metadata.mobileVideoUrl || undefined;
+  const finalThumbnailUrl = searchThumbnailUrl || metadata.thumbnailUrl || undefined;
 
   return (
     <RecordingLayout
-      recordingUrl={finalRecordingUrl}
-      recordingMetadata={{
-        username: searchUsername || metadata.username || undefined,
-        title: searchTitle || metadata.title || undefined,
-        category: searchCategory || metadata.category || undefined,
-        cohosts: parsedCohosts || metadata.cohosts,
-        participantCount: metadata.participantCount
-      }}
-    >
+    mobileVideoUrl={finalMobileUrl}
+    thumbnailUrl={finalThumbnailUrl}
+    recordingMetadata={{
+      username: searchUsername || metadata.username || undefined,
+      title: searchTitle || metadata.title || undefined,
+      category: searchCategory || metadata.category || undefined,
+      cohosts: parsedCohosts || metadata.cohosts,
+      participantCount: metadata.participantCount
+    }}
+  >
       <RecordingPlaybackContent />
     </RecordingLayout>
   )

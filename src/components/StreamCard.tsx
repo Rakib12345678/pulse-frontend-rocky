@@ -9,7 +9,7 @@ import coHostIcon from '@/assets/co-host.svg';
 
 export interface StreamCardProps {
   callId: string;
-  thumbnailUrl: string;
+  // thumbnailUrl: string;
   avatarUrl: string;
   streamerName: string;
   viewerCount: string | number;
@@ -21,7 +21,8 @@ export interface StreamCardProps {
   collaboratorAvatarUrl?: string; // primarily for standard variant
   createdByUserId?: string;
   variant?: 'standard' | 'explore';
-  recordingUrl?: string;
+  mobileVideoUrl?: string;
+  thumbnailUrl?: string;
   cardClickRedirectToLive?: boolean;
 }
 
@@ -39,7 +40,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   collaboratorAvatarUrl,
   createdByUserId,
   variant = 'standard',
-  recordingUrl,
+  mobileVideoUrl,
+  thumbnailUrl: propThumbnailUrl,
   cardClickRedirectToLive = false,
 }) => {
   const { user } = useAuthStore();
@@ -75,7 +77,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         to: "/stream/$id" as any,
         params: { id: callId } as any,
         search: {
-          recordingUrl,
+          mobileVideoUrl,
+          thumbnailUrl: propThumbnailUrl || thumbnailUrl,
           username: streamerName,
           title,
           category,
@@ -83,7 +86,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         } as any
       });
     },
-    [user, createdByUserId, isLive, streamerName, callId, recordingUrl, title, category, cohosts, navigate, cardClickRedirectToLive]
+    [user, createdByUserId, isLive, streamerName, callId, title, mobileVideoUrl, propThumbnailUrl, thumbnailUrl, category, cohosts, navigate, cardClickRedirectToLive]
   );
 
   if (variant === 'explore') {
