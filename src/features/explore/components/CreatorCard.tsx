@@ -106,15 +106,15 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                 <button
                     type="button"
                     onClick={handleFollowClick}
-                    disabled={isPending || creator.isFollower}
+                    disabled={isPending}
                     className={cn(
                         "w-[120px] h-[48px] rounded-[100px] py-3 px-6 flex items-center justify-center gap-4 text-xs font-bold transition-all shadow-lg",
-                        creator.isFollower
-                            ? "bg-[#262626] text-gray-500 cursor-not-allowed opacity-100"
+                        creator.followedByMe
+                            ? "bg-[#262626] text-gray-400 hover:bg-[#333] hover:text-white cursor-pointer"
                             : "bg-[#FF8800] text-black hover:bg-[#ff941a] shadow-orange-900/10 cursor-pointer"
                     )}
                 >
-                    {creator.isFollower ? 'Following' : 'Follow'}
+                    {creator.followedByMe ? 'Following' : 'Follow'}
                 </button>
             ) : (
                 <div className="w-[120px] h-[48px] rounded-[100px] py-3 px-6 flex items-center justify-center gap-4 text-xs font-bold bg-[#262626] text-gray-500 cursor-default opacity-100 transition-all shadow-lg">

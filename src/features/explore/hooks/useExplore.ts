@@ -25,7 +25,28 @@ export const useExplore = () => {
     const { data: exploreData, isLoading, error, refetch } = useQuery<ExploreData>({
         queryKey: ['exploreData', activeCategories],
         queryFn: async () => {
-            return exploreService.getExploreData(activeCategories);
+            const data = await exploreService.getExploreData(activeCategories);
+            const mapItem = (u: any) => ({
+                id: u.id || u.userId || u.userID || u.user_id || u.pk || u._id || u.user?.id || u.user?.userId || 0,
+                username: u.username || u.user?.username || 'user',
+                fullName: u.fullname || u.fullName || u.displayName || u.user?.fullname || u.user?.fullName || u.username || 'Unknown',
+                profileImage: u.profileImage || u.avatar || u.user?.profileImage || '',
+                followerCount: u.followerCount || u.followersCount || u.followers_count || u.followers || u.user?.followerCount || 0,
+                isFollower: u.isFollower || false,
+                followedByMe: u.followedByMe || u.isFollowing || u.isFollowed || u.isFollower || u.user?.isFollowed || false,
+                isLive: u.isLive || u.user?.isLive || false,
+                callId: u.callId || u.user?.callId || null,
+                participantCount: u.participantCount || u.participants_count || 0,
+                cohostCount: u.cohostCount || 0,
+                cohosts: u.cohosts || []
+            });
+
+            return {
+                trendingStreams: (data.trendingStreams || []).map(mapItem),
+                newCreators: (data.newCreators || []).map(mapItem),
+                recommendedStreams: (data.recommendedStreams || []).map(mapItem),
+                popularStreams: (data.popularStreams || []).map(mapItem),
+            };
         },
         placeholderData: keepPreviousData,
         retry: 3,
@@ -57,9 +78,9 @@ export const useExplore = () => {
                         username: u.username || u.user?.username || 'user',
                         fullName: u.fullname || u.fullName || u.displayName || u.user?.fullname || u.user?.fullName || u.username || 'Unknown',
                         profileImage: u.profileImage || u.avatar || u.user?.profileImage || '',
-                        followerCount: u.followerCount || u.user?.followerCount || 0,
+                        followerCount: u.followerCount || u.followersCount || u.followers_count || u.followers || u.user?.followerCount || 0,
                         isFollower: u.isFollower || false,
-                        followedByMe: u.followedByMe || u.isFollowing || u.isFollowed || u.user?.isFollowed || false,
+                        followedByMe: u.followedByMe || u.isFollowing || u.isFollowed || u.isFollower || u.user?.isFollowed || false,
                         isLive: u.isLive || u.user?.isLive || false,
                         callId: u.callId || u.user?.callId || null,
                         participantCount: u.participantCount || 0,
