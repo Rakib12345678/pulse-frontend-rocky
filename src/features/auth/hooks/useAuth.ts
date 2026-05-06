@@ -8,6 +8,7 @@ import type { OnboardingState } from '@/features/auth/stores/authStore';
 
 export function useAuth() {
     const setAuth = useAuthStore((s) => s.setAuth);
+    const setShowSuspendedModal = useAuthStore((s) => s.setShowSuspendedModal);
 
     // Sign Up Store Actions
     const closeSignUp = useSignUpStore((s) => s.closeModal);
@@ -56,8 +57,18 @@ export function useAuth() {
             }
         },
         onError: (err: any) => {
-            const msg = err.response?.data?.message || "Authentication failed. Please try again.";
-            toast.error(msg);
+            const status = err.response?.status;
+            const msg: string = err.response?.data?.message || "";
+            const isSuspended =
+                status === 403 &&
+                msg.toLowerCase().includes('suspended');
+
+            if (isSuspended) {
+                closeSignUp();
+                setShowSuspendedModal(true);
+            } else {
+                toast.error(msg || "Authentication failed. Please try again.");
+            }
         }
     });
 

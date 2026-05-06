@@ -7,12 +7,13 @@ import {
 } from "@tanstack/react-router"
 import type { QueryClient } from "@tanstack/react-query"
 import { Suspense, lazy } from "react"
-import type { useAuthStore } from "@/features/auth/stores/authStore"
+import { useAuthStore } from "@/features/auth/stores/authStore"
 
 import { Toaster } from "@/components/ui/sonner"
 import { SignUpModal } from "@/features/auth/components/SignUpModal"
 import { GoLiveModal } from "@/features/live/components/modals/GoLiveModal"
 import { RejoinStreamBanner } from "@/features/live/components/overlay/RejoinStreamBanner"
+import { AccountSuspendedModal } from "@/components/internal/AccountSuspendedModal"
 
 import appCss from "../styles.css?url"
 import { Button } from "@/components/ui/button"
@@ -55,7 +56,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     }
 
     const publicRoute = isPublicRoute(location.pathname)
-    const { isAuthenticated } = context.authStore.getState()
+    const { isAuthenticated, user } = context.authStore.getState()
 
     // We redirect to home ("/for-you") if they are trying to access a protected route
     // while unauthenticated.
@@ -67,10 +68,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         },
       })
     }
-
-    // If user IS authenticated and trying to access a public-only route (like a login page if we had one),
-    // we would redirect them to their dashboard/home, but the user requested:
-    // "a non auth user will be redirected and an auth user will not be"
   }
 })
 
@@ -103,6 +100,7 @@ function RootComponent() {
           <SignUpModal />
           <GoLiveModal />
           <RejoinStreamBanner />
+          <AccountSuspendedModal />
         </GoogleOAuthProvider>
 
 

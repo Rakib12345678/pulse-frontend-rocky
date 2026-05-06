@@ -610,7 +610,14 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 toast.dismiss();
                 setStep('age');
             },
-            onError: () => {
+            onError: (err: any) => {
+                // Suspension errors (403) are handled by useAuth.onError which
+                // closes the SignUpModal and shows AccountSuspendedModal instead.
+                const isSuspended =
+                    err?.response?.status === 403 &&
+                    (err?.response?.data?.message ?? '').toLowerCase().includes('suspended');
+                if (isSuspended) return;
+
                 setError("Wrong OTP. Please try again");
                 setOtp(['', '', '', '', '', '']);
                 inputRefs.current[0]?.focus();

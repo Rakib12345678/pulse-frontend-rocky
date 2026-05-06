@@ -63,7 +63,11 @@ api.interceptors.response.use(
                 const { refreshToken } = useAuthStore.getState();
 
                 if (!refreshToken) {
-                    throw new Error("No refresh token available");
+                    // No session to refresh — propagate the original error so
+                    // callers (e.g. useAuth) can inspect err.response correctly
+                    // (e.g. to detect a 403 "suspended" response during sign-up).
+                    isRefreshing = false;
+                    return Promise.reject(error);
                 }
 
                 const { data } = await axios.post(
@@ -80,9 +84,10 @@ api.interceptors.response.use(
                 const user = data.user;
                 useAuthStore.getState().setAuth({
                     accessToken: newToken,
-                    refreshToken: newRefreshToken || refreshToken, 
+                    refreshToken: newRefreshToken || refreshToken,
                     user: user,
-                    newUser: false 
+                    wallet: data.wallet,
+                    newUser: false
                 });
 
                 processQueue(null, newToken);

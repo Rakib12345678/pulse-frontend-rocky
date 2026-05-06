@@ -89,6 +89,9 @@ const fetchUserLiveStatus = async (username: string): Promise<LiveStatus> => {
 
 export const useCurrentUser = () => {
   const queryClient = useQueryClient();
+  const updateUserStore = useAuthStore((s) => s.updateUser);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const setShowSuspendedModal = useAuthStore((s) => s.setShowSuspendedModal);
   const authUser = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const userId = authUser?.id;
@@ -115,8 +118,19 @@ export const useCurrentUser = () => {
 
   return useQuery({
     queryKey: ['currentUser', userId],
-    queryFn: fetchCurrentUser,
-    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const user = await fetchCurrentUser();
+      if (user.status === 'SUSPENDED') {
+        // Sign out immediately and show the suspended modal
+        setShowSuspendedModal(true);
+        clearAuth();
+        return user;
+      }
+      updateUserStore(user);
+      return user;
+    },
+    refetchInterval: 20_000,
+    staleTime: 30_000,
     retry: false,
     enabled: isAuthenticated && !!userId,
   });
@@ -310,8 +324,8 @@ export const useToggleFollow = () => {
               const uId = user.userId || user.id;
               if (uId === targetUserId) {
                 const newIsFollowing = !followedByMe;
-                return { 
-                  ...user, 
+                return {
+                  ...user,
                   isFollowing: newIsFollowing,
                   followedByMe: newIsFollowing,
                 };
@@ -357,10 +371,10 @@ export const useToggleFollow = () => {
           const newCount = followedByMe
             ? Math.max(0, (old.followingCount ?? 0) - 1)
             : (old.followingCount ?? 0) + 1;
-          
+
           // Explicitly update store here for immediate UI sync
           updateUser({ followingCount: newCount });
-          
+
           return {
             ...old,
             followingCount: newCount,

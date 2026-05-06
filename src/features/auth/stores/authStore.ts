@@ -44,6 +44,8 @@ interface AuthState {
   isAuthenticated: boolean;
   isNewUser: boolean;
   isHydrated: boolean;
+  showSuspendedModal: boolean;
+  setShowSuspendedModal: (val: boolean) => void;
   setAuth: (payload: { accessToken: string; refreshToken: string; user: User; newUser: boolean; wallet: Wallet }) => void;
   updateUser: (userData: Partial<User>) => void;
   updateWallet: (walletData: Partial<Wallet>) => void;
@@ -61,6 +63,8 @@ export const useAuthStore = create<AuthState>()(
       wallet: null,
       isAuthenticated: false,
       isNewUser: false,
+      showSuspendedModal: false,
+      setShowSuspendedModal: (val) => set({ showSuspendedModal: val }),
 
       setAuth: (payload) => set({
         accessToken: payload.accessToken,
@@ -83,14 +87,16 @@ export const useAuthStore = create<AuthState>()(
 
       setAuthenticated: (val) => set({ isAuthenticated: val }),
 
-      clearAuth: () => set({
+      clearAuth: () => set((state) => ({
         accessToken: null,
         refreshToken: null,
         user: null,
         wallet: null,
         isAuthenticated: false,
         isNewUser: false,
-      }),
+        // preserve showSuspendedModal so the modal stays visible after sign-out
+        showSuspendedModal: state.showSuspendedModal,
+      })),
 
       isHydrated: false,
       setHydrated: () => set({ isHydrated: true }),
