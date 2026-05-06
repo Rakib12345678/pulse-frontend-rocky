@@ -407,23 +407,68 @@ export const useToggleFollow = () => {
         updateUser(data);
       }
 
-      const queries = queryClient
+      // Sync with userByUsername queries
+      const usernameQueries = queryClient
         .getQueriesData({ queryKey: ['userByUsername'] })
         .filter(([key]) => key[0] === 'userByUsername') as [readonly unknown[], User | undefined][];
 
-      queries.forEach(([key]) => {
+      usernameQueries.forEach(([key]) => {
         queryClient.setQueryData<User>(key, (oldData) => {
           if (!oldData || oldData.id !== variables.targetUserId) return oldData;
           return { ...oldData, ...data };
         });
+      });
+
+      // Sync with exploreData queries
+      queryClient.setQueriesData<any>({ queryKey: ['exploreData'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+        const updateCreator = (c: any) => {
+          if (c.id === variables.targetUserId || (c.id === 0 && variables.targetUserId === 0)) {
+            return {
+              ...c,
+              followedByMe: data.followedByMe ?? !variables.followedByMe,
+              isFollowed: data.followedByMe ?? !variables.followedByMe,
+              followerCount: data.followerCount ?? c.followerCount,
+            };
+          }
+          return c;
+        };
+
+        return {
+          ...oldData,
+          trendingStreams: (oldData.trendingStreams || []).map(updateCreator),
+          newCreators: (oldData.newCreators || []).map(updateCreator),
+          recommendedStreams: (oldData.recommendedStreams || []).map(updateCreator),
+          popularStreams: (oldData.popularStreams || []).map(updateCreator),
+        };
+      });
+
+      // Sync with exploreSearch queries
+      queryClient.setQueriesData<any>({ queryKey: ['exploreSearch'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+        const updateCreator = (c: any) => {
+          if (c.id === variables.targetUserId || (c.id === 0 && variables.targetUserId === 0)) {
+            return {
+              ...c,
+              followedByMe: data.followedByMe ?? !variables.followedByMe,
+              isFollowed: data.followedByMe ?? !variables.followedByMe,
+              followerCount: data.followerCount ?? c.followerCount,
+            };
+          }
+          return c;
+        };
+
+        return {
+          ...oldData,
+          creators: (oldData.creators || []).map(updateCreator),
+          streams: (oldData.streams || []).map(updateCreator),
+        };
       });
     },
 
     onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ['userProfile', variables.targetUserId] });
       queryClient.invalidateQueries({ queryKey: ['userByUsername'] });
-      queryClient.invalidateQueries({ queryKey: ['exploreData'] });
-      queryClient.invalidateQueries({ queryKey: ['exploreSearch'] });
       queryClient.invalidateQueries({ queryKey: ['followers'] });
       queryClient.invalidateQueries({ queryKey: ['following'] });
     },
