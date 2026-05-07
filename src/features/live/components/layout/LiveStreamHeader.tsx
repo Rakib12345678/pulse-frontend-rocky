@@ -199,8 +199,8 @@ export const LiveStreamHeader: React.FC = () => {
                         track.stop();
                     });
                 }
-                await call.camera.disable().catch(() => {});
-                await call.microphone.disable().catch(() => {});
+                await call.camera.disable().catch(() => { });
+                await call.microphone.disable().catch(() => { });
             }
 
             await liveService.endLiveStream(streamData.callId, save);
