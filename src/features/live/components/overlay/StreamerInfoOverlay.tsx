@@ -103,27 +103,27 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
     if (!streamerName) return null;
 
     return (
-        <div className={`flex items-center gap-3 bg-[#1A1A1A]/95 backdrop-blur-sm px-3 py-2 pr-3 rounded-full border border-white/5 max-w-full ${className}`}>
+        <div className={`flex items-center gap-2 bg-[#1A1A1A]/95 backdrop-blur-sm px-2.5 py-1.5 pr-2.5 rounded-full border border-white/5 max-w-full ${className}`}>
             <div
                 className="relative cursor-pointer group shrink-0"
                 onClick={handleProfileClick}
                 onTouchEnd={handleProfileClick}
             >
-                <Avatar className="h-10 w-10 border-2 border-[#FF4500]">
+                <Avatar className="h-8 w-8 border-2 border-[#FF4500]">
                     <AvatarImage src={profile?.profileImage || streamerImage} className="object-cover" />
                     <AvatarFallback>{streamerName[0]?.toUpperCase()}</AvatarFallback>
                 </Avatar>
             </div>
 
-            <div className="flex flex-col mr-2 min-w-0 flex-1">
+            <div className="flex flex-col mr-1 min-w-0 flex-1">
                 <span
-                    className="text-white font-bold text-sm hover:underline cursor-pointer truncate"
+                    className="text-white font-bold text-xs hover:underline cursor-pointer truncate"
                     onClick={handleProfileClick}
                     onTouchEnd={handleProfileClick}
                 >
                     {streamerName.startsWith('@') ? streamerName : `@${streamerName}`}
                 </span>
-                <span className="text-white/60 text-xs text-left truncate">
+                <span className="text-white/60 text-[10px] text-left truncate">
                     {followerCount} Followers
                 </span>
             </div>
@@ -132,7 +132,7 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
             {currentUser?.username !== (profile?.username || apiName.replace('@', '')) && (
                 <Button
                     size="sm"
-                    className={`ml-auto shrink-0 h-8 px-6 rounded-full transition-all text-xs font-semibold ${isFollowing
+                    className={`ml-auto shrink-0 h-7 px-4 rounded-full transition-all text-xs font-semibold ${isFollowing
                         ? "bg-[#FF8800] hover:bg-[#FF5722] text-white border-none"
                         : "bg-[#FF8800] hover:bg-[#FF5722] text-white"
                         }`}

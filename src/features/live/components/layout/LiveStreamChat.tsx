@@ -139,7 +139,7 @@ export const LiveStreamChat: React.FC = () => {
                 className={`absolute ${bottomClass} z-20 flex flex-col
                     ${isMobile
                         ? 'left-2 right-2 max-h-[52vh]'
-                        : 'left-10 right-auto w-[360px] max-h-[400px] rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl'
+                        : 'left-10 right-auto w-[280px] max-h-[min(400px,calc(100vh-280px))] rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl'
                     }`}
             >
                 {/* SuperchatTicker shown for host; hidden for viewers */}

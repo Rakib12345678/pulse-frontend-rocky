@@ -84,31 +84,31 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
 
         // Desktop co-host: mic + cam centered at bottom
         return (
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-20">
+            <div className="absolute bottom-[1vh] sm:bottom-[1.5vh] md:bottom-[2vh] left-1/2 -translate-x-1/2 flex gap-[2vw] z-20">
                 <button
                     onClick={toggleCamera}
                     className={cn(
-                        "w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
+                        "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
                         !isCameraMuted
                             ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
                             : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] ring-4 ring-red-500/10 shadow-[0_0_20px_rgba(255,0,0,0.4)]"
                     )}
                     title={isCameraMuted ? "Start camera" : "Stop camera"}
                 >
-                    {!isCameraMuted ? <Camera className="w-6 h-6" /> : <CameraOff className="w-6 h-6" />}
+                    {!isCameraMuted ? <Camera className="w-[3.5vh] h-[3.5vh] max-w-[24px] max-h-[24px]" /> : <CameraOff className="w-[3.5vh] h-[3.5vh] max-w-[24px] max-h-[24px]" />}
                 </button>
 
                 <button
                     onClick={toggleMicrophone}
                     className={cn(
-                        "w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
+                        "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
                         !isMicMuted
                             ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
                             : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] ring-4 ring-red-500/10 shadow-[0_0_20px_rgba(255,0,0,0.4)]"
                     )}
                     title={isMicMuted ? "Unmute mic" : "Mute mic"}
                 >
-                    {!isMicMuted ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
+                    {!isMicMuted ? <Mic className="w-[3.5vh] h-[3.5vh] max-w-[24px] max-h-[24px]" /> : <MicOff className="w-[3.5vh] h-[3.5vh] max-w-[24px] max-h-[24px]" />}
                 </button>
             </div>
         );
@@ -151,29 +151,29 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
 
     // Host controls on desktop: centered at bottom
     return (
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-20">
+        <div className="absolute bottom-[1vh] sm:bottom-[1.5vh] md:bottom-[2vh] left-1/2 -translate-x-1/2 flex gap-[2vw] z-20">
             <button
                 onClick={toggleCamera}
                 className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
+                    "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
                     !isCameraMuted
                         ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
                         : "bg-red-500 border-red-400/50 text-white hover:bg-red-600 ring-4 ring-red-500/10"
                 )}
             >
-                {!isCameraMuted ? <Camera className="w-6 h-6" /> : <CameraOff className="w-6 h-6" />}
+                {!isCameraMuted ? <Camera className="w-[3.5vh] h-[3.5vh] max-w-[24px] max-h-[24px]" /> : <CameraOff className="w-[3.5vh] h-[3.5vh] max-w-[24px] max-h-[24px]" />}
             </button>
 
             <button
                 onClick={toggleMicrophone}
                 className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
+                    "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
                     !isMicMuted
                         ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
                         : "bg-red-500 border-red-400/50 text-white hover:bg-red-600 ring-4 ring-red-500/10"
                 )}
             >
-                {!isMicMuted ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
+                {!isMicMuted ? <Mic className="w-[3.5vh] h-[3.5vh] max-w-[24px] max-h-[24px]" /> : <MicOff className="w-[3.5vh] h-[3.5vh] max-w-[24px] max-h-[24px]" />}
             </button>
         </div>
     );

@@ -402,15 +402,31 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         );
     }
 
+    /* ===== DESKTOP: host only ===== */
+    if (coHosts.length === 0) {
+        return (
+            <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
+                <div className="flex-1 h-full flex items-center justify-center">
+                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '320px', maxWidth: '90%' }}>
+                        {renderHostVideo(host)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     /* ===== DESKTOP: host + 1 co-host ===== */
     if (coHosts.length === 1) {
         return (
-            <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
-                <div className="flex-1 h-full flex justify-center gap-4">
-                    <div className="h-full w-fit aspect-9/16 max-w-sm">
+            <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
+                {/* Video area: sits to the right of the chat panel (chat is absolute left-10 w-[280px]) */}
+                <div className="flex-1 h-full flex items-center justify-center gap-6 ml-[300px] mr-[80px]">
+                    {/* Host: stable 9:16 box — width computed from height so camera toggle never resizes it */}
+                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '280px', maxWidth: '48%' }}>
                         {renderHostVideo(host)}
                     </div>
-                    <div className="h-full w-fit aspect-9/16 max-w-sm relative rounded-3xl overflow-hidden bg-neutral-900 border border-white/5 shadow-2xl">
+                    {/* Co-host: stable 9:16 box */}
+                    <div className="shrink-0 relative overflow-hidden rounded-3xl bg-neutral-900 border border-white/5 shadow-2xl" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '280px', maxWidth: '48%' }}>
                         {(() => {
                             const p = coHosts[0];
                             const participantHasVideo = hasVideo(p);
@@ -425,12 +441,12 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                                         />
                                     ) : (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900">
-                                            <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 mb-3">
+                                            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 mb-3">
                                                 {p.image ? (
                                                     <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
-                                                        <span className="text-3xl font-bold text-[#FF8800]">
+                                                        <span className="text-2xl font-bold text-[#FF8800]">
                                                             {(getFullName(p) || 'U').charAt(0).toUpperCase()}
                                                         </span>
                                                     </div>
@@ -487,12 +503,14 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     // 3-4 participants: Host on left, 2-3 Co-hosts stacked on right
     if (coHosts.length === 2 || coHosts.length === 3) {
         return (
-            <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
-                <div className="flex-1 h-full flex justify-center gap-6">
-                    <div className="h-full w-fit aspect-9/16 max-w-sm">
+            <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
+                <div className="flex-1 h-full flex items-center justify-center gap-6 ml-[300px] mr-[80px]">
+                    {/* Host */}
+                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '280px', maxWidth: '45%' }}>
                         {renderHostVideo(host)}
                     </div>
-                    <div className="h-full w-fit aspect-9/16 flex flex-col gap-4 max-w-sm">
+                    {/* Co-hosts stacked, share remaining height */}
+                    <div className="shrink-0 flex flex-col gap-4" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '280px', maxWidth: '45%' }}>
                         {coHosts.map((p) => (
                             <div key={p.sessionId} className="flex-1 min-h-0">
                                 {renderCoHostCard(p, "w-full h-full")}
@@ -510,14 +528,16 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         );
     }
 
-    // 4+ participants: main host + right sidebar
+    // 4+ participants: main host + sidebar of small co-host cards
     return (
-        <div className="flex h-full w-full p-6 pt-28 pb-32 overflow-hidden">
-            <div className="relative flex-1 h-full flex justify-center">
-                <div className="h-full w-fit aspect-9/16 max-w-md">
+        <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
+            <div className="flex-1 h-full flex items-center justify-center gap-6 ml-[300px] mr-[80px]">
+                {/* Host — stable 9:16 box */}
+                <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', maxWidth: '55%' }}>
                     {renderHostVideo(host)}
                 </div>
-                <div className="ml-4 flex flex-col gap-4 justify-start py-4">
+                {/* Co-host sidebar: small cards, scrollable if many */}
+                <div className="h-full flex flex-col gap-4 overflow-y-auto py-2">
                     {coHosts.map((p) => renderCoHostCard(p))}
                 </div>
             </div>
