@@ -22,21 +22,24 @@ export const useTotalUnreadCount = () => {
         try {
             const client = getStreamClient();
             
-            // First, try the built-in property as it's fast
+            // The unread_channels property on the user object is the most reliable 
+            // total count across all channels (including those not in the current query)
             const sdkCount = (client.user as any)?.unread_channels ?? 0;
             
-            // Then perform a query to verify/correct the count
-            // We query active channels and filter manually to ensure type safety and accuracy
+            // Perform a query as a verification step, but with a larger limit 
+            // to catch more unread channels.
             const response = await client.queryChannels(
-                { members: { $in: [client.userID!] } },
+                { members: { $in: [client.userID!] }, unread_count: { $gt: 0 } },
                 { last_message_at: -1 },
-                { limit: 30, watch: false }
+                { limit: 100, watch: false }
             );
             
-            const actualCount = Array.isArray(response) 
-                ? response.filter(c => c.countUnread() > 0).length 
-                : sdkCount;
-            setUnreadCount(actualCount);
+            const queriedCount = Array.isArray(response) ? response.length : 0;
+            
+            // Use the maximum of the two to be safe, but prioritize sdkCount 
+            // as it's the source of truth for the entire account.
+            const finalCount = Math.max(sdkCount, queriedCount);
+            setUnreadCount(finalCount);
         } catch (err: any) {
             // Client not ready or query failed
         }

@@ -264,7 +264,7 @@ export const GoLiveModal = () => {
 
     if (isLoading && !showConflict) {
         return (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0f1117]/80 backdrop-blur-sm">
+            <div className="fixed inset-0 z-[50000] flex items-center justify-center bg-[#0f1117]/80 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 className="w-12 h-12 text-[#FF8800] animate-spin" />
                     <p className="text-white font-medium">Checking stream status...</p>
@@ -278,8 +278,8 @@ export const GoLiveModal = () => {
             {/* ===== MOBILE: Fullscreen Layout ===== */}
             {isMobile ? (
                 <div
-                    className="fixed inset-0 z-400 bg-[#0f1117] flex flex-col h-dvh overflow-hidden"
-                    style={{ zIndex: 9999 }}
+                    className="fixed inset-0 bg-[#0f1117] flex flex-col h-dvh overflow-hidden"
+                    style={{ zIndex: 50000 }}
                     onClick={(e) => {
                         if (e.target === e.currentTarget && !showConflict) closeModal();
                     }}
@@ -414,7 +414,7 @@ export const GoLiveModal = () => {
                 </div>
             ) : (
                 /* ===== DESKTOP: Original Modal Layout ===== */
-                <div className="fixed inset-0 z-400 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4" style={{ zIndex: 9999 }}>
+                <div className="fixed inset-0 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4" style={{ zIndex: 50000 }}>
                     <div className="absolute inset-0" onClick={() => !showConflict && closeModal()} />
 
                     <div className="relative z-10 w-full max-w-[1000px] h-[600px] bg-[#0f1117] rounded-[24px] overflow-hidden shadow-2xl flex flex-col md:flex-row border border-white/5 animate-in zoom-in-95 duration-300">
@@ -575,7 +575,7 @@ export const GoLiveModal = () => {
             )}
             {/* Conflict Resolution Modal */}
             {showConflict && (
-                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
+                <div className="fixed inset-0 z-[50001] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6">
                     <div className="bg-[#1c1c1e] rounded-3xl p-8 w-full max-w-sm flex flex-col items-center gap-5 shadow-2xl border border-white/5">
                         <div className="w-16 h-16 rounded-full bg-[#FF8800]/10 flex items-center justify-center">
                             <Camera className="w-8 h-8 text-[#FF8800]" />

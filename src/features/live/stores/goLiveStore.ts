@@ -106,7 +106,17 @@ export const useGoLiveStore = create<GoLiveState>((set, get) => ({
             }
         }
     },
-    closeModal: () => set({ isOpen: false, showConflict: false, conflictStream: null, isRejoining: false, isRejoinBannerDismissed: false }),
+    closeModal: () => set({
+        isOpen: false,
+        showConflict: false,
+        conflictStream: null,
+        isRejoining: false,
+        isRejoinBannerDismissed: false,
+        streamTitle: '',
+        selectedCategory: null,
+        isCameraEnabled: true,
+        isMicEnabled: true
+    }),
     setShowConflict: (show) => set({ showConflict: show }),
     setConflictStream: (stream) => set({ conflictStream: stream }),
     setIsRejoining: (rejoining) => set({ isRejoining: rejoining }),
