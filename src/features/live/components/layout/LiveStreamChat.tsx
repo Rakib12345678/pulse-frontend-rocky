@@ -45,8 +45,8 @@ export const LiveStreamChat: React.FC = () => {
 
     // Use the same ID as the call for the chat channel (must be before any early returns)
     const channel = useMemo(
-        () => (call && chatClient) ? chatClient.channel('livestream', call.id) : null,
-        [chatClient, call?.id]
+        () => (call && chatClient && chatClient.userID) ? chatClient.channel('livestream', call.id) : null,
+        [chatClient, chatClient?.userID, call?.id]
     );
 
     // Eagerly watch the channel so the host's SuperchatTicker has messages immediately
@@ -236,24 +236,22 @@ const LiveStreamMessageList: React.FC = () => {
                     return (
                         <div
                             key={msg.id}
-                            className="flex items-center gap-3 bg-[#2C2F30] border border-[#494E50] rounded-2xl px-3 py-3"
+                            className="flex items-start gap-3 bg-[#2C2F30] border border-[#494E50] rounded-2xl px-3 py-3"
                         >
                             <img
                                 src={msg.user?.image || 'https://i.pravatar.cc/150'}
                                 alt={getDisplayName(msg.user)}
                                 onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
-                                className="w-9 h-9 rounded-full border-2 border-[#FF8800]/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                className="w-9 h-9 rounded-full border-2 border-[#FF8800]/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity mt-0.5"
                             />
-                            <div className="flex flex-col min-w-0 flex-1">
-                                <div className="flex items-center gap-1.5">
-                                    <span
-                                        className="text-xs font-semibold text-[#FF8800] cursor-pointer hover:underline transition-colors"
-                                        onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
-                                    >
-                                        @{getDisplayName(msg.user)}
-                                    </span>
-                                    <span className="text-xs text-white/70">{msg.text}</span>
-                                </div>
+                            <div className="flex-1 min-w-0">
+                                <span
+                                    className="text-xs font-semibold text-[#FF8800] cursor-pointer transition-colors mr-1"
+                                    onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
+                                >
+                                    @{getDisplayName(msg.user)}
+                                </span>
+                                <span className="text-xs text-white/70 break-words">{msg.text}</span>
                                 {giftCost && (
                                     <div className="flex items-center gap-1 mt-0.5">
                                         <img src={coinIcon} alt="coins" className="w-3 h-3" />
@@ -265,7 +263,7 @@ const LiveStreamMessageList: React.FC = () => {
                                 <img
                                     src={giftIconUrl}
                                     alt="gift"
-                                    className="w-10 h-10 object-contain drop-shadow-[0_0_6px_rgba(255,136,0,0.5)] animate-bounce"
+                                    className="w-10 h-10 object-contain shrink-0 drop-shadow-[0_0_6px_rgba(255,136,0,0.5)] animate-bounce"
                                     style={{ animationDuration: '1.5s', animationIterationCount: 3 }}
                                 />
                             )}

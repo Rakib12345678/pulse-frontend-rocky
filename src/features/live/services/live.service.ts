@@ -71,7 +71,9 @@ export const liveService = {
     // Start recording for a live stream
     startRecording: async (callId: string): Promise<void> => {
         try {
-            await api.post('/stream/recording/start', { callId });
+            await api.post('/stream/recording/start', null, {
+                params: { callId }
+            });
         } catch (error) {
             console.error('Failed to start recording:', error);
             throw error;

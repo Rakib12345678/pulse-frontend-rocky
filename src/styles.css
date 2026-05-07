@@ -132,7 +132,7 @@ textarea {
   color: white !important;
   caret-color: white !important;
   text-decoration: none !important;
-
+  user-select: text !important;
 }
 
 ::selection {
@@ -147,6 +147,7 @@ textarea {
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+    user-select: none;
   }
 
   *::-webkit-scrollbar {

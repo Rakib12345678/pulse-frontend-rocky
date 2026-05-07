@@ -20,7 +20,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     const { isViewer, isGuest, isChatVisible, call } = useLiveStreamContext();
     const isHost = !isViewer;
     const { client: chatClient } = useChatContext();
-    const channel = React.useMemo(() => (call && chatClient) ? chatClient.channel('livestream', call.id) : null, [chatClient, call?.id]);
+    const channel = React.useMemo(() => (call && chatClient && chatClient.userID) ? chatClient.channel('livestream', call.id) : null, [chatClient, call?.id]);
     const participants = useParticipants();
 
     // Helper to extract fullName from participant custom fields

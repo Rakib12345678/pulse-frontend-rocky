@@ -184,12 +184,35 @@ export const LiveStreamHeader: React.FC = () => {
         setEndingStream(true);
 
         try {
+            // CRITICAL: Stop local media tracks BEFORE ending the call.
+            // call.camera.disable() only stops publishing — it does NOT release
+            // the MediaStreamTrack hardware, so the browser will keep showing
+            // the camera/mic indicator. We must explicitly stop() every track
+            // to fully release the camera & microphone permissions.
+            if (call) {
+                const localParticipant = call.state.localParticipant;
+                if (localParticipant) {
+                    localParticipant.videoStream?.getTracks().forEach(track => {
+                        track.stop();
+                    });
+                    localParticipant.audioStream?.getTracks().forEach(track => {
+                        track.stop();
+                    });
+                }
+                await call.camera.disable().catch(() => {});
+                await call.microphone.disable().catch(() => {});
+            }
+
             await liveService.endLiveStream(streamData.callId, save);
             if (call) {
-                await call.camera.disable();
-                await call.microphone.disable();
                 await call.endCall();
             }
+
+            // Reset the host stream data so LiveStreamLayout's cleanup
+            // fully tears down and RejoinStreamBanner doesn't appear
+            useGoLiveStore.getState().reset();
+            localStorage.removeItem('pulse_host_is_currently_live');
+            localStorage.removeItem('pulse_host_left_at');
 
             const durationMins = streamDuration / 60;
             if (save && durationMins >= 10) {

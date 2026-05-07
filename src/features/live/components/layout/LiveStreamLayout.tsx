@@ -308,13 +308,29 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
             // Initialize Chat Client
             _chatClient = StreamChat.getInstance(apiKey);
+            let chatConnected = false;
             try {
-                if (!currentUser) {
-                    await _chatClient.connectAnonymousUser();
-                } else {
-                    await _chatClient.connectUser(userData as any, token);
+                const targetUserId = currentUser ? String(currentUser.id) : null;
+                const currentUserId = _chatClient.userID;
+
+                // If already connected to a DIFFERENT user, disconnect first
+                if (currentUserId && currentUserId !== targetUserId) {
+                    console.log('[LiveStreamLayout] Disconnecting previous chat user:', currentUserId);
+                    await _chatClient.disconnectUser();
                 }
 
+                // If NOT connected, connect now
+                if (!_chatClient.userID) {
+                    if (!currentUser) {
+                        console.log('[LiveStreamLayout] Connecting anonymous chat user');
+                        await _chatClient.connectAnonymousUser();
+                    } else {
+                        console.log('[LiveStreamLayout] Connecting chat user:', targetUserId);
+                        await _chatClient.connectUser(userData as any, token);
+                    }
+                }
+                
+                chatConnected = true;
                 // Guard against unmount during chat connection
                 if (!mounted) return;
             } catch (err) {
@@ -412,7 +428,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
             if (mounted) {
                 setClient(_client);
-                setChatClient(_chatClient);
+                if (chatConnected) setChatClient(_chatClient);
                 setCall(_call);
             }
         };
@@ -430,18 +446,18 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                     local.audioStream?.getTracks().forEach(track => track.stop());
                 }
 
-                _call.camera.disable();
-                _call.microphone.disable();
+                _call.camera.disable().catch(() => {});
+                _call.microphone.disable().catch(() => {});
 
                 if (!(_isHost && isTerminatingRef.current)) {
-                    _call.leave();
+                    _call.leave().catch(() => {});
                 }
             }
             if (_client) {
-                _client.disconnectUser();
+                _client.disconnectUser().catch(() => {});
             }
             if (_chatClient) {
-                _chatClient.disconnectUser();
+                _chatClient.disconnectUser().catch(() => {});
             }
 
             if (_isHost && _callId) {

@@ -48,8 +48,8 @@ const NavLink = ({ to, label, badgeCount = 0 }: NavLinkProps) => {
         {badgeCount > 0 && (
           <span className={cn(
             "absolute -top-2.5 flex h-[19px] items-center justify-center rounded-full bg-[#FF7700] font-black text-white border-1.5 border-[#0f1117] shadow-xl z-20 leading-none transition-all duration-200",
-            badgeCount < 10 
-              ? "w-[19px] -right-4 text-[11px]" 
+            badgeCount < 10
+              ? "w-[19px] -right-4 text-[11px]"
               : "min-w-[30px] -right-6.5 px-2 text-[10px]"
           )}>
             {badgeCount > 999 ? '999+' : badgeCount}
@@ -217,7 +217,7 @@ export const Navbar: React.FC = () => {
                       <Plus className="w-4 h-4 text-white" />
                     </div>
                   </Button>
-              {/* Notifications
+                  {/* Notifications
                 <Button
                   variant="ghost"
                   size="icon"
@@ -227,7 +227,7 @@ export const Navbar: React.FC = () => {
                   <span className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-[#0f1117]" />
                 </Button> */}
 
-                {/* Profile Link */}
+                  {/* Profile Link */}
                   <Link
                     to="/profile"
                     className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/10 transition-transform hover:scale-105 active:scale-95 cursor-pointer bg-neutral-800 p-0"
