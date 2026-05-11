@@ -42,7 +42,7 @@ interface GoLiveState {
     isRejoining: boolean;
 
     openModal: () => Promise<void>;
-    closeModal: () => void;
+    closeModal: (reset?: boolean) => void;
     setShowConflict: (show: boolean) => void;
     setConflictStream: (stream: any | null) => void;
     setIsRejoining: (rejoining: boolean) => void;
@@ -106,17 +106,18 @@ export const useGoLiveStore = create<GoLiveState>((set, get) => ({
             }
         }
     },
-    closeModal: () => set({
-        isOpen: false,
-        showConflict: false,
-        conflictStream: null,
-        isRejoining: false,
-        isRejoinBannerDismissed: false,
-        streamTitle: '',
-        selectedCategory: null,
-        isCameraEnabled: true,
-        isMicEnabled: true
-    }),
+    closeModal: (shouldReset = false) => {
+        if (shouldReset) {
+            get().reset();
+        }
+        set({
+            isOpen: false,
+            showConflict: false,
+            conflictStream: null,
+            isRejoining: false,
+            isRejoinBannerDismissed: false
+        });
+    },
     setShowConflict: (show) => set({ showConflict: show }),
     setConflictStream: (stream) => set({ conflictStream: stream }),
     setIsRejoining: (rejoining) => set({ isRejoining: rejoining }),

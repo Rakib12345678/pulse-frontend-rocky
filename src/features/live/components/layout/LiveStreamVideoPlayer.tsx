@@ -38,8 +38,8 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     useParticipantPresence(call, isViewer);
 
     const { setHidden, setVisible, clear } = useViewerVisibilityStore();
-
     const [knownCoHostIds, setKnownCoHostIds] = useState<Set<string>>(new Set());
+    const [isRemovedLocally, setIsRemovedLocally] = useState(false);
 
     useEffect(() => {
         if (!call) return;
@@ -61,12 +61,14 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
             if (customData?.type === 'join-response' && customData?.accepted) {
                 setKnownCoHostIds(prev => new Set(prev).add(customData.userId));
-            } else if (customData?.type === 'kicked') {
+                if (customData.userId === call.currentUserId) setIsRemovedLocally(false);
+            } else if (customData?.type === 'kicked' || customData?.type === 'cohost-removed') {
                 setKnownCoHostIds(prev => {
                     const next = new Set(prev);
                     next.delete(customData.userId);
                     return next;
                 });
+                if (customData.userId === call.currentUserId) setIsRemovedLocally(true);
             }
         });
 
@@ -99,6 +101,9 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         if (!p.sessionId) return false;
         if (p.isLocalParticipant && !isViewer) return true;
         if (creatorId && p.userId === creatorId) return true;
+
+        // If I am a local viewer and I've been removed, I shouldn't be on stage
+        if (p.isLocalParticipant && isViewer && isRemovedLocally) return false;
 
         const isCoHostRole = p.roles?.includes('co_host') || p.roles?.includes('admin') || p.roles?.includes('host') || knownCoHostIds.has(p.userId);
         const hasCapabilities = p.capabilities?.includes('send-audio') || p.capabilities?.includes('send-video');
@@ -188,7 +193,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                 update_members: [{ user_id: userId, role: 'user' }],
             });
             await call.sendCustomEvent({
-                type: 'kicked',
+                type: 'cohost-removed',
                 userId,
             });
 
@@ -198,13 +203,13 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
             if (channel) {
                 try {
-                    await channel.sendMessage({ text: `@${userName} was kicked` });
+                    await channel.sendMessage({ text: `@${userName} was removed from stage` });
                 } catch (e) {
                     console.error('Failed to send kick chat message:', e);
                 }
             }
 
-            toast.success(`Removed @${userName} from stream`);
+            toast.success(`Removed @${userName} from stage`);
         } catch (err) {
             console.error('[Kick] Failed to kick co-host:', err);
             toast.error('Failed to remove co-host');
@@ -332,7 +337,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     <button
                         onClick={() => setConfirmKick({ userId: p.userId, userName: p.name || p.userId })}
                         className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-red-500 flex items-center justify-center shadow-lg border border-red-400/50 hover:bg-red-600 transition-colors cursor-pointer"
-                        title="Remove from stream"
+                        title="Remove from stage"
                     >
                         <PhoneOff className="w-3.5 h-3.5 text-white" />
                     </button>
@@ -406,8 +411,8 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     if (coHosts.length === 0) {
         return (
             <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
-                <div className="flex-1 h-full flex items-center justify-center">
-                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '320px', maxWidth: '90%' }}>
+                <div className="flex-1 h-full flex items-center justify-center transition-all duration-300">
+                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '90%' }}>
                         {renderHostVideo(host)}
                     </div>
                 </div>
@@ -420,13 +425,15 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         return (
             <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
                 {/* Video area: sits to the right of the chat panel (chat is absolute left-10 w-[280px]) */}
-                <div className="flex-1 h-full flex items-center justify-center gap-6 ml-[300px] mr-[80px]">
+                <div className={cn(
+                    "flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300"
+                )}>
                     {/* Host: stable 9:16 box — width computed from height so camera toggle never resizes it */}
-                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '280px', maxWidth: '48%' }}>
+                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '40%' }}>
                         {renderHostVideo(host)}
                     </div>
                     {/* Co-host: stable 9:16 box */}
-                    <div className="shrink-0 relative overflow-hidden rounded-3xl bg-neutral-900 border border-white/5 shadow-2xl" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '280px', maxWidth: '48%' }}>
+                    <div className="shrink-0 relative overflow-hidden rounded-3xl bg-neutral-900 border border-white/5 shadow-2xl" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '40%' }}>
                         {(() => {
                             const p = coHosts[0];
                             const participantHasVideo = hasVideo(p);
@@ -504,13 +511,15 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     if (coHosts.length === 2 || coHosts.length === 3) {
         return (
             <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
-                <div className="flex-1 h-full flex items-center justify-center gap-6 ml-[300px] mr-[80px]">
+                <div className={cn(
+                    "flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300"
+                )}>
                     {/* Host */}
-                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '280px', maxWidth: '45%' }}>
+                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '40%' }}>
                         {renderHostVideo(host)}
                     </div>
                     {/* Co-hosts stacked, share remaining height */}
-                    <div className="shrink-0 flex flex-col gap-4" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '280px', maxWidth: '45%' }}>
+                    <div className="shrink-0 flex flex-col gap-3" style={{ height: 'min(100%, 85vh)', width: 'auto', minWidth: '160px', maxWidth: '30%' }}>
                         {coHosts.map((p) => (
                             <div key={p.sessionId} className="flex-1 min-h-0">
                                 {renderCoHostCard(p, "w-full h-full")}
@@ -531,9 +540,9 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     // 4+ participants: main host + sidebar of small co-host cards
     return (
         <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
-            <div className="flex-1 h-full flex items-center justify-center gap-6 ml-[300px] mr-[80px]">
+            <div className="flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300">
                 {/* Host — stable 9:16 box */}
-                <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', maxWidth: '55%' }}>
+                <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', maxWidth: '45%' }}>
                     {renderHostVideo(host)}
                 </div>
                 {/* Co-host sidebar: small cards, scrollable if many */}
@@ -560,7 +569,7 @@ const RemoveCoHostModal: React.FC<{
         <div className="bg-[#1c1c1e] rounded-3xl p-8 w-full max-w-sm flex flex-col items-center gap-5 shadow-2xl">
             <img src={kick} alt="kick" className="w-12 h-12" />
             <p className="text-white text-xl font-semibold text-center leading-snug">
-                Do you want to remove the user from the live stream?
+                Do you want to remove the user from the stage?
             </p>
             <div className="flex gap-3 w-full mt-1">
                 <button

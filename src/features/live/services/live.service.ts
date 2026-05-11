@@ -68,17 +68,17 @@ export const liveService = {
         }
     },
 
-    // Start recording for a live stream
-    startRecording: async (callId: string): Promise<void> => {
-        try {
-            await api.post('/stream/recording/start', null, {
-                params: { callId }
-            });
-        } catch (error) {
-            console.error('Failed to start recording:', error);
-            throw error;
-        }
-    },
+    // // Start recording for a live stream
+    // startRecording: async (callId: string): Promise<void> => {
+    //     try {
+    //         await api.post('/stream/recording/start', null, {
+    //             params: { callId }
+    //         });
+    //     } catch (error) {
+    //         console.error('Failed to start recording:', error);
+    //         throw error;
+    //     }
+    // },
 
     // Update stream settings
     updateStreamSettings: async (streamId: string, settings: Partial<CreateLiveStreamPayload>): Promise<void> => {

@@ -51,7 +51,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       if (streamerName && !/^\d+$/.test(streamerName)) {
         navigate({ to: `/profile/${streamerName}` as any });
       }
@@ -148,7 +148,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
               />
 
               <div className="flex flex-col overflow-hidden">
-                <h3 
+                <h3
                   onClick={handleProfileClick}
                   className="truncate text-sm font-bold text-white leading-tight [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%),_0_2px_6px_rgb(0_0_0_/_60%)] cursor-pointer hover:text-orange-400 transition-colors"
                 >
@@ -232,19 +232,19 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <UserAvatar
-                src={avatarUrl}
-                alt={streamerName}
-                isLive={isLive}
-                callId={callId}
-                username={streamerName}
-                size="custom"
-                className="w-10 h-10"
-                clickable={true}
-                showBadge={false}
+              src={avatarUrl}
+              alt={streamerName}
+              isLive={isLive}
+              callId={callId}
+              username={streamerName}
+              size="custom"
+              className="w-10 h-10"
+              clickable={true}
+              showBadge={false}
             />
 
             <div className="flex flex-col min-w-0">
-              <h3 
+              <h3
                 onClick={handleProfileClick}
                 className="truncate text-sm font-bold text-white leading-tight cursor-pointer hover:text-orange-400 transition-colors"
               >

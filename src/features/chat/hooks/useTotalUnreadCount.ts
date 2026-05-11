@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { getStreamClient, isStreamConnected } from '../stream/streamClient';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 
@@ -9,41 +9,6 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 export const useTotalUnreadCount = () => {
     const { isAuthenticated } = useAuthStore();
     const [unreadCount, setUnreadCount] = useState(0);
-    const lastSyncTime = useRef(0);
-
-    const updateCount = useCallback(async () => {
-        if (!isStreamConnected()) return;
-        
-        // Rate limit manual syncs to once every 2 seconds unless forced
-        const now = Date.now();
-        if (now - lastSyncTime.current < 2000) return;
-        lastSyncTime.current = now;
-
-        try {
-            const client = getStreamClient();
-            
-            // The unread_channels property on the user object is the most reliable 
-            // total count across all channels (including those not in the current query)
-            const sdkCount = (client.user as any)?.unread_channels ?? 0;
-            
-            // Perform a query as a verification step, but with a larger limit 
-            // to catch more unread channels.
-            const response = await client.queryChannels(
-                { members: { $in: [client.userID!] }, unread_count: { $gt: 0 } },
-                { last_message_at: -1 },
-                { limit: 100, watch: false }
-            );
-            
-            const queriedCount = Array.isArray(response) ? response.length : 0;
-            
-            // Use the maximum of the two to be safe, but prioritize sdkCount 
-            // as it's the source of truth for the entire account.
-            const finalCount = Math.max(sdkCount, queriedCount);
-            setUnreadCount(finalCount);
-        } catch (err: any) {
-            // Client not ready or query failed
-        }
-    }, []);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -52,64 +17,74 @@ export const useTotalUnreadCount = () => {
         }
 
         let isMounted = true;
-        let unsubscribe: (() => void) | null = null;
+        let client: any = null;
 
-        const setupListeners = () => {
+        const updateFromClient = () => {
+            if (!isMounted || !client) return;
+            const count = client.user?.unread_channels ?? 0;
+            setUnreadCount(count);
+        };
+
+        const init = () => {
             try {
-                if (!isStreamConnected()) return;
-                const client = getStreamClient();
+                if (!isStreamConnected()) return false;
+                client = getStreamClient();
+                
+                // Initial count
+                updateFromClient();
 
-                if (unsubscribe) unsubscribe();
-
-                const handleEvent = (event: any) => {
-                    if (!isMounted) return;
-                    
-                    // notification.unread_count provides the new counts directly
+                // Listen to ALL events that might affect unread counts
+                const listener = client.on((event: any) => {
                     if (event.unread_channels !== undefined) {
                         setUnreadCount(event.unread_channels);
+                    } else if (event.total_unread_count !== undefined) {
+                        // Sometimes only total_unread_count comes, but unread_channels usually follows
+                        // or we can just pull it from the user object
+                        updateFromClient();
                     } else if (
-                        ['message.new', 'notification.message_new', 'notification.mark_read', 'notification.unread_count', 'message.read', 'notification.mark_unread'].includes(event.type)
+                        ['message.new', 'notification.message_new', 'notification.mark_read', 'message.read', 'notification.mark_unread'].includes(event.type)
                     ) {
-                        // For other events, we trigger a sync to be sure
-                        setTimeout(() => {
-                            if (isMounted) updateCount();
-                        }, 500);
+                        updateFromClient();
                     }
-                };
-
-                const listener = client.on(handleEvent);
-                const connectionSub = client.on('connection.changed', (event) => {
-                    if (event.online) updateCount();
                 });
 
-                unsubscribe = () => {
+                const connectionSub = client.on('connection.changed', (event: any) => {
+                    if (event.online) updateFromClient();
+                });
+
+                return () => {
                     listener.unsubscribe();
                     connectionSub.unsubscribe();
-                    unsubscribe = null;
                 };
-                
-                updateCount();
-            } catch {
-                // Client not ready
+            } catch (err) {
+                return false;
             }
         };
 
-        setupListeners();
+        let cleanup = init();
 
+        // If not connected yet, poll until it is
         const intervalId = setInterval(() => {
-            if (!unsubscribe && isStreamConnected()) {
-                setupListeners();
-            } else if (isStreamConnected()) {
-                updateCount();
+            if (!cleanup) {
+                cleanup = init();
+                if (cleanup) clearInterval(intervalId);
+            } else {
+                // Occasional sync just in case
+                updateFromClient();
             }
-        }, 8000); // Polling every 8s as fallback
+        }, 8000);
+
+        // Listen for manual syncs
+        const handleSync = () => updateFromClient();
+        window.addEventListener('unread-count-sync', handleSync);
 
         return () => {
             isMounted = false;
             clearInterval(intervalId);
-            if (unsubscribe) unsubscribe();
+            window.removeEventListener('unread-count-sync', handleSync);
+            if (cleanup && typeof cleanup === 'function') cleanup();
         };
-    }, [isAuthenticated, updateCount]);
+    }, [isAuthenticated]);
 
     return unreadCount;
 };

@@ -79,10 +79,12 @@ const renderMessageContent = (msg: Message, text: string, isMe: boolean, onImage
                 </div>
                 <div className="flex flex-col items-center gap-1 text-center">
                     <span className="text-[13px] font-bold text-white uppercase tracking-wider">{name.trim() || 'Gift'}</span>
-                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20">
-                        <span className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
-                        <span className="text-[11px] font-black text-yellow-500">{coins} Coins</span>
-                    </div>
+                    {isMe && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20">
+                            <span className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]" />
+                            <span className="text-[11px] font-black text-yellow-500">{coins} Coins</span>
+                        </div>
+                    )}
                 </div>
                 <button className="w-full h-8 rounded-lg bg-[#FF7700]/10 hover:bg-[#FF7700]/20 text-[#FF7700] text-[11px] font-bold transition-colors mt-1 border border-[#FF7700]/20">
                     {isMe ? 'Gift Sent' : 'Gift Received'}
@@ -363,6 +365,10 @@ export const MessageBubble = ({
                         e.stopPropagation(); 
                         setFullPickerOpen(true); 
                     }}
+                    onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setFullPickerOpen(true); 
+                    }}
                     className="w-7 h-7 ml-1 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors shadow-inner cursor-pointer"
                 >
                     <Plus className="w-4 h-4 text-white stroke-[3]" />
@@ -370,15 +376,69 @@ export const MessageBubble = ({
             </div>
         );
 
+        if (isMobile) {
+            return (
+                <div className={cn("relative flex items-center z-40", alignment === 'right' ? 'mr-1' : 'ml-1')}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setQuickReactionOpen(v => !v);
+                        }}
+                        className={cn(
+                            "w-6 h-6 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/50 text-gray-400 hover:text-white transition-all shadow-sm cursor-pointer",
+                            (hovered || quickReactionOpen || fullPickerOpen) ? 'opacity-100' : 'opacity-0'
+                        )}
+                    >
+                        <Smile className="w-4 h-4" />
+                    </button>
+
+                    {quickReactionOpen && !fullPickerOpen && (
+                        <div
+                            ref={pickerRef}
+                            className="flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[10001] animate-in duration-200 fade-in zoom-in-95 fixed bottom-[100px] left-1/2 -translate-x-1/2"
+                        >
+                            {pickerContent}
+                        </div>
+                    )}
+
+                    {fullPickerOpen && (
+                        <Drawer open={fullPickerOpen} onOpenChange={(open) => {
+                            if (!open) {
+                                setFullPickerOpen(false);
+                                setQuickReactionOpen(false);
+                            }
+                        }}>
+                            <DrawerContent className="bg-[#111213] border-none px-4 pb-6 max-h-[85vh] rounded-t-[32px] z-[10002]">
+                                <div className="mx-auto mt-2 mb-4 h-1 w-12 shrink-0 rounded-full bg-white/20" />
+                                <EmojiPickerPopup
+                                    isMobile={isMobile}
+                                    onSelect={handleReaction}
+                                    onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
+                                    className="w-full bg-transparent shadow-none"
+                                />
+                            </DrawerContent>
+                        </Drawer>
+                    )}
+                </div>
+            );
+        }
+
         return (
             <div className={cn("relative flex items-center z-40", alignment === 'right' ? 'mr-1' : 'ml-1')}>
-                {isMobile ? (
-                    <>
+                <Popover 
+                    open={quickReactionOpen || fullPickerOpen} 
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setQuickReactionOpen(false);
+                            setFullPickerOpen(false);
+                        } else {
+                            setQuickReactionOpen(true);
+                        }
+                    }}
+                >
+                    <PopoverTrigger asChild>
                         <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setQuickReactionOpen(v => !v);
-                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className={cn(
                                 "w-6 h-6 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/50 text-gray-400 hover:text-white transition-all shadow-sm cursor-pointer",
                                 (hovered || quickReactionOpen || fullPickerOpen) ? 'opacity-100' : 'opacity-0'
@@ -386,89 +446,28 @@ export const MessageBubble = ({
                         >
                             <Smile className="w-4 h-4" />
                         </button>
+                    </PopoverTrigger>
 
-                        {quickReactionOpen && !fullPickerOpen && (
-                            <div
-                                ref={pickerRef}
-                                className="flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl z-[10001] animate-in duration-200 fade-in zoom-in-95 fixed bottom-[100px] left-1/2 -translate-x-1/2"
-                            >
+                    <PopoverContent
+                        side="top"
+                        align={alignment === 'left' ? 'start' : 'end'}
+                        sideOffset={8}
+                        className="w-auto p-0 border-none bg-transparent shadow-none z-[10001]"
+                    >
+                        {fullPickerOpen ? (
+                            <EmojiPickerPopup
+                                onSelect={handleReaction}
+                                onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
+                                className="shadow-2xl border border-white/10 rounded-2xl shadow-orange-500/10 scale-90 sm:scale-100 origin-bottom"
+                            />
+                        ) : (
+                            <div className="flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl animate-in duration-200 fade-in zoom-in-95">
                                 {pickerContent}
                             </div>
                         )}
-                    </>
-                ) : (
-                    <Popover 
-                        open={quickReactionOpen || fullPickerOpen} 
-                        onOpenChange={(open) => {
-                            if (!open) {
-                                setQuickReactionOpen(false);
-                                setFullPickerOpen(false);
-                            } else {
-                                setQuickReactionOpen(true);
-                            }
-                        }}
-                    >
-                        <PopoverTrigger asChild>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                }}
-                                className={cn(
-                                    "w-6 h-6 rounded-full flex items-center justify-center bg-black/20 hover:bg-black/50 text-gray-400 hover:text-white transition-all shadow-sm cursor-pointer",
-                                    (hovered || quickReactionOpen || fullPickerOpen) ? 'opacity-100' : 'opacity-0'
-                                )}
-                            >
-                                <Smile className="w-4 h-4" />
-                            </button>
-                        </PopoverTrigger>
-
-                        <PopoverContent
-                            side="top"
-                            align={alignment === 'left' ? 'start' : 'end'}
-                            sideOffset={8}
-                            className={cn(
-                                "z-[10001] p-0 border-none bg-transparent shadow-none animate-in duration-200 fade-in zoom-in-95",
-                                fullPickerOpen ? "w-auto" : "w-auto"
-                            )}
-                        >
-                            {fullPickerOpen ? (
-                                <EmojiPickerPopup
-                                    onSelect={handleReaction}
-                                    onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
-                                    className="shadow-2xl border border-white/10 rounded-2xl shadow-orange-500/10 scale-90 sm:scale-100 origin-bottom"
-                                />
-                            ) : (
-                                <div className="flex items-center gap-1.5 bg-[#25272e] border border-white/10 rounded-full px-3 py-1.5 shadow-2xl">
-                                    {pickerContent}
-                                </div>
-                            )}
-                        </PopoverContent>
-                    </Popover>
-                )}
+                    </PopoverContent>
+                </Popover>
             </div>
-        );
-    };
-
-    const renderFullPicker = (alignment: 'left' | 'right') => {
-        if (!fullPickerOpen || !isMobile) return null;
-
-        return (
-            <Drawer open={fullPickerOpen} onOpenChange={(open) => {
-                if (!open) {
-                    setFullPickerOpen(false);
-                    setQuickReactionOpen(false);
-                }
-            }}>
-                <DrawerContent className="bg-[#111213] border-none px-4 pb-6 max-h-[85vh] rounded-t-[32px]">
-                    <div className="mx-auto mt-2 mb-4 h-1 w-12 shrink-0 rounded-full bg-white/20" />
-                    <EmojiPickerPopup
-                        isMobile={isMobile}
-                        onSelect={handleReaction}
-                        onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
-                        className="w-full bg-transparent shadow-none"
-                    />
-                </DrawerContent>
-            </Drawer>
         );
     };
 
@@ -561,7 +560,6 @@ export const MessageBubble = ({
                                     />
                                 )}
                                 {renderReactions(meOnlyImage)}
-                                {renderFullPicker('right')}
                                 {renderReactionModal('right')}
                             </div>
                         </div>
@@ -658,7 +656,6 @@ export const MessageBubble = ({
                         )}
 
                         {renderReactions(tOnlyImage)}
-                        {renderFullPicker('left')}
                         {renderReactionModal('left')}
                     </div>
                     {renderReactionPicker('left')}

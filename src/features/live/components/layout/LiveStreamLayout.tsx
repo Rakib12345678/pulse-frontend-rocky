@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
 import { liveService } from '@/features/live/services/live.service';
+import { userService } from '@/features/live/services/user.service';
 import { FloatingHearts } from '@/features/live/components/overlay/FloatingHearts';
 
 const apiKey = import.meta.env.VITE_STREAM_API_KEY || 'placeholder_key';
@@ -205,6 +206,9 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     const [streamEnded, setStreamEnded] = useState(false);
     const navigate = useNavigate();
     const isTerminatingRef = useRef(false);
+    const [initError, setInitError] = useState<string | null>(null);
+    const initTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     useEffect(() => {
         const handleBeforeUnload = () => {
             isTerminatingRef.current = true;
@@ -219,9 +223,58 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
         userRef.current = user;
         if (!!streamData) {
             useGoLiveStore.setState({ isRejoinBannerDismissed: false });
-            localStorage.removeItem('pulse_host_left_at');
+            // If we are currently live, we shouldn't have a 'left_at' timestamp
+            // unless we just resumed.
+            const leftAt = localStorage.getItem('pulse_host_left_at');
+            if (!leftAt) {
+                localStorage.removeItem('pulse_host_left_at');
+            }
         }
     }, [user, !!streamData]);
+
+    // Handle Sleep/Wake detection for Host
+    useEffect(() => {
+        if (!streamData) return;
+
+        const checkInterruption = async () => {
+            const leftAt = localStorage.getItem('pulse_host_left_at');
+            if (!leftAt) return;
+
+            const timeAway = Date.now() - Number(leftAt);
+            // If away for more than 10 seconds, trigger rejoin flow
+            if (timeAway > 10000) {
+                try {
+                    const status = await userService.getUserStream();
+                    if (status.isLive && status.callId === streamData.callId) {
+                        useGoLiveStore.getState().openRejoinSetup(status);
+                    }
+                } catch (err) {
+                    console.error("Failed to check stream status on wake:", err);
+                    // If backend check fails due to network, we'll try again on next visibility change
+                    // but we don't want to block the user forever.
+                }
+            } else {
+                // Short interruption, just clear it
+                localStorage.removeItem('pulse_host_left_at');
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                localStorage.setItem('pulse_host_left_at', String(Date.now()));
+            } else {
+                checkInterruption();
+            }
+        };
+
+        // Initial check on mount (handles page reload/wake that causes re-mount)
+        checkInterruption();
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [streamData]);
 
     useEffect(() => {
         const isHostMode = !!streamData;
@@ -329,7 +382,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         await _chatClient.connectUser(userData as any, token);
                     }
                 }
-                
+
                 chatConnected = true;
                 // Guard against unmount during chat connection
                 if (!mounted) return;
@@ -394,22 +447,41 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                     if (!mounted) return;
 
                     try {
+                        // Refresh the call state from the server to see if it's already live
+                        await _call.get();
                         const state = _call.state;
-                        if (!state.backstage && !state.startedAt) {
-                            await _call.goLive();
-                        } else if (state.backstage) {
-                            await _call.goLive();
+
+                        const { isRejoining } = useGoLiveStore.getState();
+                        const leftAt = localStorage.getItem('pulse_host_left_at');
+
+                        // CRITICAL: Skip auto goLive if:
+                        // 1. We are in the middle of a Rejoin UI flow
+                        // 2. We just returned from a sleep/interruption (leftAt exists)
+                        // 3. The server already says the call is started
+                        const alreadyStarted = !!state.startedAt;
+
+                        if (isRejoining || leftAt || alreadyStarted) {
+                            console.log("[LiveStreamLayout] Skipping auto goLive()", { isRejoining, hasLeftAt: !!leftAt, alreadyStarted });
+                            if (alreadyStarted && !isRejoining && !leftAt) {
+                                toast.info("Resuming your active stream...");
+                            }
+                        } else {
+                            if (!state.backstage && !state.startedAt) {
+                                await _call.goLive();
+                            } else if (state.backstage) {
+                                await _call.goLive();
+                            }
+                            toast.success("Your stream is now live and visible to viewers!");
                         }
-                        toast.success("Your stream is now live and visible to viewers!");
 
                         // Start recording AFTER successful join and goLive
-                        if (_callId) {
-                            liveService.startRecording(_callId).catch(err => {
-                                console.error("Failed to start recording:", err);
-                            });
-                        }
+                        // if (_callId) {
+                        //     liveService.startRecording(_callId).catch(err => {
+                        //         console.error("Failed to start recording:", err);
+                        //     });
+                        // }
                     } catch (e) {
-                        console.error("Failed to go live:", e);
+                        console.error("Failed to verify/start goLive:", e);
                     }
                 } else {
                     // Viewers shouldn't have camera/mic enabled by default
@@ -423,12 +495,14 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
             } catch (err) {
                 console.error('Failed to join call:', err);
+                setInitError('Failed to connect to the live session. Please check your internet connection.');
                 toast.error('Failed to join live session');
             }
 
             if (mounted) {
                 setClient(_client);
-                if (chatConnected) setChatClient(_chatClient);
+                // Set the chat client even if connection failed/is pending to avoid crashing the Chat provider
+                if (_chatClient) setChatClient(_chatClient);
                 setCall(_call);
             }
         };
@@ -446,18 +520,18 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                     local.audioStream?.getTracks().forEach(track => track.stop());
                 }
 
-                _call.camera.disable().catch(() => {});
-                _call.microphone.disable().catch(() => {});
+                _call.camera.disable().catch(() => { });
+                _call.microphone.disable().catch(() => { });
 
                 if (!(_isHost && isTerminatingRef.current)) {
-                    _call.leave().catch(() => {});
+                    _call.leave().catch(() => { });
                 }
             }
             if (_client) {
-                _client.disconnectUser().catch(() => {});
+                _client.disconnectUser().catch(() => { });
             }
             if (_chatClient) {
-                _chatClient.disconnectUser().catch(() => {});
+                _chatClient.disconnectUser().catch(() => { });
             }
 
             if (_isHost && _callId) {
@@ -493,9 +567,34 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
 
 
-    if (!client || !call || !chatClient) {
+    const { isRejoining } = useGoLiveStore();
+
+    if (initError && !client) {
         return (
-            <div className="fixed inset-0 flex items-center justify-center bg-[#0f1117] z-10000 overflow-hidden">
+            <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#0f1117] z-50 p-6 text-center">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-8 max-w-md">
+                    <p className="text-red-500 mb-6">{initError}</p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-6 py-3 bg-[#FF8800] text-white rounded-xl font-semibold hover:bg-[#FF9911] transition-colors"
+                    >
+                        Retry Connection
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // If we don't have essential data yet, show the loader.
+    // Exception: If we are currently in the 'rejoining' state (Rejoin Modal is open),
+    // we return a blank background instead of the loader to avoid z-index conflicts
+    // and let the Rejoin UI be the primary focus.
+    if (!client || !call || !chatClient) {
+        if (isRejoining) {
+            return <div className="fixed inset-0 bg-[#0f1117] z-40" />;
+        }
+        return (
+            <div className="fixed inset-0 flex items-center justify-center bg-[#0f1117] z-40 overflow-hidden">
                 <Loader2 className="h-10 w-10 animate-spin text-[#FF8800]" />
             </div>
         );

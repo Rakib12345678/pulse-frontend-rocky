@@ -125,45 +125,60 @@ export const LiveStreamChat: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [isViewer, call?.id]);
 
-    if (!isChatVisible) return null;
+    if (!call || !chatClient) return null;
 
-    if (!call || !chatClient || !channel) return null;
+    // Logic-only providers (no UI)
+    const providers = (
+        <>
+            <JoinMessageSender channel={channel as any} isViewer={isViewer} userId={user?.id} />
+        </>
+    );
+
+    if (!isChatVisible) return providers;
 
     // Mobile: viewers need extra room for horizontal gift bar; host just clears the Invite Friends button
     const bottomClass = isMobile ? (isViewer ? 'bottom-[96px]' : 'bottom-[96px]') : 'bottom-10';
 
     return (
-        <Channel key={chatClient.userID || 'anonymous'} channel={channel}>
-            {/* Chat messages + input — transparent on mobile, dark card on desktop */}
-            <div
-                className={`absolute ${bottomClass} z-20 flex flex-col
-                    ${isMobile
-                        ? 'left-2 right-2 max-h-[52vh]'
-                        : 'left-10 right-auto w-[280px] max-h-[min(400px,calc(100vh-280px))] rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl'
-                    }`}
-            >
-                {/* SuperchatTicker shown for host; hidden for viewers */}
-                <SuperchatTicker />
+        <Channel key={chatClient.userID || 'anonymous'} channel={channel as any}>
+            {providers}
+            
+            {channel ? (
+                <>
+                    {/* Chat messages + input — transparent on mobile, dark card on desktop */}
+                    <div
+                        className={`absolute ${bottomClass} z-20 flex flex-col
+                            ${isMobile
+                                ? 'left-2 right-2 max-h-[52vh]'
+                                : 'left-4 xl:left-10 right-auto w-[280px] max-h-[min(400px,calc(100vh-280px))] rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl'
+                            }`}
+                    >
+                        <SuperchatTicker />
+                        <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'pt-2 px-2 pb-1' : 'bg-[#1D1F20] pt-4 px-4 pb-3'}`}>
+                            <LiveStreamMessageList />
+                            <LiveStreamMessageInput />
+                        </div>
+                    </div>
 
-                <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'pt-2 px-2 pb-1' : 'bg-[#1D1F20] pt-4 px-4 pb-3'}`}>
-                    <LiveStreamMessageList />
-                    <LiveStreamMessageInput />
+                    {/* Viewer: horizontal gift sidebar with join button at bottom */}
+                    {isViewer && <ViewerBottomBar />}
+                    {/* Host: Invite Friends button */}
+                    {!isViewer && <HostInviteBar />}
+
+                    {/* CompactGiftSidebar handles horizontal gift row on mobile (viewer only) */}
+                    <CompactGiftSidebar />
+
+                    <GiftingFeature
+                        isOpen={isGiftingOpen}
+                        onOpenChange={setIsGiftingOpen}
+                    />
+                </>
+            ) : (
+                /* Still show the gift sidebar even if chat channel is not ready, if possible */
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                   {/* Optional: <Loader2 className="h-6 w-6 animate-spin text-white/20" /> */}
                 </div>
-                <JoinMessageSender channel={channel} isViewer={isViewer} userId={user?.id} />
-            </div>
-
-            {/* Viewer: horizontal gift sidebar with join button at bottom */}
-            {isViewer && <ViewerBottomBar />}
-            {/* Host: Invite Friends button */}
-            {!isViewer && <HostInviteBar />}
-
-            {/* CompactGiftSidebar handles horizontal gift row on mobile (viewer only) */}
-            <CompactGiftSidebar />
-
-            <GiftingFeature
-                isOpen={isGiftingOpen}
-                onOpenChange={setIsGiftingOpen}
-            />
+            )}
         </Channel>
     );
 };
@@ -504,7 +519,7 @@ const JoinMessageSender: React.FC<{ channel: StreamChannel; isViewer: boolean; u
                         await channel.watch();
                     }
                     await channel.sendMessage({
-                        text: 'has started the livestream',
+                        text: 'has started the live stream',
                         isJoinMessage: true
                     } as any);
                 } catch (err) {
@@ -530,6 +545,7 @@ const ViewerBottomBar: React.FC = () => {
     const { user } = useAuthStore();
     const navigate = useNavigate();
     const [isMuted, setIsMuted] = useState(false);
+    const hasBeenRemovedRef = useRef(false);
 
     const toggleMute = () => {
         if (call) {
@@ -552,7 +568,7 @@ const ViewerBottomBar: React.FC = () => {
     const viewerParticipants = useViewerParticipants();
 
     useEffect(() => {
-        if (!call || !user || requestStatus !== 'idle') return;
+        if (!call || !user || requestStatus !== 'idle' || hasBeenRemovedRef.current) return;
 
         const myParticipant = viewerParticipants.find(
             (p: any) => p.userId === String(user.id)
@@ -590,6 +606,23 @@ const ViewerBottomBar: React.FC = () => {
                     setTimeout(() => setRequestStatus('idle'), 3000);
                 }
             }
+
+            // Handle being removed from stage by the host
+            if (customData?.type === 'cohost-removed' && customData?.userId === String(user.id)) {
+                console.log('[ViewerBottomBar] Removed from stage by host');
+                hasBeenRemovedRef.current = true;
+                (async () => {
+                    try {
+                        await call.camera.disable();
+                        await call.microphone.disable();
+                    } catch (err) {
+                        console.error('[ViewerBottomBar] Failed to disable camera/mic:', err);
+                    }
+                })();
+                setRequestStatus('idle');
+                toast.info('You have been removed from the stage');
+            }
+
             // Handle being kicked by the host
             if (customData?.type === 'kicked' && customData?.userId === String(user.id)) {
                 console.log('[ViewerBottomBar] Kicked by host');
@@ -634,6 +667,7 @@ const ViewerBottomBar: React.FC = () => {
 
         try {
             console.log('[JoinStream] Sending custom join-request event...');
+            hasBeenRemovedRef.current = false; // Reset on new request
             setRequestStatus('pending');
             await call.sendCustomEvent({
                 type: 'join-request',

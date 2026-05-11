@@ -62,17 +62,17 @@ export const useExplore = () => {
             if (!query) return null;
 
             const results = await exploreService.searchExplore(query);
-            
+
             // Handle case where results.creators might be an object containing the array
-            const creatorList = Array.isArray(results.creators) 
-                ? results.creators 
+            const creatorList = Array.isArray(results.creators)
+                ? results.creators
                 : (results.creators as any)?.data || (results.creators as any)?.users || [];
 
             return {
                 creators: creatorList.map((u: any) => {
                     // Try to extract ID from various common field names or nested objects
                     const id = u.id || u.userId || u.userID || u.user_id || u.pk || u._id || u.user?.id || u.user?.userId || 0;
-                    
+
                     return {
                         id,
                         username: u.username || u.user?.username || 'user',

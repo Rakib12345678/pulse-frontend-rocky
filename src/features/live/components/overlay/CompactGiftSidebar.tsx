@@ -21,12 +21,13 @@ export const CompactGiftSidebar: React.FC = () => {
     const { data: walletData } = useWalletBalance();
     const { openModal: openAuthModal, setMode } = useSignUpStore();
     const { openModal: openCoinsModal } = useCoinsStore();
-    const { call, isViewer, isGiftingOpen } = useLiveStreamContext();
+    const { call, isViewer, isGiftingOpen, isChatVisible } = useLiveStreamContext();
     const { channel } = useChannelStateContext();
     const { useCallCreatedBy } = useCallStateHooks();
     const createdBy = useCallCreatedBy();
     const isMobile = useIsMobile();
     const navigate = useNavigate();
+    const hasBeenRemovedRef = React.useRef(false);
 
     // Join stream logic
     const { requestStatus, setRequestStatus } = useJoinRequestStore();
@@ -119,6 +120,7 @@ export const CompactGiftSidebar: React.FC = () => {
         }
         if (requestStatus !== 'idle' || !call) return;
         try {
+            hasBeenRemovedRef.current = false;
             setRequestStatus('pending');
             await call.sendCustomEvent({
                 type: 'join-request',
@@ -146,6 +148,17 @@ export const CompactGiftSidebar: React.FC = () => {
                     setTimeout(() => setRequestStatus('idle'), 3000);
                 }
             }
+            if (customData?.type === 'cohost-removed' && customData?.userId === String(user.id)) {
+                hasBeenRemovedRef.current = true;
+                (async () => {
+                    try {
+                        await call.camera.disable();
+                        await call.microphone.disable();
+                    } catch { }
+                })();
+                setRequestStatus('idle');
+                toast.info('You have been removed from the stage');
+            }
             if (customData?.type === 'kicked' && customData?.userId === String(user.id)) {
                 toast.error('You have been removed from the stream');
                 (async () => {
@@ -165,7 +178,7 @@ export const CompactGiftSidebar: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
     const viewerParticipants = useParticipants();
     useEffect(() => {
-        if (!call || !user || requestStatus !== 'idle') return;
+        if (!call || !user || requestStatus !== 'idle' || hasBeenRemovedRef.current) return;
         const myParticipant = viewerParticipants.find((p: any) => p.userId === String(user.id));
         if (!myParticipant) return;
         const p = myParticipant as any;
@@ -182,15 +195,15 @@ export const CompactGiftSidebar: React.FC = () => {
     }).length;
     const isStageFull = currentCoHostCount >= MAX_COHOSTS;
 
-    // Hide for non-viewers
-    if (!isViewer) return null;
+    // Hide for non-viewers or when UI is hidden via eye icon
+    if (!isViewer || !isChatVisible) return null;
 
     /* ===== DESKTOP: vertical right sidebar (original behaviour) ===== */
     if (!isMobile) {
         if (gifts.length === 0 || isGiftingOpen) return null;
         return (
             <div
-                className="absolute z-30 flex flex-col items-center gap-5 overflow-y-auto scrollbar-hide right-10 bottom-28 top-32 w-16"
+                className="absolute z-30 flex flex-col items-center gap-5 overflow-y-auto scrollbar-hide right-4 xl:right-10 bottom-28 top-32 w-16"
                 style={{
                     maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)'

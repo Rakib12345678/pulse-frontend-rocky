@@ -148,9 +148,18 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
                 const conv = channelToConversation(ch, myId, nameCache.current[ch.cid]);
                 const participantId = conv.participant.id;
                 const liveUser = client?.state?.users?.[participantId] as Record<string, any> | undefined;
-                const isOnline = liveUser?.online ?? conv.isOnline ?? false;
-                const lastActive = liveUser?.last_active
-                    ? new Date(liveUser.last_active).toISOString()
+                
+                // Robust online check:
+                // 1. Check live state from client.state.users (most accurate for watched users)
+                // 2. Check the conversation's initial mapping
+                // 3. Fallback: if they were active in the last 60 seconds, treat as online for UI responsiveness
+                const lastActiveTime = liveUser?.last_active || conv.lastActive;
+                const isRecentlyActive = lastActiveTime && (new Date().getTime() - new Date(lastActiveTime).getTime() < 60000);
+                
+                const isOnline = liveUser?.online === true || conv.isOnline === true || !!isRecentlyActive;
+                
+                const lastActive = lastActiveTime
+                    ? new Date(lastActiveTime).toISOString()
                     : conv.lastActive;
                 const unreadCount = ch.cid === activeConvId ? 0 : conv.unreadCount;
 
@@ -402,7 +411,11 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
     const markAsRead = useCallback(() => {
         if (!activeChannel) return;
         activeChannel.markRead()
-            .then(() => syncMessages(activeChannel))
+            .then(() => {
+                syncMessages(activeChannel);
+                // Trigger navbar unread count update
+                window.dispatchEvent(new CustomEvent('unread-count-sync'));
+            })
             .catch(() => { });
     }, [activeChannel, syncMessages]);
 
