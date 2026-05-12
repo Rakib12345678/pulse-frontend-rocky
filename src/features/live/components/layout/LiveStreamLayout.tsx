@@ -424,6 +424,8 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         if (isCameraEnabled) {
                             await _call.camera.enable();
                         } else {
+                            // Standard disable. Avoid forceStop: true during initialization
+                            // to prevent the SDK state from getting stuck.
                             await _call.camera.disable();
                         }
                     } catch (e) {
@@ -437,7 +439,14 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         if (isMicEnabled) {
                             await _call.microphone.enable();
                         } else {
-                            await _call.microphone.disable();
+                            await _call.microphone.disable({ forceStop: true } as any);
+                            // Disable background speech detection and clean up detectors
+                            _call.microphone.disableSpeakingWhileMutedNotification().catch(() => { });
+                            try {
+                                const mic = _call.microphone as any;
+                                if (typeof mic.noAudioDetectorCleanup === 'function') mic.noAudioDetectorCleanup();
+                                if (typeof mic.soundDetectorCleanup === 'function') mic.soundDetectorCleanup();
+                            } catch (e) { }
                         }
                     } catch (e) {
                         console.error("Failed to set initial mic state:", e);
@@ -513,19 +522,37 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             mounted = false;
 
             if (_call) {
-                // Explicitly stop hardware tracks to ensure light goes off immediately
+                // Block any new getUserMedia calls during teardown so the SDK
+                // cannot re-acquire the mic for internal detection loops.
+                (window as any).pulseBlockMedia = true;
+
+                try {
+                    const mic = _call.microphone as any;
+                    if (typeof mic.noAudioDetectorCleanup === 'function') mic.noAudioDetectorCleanup();
+                    if (typeof mic.soundDetectorCleanup === 'function') mic.soundDetectorCleanup();
+                } catch (e) { console.warn("Failed to clean up audio detectors", e); }
+
+                // Step 1: Disable speaking-while-muted detection FIRST.
+                _call.microphone.disableSpeakingWhileMutedNotification().catch(() => { });
+
+                // Step 2: Stop all existing hardware tracks
+                try { (_call.camera.state as any).mediaStream?.getTracks().forEach((t: MediaStreamTrack) => t.stop()); } catch { }
+                try { (_call.microphone.state as any).mediaStream?.getTracks().forEach((t: MediaStreamTrack) => t.stop()); } catch { }
                 const local = _call.state.localParticipant;
                 if (local) {
                     local.videoStream?.getTracks().forEach(track => track.stop());
                     local.audioStream?.getTracks().forEach(track => track.stop());
                 }
 
-                _call.camera.disable().catch(() => { });
-                _call.microphone.disable().catch(() => { });
+                _call.camera.disable().catch(() => {});
+                _call.microphone.disable().catch(() => {});
 
                 if (!(_isHost && isTerminatingRef.current)) {
                     _call.leave().catch(() => { });
                 }
+
+                // Restore getUserMedia after a safe window (SDK teardown completes)
+                setTimeout(() => { (window as any).pulseBlockMedia = false; }, 3000);
             }
             if (_client) {
                 _client.disconnectUser().catch(() => { });

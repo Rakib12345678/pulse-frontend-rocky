@@ -32,7 +32,11 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
 
     const toggleCamera = async () => {
         try {
-            await camera.toggle();
+            if (!isCameraMuted) {
+                await camera.disable({ forceStop: true } as any);
+            } else {
+                await camera.enable();
+            }
         } catch (error) {
             console.error('Failed to toggle camera:', error);
         }
@@ -40,7 +44,21 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
 
     const toggleMicrophone = async () => {
         try {
-            await microphone.toggle();
+            if (!isMicMuted) {
+                // Important: disable background speech detection which keeps mic active
+                await microphone.disableSpeakingWhileMutedNotification().catch(() => { });
+                
+                // Force cleanup of internal audio contexts/detectors that lock the microphone hardware
+                try {
+                    const mic = microphone as any;
+                    if (typeof mic.noAudioDetectorCleanup === 'function') mic.noAudioDetectorCleanup();
+                    if (typeof mic.soundDetectorCleanup === 'function') mic.soundDetectorCleanup();
+                } catch (e) { console.warn("Failed to clean up audio detectors", e); }
+
+                await microphone.disable({ forceStop: true } as any);
+            } else {
+                await microphone.enable();
+            }
         } catch (error) {
             console.error('Failed to toggle microphone:', error);
         }

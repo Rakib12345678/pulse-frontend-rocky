@@ -38,13 +38,23 @@ export const GoLiveModal = () => {
     } = useGoLiveStore();
 
     const videoRef = useRef<HTMLVideoElement>(null);
+    const activeStreamRef = useRef<MediaStream | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [permissionError, setPermissionError] = useState<string | null>(null);
 
     const stopStream = useCallback(() => {
+        // Synchronously stop the active stream reference to prevent races
+        if (activeStreamRef.current) {
+            activeStreamRef.current.getTracks().forEach(track => track.stop());
+            activeStreamRef.current = null;
+        }
+
         setStream((current) => {
             if (current) {
                 current.getTracks().forEach(track => track.stop());
+            }
+            if (videoRef.current) {
+                videoRef.current.srcObject = null;
             }
             return null;
         });
@@ -57,54 +67,49 @@ export const GoLiveModal = () => {
             useGoLiveStore.getState();
 
         try {
+            // We rely on the useEffect cleanup or the check below to handle stopping.
+            // Redundant stopStream() calls here can cause race conditions.
+
             let newStream: MediaStream;
 
             try {
-                // Try getting both first for best experience
+                // Try getting requested media combination
                 newStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
+                    video: camEnabled,
+                    audio: micEnabled
                 });
             } catch (err: any) {
-                console.warn("Could not get both video and audio, trying video only...", err);
-                try {
-                    // Fallback 1: Try video only
-                    newStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    toast.warning("Microphone not found or blocked. Video only preview.");
-                } catch (err2: any) {
-                    console.warn("Could not get video, trying audio only...", err2);
+                console.warn("Could not get requested media combination, trying fallbacks...", err);
+                
+                // Fallback logic: only try to get what the user has enabled
+                if (camEnabled && micEnabled) {
                     try {
-                        // Fallback 2: Try audio only
-                        newStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        toast.warning("Camera not found or blocked. Audio only preview.");
-                    } catch (err3: any) {
-                        // Critical failure: All attempts failed
-                        console.error("Critical failure: Could not get any media device", err3);
-                        throw err3;
+                        // Fallback 1: Try video only
+                        newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        toast.warning("Microphone not found or blocked. Video only preview.");
+                    } catch (err2: any) {
+                        try {
+                            // Fallback 2: Try audio only
+                            newStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            toast.warning("Camera not found or blocked. Audio only preview.");
+                        } catch (err3: any) {
+                            throw err3;
+                        }
                     }
+                } else {
+                    // If user only wanted one thing and it failed, re-throw
+                    throw err;
                 }
             }
 
+            // Keep a synchronous reference to the stream for race-condition-free cleanup
+            activeStreamRef.current = newStream;
             setStream(newStream);
             if (videoRef.current) {
                 videoRef.current.srcObject = newStream;
             }
-
-            // Sync initial track state from the store's current values
-            const videoTracks = newStream.getVideoTracks();
-            const audioTracks = newStream.getAudioTracks();
-
-            if (videoTracks.length > 0) {
-                videoTracks.forEach(track => {
-                    track.enabled = camEnabled;
-                });
-            }
-
-            if (audioTracks.length > 0) {
-                audioTracks.forEach(track => {
-                    track.enabled = micEnabled;
-                });
-            }
+            
+            return newStream;
 
         } catch (err: any) {
             console.error("Error accessing media devices:", err);
@@ -128,36 +133,37 @@ export const GoLiveModal = () => {
         }
     }, [stream, isCameraEnabled]);
 
-    // Effect to toggle tracks when state changes
+    // Handle initial mount/open and toggle changes
     useEffect(() => {
-        if (stream) {
-            const videoTracks = stream.getVideoTracks();
-            const audioTracks = stream.getAudioTracks();
-
-            videoTracks.forEach(track => {
-                if (track.enabled !== isCameraEnabled) {
-                    track.enabled = isCameraEnabled;
-                }
-            });
-
-            audioTracks.forEach(track => {
-                if (track.enabled !== isMicEnabled) {
-                    track.enabled = isMicEnabled;
-                }
-            });
-        }
-    }, [isCameraEnabled, isMicEnabled, stream]);
-
-    // Handle initial mount/open
-    useEffect(() => {
-        if (isOpen) {
-            initiateMedia();
-        } else {
+        if (!isOpen) {
             stopStream();
+            return;
         }
 
-        return () => stopStream();
-    }, [isOpen, initiateMedia, stopStream]);
+        let isCancelled = false;
+
+        const startMedia = async () => {
+            // First, stop any orphaned tracks
+            if (activeStreamRef.current) {
+                activeStreamRef.current.getTracks().forEach(t => t.stop());
+                activeStreamRef.current = null;
+            }
+
+            const newStream = await initiateMedia();
+            
+            if (isCancelled && newStream) {
+                // If the modal was closed/changed while getUserMedia was pending,
+                // destroy the newly acquired stream immediately.
+                newStream.getTracks().forEach(t => t.stop());
+            }
+        };
+
+        startMedia();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [isOpen, isCameraEnabled, isMicEnabled, initiateMedia, stopStream]);
 
     const navigate = useNavigate();
 

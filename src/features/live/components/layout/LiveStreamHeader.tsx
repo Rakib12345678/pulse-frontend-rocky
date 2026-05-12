@@ -13,6 +13,7 @@ import { useSubmitReport } from '@/features/report/services/report.service';
 import { ReportStreamModal, TargetUserOption, ReportLimitModal, ReportSuccessModal, ReportFailureModal } from '@/components/internal/ReasonModal';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
+import { teardownCallMedia } from '@/features/live/utils/mediaCleanup';
 
 import { ParticipantsDialog } from '@/features/live/components/modals/ParticipantsDialog';
 import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
@@ -166,8 +167,7 @@ export const LiveStreamHeader: React.FC = () => {
     const handleLeaveStream = async () => {
         try {
             if (call) {
-                await call.camera.disable();
-                await call.microphone.disable();
+                await teardownCallMedia(call);
                 await call.leave();
             }
             navigate({ to: '/for-you' });
@@ -177,6 +177,15 @@ export const LiveStreamHeader: React.FC = () => {
         }
     };
 
+    /**
+     * Temporarily sets a flag so that any new stream the SDK tries to 
+     * open during teardown is immediately stopped by the interceptor in __root.tsx.
+     */
+    const blockGetUserMedia = () => {
+        (window as any).pulseBlockMedia = true;
+        return () => { (window as any).pulseBlockMedia = false; };
+    };
+
     const handleEndLiveChoice = React.useCallback(async (save: boolean) => {
         if (!streamData) return;
         setIsEndingProcess(true);
@@ -184,23 +193,15 @@ export const LiveStreamHeader: React.FC = () => {
         setEndingStream(true);
 
         try {
-            // CRITICAL: Stop local media tracks BEFORE ending the call.
-            // call.camera.disable() only stops publishing — it does NOT release
-            // the MediaStreamTrack hardware, so the browser will keep showing
-            // the camera/mic indicator. We must explicitly stop() every track
-            // to fully release the camera & microphone permissions.
             if (call) {
-                const localParticipant = call.state.localParticipant;
-                if (localParticipant) {
-                    localParticipant.videoStream?.getTracks().forEach(track => {
-                        track.stop();
-                    });
-                    localParticipant.audioStream?.getTracks().forEach(track => {
-                        track.stop();
-                    });
-                }
-                await call.camera.disable().catch(() => { });
-                await call.microphone.disable().catch(() => { });
+                // Block any new getUserMedia calls during teardown so the SDK
+                // cannot re-acquire the mic for internal detection loops.
+                const restoreGetUserMedia = blockGetUserMedia();
+
+                await teardownCallMedia(call);
+
+                // Restore getUserMedia after a safe window (SDK teardown completes)
+                setTimeout(restoreGetUserMedia, 3000);
             }
 
             await liveService.endLiveStream(streamData.callId, save);

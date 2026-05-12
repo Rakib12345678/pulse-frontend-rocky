@@ -19,6 +19,37 @@ import appCss from "../styles.css?url"
 import { Button } from "@/components/ui/button"
 import { GoogleOAuthProvider } from "@react-oauth/google"
 
+if (typeof window !== 'undefined' && navigator.mediaDevices) {
+  (window as any).activeMediaTracks = new Set<MediaStreamTrack>();
+  (window as any).pulseBlockMedia = false;
+  const originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+  
+  navigator.mediaDevices.getUserMedia = async (constraints) => {
+    const stream = await originalGetUserMedia(constraints);
+    
+    // If we are currently in teardown phase, instantly kill the acquired tracks
+    if ((window as any).pulseBlockMedia) {
+        stream.getTracks().forEach(t => t.stop());
+        return stream;
+    }
+
+    stream.getTracks().forEach(t => {
+      (window as any).activeMediaTracks.add(t);
+      t.addEventListener('ended', () => (window as any).activeMediaTracks.delete(t));
+    });
+    return stream;
+  };
+
+  (window as any).killAllMedia = () => {
+    if ((window as any).activeMediaTracks) {
+      (window as any).activeMediaTracks.forEach((t: MediaStreamTrack) => {
+        try { t.stop(); } catch (e) {}
+      });
+      (window as any).activeMediaTracks.clear();
+    }
+  };
+}
+
 export interface RouterContext {
   queryClient: QueryClient
   authStore: typeof useAuthStore
