@@ -28,6 +28,7 @@ export interface FeedStreamItem {
     mobileVideoUrl?: string | null;
     thumbnailUrl?: string | null;
     cohosts?: { username: string; profileImage: string; status: string }[];
+    isDefaultImage?: boolean;
 }
 
 export interface StreamFeedResponse {

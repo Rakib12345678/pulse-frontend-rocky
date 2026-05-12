@@ -24,6 +24,7 @@ export interface StreamCardProps {
   mobileVideoUrl?: string;
   thumbnailUrl?: string;
   cardClickRedirectToLive?: boolean;
+  isDefaultImage?: boolean;
 }
 
 export const StreamCard: React.FC<StreamCardProps> = ({
@@ -43,6 +44,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   mobileVideoUrl,
   thumbnailUrl: propThumbnailUrl,
   cardClickRedirectToLive = false,
+  isDefaultImage = false,
 }) => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -98,11 +100,34 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         className="group relative block w-full aspect-[3/5.2] overflow-hidden rounded-2xl bg-neutral-900 shadow-2xl transition-all duration-500 hover:shadow-orange-900/20 cursor-pointer"
       >
         {/* Background Image */}
-        <img
-          src={thumbnailUrl || avatarUrl}
-          alt={streamerName}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
+        {isDefaultImage ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/60 overflow-hidden">
+            <img
+              src={avatarUrl}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover blur-3xl opacity-40 scale-150"
+            />
+            <div className="relative z-10 flex flex-col items-center gap-4">
+              <UserAvatar
+                src={avatarUrl}
+                alt={streamerName}
+                isLive={isLive}
+                callId={callId}
+                username={streamerName}
+                size="custom"
+                className="w-24 h-24 sm:w-28 sm:h-28 shadow-2xl"
+                clickable={true}
+                showBadge={false}
+              />
+            </div>
+          </div>
+        ) : (
+          <img
+            src={thumbnailUrl || avatarUrl}
+            alt={streamerName}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        )}
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
@@ -135,17 +160,19 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         <div className="absolute bottom-0 left-0 right-0 px-4 pt-5 pb-6 bg-gradient-to-t from-black/80 to-transparent backdrop-blur-[2px]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 overflow-hidden flex-1">
-              <UserAvatar
-                src={avatarUrl}
-                alt={streamerName}
-                isLive={isLive}
-                callId={callId}
-                username={streamerName}
-                size="custom"
-                className="w-10 h-10"
-                clickable={true}
-                showBadge={false}
-              />
+              {!isDefaultImage && (
+                <UserAvatar
+                  src={avatarUrl}
+                  alt={streamerName}
+                  isLive={isLive}
+                  callId={callId}
+                  username={streamerName}
+                  size="custom"
+                  className="w-10 h-10"
+                  clickable={true}
+                  showBadge={false}
+                />
+              )}
 
               <div className="flex flex-col overflow-hidden">
                 <h3
@@ -179,11 +206,34 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       onClick={handleCardClick}
       className="group relative block w-full aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 shadow-lg transition-all hover:shadow-xl cursor-pointer"
     >
-      <img
-        src={thumbnailUrl || avatarUrl}
-        alt={streamerName}
-        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-      />
+      {isDefaultImage ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/60 overflow-hidden">
+          <img
+            src={avatarUrl}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover blur-3xl opacity-40 scale-150"
+          />
+          <div className="relative z-10 flex flex-col items-center gap-4">
+            <UserAvatar
+              src={avatarUrl}
+              alt={streamerName}
+              isLive={isLive}
+              callId={callId}
+              username={streamerName}
+              size="custom"
+              className="w-24 h-24 sm:w-28 sm:h-28 shadow-2xl"
+              clickable={true}
+              showBadge={false}
+            />
+          </div>
+        </div>
+      ) : (
+        <img
+          src={thumbnailUrl || avatarUrl}
+          alt={streamerName}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      )}
 
       <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-black/10" />
 
@@ -231,17 +281,19 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       <div className="absolute bottom-0 left-0 right-0 p-3">
         <div className="flex items-end justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <UserAvatar
-              src={avatarUrl}
-              alt={streamerName}
-              isLive={isLive}
-              callId={callId}
-              username={streamerName}
-              size="custom"
-              className="w-10 h-10"
-              clickable={true}
-              showBadge={false}
-            />
+            {!isDefaultImage && (
+              <UserAvatar
+                src={avatarUrl}
+                alt={streamerName}
+                isLive={isLive}
+                callId={callId}
+                username={streamerName}
+                size="custom"
+                className="w-10 h-10"
+                clickable={true}
+                showBadge={false}
+              />
+            )}
 
             <div className="flex flex-col min-w-0">
               <h3

@@ -105,7 +105,8 @@ export const ExplorePage: React.FC = () => {
                                                 isLive: item.isLive,
                                                 callId: item.callId,
                                                 category: item.category,
-                                                cohosts: item.cohosts
+                                                cohosts: item.cohosts,
+                                                isDefaultImage: item.isDefaultImage
                                             }}
                                         />
                                     </div>
@@ -138,6 +139,7 @@ export const ExplorePage: React.FC = () => {
                                             category={item.category}
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}
+                                            isDefaultImage={item.isDefaultImage}
                                         />
                                     </div>
                                 ))}
@@ -165,7 +167,8 @@ export const ExplorePage: React.FC = () => {
                                             isLive: item.isLive,
                                             callId: item.callId,
                                             category: item.category,
-                                            cohosts: item.cohosts
+                                            cohosts: item.cohosts,
+                                            isDefaultImage: item.isDefaultImage
                                         }} />
                                     </div>
                                 ))}
@@ -194,6 +197,7 @@ export const ExplorePage: React.FC = () => {
                                             category={item.category}
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}
+                                            isDefaultImage={item.isDefaultImage}
                                         />
                                     </div>
                                 ))}
@@ -223,6 +227,7 @@ export const ExplorePage: React.FC = () => {
                                             category={item.category}
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}
+                                            isDefaultImage={item.isDefaultImage}
                                         />
                                     </div>
                                 ))}

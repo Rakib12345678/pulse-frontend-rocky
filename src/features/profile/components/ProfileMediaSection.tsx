@@ -158,6 +158,7 @@ export const ProfileMediaSection = ({
                       category=""
                       title={item.displayName}
                       isLive={false}
+                      isDefaultImage={item.isDefaultImage}
                     />
                   ) : (
                     <StreamCard
@@ -174,7 +175,7 @@ export const ProfileMediaSection = ({
                       cohosts={item.cohosts}
                       createdByUserId={item.createdByUserId}
                       mobileVideoUrl={item.mobileVideoUrl}
-                      // thumbnailUrl={item.thumbnailUrl || item.thumbnail || item.profileImage || item.avatar}
+                      isDefaultImage={item.isDefaultImage}
                     />
                   )}
                 </div>

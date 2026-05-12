@@ -241,8 +241,8 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
         userId={user.id}
       />
 
-      <div className="bg-[#111213] flex flex-col rounded-2xl p-3 md:p-5 lg:p-6 xl:p-14 border-x-0 border-y-2 md:border-2 border-[#1D1F20] mb-3 md:mb-5 lg:mb-8 xl:mb-15">
-        <div className="flex flex-col md:flex-row gap-3 md:gap-4 lg:gap-6 xl:gap-8 justify-between items-center mb-3 md:mb-5 lg:mb-8 xl:mb-10">
+      <div className="bg-[#111213] flex flex-col rounded-2xl p-3 md:p-5 lg:p-6 xl:p-8 2xl:p-14 border-x-0 border-y-2 md:border-2 border-[#1D1F20] mb-3 md:mb-5 lg:mb-8 xl:mb-10 2xl:mb-15">
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4 lg:gap-6 xl:gap-6 2xl:gap-8 justify-between items-center mb-3 md:mb-5 lg:mb-8 xl:mb-8 2xl:mb-10">
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center text-center md:text-left">
             <div className="relative shrink-0">
               <UserAvatar
@@ -252,7 +252,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 callId={liveStatus?.callId}
                 username={user.username}
                 size="custom"
-                className="w-32 h-32 md:w-20 md:h-20 lg:w-26 lg:h-26 xl:w-32 xl:h-32"
+                className="w-32 h-32 md:w-20 md:h-20 lg:w-24 lg:h-24 xl:w-28 xl:h-28 2xl:w-32 2xl:h-32"
                 clickable={true}
                 showBadge={true}
               />
@@ -268,7 +268,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 
             <div className="flex flex-col items-center md:items-start w-full mt-2 md:mt-0">
               <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
-                <h1 className="text-xl md:text-xl lg:text-2xl xl:text-4xl font-bold text-white mb-1">
+                <h1 className="text-xl md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold text-white mb-1">
                   {user.fullName || user.username}
                 </h1>
               </div>
@@ -283,7 +283,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 )}
               </div>
               {user.bio && (
-                <p className="text-zinc-300 text-sm md:text-sm lg:text-sm xl:text-base max-w-lg leading-relaxed text-center md:text-left mt-1 md:mt-2 lg:mt-3 px-2 md:px-0">{user.bio}</p>
+                <p className="text-zinc-300 text-sm md:text-sm lg:text-sm xl:text-sm 2xl:text-base max-w-lg leading-relaxed text-center md:text-left mt-1 md:mt-2 lg:mt-2 px-2 md:px-0">{user.bio}</p>
               )}
             </div>
           </div>
@@ -389,7 +389,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
           </div>
         </div>
 
-        <div className="bg-[#1D1F20] rounded-2xl md:rounded-3xl lg:rounded-3xl xl:rounded-4xl py-1.5 md:py-2.5 lg:py-3 xl:py-4 px-4 md:px-10 lg:px-14 xl:px-20 border border-zinc-800/40 shadow-2xl w-full">
+        <div className="bg-[#1D1F20] rounded-2xl md:rounded-3xl lg:rounded-3xl xl:rounded-3xl 2xl:rounded-4xl py-1.5 md:py-2.5 lg:py-3 xl:py-3 2xl:py-4 px-4 md:px-10 lg:px-14 xl:px-16 2xl:px-20 border border-zinc-800/40 shadow-2xl w-full">
           <div className="flex justify-between items-center w-full">
             {stats.map((stat, i) => (
               <div
@@ -401,7 +401,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
                 onClick={stat.label !== 'Post' ? () => openFollowModal(stat.label.toLowerCase() as any) : undefined}
               >
                 <span className="text-[#494E50] text-[9px] md:text-xs font-bold tracking-widest">{stat.label}</span>
-                <span className="text-base md:text-2xl lg:text-3xl xl:text-4xl font-extrabold tracking-tight text-[#FFE2A5]">{stat.value}</span>
+                <span className="text-base md:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-extrabold tracking-tight text-[#FFE2A5]">{stat.value}</span>
               </div>
             ))}
           </div>

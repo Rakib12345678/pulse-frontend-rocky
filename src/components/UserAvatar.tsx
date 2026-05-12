@@ -58,7 +58,7 @@ export const UserAvatar = ({
     <div
       onClick={handleClick}
       className={cn(
-        'relative shrink-0 flex items-center justify-center',
+        'relative shrink-0 flex items-center justify-center rounded-full',
         clickable && (username || (isLive && callId)) ? 'cursor-pointer' : '',
         avatarSizeClass,
         className

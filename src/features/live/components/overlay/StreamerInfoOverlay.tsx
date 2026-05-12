@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -130,24 +130,21 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
 
             {/* Don't show follow button if it's the current user */}
             {currentUser?.username !== (profile?.username || apiName.replace('@', '')) && (
-                <Button
-                    size="sm"
-                    className={`ml-auto shrink-0 h-7 px-4 rounded-full transition-all text-xs font-semibold ${isFollowing
-                        ? "bg-[#FF8800] hover:bg-[#FF5722] text-white border-none"
-                        : "bg-[#FF8800] hover:bg-[#FF5722] text-white"
+                <button
+                    className={`ml-auto shrink-0 h-8 w-8 rounded-full transition-all flex items-center justify-center ${isFollowing
+                        ? "bg-[#262626] hover:bg-[#333]"
+                        : "bg-[#FF8800] hover:bg-[#FF7700]"
                         }`}
                     onClick={handleFollowToggle}
                     onTouchEnd={handleFollowToggle}
                     disabled={isLoading}
                 >
                     {isLoading ? (
-                        <Loader2 className="h-2 w-2 animate-spin" />
-                    ) : isFollowing ? (
-                        "Following"
+                        <Loader2 className={`h-5 w-5 animate-spin ${isFollowing ? 'text-gray-400' : 'text-black'}`} />
                     ) : (
-                        "Follow"
+                        <Plus className={`h-5 w-5 ${isFollowing ? 'text-gray-400' : 'text-black'}`} />
                     )}
-                </Button>
+                </button>
             )}
         </div>
     );

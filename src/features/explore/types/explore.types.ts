@@ -20,6 +20,7 @@ export interface ExploreItem {
         profileImage: string;
     }[];
     category?: string;
+    isDefaultImage?: boolean;
 }
 
 export interface Creator {
@@ -34,6 +35,7 @@ export interface Creator {
     callId?: string | null;
     category?: string;
     cohosts?: { username: string; profileImage: string; }[];
+    isDefaultImage?: boolean;
 }
 
 export interface ExploreData {

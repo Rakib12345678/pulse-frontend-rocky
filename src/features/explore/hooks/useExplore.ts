@@ -38,7 +38,8 @@ export const useExplore = () => {
                 callId: u.callId || u.user?.callId || null,
                 participantCount: u.participantCount || u.participants_count || 0,
                 cohostCount: u.cohostCount || 0,
-                cohosts: u.cohosts || []
+                cohosts: u.cohosts || [],
+                isDefaultImage: u.isDefaultImage || false
             });
 
             return {
@@ -85,7 +86,8 @@ export const useExplore = () => {
                         callId: u.callId || u.user?.callId || null,
                         participantCount: u.participantCount || 0,
                         cohostCount: u.cohostCount || 0,
-                        cohosts: u.cohosts || []
+                        cohosts: u.cohosts || [],
+                        isDefaultImage: u.isDefaultImage || false
                     };
                 }),
                 streams: (Array.isArray(results.streams) ? results.streams : (results.streams as any)?.data || []).map((s: any) => ({
