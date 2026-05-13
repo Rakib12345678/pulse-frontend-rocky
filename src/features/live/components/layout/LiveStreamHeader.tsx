@@ -35,7 +35,7 @@ import {
 
 export const LiveStreamHeader: React.FC = () => {
     const { streamData, setEndingStream } = useGoLiveStore();
-    const { isChatVisible, setChatVisible, call } = useLiveStreamContext();
+    const { isChatVisible, setChatVisible, call, setStreamEnded } = useLiveStreamContext();
     const navigate = useNavigate();
     const { useCallSession, useParticipants, useCallCreatedBy } = useCallStateHooks();
     const session = useCallSession();
@@ -191,6 +191,7 @@ export const LiveStreamHeader: React.FC = () => {
         setIsEndingProcess(true);
         // Set ending stream flag immediately to bypass navigation blockers
         setEndingStream(true);
+        setStreamEnded(true);
 
         try {
             if (call) {

@@ -195,7 +195,7 @@ const LiveStreamInner: React.FC<{
 };
 
 export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, callId: viewerCallId }) => {
-    const { streamData } = useGoLiveStore();
+    const { streamData, isRejoining, isEndingStream } = useGoLiveStore();
     const { user } = useAuthStore();
     const userRef = useRef(user);
     const [client, setClient] = useState<StreamVideoClient | null>(null);
@@ -278,7 +278,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
     useEffect(() => {
         const isHostMode = !!streamData;
-        const isViewerMode = !streamData && !!viewerCallId;
+        const isViewerMode = !streamData && !!viewerCallId && !isEndingStream;
 
         if (!isHostMode && !isViewerMode) return;
         setStreamEnded(false);
@@ -571,11 +571,10 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             setChatClient(null);
             setCall(null);
         };
-    }, [streamData, viewerCallId, user?.id]);
+    }, [streamData, viewerCallId, user?.id, isEndingStream]);
 
 
 
-    const { isRejoining } = useGoLiveStore();
 
     if (initError && !client) {
         return (

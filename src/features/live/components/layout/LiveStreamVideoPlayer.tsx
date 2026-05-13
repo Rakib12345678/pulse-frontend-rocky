@@ -15,10 +15,11 @@ import { cn } from '@/lib/utils';
 import { useParticipantPresence } from '@/features/live/hooks/useParticipantPresence';
 import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
 import { teardownCallMedia } from '@/features/live/utils/mediaCleanup';
+import { StreamFinishedOverlay } from '@/features/live/components/overlay/StreamFinishedOverlay';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
-    const { isViewer, isGuest, isChatVisible, call } = useLiveStreamContext();
+    const { isViewer, isGuest, isChatVisible, call, streamEnded, setStreamEnded } = useLiveStreamContext();
     const isHost = !isViewer;
     const { client: chatClient } = useChatContext();
     const channel = React.useMemo(() => (call && chatClient && chatClient.userID) ? chatClient.channel('livestream', call.id) : null, [chatClient, call?.id]);
@@ -168,8 +169,8 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
             if (!isHost) {
                 useGoLiveStore.getState().setEndingStream(true);
+                setStreamEnded(true);
                 toast.info('Stream has ended');
-                navigate({ to: '/for-you' });
             }
         });
 
@@ -179,13 +180,13 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                 try {
                     const callState = await call.get();
                     if (callState.call.ended_at && !isHost) {
+                        setStreamEnded(true);
                         toast.info('Stream has ended');
-                        navigate({ to: '/for-you' });
                     }
                 } catch (e) {
                     if (!isHost) {
+                        setStreamEnded(true);
                         toast.info('Stream has ended');
-                        navigate({ to: '/for-you' });
                     }
                 }
             }, 5000);
@@ -200,7 +201,13 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     // Fallback: auto-exit if no streamers for 15 seconds
     useEffect(() => {
         if (sortedParticipants.length === 0) {
-            const timer = setTimeout(() => navigate({ to: '/for-you' }), 15000);
+            const timer = setTimeout(() => {
+                if (isViewer) {
+                    setStreamEnded(true);
+                } else {
+                    navigate({ to: '/for-you' });
+                }
+            }, 15000);
             return () => clearTimeout(timer);
         }
     }, [sortedParticipants.length, navigate]);
@@ -406,10 +413,16 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
     if (!host) {
         return (
-            <div className="flex h-full w-full items-center justify-center p-6 pt-28">
+            <div className="flex h-full w-full items-center justify-center p-6 pt-28 relative">
                 <div className="flex-1 flex items-center justify-center rounded-3xl bg-neutral-900 border border-white/5 max-w-sm aspect-9/16">
                     <span className="text-white/50 text-lg">Streamer not available</span>
                 </div>
+                {streamEnded && (
+                    <StreamFinishedOverlay
+                        streamerName="Streamer"
+                        participantCount={participants.length}
+                    />
+                )}
             </div>
         );
     }
@@ -435,148 +448,144 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     }
 
     /* ===== DESKTOP: host only ===== */
-    if (coHosts.length === 0) {
-        return (
-            <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
-                <div className="flex-1 h-full flex items-center justify-center transition-all duration-300">
-                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '90%' }}>
-                        {renderHostVideo(host)}
+    const renderContent = () => {
+        if (coHosts.length === 0) {
+            return (
+                <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
+                    <div className="flex-1 h-full flex items-center justify-center transition-all duration-300">
+                        <div className="shrink-0 overflow-hidden relative" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '90%' }}>
+                            {renderHostVideo(host)}
+                        </div>
                     </div>
                 </div>
-            </div>
-        );
-    }
+            );
+        }
 
-    /* ===== DESKTOP: host + 1 co-host ===== */
-    if (coHosts.length === 1) {
-        return (
-            <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
-                {/* Video area: sits to the right of the chat panel (chat is absolute left-10 w-[280px]) */}
-                <div className={cn(
-                    "flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300"
-                )}>
-                    {/* Host: stable 9:16 box — width computed from height so camera toggle never resizes it */}
-                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '40%' }}>
-                        {renderHostVideo(host)}
-                    </div>
-                    {/* Co-host: stable 9:16 box */}
-                    <div className="shrink-0 relative overflow-hidden rounded-3xl bg-neutral-900 border border-white/5 shadow-2xl" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '40%' }}>
-                        {(() => {
-                            const p = coHosts[0];
-                            const participantHasVideo = hasVideo(p);
-                            const participantHasAudio = hasAudio(p);
-                            return (
-                                <>
-                                    {participantHasVideo ? (
-                                        <ParticipantView
-                                            participant={p}
-                                            className="h-full w-full object-cover"
-                                            ParticipantViewUI={null}
-                                        />
-                                    ) : (
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900">
-                                            <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 mb-3">
-                                                {p.image ? (
-                                                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
-                                                        <span className="text-2xl font-bold text-[#FF8800]">
-                                                            {(getFullName(p) || 'U').charAt(0).toUpperCase()}
-                                                        </span>
-                                                    </div>
-                                                )}
+        /* ===== DESKTOP: host + 1 co-host ===== */
+        if (coHosts.length === 1) {
+            return (
+                <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
+                    <div className={cn(
+                        "flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300"
+                    )}>
+                        <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '40%' }}>
+                            {renderHostVideo(host)}
+                        </div>
+                        <div className="shrink-0 relative overflow-hidden rounded-3xl bg-neutral-900 border border-white/5 shadow-2xl" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '40%' }}>
+                            {(() => {
+                                const p = coHosts[0];
+                                const participantHasVideo = hasVideo(p);
+                                const participantHasAudio = hasAudio(p);
+                                return (
+                                    <>
+                                        {participantHasVideo ? (
+                                            <ParticipantView
+                                                participant={p}
+                                                className="h-full w-full object-cover"
+                                                ParticipantViewUI={null}
+                                            />
+                                        ) : (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900">
+                                                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 mb-3">
+                                                    {p.image ? (
+                                                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
+                                                            <span className="text-2xl font-bold text-[#FF8800]">
+                                                                {(getFullName(p) || 'U').charAt(0).toUpperCase()}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="text-white/60 text-sm font-medium">{getFullName(p) || 'Guest'}</span>
                                             </div>
-                                            <span className="text-white/60 text-sm font-medium">{getFullName(p) || 'Guest'}</span>
-                                        </div>
-                                    )}
-                                    {!isViewer && (
-                                        <button
-                                            onClick={() => setConfirmKick({ userId: p.userId, userName: p.name || p.userId })}
-                                            className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center shadow-lg border border-red-400/50 hover:bg-red-600 transition-colors cursor-pointer"
-                                        >
-                                            <PhoneOff className="w-4 h-4 text-white" />
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (!isViewer && participantHasAudio) handleMuteCoHost(p.userId, p.name || 'Guest');
-                                        }}
-                                        disabled={isViewer || !participantHasAudio}
-                                        title={!isViewer && participantHasAudio ? 'Mute co-host' : ''}
-                                        className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-lg border outline-none ${!isViewer && participantHasAudio ? 'cursor-pointer hover:bg-white/20' : ''
-                                            } ${participantHasAudio ? 'bg-white/10 backdrop-blur-md border-white/10' : 'bg-red-500/80 border-red-400/50'}`}
-                                    >
-                                        {participantHasAudio ? <Mic className="w-4 h-4 text-white/70" /> : <MicOff className="w-4 h-4 text-white" />}
-                                    </button>
-                                    {isChatVisible && !p.isLocalParticipant && (
-                                        <div className="absolute bottom-4 left-4">
+                                        )}
+                                        {!isViewer && (
                                             <button
-                                                onClick={() => openProfileModal(p.name || 'Guest')}
-                                                className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block cursor-pointer hover:bg-black/60 transition-colors"
+                                                onClick={() => setConfirmKick({ userId: p.userId, userName: p.name || p.userId })}
+                                                className="absolute top-3 left-3 z-10 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center shadow-lg border border-red-400/50 hover:bg-red-600 transition-colors cursor-pointer"
                                             >
-                                                {getFullName(p) || 'Guest'}
+                                                <PhoneOff className="w-4 h-4 text-white" />
                                             </button>
-                                        </div>
-                                    )}
-                                </>
-                            );
-                        })()}
+                                        )}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (!isViewer && participantHasAudio) handleMuteCoHost(p.userId, p.name || 'Guest');
+                                            }}
+                                            disabled={isViewer || !participantHasAudio}
+                                            title={!isViewer && participantHasAudio ? 'Mute co-host' : ''}
+                                            className={`absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-lg border outline-none ${!isViewer && participantHasAudio ? 'cursor-pointer hover:bg-white/20' : ''
+                                                } ${participantHasAudio ? 'bg-white/10 backdrop-blur-md border-white/10' : 'bg-red-500/80 border-red-400/50'}`}
+                                        >
+                                            {participantHasAudio ? <Mic className="w-4 h-4 text-white/70" /> : <MicOff className="w-4 h-4 text-white" />}
+                                        </button>
+                                        {isChatVisible && !p.isLocalParticipant && (
+                                            <div className="absolute bottom-4 left-4">
+                                                <button
+                                                    onClick={() => openProfileModal(p.name || 'Guest')}
+                                                    className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg text-sm font-medium border border-white/10 inline-block cursor-pointer hover:bg-black/60 transition-colors"
+                                                >
+                                                    {getFullName(p) || 'Guest'}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </div>
                     </div>
                 </div>
-                {confirmKick && (
-                    <RemoveCoHostModal
-                        onConfirm={() => { handleKickCoHost(confirmKick!.userId, confirmKick!.userName); setConfirmKick(null); }}
-                        onCancel={() => setConfirmKick(null)}
-                    />
-                )}
-            </div>
-        );
-    }
+            );
+        }
 
-    // 3-4 participants: Host on left, 2-3 Co-hosts stacked on right
-    if (coHosts.length === 2 || coHosts.length === 3) {
+        // 3-4 participants: Host on left, 2-3 Co-hosts stacked on right
+        if (coHosts.length === 2 || coHosts.length === 3) {
+            return (
+                <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
+                    <div className={cn(
+                        "flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300"
+                    )}>
+                        <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '45%' }}>
+                            {renderHostVideo(host)}
+                        </div>
+                        <div className="shrink-0 flex flex-col gap-3" style={{ height: 'min(100%, 85vh)', width: 'clamp(200px, 18vw, 350px)', minWidth: '200px', maxWidth: '35%' }}>
+                            {coHosts.map((p) => (
+                                <div key={p.sessionId} className="flex-1 min-h-0">
+                                    {renderCoHostCard(p, "w-full h-full")}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 4+ participants: main host + sidebar of small co-host cards
         return (
             <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
-                <div className={cn(
-                    "flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300"
-                )}>
-                    {/* Host */}
-                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '45%' }}>
+                <div className="flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300">
+                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', maxWidth: '45%' }}>
                         {renderHostVideo(host)}
                     </div>
-                    {/* Co-hosts stacked, share remaining height */}
-                    <div className="shrink-0 flex flex-col gap-3" style={{ height: 'min(100%, 85vh)', width: 'clamp(200px, 18vw, 350px)', minWidth: '200px', maxWidth: '35%' }}>
-                        {coHosts.map((p) => (
-                            <div key={p.sessionId} className="flex-1 min-h-0">
-                                {renderCoHostCard(p, "w-full h-full")}
-                            </div>
-                        ))}
+                    <div className="h-full flex flex-col gap-4 overflow-y-auto py-2">
+                        {coHosts.map((p) => renderCoHostCard(p))}
                     </div>
                 </div>
-                {confirmKick && (
-                    <RemoveCoHostModal
-                        onConfirm={() => { handleKickCoHost(confirmKick!.userId, confirmKick!.userName); setConfirmKick(null); }}
-                        onCancel={() => setConfirmKick(null)}
-                    />
-                )}
             </div>
         );
-    }
+    };
 
-    // 4+ participants: main host + sidebar of small co-host cards
     return (
-        <div className="flex h-full w-full px-4 pt-20 pb-24 overflow-hidden">
-            <div className="flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300">
-                {/* Host — stable 9:16 box */}
-                <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', maxWidth: '45%' }}>
-                    {renderHostVideo(host)}
-                </div>
-                {/* Co-host sidebar: small cards, scrollable if many */}
-                <div className="h-full flex flex-col gap-4 overflow-y-auto py-2">
-                    {coHosts.map((p) => renderCoHostCard(p))}
-                </div>
-            </div>
+        <div className="relative h-full w-full overflow-hidden">
+            {renderContent()}
+            {streamEnded && (
+                <StreamFinishedOverlay
+                    streamerName={getFullName(host) || 'Host'}
+                    streamerImage={host.image}
+                    participantCount={participants.length}
+                />
+            )}
             {confirmKick && (
                 <RemoveCoHostModal
                     onConfirm={() => { handleKickCoHost(confirmKick!.userId, confirmKick!.userName); setConfirmKick(null); }}

@@ -73,7 +73,7 @@ export const useGoLiveStore = create<GoLiveState>((set, get) => ({
     isRejoining: false,
 
     openModal: async () => {
-        set({ isRejoinBannerDismissed: true, isOpen: true, isLoading: true, isRejoining: false });
+        set({ isRejoinBannerDismissed: true, isOpen: true, isLoading: true, isRejoining: false, isEndingStream: false });
 
         try {
             const { liveService } = await import('../services/live.service');
@@ -156,7 +156,6 @@ export const useGoLiveStore = create<GoLiveState>((set, get) => ({
             isMicEnabled: true,
             isLoading: false,
             streamData: null,
-            isEndingStream: false,
             showConflict: false,
             conflictStream: null,
             isRejoinBannerDismissed: false,
