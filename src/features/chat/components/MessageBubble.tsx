@@ -8,7 +8,7 @@ import { TickIcon } from './ChatSidebar';
 import { capitalizeName, formatMsgTime } from '../utils/ChatUtils';
 import type { Message } from '../types/chat.types';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { getRecentEmojis, saveRecentEmoji, type QuickReaction, getSafeEmojiId } from '../utils/EmojiUtils';
+import { getRecentEmojis, saveRecentEmoji, type QuickReaction, getSafeEmojiId, parseEmojiId } from '../utils/EmojiUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Drawer, DrawerContent, DrawerTitle, DrawerHeader } from '@/components/ui/drawer';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from '@/components/ui/dialog';
@@ -230,7 +230,7 @@ export const MessageBubble = ({
         const totalCount = Object.values(message.reactions.counts).reduce((a, b) => a + b, 0);
         const uniqueEmojis = keys.map(type => {
             const reactionData = message.reactions!.latest.find(r => r.type === type);
-            return reactionData?.emoji || quickReactions.find(r => r.id === type)?.emoji || type;
+            return reactionData?.emoji || quickReactions.find(r => r.id === type)?.emoji || parseEmojiId(type);
         });
 
         const filteredEmojis = Array.from(new Set(uniqueEmojis.filter(Boolean)));
@@ -260,8 +260,12 @@ export const MessageBubble = ({
 
         const content = (
             <div className={cn("flex flex-col gap-2", isMobile ? "p-4 bg-[#1a1c23]" : "")}>
-                {message.reactions?.latest.map((r, i) => {
-                    if (!r.user) return null;
+                {(!message.reactions?.latest || message.reactions.latest.length === 0) ? (
+                    <div className="py-6 text-center">
+                        <p className="text-gray-500 text-[13px]">No details available</p>
+                    </div>
+                ) : message.reactions.latest.map((r, i) => {
+                    const user = r.user || { name: 'Unknown User', avatar: '' };
                     const isMyReaction = String(r.user_id) === myId;
                     const isRemoving = removingReaction === r.type && isMyReaction;
                     const handleRemove = async (e: React.MouseEvent) => {
@@ -277,7 +281,7 @@ export const MessageBubble = ({
                         }
                     };
 
-                    const emoji = r.emoji || quickReactions.find(qr => qr.id === r.type)?.emoji || r.type;
+                    const emoji = r.emoji || quickReactions.find(qr => qr.id === r.type)?.emoji || parseEmojiId(r.type);
 
                     return (
                         <div
@@ -290,10 +294,10 @@ export const MessageBubble = ({
                             )}
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                <Avatar src={r.user.avatar} alt={r.user.name} className={cn("shrink-0 border border-white/5", isMobile ? "w-10 h-10" : "w-8 h-8")} />
+                                <Avatar src={user.avatar} alt={user.name} className={cn("shrink-0 border border-white/5", isMobile ? "w-10 h-10" : "w-8 h-8")} />
                                 <div className="flex flex-col min-w-0">
                                     <span className={cn("font-semibold text-white truncate", isMobile ? "text-[15px]" : "text-[13px]")}>
-                                        {isMyReaction ? 'You' : capitalizeName(r.user.name)}
+                                        {isMyReaction ? 'You' : capitalizeName(user.name)}
                                     </span>
                                     {isMyReaction && (
                                         <span className={cn("text-gray-500 group-hover/item:text-[#FF7700] transition-colors", isMobile ? "text-[12px]" : "text-[10px]")}>
@@ -361,10 +365,6 @@ export const MessageBubble = ({
                     </button>
                 ))}
                 <button
-                    onClick={(e) => { 
-                        e.stopPropagation(); 
-                        setFullPickerOpen(true); 
-                    }}
                     onClick={(e) => { 
                         e.stopPropagation(); 
                         setFullPickerOpen(true); 

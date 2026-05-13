@@ -1,6 +1,6 @@
 import React from 'react';
 import { Camera, CameraOff, Mic, MicOff } from 'lucide-react';
-import { useCallStateHooks, OwnCapability } from '@stream-io/video-react-sdk';
+import { useCall, useCallStateHooks, OwnCapability } from '@stream-io/video-react-sdk';
 import { cn } from '@/lib/utils';
 
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -15,6 +15,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
     const { useCameraState, useMicrophoneState, useHasPermissions } = useCallStateHooks();
     const { camera, status: cameraStatus } = useCameraState();
     const { microphone, status: micStatus } = useMicrophoneState();
+    const call = useCall();
 
     const isCameraMuted = cameraStatus !== 'enabled';
     const isMicMuted = micStatus !== 'enabled';
@@ -22,6 +23,46 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
     // Check if local participant has been granted send permissions
     const canSendAudio = useHasPermissions(OwnCapability.SEND_AUDIO);
     const canSendVideo = useHasPermissions(OwnCapability.SEND_VIDEO);
+
+    // REACTIVE CLEANUP: Ensure tracks are stopped whenever the SDK reports them as disabled
+    React.useEffect(() => {
+        if (micStatus === 'disabled') {
+            (window as any).activeMediaTracks?.forEach((t: MediaStreamTrack) => {
+                if (t.kind === 'audio') try { t.stop(); } catch (e) { }
+            });
+        }
+    }, [micStatus]);
+
+    React.useEffect(() => {
+        if (cameraStatus === 'disabled') {
+            (window as any).activeMediaTracks?.forEach((t: MediaStreamTrack) => {
+                if (t.kind === 'video') try { t.stop(); } catch (e) { }
+            });
+        }
+    }, [cameraStatus]);
+
+    // MEDIA GUARDIAN: Actively poll and kill "ghost" tracks during the first 10s of joining.
+    // This prevents the SDK from re-acquiring media in the background during its initialization.
+    React.useEffect(() => {
+        const guardian = setInterval(() => {
+            if ((window as any).activeMediaTracks) {
+                (window as any).activeMediaTracks.forEach((t: MediaStreamTrack) => {
+                    if (t.kind === 'audio' && micStatus === 'disabled') {
+                        try { t.stop(); } catch (e) { }
+                    }
+                    if (t.kind === 'video' && cameraStatus === 'disabled') {
+                        try { t.stop(); } catch (e) { }
+                    }
+                });
+            }
+        }, 1000);
+
+        const timeout = setTimeout(() => clearInterval(guardian), 10000);
+        return () => {
+            clearInterval(guardian);
+            clearTimeout(timeout);
+        };
+    }, [micStatus, cameraStatus]);
 
 
     const isMobile = useIsMobile();
@@ -33,18 +74,34 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
     const toggleCamera = async () => {
         try {
             if (!isCameraMuted) {
+                // Block new acquisitions during disable sequence
+                (window as any).pulseBlockMedia = true;
+
+                // Stop all local video tracks to force browser indicator off
+                const local = call?.state.localParticipant;
+                if (local && local.videoStream) {
+                    local.videoStream.getTracks().forEach(t => t.stop());
+                }
+
                 await camera.disable({ forceStop: true } as any);
+
+                // Restore after a window
+                setTimeout(() => { (window as any).pulseBlockMedia = false; }, 2000);
             } else {
                 await camera.enable();
             }
         } catch (error) {
             console.error('Failed to toggle camera:', error);
+            (window as any).pulseBlockMedia = false;
         }
     };
 
     const toggleMicrophone = async () => {
         try {
             if (!isMicMuted) {
+                // Block new acquisitions during disable sequence
+                (window as any).pulseBlockMedia = true;
+
                 // Important: disable background speech detection which keeps mic active
                 await microphone.disableSpeakingWhileMutedNotification().catch(() => { });
                 
@@ -55,12 +112,22 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                     if (typeof mic.soundDetectorCleanup === 'function') mic.soundDetectorCleanup();
                 } catch (e) { console.warn("Failed to clean up audio detectors", e); }
 
+                // Stop all local audio tracks to force browser indicator off
+                const local = call?.state.localParticipant;
+                if (local && local.audioStream) {
+                    local.audioStream.getTracks().forEach(t => t.stop());
+                }
+
                 await microphone.disable({ forceStop: true } as any);
+
+                // Restore after a window
+                setTimeout(() => { (window as any).pulseBlockMedia = false; }, 2000);
             } else {
                 await microphone.enable();
             }
         } catch (error) {
             console.error('Failed to toggle microphone:', error);
+            (window as any).pulseBlockMedia = false;
         }
     };
 

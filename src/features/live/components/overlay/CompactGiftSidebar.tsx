@@ -31,7 +31,6 @@ export const CompactGiftSidebar: React.FC = () => {
 
     // Join stream logic
     const { requestStatus, setRequestStatus } = useJoinRequestStore();
-    const { openModal, setMode: setSignUpMode } = useSignUpStore();
 
     const [gifts, setGifts] = useState<GiftEntity[]>([]);
 
@@ -114,8 +113,8 @@ export const CompactGiftSidebar: React.FC = () => {
 
     const handleJoinRequest = async () => {
         if (!user) {
-            setSignUpMode('login');
-            openModal();
+            setMode('login');
+            openAuthModal();
             return;
         }
         if (requestStatus !== 'idle' || !call) return;
@@ -136,7 +135,7 @@ export const CompactGiftSidebar: React.FC = () => {
 
     // Listen for join-response & kick events on mobile bar too
     useEffect(() => {
-        if (!call || !user) return;
+        if (!call || !user || !isMobile) return;
         const unsubscribe = call.on('custom', (event: any) => {
             const customData = event?.custom;
             if (customData?.type === 'join-response' && customData?.userId === String(user.id)) {
@@ -152,6 +151,11 @@ export const CompactGiftSidebar: React.FC = () => {
                 hasBeenRemovedRef.current = true;
                 (async () => {
                     try {
+                        const local = call.state.localParticipant;
+                        if (local) {
+                            local.videoStream?.getTracks().forEach(t => t.stop());
+                            local.audioStream?.getTracks().forEach(t => t.stop());
+                        }
                         await call.camera.disable();
                         await call.microphone.disable();
                     } catch { }
@@ -163,6 +167,11 @@ export const CompactGiftSidebar: React.FC = () => {
                 toast.error('You have been removed from the stream');
                 (async () => {
                     try {
+                        const local = call.state.localParticipant;
+                        if (local) {
+                            local.videoStream?.getTracks().forEach(t => t.stop());
+                            local.audioStream?.getTracks().forEach(t => t.stop());
+                        }
                         await call.camera.disable();
                         await call.microphone.disable();
                     } catch { }

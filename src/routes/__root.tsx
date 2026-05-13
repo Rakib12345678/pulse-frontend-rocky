@@ -40,6 +40,21 @@ if (typeof window !== 'undefined' && navigator.mediaDevices) {
     return stream;
   };
 
+  const originalClone = MediaStreamTrack.prototype.clone;
+  MediaStreamTrack.prototype.clone = function() {
+    const clonedTrack = originalClone.apply(this, arguments as any);
+    (window as any).activeMediaTracks.add(clonedTrack);
+    clonedTrack.addEventListener('ended', () => (window as any).activeMediaTracks.delete(clonedTrack));
+    return clonedTrack;
+  };
+
+  const originalAddTrack = MediaStream.prototype.addTrack;
+  MediaStream.prototype.addTrack = function(track: MediaStreamTrack) {
+    (window as any).activeMediaTracks.add(track);
+    track.addEventListener('ended', () => (window as any).activeMediaTracks.delete(track));
+    return originalAddTrack.apply(this, arguments as any);
+  };
+
   (window as any).killAllMedia = () => {
     if ((window as any).activeMediaTracks) {
       (window as any).activeMediaTracks.forEach((t: MediaStreamTrack) => {

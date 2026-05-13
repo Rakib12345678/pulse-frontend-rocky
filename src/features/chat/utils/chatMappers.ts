@@ -44,7 +44,8 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
 
     const attachmentsToUse = uniqueAttachments.length > 0 ? uniqueAttachments : undefined;
     const reactionCounts = msg.reaction_counts || {};
-    const latestReactions = (msg.latest_reactions || []).map((r: any) => ({
+    const rawLatest = msg.latest_reactions || msg.reactions || [];
+    const latestReactions = rawLatest.map((r: any) => ({
         ...r,
         type: r.type,
         user_id: r.user?.id || r.user_id,

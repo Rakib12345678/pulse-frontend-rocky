@@ -18,6 +18,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { liveService } from '@/features/live/services/live.service';
 import { userService } from '@/features/live/services/user.service';
 import { FloatingHearts } from '@/features/live/components/overlay/FloatingHearts';
+import { teardownCallMedia } from '@/features/live/utils/mediaCleanup';
 
 const apiKey = import.meta.env.VITE_STREAM_API_KEY || 'placeholder_key';
 
@@ -207,7 +208,6 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     const navigate = useNavigate();
     const isTerminatingRef = useRef(false);
     const [initError, setInitError] = useState<string | null>(null);
-    const initTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         const handleBeforeUnload = () => {
@@ -526,26 +526,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                 // cannot re-acquire the mic for internal detection loops.
                 (window as any).pulseBlockMedia = true;
 
-                try {
-                    const mic = _call.microphone as any;
-                    if (typeof mic.noAudioDetectorCleanup === 'function') mic.noAudioDetectorCleanup();
-                    if (typeof mic.soundDetectorCleanup === 'function') mic.soundDetectorCleanup();
-                } catch (e) { console.warn("Failed to clean up audio detectors", e); }
-
-                // Step 1: Disable speaking-while-muted detection FIRST.
-                _call.microphone.disableSpeakingWhileMutedNotification().catch(() => { });
-
-                // Step 2: Stop all existing hardware tracks
-                try { (_call.camera.state as any).mediaStream?.getTracks().forEach((t: MediaStreamTrack) => t.stop()); } catch { }
-                try { (_call.microphone.state as any).mediaStream?.getTracks().forEach((t: MediaStreamTrack) => t.stop()); } catch { }
-                const local = _call.state.localParticipant;
-                if (local) {
-                    local.videoStream?.getTracks().forEach(track => track.stop());
-                    local.audioStream?.getTracks().forEach(track => track.stop());
-                }
-
-                _call.camera.disable().catch(() => {});
-                _call.microphone.disable().catch(() => {});
+                teardownCallMedia(_call).catch(e => console.warn("Layout cleanup: teardown failed", e));
 
                 if (!(_isHost && isTerminatingRef.current)) {
                     _call.leave().catch(() => { });

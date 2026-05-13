@@ -1,3 +1,4 @@
+import data from '@emoji-mart/data';
 
 export interface QuickReaction {
     id: string;
@@ -14,6 +15,44 @@ export const getSafeEmojiId = (emoji: string, preferredId?: string): string => {
         .filter(Boolean)
         .join('_');
     return `emoji_${hex}`;
+};
+
+/**
+ * Decodes a safe emoji ID back to its emoji character(s).
+ * Handles:
+ * 1. Hex-based IDs (emoji_1f44d)
+ * 2. Descriptive IDs from emoji-mart (pleading_face)
+ * 3. Custom mapped IDs (thumbsup)
+ */
+export const parseEmojiId = (id: string): string => {
+    if (!id) return id;
+
+    // 1. Handle hex-based IDs
+    if (id.startsWith('emoji_')) {
+        try {
+            const hexParts = id.replace('emoji_', '').split('_');
+            return hexParts
+                .map(hex => {
+                    const codePoint = parseInt(hex, 16);
+                    return isNaN(codePoint) ? '' : String.fromCodePoint(codePoint);
+                })
+                .join('');
+        } catch (e) {
+            return id;
+        }
+    }
+
+    // 2. Handle descriptive IDs from emoji-mart (e.g. "pleading_face")
+    const emojiData = (data as any).emojis?.[id];
+    if (emojiData && emojiData.skins && emojiData.skins[0]) {
+        return emojiData.skins[0].native;
+    }
+
+    // 3. Fallback to manual check against DEFAULT_REACTIONS
+    const manual = DEFAULT_REACTIONS.find(r => r.id === id);
+    if (manual) return manual.emoji;
+
+    return id;
 };
 
 const DEFAULT_REACTIONS: QuickReaction[] = [

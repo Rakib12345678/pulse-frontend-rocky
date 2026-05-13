@@ -590,7 +590,7 @@ const ViewerBottomBar: React.FC = () => {
 
     // Listen for join-response from host
     useEffect(() => {
-        if (!call || !user) return;
+        if (!call || !user || isMobile) return;
         const unsubscribe = call.on('custom', (event: any) => {
             const customData = event?.custom;
             if (customData?.type === 'join-response' && customData?.userId === String(user.id)) {
@@ -613,6 +613,11 @@ const ViewerBottomBar: React.FC = () => {
                 hasBeenRemovedRef.current = true;
                 (async () => {
                     try {
+                        const local = call.state.localParticipant;
+                        if (local) {
+                            local.videoStream?.getTracks().forEach(t => t.stop());
+                            local.audioStream?.getTracks().forEach(t => t.stop());
+                        }
                         await call.camera.disable();
                         await call.microphone.disable();
                     } catch (err) {
@@ -628,6 +633,11 @@ const ViewerBottomBar: React.FC = () => {
                 console.log('[ViewerBottomBar] Kicked by host');
                 (async () => {
                     try {
+                        const local = call.state.localParticipant;
+                        if (local) {
+                            local.videoStream?.getTracks().forEach(t => t.stop());
+                            local.audioStream?.getTracks().forEach(t => t.stop());
+                        }
                         await call.camera.disable();
                         await call.microphone.disable();
                     } catch (err) {

@@ -39,6 +39,7 @@ export const useExplore = () => {
                 participantCount: u.participantCount || u.participants_count || 0,
                 cohostCount: u.cohostCount || 0,
                 cohosts: u.cohosts || [],
+                category: u.category || u.user?.category || u.categoryName || u.stream_category || '',
                 isDefaultImage: u.isDefaultImage || false
             });
 
@@ -87,6 +88,7 @@ export const useExplore = () => {
                         participantCount: u.participantCount || 0,
                         cohostCount: u.cohostCount || 0,
                         cohosts: u.cohosts || [],
+                        category: u.category || u.user?.category || u.categoryName || u.stream_category || '',
                         isDefaultImage: u.isDefaultImage || false
                     };
                 }),

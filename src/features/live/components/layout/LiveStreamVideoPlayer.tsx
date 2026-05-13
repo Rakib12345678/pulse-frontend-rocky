@@ -14,6 +14,7 @@ import kick from '@/assets/kick.svg';
 import { cn } from '@/lib/utils';
 import { useParticipantPresence } from '@/features/live/hooks/useParticipantPresence';
 import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
+import { teardownCallMedia } from '@/features/live/utils/mediaCleanup';
 
 export const LiveStreamVideoPlayer: React.FC = () => {
     const { useParticipants } = useCallStateHooks();
@@ -94,26 +95,57 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     }, [participants]);
     // ────────────────────────────────────────────────────────────────────────────
 
+    // Sync known co-hosts from current participants roles (to handle refresh)
+    useEffect(() => {
+        if (participants.length === 0) return;
+        const currentCoHosts = participants.filter((p: any) => 
+            p.roles?.includes('co_host') || 
+            p.roles?.includes('admin') || 
+            p.roles?.includes('host')
+        ).map((p: any) => p.userId);
+        
+        if (currentCoHosts.length > 0) {
+            setKnownCoHostIds(prev => {
+                let changed = false;
+                const next = new Set(prev);
+                currentCoHosts.forEach(id => {
+                    if (!next.has(id)) {
+                        next.add(id);
+                        changed = true;
+                    }
+                });
+                return changed ? next : prev;
+            });
+        }
+    }, [participants]);
+
     const creatorId = call?.state.createdBy?.id;
 
     // Filter participants: show host always, others only if co-hosts and actively connected
     const activeParticipants = participants.filter((p: any) => {
         if (!p.sessionId) return false;
-        if (p.isLocalParticipant && !isViewer) return true;
-        if (creatorId && p.userId === creatorId) return true;
 
-        // If I am a local viewer and I've been removed, I shouldn't be on stage
-        if (p.isLocalParticipant && isViewer && isRemovedLocally) return false;
-
-        const isCoHostRole = p.roles?.includes('co_host') || p.roles?.includes('admin') || p.roles?.includes('host') || knownCoHostIds.has(p.userId);
+        // 1. Identify if this is the Host
+        const isHostOfCall = (creatorId && p.userId === creatorId) || p.roles?.includes('host') || p.roles?.includes('admin');
+        
+        // 2. Identify if this is a Co-host (via role, cap, or explicit tracking)
+        const isCoHostRole = p.roles?.includes('co_host') || knownCoHostIds.has(p.userId);
         const hasCapabilities = p.capabilities?.includes('send-audio') || p.capabilities?.includes('send-video');
+        
+        // 3. Local participant handling
+        if (p.isLocalParticipant && !isViewer) return true; // I am the host
+        if (p.isLocalParticipant && isViewer && isRemovedLocally) return false; // I am a viewer who was kicked
+
+        // 4. Authorized Stage Presence: if they are the host or an authorized co-host, 
+        // they MUST stay on stage even if their camera/mic are off.
+        if (isHostOfCall || isCoHostRole || hasCapabilities) return true;
+
+        // 5. Active Publishing Fallback: if they are currently publishing, they should be shown
+        // (handles race conditions where roles/capabilities haven't synced yet)
         const isPublishing = hasVideo(p) || hasAudio(p) || (p.publishedTracks && p.publishedTracks.length > 0);
+        if (isPublishing) return true;
 
-        const isActiveCoHost = isCoHostRole || hasCapabilities || isPublishing;
-
-        if (p.connectionQuality === 'offline' && !isActiveCoHost) return false;
-
-        return isActiveCoHost;
+        return false;
     });
 
     // Sort: host (creator or local) first, then co-hosts
@@ -132,12 +164,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     useEffect(() => {
         if (!call) return;
         const unsubscribe = call.on('call.ended', async () => {
-            try {
-                await call.camera.disable();
-                await call.microphone.disable();
-            } catch (e) {
-                // Ignore — call may already be torn down
-            }
+            await teardownCallMedia(call);
 
             if (!isHost) {
                 useGoLiveStore.getState().setEndingStream(true);
@@ -515,11 +542,11 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     "flex-1 h-full flex items-center justify-center gap-3 lg:gap-6 transition-all duration-300"
                 )}>
                     {/* Host */}
-                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '40%' }}>
+                    <div className="shrink-0 overflow-hidden" style={{ height: 'min(100%, 85vh)', width: 'auto', aspectRatio: '9/16', minWidth: '200px', maxWidth: '45%' }}>
                         {renderHostVideo(host)}
                     </div>
                     {/* Co-hosts stacked, share remaining height */}
-                    <div className="shrink-0 flex flex-col gap-3" style={{ height: 'min(100%, 85vh)', width: 'auto', minWidth: '160px', maxWidth: '30%' }}>
+                    <div className="shrink-0 flex flex-col gap-3" style={{ height: 'min(100%, 85vh)', width: 'clamp(200px, 18vw, 350px)', minWidth: '200px', maxWidth: '35%' }}>
                         {coHosts.map((p) => (
                             <div key={p.sessionId} className="flex-1 min-h-0">
                                 {renderCoHostCard(p, "w-full h-full")}

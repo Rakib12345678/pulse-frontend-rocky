@@ -188,8 +188,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
             </div>
 
             {category && (
-              <div className="shrink-0 max-w-[40%]">
-                <div className="truncate rounded-2xl bg-white/10 px-2 py-1 text-[9px] font-bold text-white/90 backdrop-blur-xl border border-white/10 shadow-lg capitalize">
+              <div className="shrink-0 max-w-[45%]">
+                <div className="truncate rounded-full bg-white/30 px-3 py-1.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 shadow-lg capitalize leading-none">
                   {category}
                 </div>
               </div>
@@ -309,8 +309,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           </div>
 
           {category && (
-            <div className="shrink-0 max-w-[40%]">
-              <div className="truncate rounded-2xl bg-zinc-600/60 px-2.5 py-1.5 text-[10px] font-semibold text-white backdrop-blur-md text-center">
+            <div className="shrink-0 max-w-[45%]">
+              <div className="truncate rounded-full bg-white/30 px-3 py-1.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 shadow-lg capitalize leading-none">
                 {category}
               </div>
             </div>
