@@ -14,6 +14,7 @@ import kick from '@/assets/kick.svg';
 import { cn } from '@/lib/utils';
 import { useParticipantPresence } from '@/features/live/hooks/useParticipantPresence';
 import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
+import { useCohostStore } from '@/features/live/stores/cohostStore';
 import { teardownCallMedia } from '@/features/live/utils/mediaCleanup';
 import { StreamFinishedOverlay } from '@/features/live/components/overlay/StreamFinishedOverlay';
 
@@ -40,7 +41,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     useParticipantPresence(call, isViewer);
 
     const { setHidden, setVisible, clear } = useViewerVisibilityStore();
-    const [knownCoHostIds, setKnownCoHostIds] = useState<Set<string>>(new Set());
+    const { cohostIds } = useCohostStore();
     const [isRemovedLocally, setIsRemovedLocally] = useState(false);
 
     useEffect(() => {
@@ -62,14 +63,8 @@ export const LiveStreamVideoPlayer: React.FC = () => {
             }
 
             if (customData?.type === 'join-response' && customData?.accepted) {
-                setKnownCoHostIds(prev => new Set(prev).add(customData.userId));
                 if (customData.userId === call.currentUserId) setIsRemovedLocally(false);
             } else if (customData?.type === 'kicked' || customData?.type === 'cohost-removed') {
-                setKnownCoHostIds(prev => {
-                    const next = new Set(prev);
-                    next.delete(customData.userId);
-                    return next;
-                });
                 if (customData.userId === call.currentUserId) setIsRemovedLocally(true);
             }
         });
@@ -96,29 +91,6 @@ export const LiveStreamVideoPlayer: React.FC = () => {
     }, [participants]);
     // ────────────────────────────────────────────────────────────────────────────
 
-    // Sync known co-hosts from current participants roles (to handle refresh)
-    useEffect(() => {
-        if (participants.length === 0) return;
-        const currentCoHosts = participants.filter((p: any) => 
-            p.roles?.includes('co_host') || 
-            p.roles?.includes('admin') || 
-            p.roles?.includes('host')
-        ).map((p: any) => p.userId);
-        
-        if (currentCoHosts.length > 0) {
-            setKnownCoHostIds(prev => {
-                let changed = false;
-                const next = new Set(prev);
-                currentCoHosts.forEach(id => {
-                    if (!next.has(id)) {
-                        next.add(id);
-                        changed = true;
-                    }
-                });
-                return changed ? next : prev;
-            });
-        }
-    }, [participants]);
 
     const creatorId = call?.state.createdBy?.id;
 
@@ -128,11 +100,11 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
         // 1. Identify if this is the Host
         const isHostOfCall = (creatorId && p.userId === creatorId) || p.roles?.includes('host') || p.roles?.includes('admin');
-        
+
         // 2. Identify if this is a Co-host (via role, cap, or explicit tracking)
-        const isCoHostRole = p.roles?.includes('co_host') || knownCoHostIds.has(p.userId);
+        const isCoHostRole = p.roles?.includes('co_host') || cohostIds.has(p.userId);
         const hasCapabilities = p.capabilities?.includes('send-audio') || p.capabilities?.includes('send-video');
-        
+
         // 3. Local participant handling
         if (p.isLocalParticipant && !isViewer) return true; // I am the host
         if (p.isLocalParticipant && isViewer && isRemovedLocally) return false; // I am a viewer who was kicked
@@ -171,6 +143,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                 useGoLiveStore.getState().setEndingStream(true);
                 setStreamEnded(true);
                 toast.info('Stream has ended');
+                navigate({ to: '/for-you' });
             }
         });
 
@@ -182,11 +155,13 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     if (callState.call.ended_at && !isHost) {
                         setStreamEnded(true);
                         toast.info('Stream has ended');
+                        navigate({ to: '/for-you' });
                     }
                 } catch (e) {
                     if (!isHost) {
                         setStreamEnded(true);
                         toast.info('Stream has ended');
+                        navigate({ to: '/for-you' });
                     }
                 }
             }, 5000);
@@ -237,7 +212,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
             if (channel) {
                 try {
-                    await channel.sendMessage({ text: `@${userName} was removed from stage` });
+                    await channel.sendMessage({ text: `@${userName} was removed as cohost` });
                 } catch (e) {
                     console.error('Failed to send kick chat message:', e);
                 }
@@ -605,7 +580,7 @@ const RemoveCoHostModal: React.FC<{
         <div className="bg-[#1c1c1e] rounded-3xl p-8 w-full max-w-sm flex flex-col items-center gap-5 shadow-2xl">
             <img src={kick} alt="kick" className="w-12 h-12" />
             <p className="text-white text-xl font-semibold text-center leading-snug">
-                Do you want to remove the user from the stage?
+                Do you want to remove the user as a cohost?
             </p>
             <div className="flex gap-3 w-full mt-1">
                 <button

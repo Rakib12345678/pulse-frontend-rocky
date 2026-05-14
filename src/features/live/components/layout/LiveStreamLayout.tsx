@@ -26,6 +26,7 @@ import { UserProfileModal } from '@/features/live/components/modals/UserProfileM
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useViewerRejoinStore } from '@/features/live/stores/viewerRejoinStore';
+import { useCohostStore } from '@/features/live/stores/cohostStore';
 
 // Context for sharing viewer state with child components
 interface LiveStreamContextValue {
@@ -171,6 +172,35 @@ const LiveStreamInner: React.FC<{
 }> = ({ children, isViewer, isGuest, call, isChatVisible, setChatVisible, isGiftingOpen, setIsGiftingOpen, streamEnded, setStreamEnded }) => {
     const { showFullscreen } = useUserProfileStore();
     const showPiP = showFullscreen;
+    const { addCohost, removeCohost, setCohosts } = useCohostStore();
+    const { useParticipants } = useCallStateHooks();
+    const participants = useParticipants();
+
+    // Sync co-hosts from participants roles and listen for custom events
+    useEffect(() => {
+        if (!call) return;
+
+        // Initial sync from roles
+        const currentCoHosts = participants
+            .filter((p: any) => p.roles?.includes('co_host') || p.roles?.includes('admin'))
+            .map((p: any) => p.userId);
+        if (currentCoHosts.length > 0) {
+            setCohosts(currentCoHosts);
+        }
+
+        const unsubscribe = call.on('custom', (event: any) => {
+            const customData = event?.custom;
+            if (customData?.type === 'join-response' && customData?.accepted) {
+                addCohost(customData.userId);
+            } else if (customData?.type === 'kicked' || customData?.type === 'cohost-removed') {
+                removeCohost(customData.userId);
+            }
+        });
+
+        return () => {
+            unsubscribe();
+        };
+    }, [call, addCohost, removeCohost, setCohosts]);
 
     // Lock body scroll while live stream is active (prevents mobile scroll that hides navbar)
     useEffect(() => {
@@ -301,16 +331,60 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             let callType: string;
             let callIdToUse: string;
             let token: string | undefined;
+            let alreadyHasActiveStream = false;
 
             if (isHostMode && streamData) {
-                // Host mode - use existing stream data
-                callType = streamData.callType;
-                callIdToUse = streamData.callId;
-                token = streamData.token;
-                _isHost = true;
-                _callId = streamData.callId;
-                setIsViewer(false);
+                // Host mode - verify with backend first
+                try {
+                    const status = await userService.getUserStream();
+                    if (!mounted) return;
 
+                    if (status.isLive) {
+                        // If backend says we are live, we MUST use the backend's callId and rejoin
+                        alreadyHasActiveStream = true;
+                        callType = status.callType || 'livestream';
+                        callIdToUse = status.callId!;
+                        
+                        // If the callId from backend is different from what we have in store, 
+                        // we need a fresh token for this specific callId
+                        if (status.callId !== streamData.callId) {
+                            console.log("[LiveStreamLayout] Backend callId differs. Fetching fresh token...");
+                            const joinRes = await liveService.joinStream(status.callId!);
+                            token = joinRes.token;
+                            // Update store so subsequent logic uses correct ID
+                            useGoLiveStore.getState().setStreamData({
+                                callId: joinRes.callId,
+                                callType: joinRes.callType,
+                                token: joinRes.token
+                            });
+                        } else {
+                            token = streamData.token;
+                        }
+                        
+                        console.log("[LiveStreamLayout] Rejoining active stream:", callIdToUse);
+                    } else {
+                        // status.isLive is false (404 handled by service)
+                        // The user intended to be a host, but no stream exists.
+                        // We should NOT create a new one here automatically if we were rejoining.
+                        // However, if this is a fresh "Go Live" intent, we'd have already created it.
+                        // If we are in the Layout, it means we think we have streamData.
+                        
+                        console.log("[LiveStreamLayout] No active stream found on backend. Cleaning up.");
+                        useGoLiveStore.getState().reset();
+                        toast.error("Live stream not found or has ended.");
+                        navigate({ to: '/for-you' });
+                        return;
+                    }
+                } catch (err) {
+                    console.error("[LiveStreamLayout] Critical error checking stream status:", err);
+                    toast.error("Connection error. Please try again.");
+                    navigate({ to: '/for-you' });
+                    return;
+                }
+
+                _isHost = true;
+                _callId = callIdToUse;
+                setIsViewer(false);
                 localStorage.setItem('pulse_host_is_currently_live', 'true');
             } else if (isViewerMode && viewerCallId) {
                 // Viewer mode - join the stream
@@ -391,7 +465,8 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             }
 
             try {
-                await _call.join({ create: isHostMode });
+                // Only use create: true if we are sure this is a brand new stream
+                await _call.join({ create: isHostMode && !alreadyHasActiveStream });
 
                 if (!mounted) return;
 
@@ -467,7 +542,8 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         // 1. We are in the middle of a Rejoin UI flow
                         // 2. We just returned from a sleep/interruption (leftAt exists)
                         // 3. The server already says the call is started
-                        const alreadyStarted = !!state.startedAt;
+                        // 4. Our backend check already confirmed it's an active stream
+                        const alreadyStarted = !!state.startedAt || alreadyHasActiveStream;
 
                         if (isRejoining || leftAt || alreadyStarted) {
                             console.log("[LiveStreamLayout] Skipping auto goLive()", { isRejoining, hasLeftAt: !!leftAt, alreadyStarted });

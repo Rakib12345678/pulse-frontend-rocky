@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, UserPlus, UserCheck } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -141,8 +141,10 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
                 >
                     {isLoading ? (
                         <Loader2 className={`h-5 w-5 animate-spin ${isFollowing ? 'text-gray-400' : 'text-black'}`} />
+                    ) : isFollowing ? (
+                        <UserCheck className="h-5 w-5 text-gray-400" />
                     ) : (
-                        <Plus className={`h-5 w-5 ${isFollowing ? 'text-gray-400' : 'text-black'}`} />
+                        <UserPlus className="h-5 w-5 text-black" />
                     )}
                 </button>
             )}

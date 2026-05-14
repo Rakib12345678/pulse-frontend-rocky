@@ -467,7 +467,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     visibleMessages.length === 0 && !msgLoading && "flex-1"
                 )}>
 
-                    {hasMore && (
+                    {hasMore && messages.length > 0 && (
                         <div className="flex justify-center">
                             <button
                                 onClick={loadMore}

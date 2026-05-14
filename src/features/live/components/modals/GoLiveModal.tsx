@@ -197,40 +197,44 @@ export const GoLiveModal = () => {
             return;
         }
 
-        if (!streamTitle.trim()) {
-            toast.error("Stream title is required");
-            return;
-        }
-
-        if (!selectedCategory) {
-            toast.error("Category is required");
-            return;
-        }
-
-        const finalTitle = streamTitle.trim();
-        const finalCategory = selectedCategory;
-
         const { setStreamData } = useGoLiveStore.getState();
+        const { userService } = await import('../../services/user.service');
 
         setLoading(true);
         try {
-            if (isRejoining && conflictStream) {
-                const joinRes = await liveService.joinStream(conflictStream.callId);
+            // 1. Check backend for existing stream first
+            const status = await userService.getUserStream();
+
+            if (status.isLive) {
+                // 2. If live, join the existing one (Rejoin logic)
+                const joinRes = await liveService.joinStream(status.callId!);
                 setStreamData({
                     callId: joinRes.callId,
                     callType: joinRes.callType,
                     token: joinRes.token,
                 });
-                toast.success("Rejoining stream...");
+                toast.success("Rejoining your active stream...");
                 navigate({
                     to: '/live/$id',
-                    params: { id: conflictStream.callId },
+                    params: { id: status.callId! },
                 });
                 closeModal();
             } else {
+                // 3. If not live, create a new one
+                if (!streamTitle.trim()) {
+                    toast.error("Stream title is required");
+                    setLoading(false);
+                    return;
+                }
+                if (!selectedCategory) {
+                    toast.error("Category is required");
+                    setLoading(false);
+                    return;
+                }
+
                 const response = await liveService.createLiveStream({
-                    title: finalTitle,
-                    category: finalCategory
+                    title: streamTitle.trim(),
+                    category: selectedCategory
                 });
 
                 toast.success("Going live...");

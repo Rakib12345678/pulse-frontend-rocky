@@ -76,25 +76,19 @@ export const useGoLiveStore = create<GoLiveState>((set, get) => ({
         set({ isRejoinBannerDismissed: true, isOpen: true, isLoading: true, isRejoining: false, isEndingStream: false });
 
         try {
-            const { liveService } = await import('../services/live.service');
-            const { useAuthStore } = await import('@/features/auth/stores/authStore');
+            const { userService } = await import('../services/user.service');
 
             // FIX: If the user closed the modal while the API call was in-flight,
             // bail out instead of writing conflict state into a closed modal.
             if (!get().isOpen) return;
 
-            const feed = await liveService.getStreamFeed(undefined, 50);
+            const status = await userService.getUserStream();
 
             // FIX: Second guard — isOpen may have changed during the await above.
             if (!get().isOpen) return;
 
-            const currentUserId = String(useAuthStore.getState().user?.id);
-            const myStream = feed.data.find(
-                (s) => s.createdByUserId === currentUserId && s.isLive
-            );
-
-            if (myStream) {
-                set({ conflictStream: myStream, showConflict: true, isLoading: false });
+            if (status.isLive) {
+                set({ conflictStream: status, showConflict: true, isLoading: false });
             } else {
                 set({ isLoading: false });
             }

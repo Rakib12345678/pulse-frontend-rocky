@@ -11,6 +11,7 @@ import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { userService } from '@/features/live/services/user.service';
 import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
+import { useCohostStore } from '@/features/live/stores/cohostStore';
 
 // Helper to extract fullName from participant custom fields
 const getFullName = (p: any): string =>
@@ -27,11 +28,13 @@ export const ParticipantsDialog: React.FC = () => {
 
     // Filter out users who have minimized the app
     const { hiddenUsers } = useViewerVisibilityStore();
+    const { cohostIds } = useCohostStore();
     const activeParticipants = connectedParticipants.filter((p: any) => {
         // Always show the local participant (self)
         if (p.isLocalParticipant) return true;
-        // Co-hosts are always shown (they have publishing capabilities)
+        // Co-hosts are always shown (they have publishing capabilities or are in cohostStore)
         const isCoHost = p.roles?.includes('co_host') ||
+            cohostIds.has(p.userId) ||
             p.capabilities?.includes('send-audio') ||
             p.capabilities?.includes('send-video');
         if (isCoHost) return true;
@@ -109,6 +112,7 @@ export const ParticipantsDialog: React.FC = () => {
                         const isCreator = participant.roles?.includes('host') || participant.roles?.includes('admin') || participant.userId === createdBy?.id;
                         const isCoHost = !isCreator && (
                             participant.roles?.includes('co_host') ||
+                            cohostIds.has(participant.userId) ||
                             participant.capabilities?.includes('send-audio') ||
                             participant.capabilities?.includes('send-video')
                         );

@@ -39,20 +39,8 @@ export const ForYouPage: React.FC = () => {
             <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-10">
                 <div className="hidden md:flex items-center justify-between mb-8">
                     <h1 className="text-3xl font-bold text-white">Creators</h1>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center">
                         <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
-                        {activeTab === 'live' ? (
-                            <Button
-                                onClick={fetchStreams}
-                                variant="ghost"
-                                size="icon"
-                                className="text-white hover:bg-white/10"
-                                disabled={isLoading}
-                            />
-                        ) : (
-                            // placeholder in following tab clicked case
-                            <div className="w-10" />
-                        )}
                     </div>
                 </div>
 

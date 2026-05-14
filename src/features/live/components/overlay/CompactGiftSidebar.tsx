@@ -161,7 +161,7 @@ export const CompactGiftSidebar: React.FC = () => {
                     } catch { }
                 })();
                 setRequestStatus('idle');
-                toast.info('You have been removed from the stage');
+                toast.info('You have been removed as a cohost');
             }
             if (customData?.type === 'kicked' && customData?.userId === String(user.id)) {
                 toast.error('You have been removed from the stream');

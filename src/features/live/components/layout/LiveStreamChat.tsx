@@ -625,7 +625,7 @@ const ViewerBottomBar: React.FC = () => {
                     }
                 })();
                 setRequestStatus('idle');
-                toast.info('You have been removed from the stage');
+                toast.info('You have been removed as a cohost');
             }
 
             // Handle being kicked by the host
