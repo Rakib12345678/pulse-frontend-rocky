@@ -31,10 +31,10 @@ const StatCard = ({
   label: string;
   gradientClass: string;
 }) => (
-  <div className={`relative flex h-[344px] w-[302px] shrink-0 flex-col justify-center ${CARD_R} p-8 shadow-2xl ${gradientClass} transition-transform hover:scale-[1.02] overflow-hidden group`}>
+  <div className={`relative flex h-[344px] w-[302px] shrink-0 flex-col justify-center ${CARD_R} p-6 shadow-2xl ${gradientClass} transition-transform hover:scale-[1.02] overflow-hidden group`}>
     <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/20 blur-3xl transition-transform group-hover:scale-150" />
-    <h3 className="relative z-10 mb-2 text-[60px] font-bold leading-none text-white tracking-tight">{value}</h3>
-    <p className="relative z-10 text-[24px] font-bold leading-[30px] text-white/90">{label}</p>
+    <h3 className="relative z-10 mb-2 text-[32px] font-bold leading-none text-white tracking-tight">{value}</h3>
+    <p className="relative z-10 text-[18px] font-bold leading-[30px] text-white/90">{label}</p>
   </div>
 );
 
@@ -136,9 +136,9 @@ export const ColumnSet = () => (
         chatMessages={[{ id: '1', username: 'alex', message: 'So calming 🌿' }]}
       />
       <StatCard
-        value="50Mn+"
-        label="Lorem ipsum dolor sit amet."
-        gradientClass="bg-gradient-to-tr from-[#99aaff] to-[#7788ff]"
+        value="Create. Stream. Connect."
+        label="Go live instantly and build real connections with your audience."
+        gradientClass="bg-gradient-to-tr from-[#5351E5] to-[#CFCEFF]"
       />
     </div>
 
@@ -156,9 +156,9 @@ export const ColumnSet = () => (
     {/* COL 4: Stack (Orange Stat + Dance) */}
     <div className="flex flex-col gap-7">
       <StatCard
-        value="100Mn+"
-        label="Built with Care by Talented Creators"
-        gradientClass="bg-gradient-to-tr from-[#ffaf88] to-[#ff9060]"
+        value="Built for the Next Generation of Creators"
+        label="Designed to make live streaming interactive, engaging, and fun."
+        gradientClass="bg-gradient-to-tr from-[#FF7A00] via-[#FF9A6B] to-[#FFD0C4]"
       />
       <LivestreamCard
         height="h-[344px]"

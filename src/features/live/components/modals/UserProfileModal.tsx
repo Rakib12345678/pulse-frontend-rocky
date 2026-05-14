@@ -519,7 +519,7 @@ export const UserProfileModal: React.FC = () => {
                                                 </button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuPortal>
-                                                <DropdownMenuContent align="end" className="w-48 bg-[#2A2A2A] border-transparent text-white rounded-2xl p-0 overflow-hidden shadow-2xl z-99999">
+                                                <DropdownMenuContent align="end" className="w-36 bg-[#2A2A2A] border-transparent text-white rounded-2xl p-0 overflow-hidden shadow-2xl z-99999">
                                                     <DropdownMenuItem onClick={handleShare} className="cursor-pointer hover:bg-white/5 focus:bg-white/5 focus:text-white p-4 text-[17px] font-medium border-b border-white/10 rounded-none justify-center">
                                                         Share Profile
                                                     </DropdownMenuItem>
@@ -691,7 +691,7 @@ export const UserProfileModal: React.FC = () => {
                                                 </button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuPortal>
-                                                <DropdownMenuContent align="end" className="w-48 bg-[#2A2A2A] border-transparent text-white rounded-2xl p-0 overflow-hidden shadow-2xl z-99999">
+                                                <DropdownMenuContent align="end" className="w-36 bg-[#2A2A2A] border-transparent text-white rounded-2xl p-0 overflow-hidden shadow-2xl z-99999">
                                                     <DropdownMenuItem onClick={handleShare} className="cursor-pointer hover:bg-white/5 focus:bg-white/5 focus:text-white p-4 text-[17px] font-medium border-b border-white/10 rounded-none justify-center">
                                                         Share Profile
                                                     </DropdownMenuItem>
