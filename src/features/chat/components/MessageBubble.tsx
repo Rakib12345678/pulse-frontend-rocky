@@ -238,7 +238,7 @@ export const MessageBubble = ({
         return (
             <div
                 className={cn(
-                    "absolute z-[10001] cursor-pointer active:scale-95 transition-transform left-3",
+                    "absolute z-10 cursor-pointer active:scale-95 transition-transform left-3",
                     isImage ? '-bottom-1' : '-bottom-2.5'
                 )}
                 onClick={(e) => { e.stopPropagation(); setShowReactionModal(true); }}
@@ -255,16 +255,51 @@ export const MessageBubble = ({
         );
     };
 
+    const [fetchedReactions, setFetchedReactions] = useState<any[] | null>(null);
+    const [fetchingReactions, setFetchingReactions] = useState(false);
+
+    const hasReactionCounts = Object.keys(message.reactions?.counts || {}).length > 0;
+
+    useEffect(() => {
+        if (showReactionModal && (!message.reactions?.latest || message.reactions.latest.length === 0) && hasReactionCounts) {
+            let mounted = true;
+            const fetchReactions = async () => {
+                setFetchingReactions(true);
+                try {
+                    const { chatService } = await import('../services/chat.service');
+                    const reactions = await chatService.getMessageReactions(message.id);
+                    if (mounted) {
+                        setFetchedReactions(reactions);
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch reactions", e);
+                } finally {
+                    if (mounted) setFetchingReactions(false);
+                }
+            };
+            fetchReactions();
+            return () => { mounted = false; };
+        }
+    }, [showReactionModal, message.id, message.reactions?.latest, hasReactionCounts]);
+
     const renderReactionModal = (side: 'left' | 'right') => {
         if (!showReactionModal) return null;
 
+        const reactionsToDisplay = (message.reactions?.latest && message.reactions.latest.length > 0) 
+            ? message.reactions.latest 
+            : (fetchedReactions || []);
+
         const content = (
             <div className={cn("flex flex-col gap-2", isMobile ? "p-4 bg-[#1a1c23]" : "")}>
-                {(!message.reactions?.latest || message.reactions.latest.length === 0) ? (
+                {fetchingReactions ? (
+                    <div className="py-6 text-center flex justify-center">
+                        <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                    </div>
+                ) : reactionsToDisplay.length === 0 ? (
                     <div className="py-6 text-center">
                         <p className="text-gray-500 text-[13px]">No details available</p>
                     </div>
-                ) : message.reactions.latest.map((r, i) => {
+                ) : reactionsToDisplay.map((r, i) => {
                     const user = r.user || { name: 'Unknown User', avatar: '' };
                     const isMyReaction = String(r.user_id) === myId;
                     const isRemoving = removingReaction === r.type && isMyReaction;

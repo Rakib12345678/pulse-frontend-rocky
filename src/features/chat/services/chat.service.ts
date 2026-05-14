@@ -107,4 +107,19 @@ export const chatService = {
         const { data } = await api.get<GiftData[]>('/gifts');
         return data ?? [];
     },
+
+    getMessageReactions: async (messageId: string): Promise<any[]> => {
+        const client = getStreamClient();
+        if (!client) return [];
+        const res = await client.queryReactions(messageId, {});
+        return res.reactions.map(r => ({
+            ...r,
+            user_id: r.user_id || r.user?.id,
+            user: r.user ? {
+                id: r.user.id,
+                name: (r.user as any).fullName ?? (r.user as any).full_name ?? r.user.name ?? r.user.id,
+                avatar: r.user.image,
+            } : undefined
+        }));
+    },
 };

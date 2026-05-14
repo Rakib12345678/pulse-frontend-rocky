@@ -92,7 +92,7 @@ const CountryDrawer: React.FC<CountryDrawerProps> = ({
         <Drawer open={open} onOpenChange={onOpenChange} modal={false}>
             {open && (
                 <div
-                    className="fixed inset-0 z-499 bg-black/60"
+                    className="fixed inset-0 z-[499] bg-black/60"
                     onClick={() => onOpenChange(false)}
                 />
             )}
@@ -100,7 +100,7 @@ const CountryDrawer: React.FC<CountryDrawerProps> = ({
                 aria-describedby={undefined}
                 onPointerDownOutside={() => onOpenChange(false)}
                 onInteractOutside={() => onOpenChange(false)}
-                className="fixed bottom-0 left-0 right-0 z-500 bg-[#111213] border-t border-[#1D1F20] flex flex-col rounded-t-2xl focus:outline-none"
+                className="fixed bottom-0 left-0 right-0 z-[500] bg-[#111213] border-t border-[#1D1F20] flex flex-col rounded-t-2xl focus:outline-none"
                 style={{
                     maxHeight: '70dvh',
                     paddingBottom: 'env(safe-area-inset-bottom)',

@@ -207,7 +207,21 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
             activeChannel.on('message.deleted', () => syncMessages(activeChannel)),
             activeChannel.on('message.read', () => syncMessages(activeChannel)),
             activeChannel.on('message.delivered', () => syncMessages(activeChannel)),
-            activeChannel.on('reaction.new', () => syncMessages(activeChannel)),
+            activeChannel.on('reaction.new', (event) => {
+                if (event.message && event.reaction) {
+                    const msg = activeChannel.state.messages.find(m => m.id === event.message!.id);
+                    if (msg) {
+                        if (!msg.latest_reactions) msg.latest_reactions = [];
+                        const exists = msg.latest_reactions.some(
+                            r => r.type === event.reaction!.type && (r.user?.id || r.user_id) === (event.reaction!.user?.id || event.reaction!.user_id)
+                        );
+                        if (!exists) {
+                            msg.latest_reactions.unshift(event.reaction);
+                        }
+                    }
+                }
+                syncMessages(activeChannel);
+            }),
             activeChannel.on('reaction.deleted', () => syncMessages(activeChannel)),
             activeChannel.on('reaction.updated', () => syncMessages(activeChannel)),
         ];

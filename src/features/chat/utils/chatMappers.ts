@@ -44,7 +44,17 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
 
     const attachmentsToUse = uniqueAttachments.length > 0 ? uniqueAttachments : undefined;
     const reactionCounts = msg.reaction_counts || {};
-    const rawLatest = msg.latest_reactions || msg.reactions || [];
+    const rawLatest = [...(msg.latest_reactions || msg.reactions || [])];
+    const ownReactionsRaw = msg.own_reactions || [];
+    
+    // Ensure own reactions are always included in latest (fixes optimistic update missing details)
+    ownReactionsRaw.forEach((ownR: any) => {
+        const exists = rawLatest.some(r => r.type === ownR.type && (r.user?.id || r.user_id) === (ownR.user?.id || ownR.user_id));
+        if (!exists) {
+            rawLatest.push(ownR);
+        }
+    });
+
     const latestReactions = rawLatest.map((r: any) => ({
         ...r,
         type: r.type,
@@ -56,7 +66,7 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
             avatar: toAbsoluteUrl(r.user.image),
         } : undefined,
     }));
-    const ownReactions = (msg.own_reactions || []).map((r: any) => ({
+    const ownReactions = ownReactionsRaw.map((r: any) => ({
         ...r,
         type: r.type,
         user_id: r.user?.id || r.user_id,
