@@ -53,9 +53,13 @@ export const ForYouPage: React.FC = () => {
                 </div>
 
                 {activeTab === 'following' && !isAuthenticated ? (
-                    <FollowingLoginPrompt onLoginClick={handleLoginClick} />
+                    <div className="flex items-center justify-center min-h-[calc(100vh-360px)] w-full">
+                        <FollowingLoginPrompt onLoginClick={handleLoginClick} />
+                    </div>
                 ) : activeTab === 'following' && isAuthenticated ? (
-                    <FollowingEmpty />
+                    <div className="flex items-center justify-center min-h-[calc(100vh-360px)] w-full">
+                        <FollowingEmpty />
+                    </div>
                 ) : (
                     <LiveStreamGrid
                         streams={streams}

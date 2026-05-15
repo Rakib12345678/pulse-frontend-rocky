@@ -47,11 +47,11 @@ export const ResultView = () => {
     if (resultStatus === 'success') {
         return (
             <div className="flex flex-col items-center justify-center py-12 gap-8 text-center animate-in fade-in zoom-in duration-300">
-                <h2 className="text-white text-3xl font-black">Congratulations</h2>
+                <h2 className="text-white text-3xl font-black">Congratulations 🎉</h2>
 
                 {coinsToDisplay > 0 && <AmountDisplay coins={coinsToDisplay} />}
 
-                <p className="text-white text-base font-medium">Added Coins Successfully</p>
+                <p className="text-white text-base font-medium">{coinsToDisplay.toLocaleString()} coins has been added to your wallet successfully</p>
 
                 <Button
                     onClick={closeModal}

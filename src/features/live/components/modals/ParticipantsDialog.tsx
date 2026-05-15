@@ -175,10 +175,6 @@ export const ParticipantsDialog: React.FC = () => {
                                             )}
                                         </button>
                                     )}
-                                    <div className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        isCreator ? "bg-[#FF8800]" : (isCoHost ? "bg-purple-500" : "bg-blue-500")
-                                    )} />
                                 </div>
                             </div>
                         );

@@ -29,7 +29,7 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
 }) => {
     if (isLoading && streams.length === 0) {
         return (
-            <div className="flex items-center justify-center py-20">
+            <div className="flex items-center justify-center min-h-[calc(100vh-360px)] w-full">
                 <Loader2 className="h-10 w-10 animate-spin text-[#FF8800]" />
             </div>
         );
@@ -37,7 +37,7 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-360px)] w-full text-center">
                 <p className="text-red-400 mb-4">{error}</p>
                 <Button onClick={onRetry} variant="outline" className='text-black'>
                     Try Again
@@ -48,10 +48,10 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
 
     if (streams.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-360px)] w-full text-center">
                 <Video className="h-16 w-16 text-gray-500 mb-4" />
                 <h2 className="text-xl font-semibold text-white mb-2">No Live Streams</h2>
-                <p className="text-gray-400 mb-6">Be the first to go live!</p>
+                <p className="text-gray-200 mb-6">Be the first to go live!</p>
             </div>
         );
     }

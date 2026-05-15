@@ -688,9 +688,9 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 {/* Error OR sent-on hint */}
                 <div className="h-4 flex items-center justify-center mb-4">
                     {error
-                        ? <p className="text-red-500 text-xs">{error}</p>
+                        ? <p className="text-red-400 text-xl">{error}</p>
                         : resendCooldown > 0 && (
-                            <p className="text-gray-500 text-xs">
+                            <p className="text-gray-400 text-xs">
                                 An OTP has been sent on your {method === 'email' ? 'email' : 'number'}
                             </p>
                         )
@@ -698,26 +698,33 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 </div>
 
                 {/* Timer / Resend */}
-                <div className="h-6 flex items-center justify-center text-sm text-gray-400 mb-2">
-                    {resendCooldown > 0 ? (
-                        <span>
-                            Resend in{' '}
-                            <span className="inline-flex items-baseline gap-0.5">
-                                <span className="text-white font-mono">
-                                    {resendCooldown < 10 ? `0${resendCooldown}` : resendCooldown}
-                                </span>
-                                <span className="text-gray-400">sec</span>
-                            </span>
+                <div className="flex flex-col items-center justify-center text-sm mb-2">
+                    {resendCooldown === 0 && (
+                        <span className="text-red-500 text-xs mb-1">
+                            Didn't recieve OTP? Retry
                         </span>
-                    ) : (
-                        <button
-                            onClick={handleResend}
-                            disabled={isLoading}
-                            className="text-blue-500 hover:text-blue-400 disabled:text-gray-600 disabled:cursor-not-allowed font-medium"
-                        >
-                            Resend OTP
-                        </button>
                     )}
+                    <div className="h-6 flex items-center justify-center text-gray-400">
+                        {resendCooldown > 0 ? (
+                            <span>
+                                Resend in{' '}
+                                <span className="inline-flex items-baseline gap-0.5">
+                                    <span className="text-white font-mono">
+                                        {resendCooldown < 10 ? `0${resendCooldown}` : resendCooldown}
+                                    </span>
+                                    <span className="text-gray-400">sec</span>
+                                </span>
+                            </span>
+                        ) : (
+                            <button
+                                onClick={handleResend}
+                                disabled={isLoading}
+                                className="text-blue-500 hover:text-blue-400 disabled:text-gray-600 disabled:cursor-not-allowed font-medium"
+                            >
+                                Resend OTP
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
