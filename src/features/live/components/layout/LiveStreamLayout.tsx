@@ -344,7 +344,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         alreadyHasActiveStream = true;
                         callType = status.callType || 'livestream';
                         callIdToUse = status.callId!;
-                        
+
                         // If the callId from backend is different from what we have in store, 
                         // we need a fresh token for this specific callId
                         if (status.callId !== streamData.callId) {
@@ -360,7 +360,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         } else {
                             token = streamData.token;
                         }
-                        
+
                         console.log("[LiveStreamLayout] Rejoining active stream:", callIdToUse);
                     } else {
                         // status.isLive is false (404 handled by service)
@@ -368,7 +368,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         // We should NOT create a new one here automatically if we were rejoining.
                         // However, if this is a fresh "Go Live" intent, we'd have already created it.
                         // If we are in the Layout, it means we think we have streamData.
-                        
+
                         console.log("[LiveStreamLayout] No active stream found on backend. Cleaning up.");
                         useGoLiveStore.getState().reset();
                         toast.error("Live stream not found or has ended.");
@@ -548,7 +548,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
                         if (isRejoining || leftAt || alreadyStarted) {
                             console.log("[LiveStreamLayout] Skipping auto goLive()", { isRejoining, hasLeftAt: !!leftAt, alreadyStarted });
                             if (alreadyStarted && !isRejoining && !leftAt) {
-                                toast.info("Resuming your active stream...");
+                                toast.info("Connecting to your live stream...");
                             }
                         } else {
                             if (!state.backstage && !state.startedAt) {

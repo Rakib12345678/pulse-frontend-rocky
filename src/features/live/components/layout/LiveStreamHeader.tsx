@@ -194,38 +194,49 @@ export const LiveStreamHeader: React.FC = () => {
         setStreamEnded(true);
 
         try {
+            // 1. End the call on the Stream SDK first (while it's still healthy).
+            //    Doing this before teardownCallMedia avoids the SDK throwing because
+            //    tracks/state have already been destroyed.
             if (call) {
-                // Block any new getUserMedia calls during teardown so the SDK
-                // cannot re-acquire the mic for internal detection loops.
+                try {
+                    await call.endCall();
+                } catch (sdkErr) {
+                    // Non-fatal — the stream is being ended regardless.
+                    console.warn('[EndLive] call.endCall() threw (non-fatal):', sdkErr);
+                }
+            }
+
+            // 2. Tell our backend the stream is over.
+            await liveService.endLiveStream(streamData.callId, save);
+
+            // 3. Clean up media tracks now that the call is already ended.
+            if (call) {
                 const restoreGetUserMedia = blockGetUserMedia();
-
                 await teardownCallMedia(call);
-
-                // Restore getUserMedia after a safe window (SDK teardown completes)
                 setTimeout(restoreGetUserMedia, 3000);
             }
 
-            await liveService.endLiveStream(streamData.callId, save);
-            if (call) {
-                await call.endCall();
-            }
-
-            // Reset the host stream data so LiveStreamLayout's cleanup
-            // fully tears down and RejoinStreamBanner doesn't appear
-            useGoLiveStore.getState().reset();
             localStorage.removeItem('pulse_host_is_currently_live');
             localStorage.removeItem('pulse_host_left_at');
 
             const durationMins = streamDuration / 60;
-            if (save && durationMins >= 10) {
+            if (save && durationMins >= 0) {
+                // Show the summary modal — reset store after so the effect
+                // can't re-run as a viewer while the modal is still visible
                 setShowDurationPopup(true);
-                // Navigation will happen when modal is closed
+                useGoLiveStore.getState().reset();
             } else {
+                // Navigate first so the route unmounts before reset() clears
+                // streamData; this prevents the layout effect from re-running
+                // as a viewer and showing a spurious "Stream ended" error toast.
                 navigate({ to: '/for-you' });
+                useGoLiveStore.getState().reset();
             }
         } catch (error) {
             console.error('Failed to end live stream:', error);
-            // Revert flag on error so user can try again
+            // Do NOT revert isEndingStream here — leaving it true prevents
+            // the layout effect from treating this as a viewer join attempt.
+            // The user can retry by clicking End Live again.
             setEndingStream(false);
             toast.error("Failed to end stream. Please try again.");
         } finally {
