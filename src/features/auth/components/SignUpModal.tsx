@@ -276,7 +276,7 @@ const StepWelcome = () => {
                 >
                     Get Started →
                 </Button>
-                <p className="mt-16 text-xs text-gray-500 px-4 text-center max-w-md mx-auto leading-relaxed">
+                <p className="mt-16 text-[14px] text-white px-2 text-center max-w-md mx-auto leading-relaxed">
                     By continuing, you agree to our{' '}
                     <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Terms of Service</Link> and{' '}
                     <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
@@ -541,7 +541,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 </div>
             </div>
 
-            <p className="md:hidden text-xs text-gray-500 px-4 text-center">
+            <p className="md:hidden text-[14px] text-white px-2 text-center">
                 By continuing, you agree to our{' '}
                 <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Terms of Service</Link> and{' '}
                 <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
@@ -747,7 +747,7 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 </Button>
             </div>
 
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-[14px] text-white text-center">
                 By continuing, you agree to our{' '}
                 <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link> &{' '}
                 <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
@@ -814,7 +814,7 @@ const StepAge = () => {
                     Disagree, I am under 18
                 </Button>
             </div>
-            <p className="mt-5 text-xs text-gray-500">
+            <p className="mt-5 text-[14px] text-white">
                 By continuing, you agree to our{' '}
                 <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link> &{' '}
                 <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
@@ -1110,14 +1110,17 @@ export const StepDetails = ({
                                 )} />
                             </Form>
                         </div>
-                        <p className="text-xs text-gray-600 text-center leading-relaxed">
+                        <p className="text-xs text-white/70 text-center leading-relaxed">
                             You can edit your profile picture or upload a new one (JPG or PNG)
                         </p>
                     </div>
 
                     {/* Right Column */}
                     <div className="flex flex-col flex-1 w-full justify-start px-0 md:px-8 py-6 md:py-4 min-w-0">
-                        <h2 className={cn("text-3xl md:text-5xl font-bold text-white tracking-tight mb-1 text-center md:text-left", mode === 'edit' && "hidden md:block")}>{title}</h2>
+                        <h2 className={cn(
+                            "font-bold text-white tracking-tight mb-1 text-center md:text-left",
+                            mode === 'edit' ? "text-2xl md:text-4xl hidden md:block" : "text-2xl md:text-4xl"
+                        )}>{title}</h2>
                         <p className={cn("text-gray-400 text-sm mb-5 md:mb-7 text-center md:text-left", mode === 'edit' && "hidden md:block")}>{subtitle}</p>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -1184,7 +1187,7 @@ export const StepDetails = ({
                                         </Button>
                                     )}
                                 </div>
-                                <p className="text-[11px] md:text-xs text-center md:text-left text-gray-500 mt-6 md:mt-4">
+                                <p className="text-[11px] md:text-[15px] text-center md:text-left text-white mt-6 md:mt-4">
                                     By continuing, you agree to our <br className="md:hidden" />
                                     <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link>{' '}&{' '}
                                     <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
@@ -1253,7 +1256,7 @@ const StepInterests = () => {
     return (
         <StepWrapper title="Interest">
             <div className="bg-transparent mb-4 max-w-sm mx-auto">
-                <p className="text-gray-400 text-sm leading-relaxed">
+                <p className="text-white/80 text-sm leading-relaxed">
                     Help us tailor your experience with content and creators that match your vibe. Your selections will shape your feed, recommendations, and the creators you connect with.
                 </p>
             </div>
@@ -1275,7 +1278,7 @@ const StepInterests = () => {
                                     "min-w-[73px] h-[36px] px-4 py-[6px] rounded-full text-sm font-medium transition-all flex items-center justify-center gap-[10px] border whitespace-nowrap",
                                     isActive
                                         ? "bg-[#FF8800]/10 border-[#FF8800] text-[#FF8800] shadow-[0_0_15px_rgba(255,136,0,0.1)]"
-                                        : "bg-white/5 border-white/10 text-gray-400 hover:border-white/30 hover:text-white hover:bg-white/10"
+                                        : "bg-white/5 border-[#FF8800]/40 text-white/80 hover:border-[#FF8800] hover:text-white hover:bg-white/10 cursor-pointer"
                                 )}
                             >
                                 {isActive && <Check className="w-3 h-3" />}

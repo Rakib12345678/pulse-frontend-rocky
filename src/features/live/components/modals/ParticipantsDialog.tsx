@@ -12,6 +12,7 @@ import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { userService } from '@/features/live/services/user.service';
 import { useViewerVisibilityStore } from '@/features/live/stores/participantPresenceStore';
 import { useCohostStore } from '@/features/live/stores/cohostStore';
+import { toast } from 'sonner';
 
 // Helper to extract fullName from participant custom fields
 const getFullName = (p: any): string =>
@@ -89,8 +90,10 @@ export const ParticipantsDialog: React.FC = () => {
         try {
             if (isFollowing) {
                 await userService.unfollowUser(targetUserId);
+                toast.success('Unfollowed user');
             } else {
                 await userService.followUser(targetUserId);
+                toast.success('Follow user');
             }
             setFollowStatuses(prev => ({ ...prev, [targetUserId]: !isFollowing }));
         } catch (error) {
@@ -163,7 +166,7 @@ export const ParticipantsDialog: React.FC = () => {
                                             className={cn(
                                                 "w-[80px] py-1.5 rounded-full text-xs font-medium transition-colors border flex items-center justify-center",
                                                 followStatuses[parseInt(participant.userId, 10)]
-                                                    ? "border-white/20 text-gray-400 hover:bg-white/5"
+                                                    ? "border-[#FF8800] text-gray-400 hover:bg-white/5"
                                                     : "border-[#FF8800] text-[#FF8800] hover:bg-[#FF8800]/10",
                                                 loadingFollow[parseInt(participant.userId, 10)] ? "opacity-50 cursor-not-allowed" : ""
                                             )}

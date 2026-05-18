@@ -24,7 +24,7 @@ export const SettingsPage = () => {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
-    const [unblockTargetId, setUnblockTargetId] = useState<number | null>(null);
+    const [pendingUnblockUser, setPendingUnblockUser] = useState<any | null>(null);
 
     const { data: blockedUsers = [], isLoading: isLoadingBlocked } = useBlockedUsers();
     const { mutate: unblockUser, isPending: isUnblocking } = useUnblockUser();
@@ -39,20 +39,18 @@ export const SettingsPage = () => {
     };
 
     // ----- Unblock -----
-    const pendingUnblockUser = blockedUsers.find((u) => u.id === unblockTargetId);
-
     const handleUnblockConfirm = () => {
-        if (unblockTargetId == null) return;
+        if (pendingUnblockUser == null) return;
         unblockUser(
-            { targetUserId: unblockTargetId },
+            { targetUserId: pendingUnblockUser.id },
             {
                 onSuccess: () => {
                     toast.success('User unblocked');
-                    setUnblockTargetId(null);
+                    setPendingUnblockUser(null);
                 },
                 onError: () => {
                     toast.error('Failed to unblock user');
-                    setUnblockTargetId(null);
+                    setPendingUnblockUser(null);
                 },
             }
         );
@@ -95,16 +93,16 @@ export const SettingsPage = () => {
 
             {/* Unblock user confirm */}
             <ConfirmModal
-                isOpen={unblockTargetId !== null}
-                title="Block User"
-                description={`Are you sure you want to block\n@${pendingUnblockUser?.username ?? ''}`}
+                isOpen={pendingUnblockUser !== null}
+                title={`Unblock ${pendingUnblockUser?.fullName || (pendingUnblockUser?.username ? `@${pendingUnblockUser.username}` : 'User')}`}
+                description={`Are you sure you want to unblock\n${pendingUnblockUser?.fullName || (pendingUnblockUser?.username ? `@${pendingUnblockUser.username}` : 'this user')}?`}
                 avatarUrl={pendingUnblockUser?.profileImage}
                 avatarFallback={(pendingUnblockUser?.fullName?.[0] || pendingUnblockUser?.username?.[0] || '?').toUpperCase()}
                 confirmLabel="Unblock User"
                 confirmClassName="bg-[#FF7700] text-black hover:bg-[#ff9922]"
                 isLoading={isUnblocking}
                 onConfirm={handleUnblockConfirm}
-                onCancel={() => setUnblockTargetId(null)}
+                onCancel={() => setPendingUnblockUser(null)}
             />
 
             {/* Delete success */}
@@ -231,7 +229,7 @@ export const SettingsPage = () => {
                                                     <span className="text-gray-300 text-sm">@{blockedUser.username}</span>
                                                 </div>
                                                 <button
-                                                    onClick={() => setUnblockTargetId(blockedUser.id)}
+                                                    onClick={() => setPendingUnblockUser(blockedUser)}
                                                     disabled={isUnblocking}
                                                     className="border border-white/20 text-white text-xs font-medium rounded-full px-5 py-2 hover:bg-white/5 transition-colors disabled:opacity-50 cursor-pointer"
                                                 >

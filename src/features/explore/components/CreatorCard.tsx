@@ -24,6 +24,9 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
         toggleFollow(
             { targetUserId: creator.id, followedByMe: creator.followedByMe || false },
             {
+                onSuccess: () => {
+                    toast.success(creator.followedByMe ? `Unfollowed @${creator.username}` : `Follow @${creator.username}`);
+                },
                 onError: (err: any) => {
                     toast.error(err?.message || 'Failed to update follow status');
                 }
@@ -110,7 +113,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                     className={cn(
                         "w-[120px] h-[48px] rounded-[100px] py-3 px-6 flex items-center justify-center gap-4 text-xs font-bold transition-all shadow-lg",
                         creator.followedByMe
-                            ? "bg-[#262626] text-gray-400 hover:bg-[#333] hover:text-white cursor-pointer"
+                            ? "bg-[#262626] text-gray-400 border border-[#FF8800] hover:bg-[#333] hover:text-white cursor-pointer"
                             : "bg-[#FF8800] text-black hover:bg-[#ff941a] shadow-orange-900/10 cursor-pointer"
                     )}
                 >

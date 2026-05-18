@@ -370,7 +370,7 @@ export const LiveStreamHeader: React.FC = () => {
                 </>
             ) : (
                 /* ========== DESKTOP HEADER ========== */
-                <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 bg-linear-to-b from-black/60 to-transparent">
+                <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 pr-10 bg-linear-to-b from-black/60 to-transparent">
                     <div className="flex items-center gap-4">
                         {isHost ? (
                             <Button
@@ -429,7 +429,7 @@ export const LiveStreamHeader: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setChatVisible(!isChatVisible)}
-                            className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all"
+                            className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all flex items-center justify-center"
                             title={isChatVisible ? "Hide Chat" : "Show Chat"}
                         >
                             {isChatVisible ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
@@ -440,7 +440,7 @@ export const LiveStreamHeader: React.FC = () => {
                                 <DropdownMenuTrigger asChild>
                                     <button
                                         type="button"
-                                        className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all flex items-center justify-center"
+                                        className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all flex items-center justify-center"
                                     >
                                         <MoreHorizontal className="w-5 h-5 text-white/70" />
                                     </button>

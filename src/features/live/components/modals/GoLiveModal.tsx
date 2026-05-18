@@ -291,14 +291,14 @@ export const GoLiveModal = () => {
                     className="fixed inset-0 bg-[#0f1117] flex flex-col h-dvh overflow-hidden"
                     style={{ zIndex: 50000 }}
                     onClick={(e) => {
-                        if (e.target === e.currentTarget && !showConflict) closeModal(true);
+                        if (e.target === e.currentTarget && !showConflict) closeModal();
                     }}
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between px-5 pt-6 pb-4">
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={() => !showConflict && closeModal(true)}
+                                onClick={() => !showConflict && closeModal()}
                                 className={cn("text-white", showConflict && "opacity-50 cursor-not-allowed")}
                                 disabled={showConflict}
                             >
@@ -425,7 +425,7 @@ export const GoLiveModal = () => {
             ) : (
                 /* ===== DESKTOP: Original Modal Layout ===== */
                 <div className="fixed inset-0 z-400 flex items-center justify-center backdrop-blur-sm animate-in fade-in duration-300 px-4" style={{ zIndex: 9999 }}>
-                    <div className="absolute inset-0" onClick={() => !showConflict && closeModal(true)} />
+                    <div className="absolute inset-0" onClick={() => !showConflict && closeModal()} />
 
                     <div className="relative z-10 w-full max-w-[1000px] h-[600px] bg-[#0f1117] rounded-[24px] overflow-hidden shadow-2xl flex flex-col md:flex-row border border-white/5 animate-in zoom-in-95 duration-300">
                         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(150%_150%_at_100%_0%,rgba(255,136,0,0.15)_0%,rgba(255,100,0,0.1)_25%,rgba(255,50,0,0.05)_50%,transparent_80%)]" />
@@ -499,7 +499,7 @@ export const GoLiveModal = () => {
                             {/* Right Panel - Form */}
                             <div className="relative w-full md:w-[58%] h-full p-8 md:p-12 flex flex-col justify-center overflow-visible">
                                 <button
-                                    onClick={() => closeModal(true)}
+                                    onClick={() => closeModal()}
                                     className="absolute top-6 right-6 p-2 rounded-full text-gray-400 hover:bg-white/5 hover:text-white transition-all z-20"
                                 >
                                     <X className="w-5 h-5" />
@@ -570,7 +570,7 @@ export const GoLiveModal = () => {
                                         </Button>
                                         <Button
                                             variant="outline"
-                                            onClick={() => closeModal(true)}
+                                            onClick={() => closeModal()}
                                             disabled={isLoading || showConflict}
                                             className="h-14 flex-1 rounded-full border-2 border-[#FF8800] text-[#FF8800] bg-transparent font-bold text-lg hover:bg-[#FF8800]/10 hover:border-[#ff9d2e] transition-all disabled:opacity-50"
                                         >
@@ -613,7 +613,7 @@ export const GoLiveModal = () => {
                                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "End & Start New"}
                             </Button>
                             <button
-                                onClick={() => closeModal(true)}
+                                onClick={() => closeModal()}
                                 className="text-gray-500 text-sm font-medium hover:text-white transition-colors mt-2"
                             >
                                 Cancel

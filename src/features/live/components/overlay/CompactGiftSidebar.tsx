@@ -212,7 +212,7 @@ export const CompactGiftSidebar: React.FC = () => {
         if (gifts.length === 0 || isGiftingOpen) return null;
         return (
             <div
-                className="absolute z-30 flex flex-col items-center gap-5 overflow-y-auto scrollbar-hide right-4 xl:right-10 bottom-28 top-32 w-16"
+                className="absolute z-30 flex flex-col items-center gap-5 overflow-y-auto scrollbar-hide right-8 bottom-28 top-32 w-16"
                 style={{
                     maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
                     WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)'

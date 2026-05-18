@@ -95,7 +95,7 @@ export const CheckoutView = () => {
 
             {/* Footer Info */}
             <div className="bg-[#1A1C1E]/50 border border-white/5 rounded-2xl px-5 py-4">
-                <p className="text-gray-400 text-[12px] leading-relaxed text-center">
+                <p className="text-white text-[15px] leading-relaxed text-center">
                     Your payment details are encrypted and secure with Stripe.
                     By continuing, you agree to Stripe's{" "}
                     <a

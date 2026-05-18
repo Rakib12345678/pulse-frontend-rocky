@@ -64,7 +64,7 @@ export const ProfilePage = ({ forcedUsername }: ProfilePageProps = {}) => {
     );
   }
 
-  if (!isOwnProfile && (error || !profileUser)) {
+  if (!isOwnProfile && (!profileUser && error)) {
     return (
       <div className="h-[calc(100vh-73px)] bg-black flex items-center justify-center overflow-hidden">
         <EmptyState
@@ -93,14 +93,24 @@ export const ProfilePage = ({ forcedUsername }: ProfilePageProps = {}) => {
           isOwnProfile={isOwnProfile}
         />
 
-        <ProfileMediaSection
-          userId={displayUser.id}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isOwnProfile={isOwnProfile}
-          userName={displayName}
-          onGoLive={handleGoLive}
-        />
+        {displayUser.blockedByMe ? (
+          <div className="mt-8 flex flex-col items-center justify-center p-12 bg-[#111213] border-2 border-[#1D1F20] rounded-2xl text-center">
+            <UserX className="w-16 h-16 text-[#FF7700] mb-4 opacity-80 animate-pulse" />
+            <h3 className="text-xl font-bold text-white mb-2">You've blocked this user</h3>
+            <p className="text-zinc-400 text-sm max-w-sm">
+              You cannot see their posts or past live streams. Unblock them to interact with their profile.
+            </p>
+          </div>
+        ) : (
+          <ProfileMediaSection
+            userId={displayUser.id}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            isOwnProfile={isOwnProfile}
+            userName={displayName}
+            onGoLive={handleGoLive}
+          />
+        )}
       </div>
     </div>
   );
