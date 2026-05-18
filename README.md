@@ -1,6 +1,6 @@
 # Pulse Live
 
-Pulse Live is a modern, high-performance live streaming platform built with React 19, TanStack Start, and Stream SDK. It features real-time video broadcasting, interactive chat, virtual gifting, and a robust coin-based economy .
+Pulse Live is a modern, high-performance live streaming platform built with React 19, TanStack Start, and Stream SDK. It features real-time video broadcasting, interactive chat, virtual gifting, and a robust coin-based economy.
 
 ## 🚀 Tech Stack
 
