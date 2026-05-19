@@ -7,6 +7,10 @@ interface UserProfileStore {
     openModal: (username: string) => void;
     closeModal: () => void;
     setShowFullscreen: (show: boolean) => void;
+
+    // Shared follow state keyed by user id so multiple components stay in sync
+    followStateMap: Record<number, boolean>;
+    setFollowState: (userId: number, followed: boolean) => void;
 }
 
 export const useUserProfileStore = create<UserProfileStore>((set) => ({
@@ -16,4 +20,10 @@ export const useUserProfileStore = create<UserProfileStore>((set) => ({
     openModal: (username) => set({ isOpen: true, username, showFullscreen: false }),
     closeModal: () => set({ isOpen: false, username: null, showFullscreen: false }),
     setShowFullscreen: (show) => set({ showFullscreen: show }),
+
+    followStateMap: {},
+    setFollowState: (userId, followed) =>
+        set((state) => ({
+            followStateMap: { ...state.followStateMap, [userId]: followed },
+        })),
 }));

@@ -3,14 +3,14 @@ import { ChevronLeft } from 'lucide-react';
 const RefundPolicyPage = () => {
     return (
         <div className="min-h-screen text-gray-200 p-6 pb-18 md:p-12">
+            <button
+                onClick={() => window.history.back()}
+                className="flex items-center gap-3 text-white transition-colors mb-6 cursor-pointer py-3 pr-4 pl-0 -ml-1"
+            >
+                <ChevronLeft className="w-7 h-7" />
+                <span className="text-lg font-semibold">Back</span>
+            </button>
             <div className="max-w-4xl mx-auto">
-                <button
-                    onClick={() => window.history.back()}
-                    className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors mb-6 cursor-pointer py-3 px-4 -ml-1"
-                >
-                    <ChevronLeft className="w-7 h-7" />
-                    <span className="text-lg font-semibold">Back</span>
-                </button>
                 <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Refund Policy</h1>
                 <p className="text-sm text-gray-400 mb-10">Effective Date: 26th March 2026 | Last Updated: 27th March 2026</p>
 

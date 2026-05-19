@@ -24,15 +24,17 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
 }) => {
     const { user: currentUser } = useAuthStore();
     const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
-    const { openModal: openProfileModal } = useUserProfileStore();
+    const { openModal: openProfileModal, followStateMap, setFollowState } = useUserProfileStore();
 
     // Use streamerUsername for API calls, fall back to streamerName
     const apiName = streamerUsername || streamerName;
 
     const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [isFollowing, setIsFollowing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [followerCount, setFollowerCount] = useState<string>('0');
+
+    // Derive follow state from the shared store so it stays in sync with UserProfileModal
+    const isFollowing = profile ? (followStateMap[profile.id] ?? profile.followedByMe) : false;
 
     // Format follower count (e.g., 1.5k, 1M)
     const formatCount = (num: number) => {
@@ -50,8 +52,12 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
                 const { data } = await userService.getUserProfile(cleanName);
                 if (data) {
                     setProfile(data);
-                    setIsFollowing(data.followedByMe);
                     setFollowerCount(formatCount(data.followerCount));
+                    // Only seed the store if there's no entry yet (avoids overwriting a
+                    // follow toggled from UserProfileModal before this fetch finished)
+                    if (!(data.id in followStateMap)) {
+                        setFollowState(data.id, data.followedByMe);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch streamer profile", error);
@@ -81,11 +87,11 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
         try {
             if (isFollowing) {
                 await userService.unfollowUser(profile.id);
-                setIsFollowing(false);
+                setFollowState(profile.id, false); // broadcast to all subscribers
                 toast.success(`Unfollowed ${streamerName}`);
             } else {
                 await userService.followUser(profile.id);
-                setIsFollowing(true);
+                setFollowState(profile.id, true); // broadcast to all subscribers
                 toast.success(`Followed ${streamerName}`);
             }
         } catch (error) {
