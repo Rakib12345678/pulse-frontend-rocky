@@ -63,6 +63,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({
     );
     const [mobileShowList, setMobileShowList] = useState(!localConvId);
     const [displayConversation, setDisplayConversation] = useState<Conversation | null>(null);
+    const [drafts, setDrafts] = useState<Record<string, string>>({});
+
+    const handleDraftChange = (conversationId: string, value: string) => {
+        setDrafts(prev => ({ ...prev, [conversationId]: value }));
+    };
 
     useEffect(() => {
         if (!localConvId) setMobileShowList(true);
@@ -169,6 +174,12 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         onReact: chat.sendReaction,
         onDeleteReaction: chat.deleteReaction,
         onMarkAsRead: chat.markAsRead,
+        draftValue: activeConversation ? (drafts[activeConversation.id] ?? '') : '',
+        onDraftChange: (value: string) => {
+            if (activeConversation) {
+                handleDraftChange(activeConversation.id, value);
+            }
+        },
     };
 
     if (asModal) {

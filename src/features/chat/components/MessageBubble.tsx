@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Gift, Smile, Plus, Loader2 } from 'lucide-react';
+import { ChevronDown, Gift, Smile, Plus, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar } from './Avatar';
 import { MessageDropdown } from './MessageDropdown';
@@ -16,22 +16,15 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 
 export const isOnlyImage = (text: string, attachments?: any[]) => {
     const hasAttachments = !!(attachments && attachments.length > 0);
-    if (!text) return hasAttachments;
-    const trimmed = text.trim();
+    const trimmed = (text || '').trim();
+    
+    // Check if the message contains [IMAGE:...] or similar bracketed IMAGE tag
+    const hasImagePrefix = /^[\[\(\【]\s*IMAGE:/i.test(trimmed);
 
-
-    // Detect any bracketed tag containing a URL (language agnostic, handles various brackets)
-    const tagRegex = /[\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】]/gi;
-    const hasTag = tagRegex.test(trimmed);
-    const cleanText = trimmed.replace(tagRegex, '').trim();
-
-
-    // If it has a tag and no other text, it's an only-image message.
-    // Also if it's just a raw URL without brackets (sometimes happens in translation)
-    const rawUrlRegex = /^https?:\/\/[^\s]+$/i;
-    const isRawUrl = rawUrlRegex.test(trimmed);
-
-    return (hasTag && !cleanText) || isRawUrl || (!trimmed && hasAttachments);
+    if (hasImagePrefix || hasAttachments) {
+        return true;
+    }
+    return false;
 };
 
 /**
@@ -54,7 +47,13 @@ export const isGift = (text: string) => {
 /**
  * Renders the message content, splitting by tags and extracting URLs/gifts structurally.
  */
-const renderMessageContent = (msg: Message, text: string, isMe: boolean, onImageLoad?: () => void) => {
+const renderMessageContent = (
+    msg: Message,
+    text: string,
+    isMe: boolean,
+    onImageLoad?: () => void,
+    onImageClick?: (url: string) => void
+) => {
     if (!text && !msg.isGiftMessage) return null;
 
     const giftMatch5 = text ? text.match(/[\[\(\【][^:\[\]]*?:(\d+):(https?:\/\/[^:]+):([^:]+):(\d+)[\]\)\】]/i) : null;
@@ -100,6 +99,12 @@ const renderMessageContent = (msg: Message, text: string, isMe: boolean, onImage
 
     return parts.map((part, index) => {
         const trimmedPart = part.trim();
+        
+        // Check if it is a bracketed IMAGE tag: e.g. [IMAGE:https://...]
+        const isImageTag = /^[\[\(\【]\s*IMAGE:/i.test(trimmedPart) && 
+            (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('】')) &&
+            trimmedPart.includes('http');
+
         const isBracketedTag = (trimmedPart.startsWith('[') || trimmedPart.startsWith('(') || trimmedPart.startsWith('【')) &&
             (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('】')) &&
             trimmedPart.includes('http');
@@ -107,7 +112,7 @@ const renderMessageContent = (msg: Message, text: string, isMe: boolean, onImage
         const rawUrlRegex = /^(https?:\/\/[^\s\n\r\]\)\】]+)$/i;
         const isRawUrl = rawUrlRegex.test(trimmedPart);
 
-        if (isBracketedTag || isRawUrl) {
+        if (isImageTag) {
             const urlMatch = trimmedPart.match(/(https?:\/\/[^\s\n\r\]\)\】]+)/i);
             if (urlMatch) {
                 const url = urlMatch[1];
@@ -117,9 +122,26 @@ const renderMessageContent = (msg: Message, text: string, isMe: boolean, onImage
                             src={url}
                             alt="chat attachment"
                             onLoad={onImageLoad}
-                            className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5"
+                            onClick={() => onImageClick?.(url)}
+                            className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5 cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all"
                         />
                     </div>
+                );
+            }
+        } else if (isBracketedTag || isRawUrl) {
+            const urlMatch = trimmedPart.match(/(https?:\/\/[^\s\n\r\]\)\】]+)/i);
+            if (urlMatch) {
+                const url = urlMatch[1];
+                return (
+                    <a
+                        key={index}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#4A9EFF] hover:underline break-all"
+                    >
+                        {url}
+                    </a>
                 );
             }
         }
@@ -167,6 +189,7 @@ export const MessageBubble = ({
     const isPending = message.status === 'pending';
     const myId = String(useAuthStore.getState().user?.id ?? '');
     const isMobile = useIsMobile();
+    const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
 
     const handleTouchStart = (e: React.TouchEvent) => {
         // Option 2: Don't show menu for others' gifts
@@ -553,7 +576,8 @@ export const MessageBubble = ({
                                                         src={att.imageUrl}
                                                         alt="attachment"
                                                         onLoad={onImageLoad}
-                                                        className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5"
+                                                        onClick={() => setActiveImageUrl(att.imageUrl)}
+                                                        className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5 cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all"
                                                     />
                                                 ) : (
                                                     <div key={i} className="w-[180px] h-[240px] bg-white/5 rounded-lg animate-pulse" />
@@ -564,7 +588,7 @@ export const MessageBubble = ({
 
                                     {message.originalText && (
                                         <div className={cn('text-[13px] sm:text-sm leading-[1.6] font-medium', (meOnlyImage || meIsGift) && 'p-0')}>
-                                            {renderMessageContent(message, message.originalText, true, onImageLoad)}
+                                            {renderMessageContent(message, message.originalText, true, onImageLoad, (url) => setActiveImageUrl(url))}
                                         </div>
                                     )}
                                     <div className={cn(
@@ -603,6 +627,26 @@ export const MessageBubble = ({
                     </div>
                     <Avatar src={myAvatar} alt="me" className="w-8 h-8 sm:w-9 sm:h-9 mt-0.5" />
                 </div>
+                <Dialog open={!!activeImageUrl} onOpenChange={(open) => !open && setActiveImageUrl(null)}>
+                    <DialogContent showCloseButton={false} className="max-w-[95vw] max-h-[95vh] sm:max-w-[85vw] sm:max-h-[85vh] p-0 bg-black/95 border border-white/10 overflow-hidden flex flex-col items-center justify-center rounded-2xl z-[99999]">
+                        <DialogTitle className="sr-only">View Image</DialogTitle>
+                        {activeImageUrl && (
+                            <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
+                                <img
+                                    src={activeImageUrl}
+                                    alt="View attachment"
+                                    className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl"
+                                />
+                                <button
+                                    onClick={() => setActiveImageUrl(null)}
+                                    className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md border border-white/10"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </>
         );
     }
@@ -649,14 +693,15 @@ export const MessageBubble = ({
                                             src={att.imageUrl}
                                             alt="attachment"
                                             onLoad={onImageLoad}
-                                            className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5"
+                                            onClick={() => setActiveImageUrl(att.imageUrl)}
+                                            className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5 cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all"
                                         />
                                     ))}
                                 </div>
                             )}
                             {receivedText && (
                                 <div className={cn('text-[13px] sm:text-sm leading-[1.6]', (tOnlyImage || tIsGift) && 'p-0')}>
-                                    {renderMessageContent(message, receivedText, false, onImageLoad)}
+                                    {renderMessageContent(message, receivedText, false, onImageLoad, (url) => setActiveImageUrl(url))}
                                 </div>
                             )}
                             <div className={cn(
@@ -696,6 +741,26 @@ export const MessageBubble = ({
                     {renderReactionPicker('left')}
                 </div>
             </div>
+            <Dialog open={!!activeImageUrl} onOpenChange={(open) => !open && setActiveImageUrl(null)}>
+                <DialogContent showCloseButton={false} className="max-w-[95vw] max-h-[95vh] sm:max-w-[85vw] sm:max-h-[85vh] p-0 bg-black/95 border border-white/10 overflow-hidden flex flex-col items-center justify-center rounded-2xl z-[99999]">
+                    <DialogTitle className="sr-only">View Image</DialogTitle>
+                    {activeImageUrl && (
+                        <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
+                            <img
+                                src={activeImageUrl}
+                                alt="View attachment"
+                                className="max-w-full max-h-[75vh] object-contain rounded-lg shadow-2xl"
+                            />
+                            <button
+                                onClick={() => setActiveImageUrl(null)}
+                                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md border border-white/10"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

@@ -37,26 +37,6 @@ import LiveIcon from '@/assets/Live.svg';
 
 const MAX_MSG_LENGTH = 4_000;
 
-// draft per conversation (kept as it is state-binding logic for the input)
-const useDraftPerConversation = (conversationId: string | null) => {
-    const drafts = useRef<Record<string, string>>({});
-    const [, rerender] = useState(0);
-
-    const getDraft = React.useCallback(
-        () => (!conversationId ? '' : (drafts.current[conversationId] ?? '')),
-        [conversationId],
-    );
-    const setDraft = React.useCallback(
-        (v: string) => { if (conversationId) drafts.current[conversationId] = v; },
-        [conversationId],
-    );
-
-    useEffect(() => { rerender(n => n + 1); }, [conversationId]);
-
-    return { getDraft, setDraft };
-};
-
-
 // ChatWindow
 interface ChatWindowProps {
     conversation: Conversation | null;
@@ -73,12 +53,15 @@ interface ChatWindowProps {
     onReact: (messageId: string, type: string, extra?: any) => Promise<void>;
     onDeleteReaction: (messageId: string, type: string) => Promise<void>;
     onMarkAsRead: () => void;
+    draftValue: string;
+    onDraftChange: (v: string) => void;
 }
 
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversation, isLoadingConversation = false, onBack, mobileFullscreen = false,
     messages, msgLoading, hasMore, loadMore, onSend, onSendImage, onDelete, onReact, onDeleteReaction, onMarkAsRead,
+    draftValue, onDraftChange,
 }) => {
     const navigate = useNavigate();
     const { user, wallet } = useAuthStore();
@@ -87,9 +70,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const myId = String(user?.id ?? '');
     const isInternetConnected = useOnlineStatus();
     const handleGoLiveClick = useGoLive();
-
-    const { getDraft, setDraft } = useDraftPerConversation(conversation?.id ?? null);
-    const [draftValue, setDraftValue] = useState('');
     const [showLangModal, setShowLangModal] = useState(false);
     const [showTranslateDrawer, setShowTranslateDrawer] = useState(false);
     const [showTranslateMenu, setShowTranslateMenu] = useState(false);
@@ -125,7 +105,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const firstScrollDone = useRef<string | null>(null);
     const scrollTimeouts = useRef<NodeJS.Timeout[]>([]);
 
-    useEffect(() => { setDraftValue(getDraft()); }, [conversation?.id, getDraft]);
+
 
     useEffect(() => {
         if (!conversation?.id) return;
@@ -234,7 +214,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         }
     };
 
-    const handleDraftChange = (val: string) => { setDraftValue(val); setDraft(val); };
+    const handleDraftChange = (val: string) => {
+        onDraftChange(val);
+    };
 
     const handleSend = async () => {
         const text = draftValue.trim();
@@ -247,9 +229,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         const currentPendingImage = pendingImage;
         const currentText = text;
 
-        setDraftValue('');
-        setDraft('');
+        onDraftChange('');
         setPendingImage(null);
+        setShowEmoji(false);
         inputRef.current?.focus();
 
         try {
@@ -261,8 +243,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             }
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         } catch {
-            setDraftValue(currentText);
-            setDraft(currentText);
+            onDraftChange(currentText);
             if (currentPendingImage) setPendingImage(currentPendingImage);
             toast.error('Failed to send message');
             inputRef.current?.focus();
@@ -276,14 +257,21 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const handleCopy = (message: Message) => {
         const isMyMessage = message.senderId === myId;
         let textToCopy: string;
-        if (isMyMessage) {
-            // Always copy what I actually typed
-            textToCopy = message.originalText ?? message.text;
+        if (message.attachments && message.attachments.length > 0 && message.attachments[0].imageUrl) {
+            textToCopy = message.attachments[0].imageUrl;
         } else {
-            // Copy whichever version is currently visible based on toggle
-            textToCopy = translateEnabled
-                ? (message.text || message.originalText)
-                : (message.originalText || message.text);
+            const rawText = isMyMessage
+                ? (message.originalText ?? message.text ?? '')
+                : (translateEnabled ? (message.text || message.originalText || '') : (message.originalText || message.text || ''));
+            
+            const isImageTag = /^[\[\(\【]\s*IMAGE:/i.test(rawText.trim());
+            const urlMatch = rawText.match(/(https?:\/\/[^\s\n\r\]\)\】]+)/i);
+
+            if (isImageTag && urlMatch) {
+                textToCopy = urlMatch[1];
+            } else {
+                textToCopy = rawText;
+            }
         }
         navigator.clipboard
             .writeText(textToCopy)
@@ -590,14 +578,60 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         {showEmoji && (
                             isMobile ? (
                                 <Drawer open={showEmoji} onOpenChange={setShowEmoji}>
-                                    <DrawerContent className="bg-[#111213] border-none px-4 pb-6 max-h-[85vh] rounded-t-[32px]">
-                                        <div className="mx-auto mt-2 mb-4 h-1 w-12 shrink-0 rounded-full bg-white/20" />
-                                        <EmojiPickerPopup
-                                            isMobile={isMobile}
-                                            onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
-                                            onClose={() => setShowEmoji(false)}
-                                            className="w-full bg-transparent shadow-none"
-                                        />
+                                    <DrawerContent className="bg-[#111213] border-none px-4 pb-6 max-h-[85vh] rounded-t-[32px] flex flex-col gap-4">
+                                        <div className="mx-auto mt-2 h-1 w-12 shrink-0 rounded-full bg-white/20" />
+                                        
+                                        {/* Input field inside the drawer for mobile */}
+                                        <div
+                                            className="flex items-center gap-2 w-full shrink-0"
+                                            onMouseDown={e => e.stopPropagation()}
+                                            onPointerDown={e => e.stopPropagation()}
+                                        >
+                                            <div className="flex-1 flex items-center gap-2 px-3 h-11 bg-[#1e2029] border border-white/10 rounded-full min-w-0">
+                                                <input
+                                                    value={draftValue}
+                                                    onChange={e => handleDraftChange(e.target.value)}
+                                                    onKeyDown={handleKeyDown}
+                                                    placeholder="Type Message Here..."
+                                                    className="flex-1 min-w-0 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
+                                                    style={{ fontSize: '16px' }}
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    onClick={() => setShowEmoji(false)}
+                                                    className="text-[#FF7700] p-1 cursor-pointer shrink-0"
+                                                >
+                                                    <Smile className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                            {draftValue.trim() && (
+                                                <button
+                                                    onPointerDown={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        handleSend();
+                                                    }}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                    }}
+                                                    disabled={!canSend}
+                                                    className="w-11 h-11 rounded-full bg-[#FF7700] flex items-center justify-center shrink-0 transition-all active:scale-95 cursor-pointer"
+                                                >
+                                                    <img src={sendIcon} alt="Send" className="w-5 h-5" />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 overflow-y-auto min-h-0">
+                                            <EmojiPickerPopup
+                                                isMobile={isMobile}
+                                                onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
+                                                onClose={() => setShowEmoji(false)}
+                                                closeOnSelect={false}
+                                                className="w-full bg-transparent shadow-none"
+                                            />
+                                        </div>
                                     </DrawerContent>
                                 </Drawer>
                             ) : (
@@ -608,6 +642,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                         isMobile={isMobile}
                                         onSelect={emoji => handleDraftChange(draftValue + emoji.native)}
                                         onClose={() => setShowEmoji(false)}
+                                        closeOnSelect={false}
                                         className="shadow-2xl border border-white/10 rounded-2xl scale-90 sm:scale-100 origin-bottom-right"
                                     />
                                 </div>

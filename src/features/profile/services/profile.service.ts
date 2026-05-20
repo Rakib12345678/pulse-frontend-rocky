@@ -28,6 +28,13 @@ const fetchPastLiveStreams = async (userId: number): Promise<LiveStream[]> => {
   return data;
 };
 
+// Delete past live streams / recordings
+const deleteRecordings = async (callIds: string[]): Promise<any> => {
+  const { data } = await api.delete('/stream/record', { data: callIds });
+  return data;
+};
+
+
 // Global past live streams (Can be filtered by user)
 const fetchGlobalPastLiveStreams = async (page = 0, size = 20, userId?: number): Promise<{ data: any[], hasMore: boolean, page: number }> => {
   const params: any = { page, size };
@@ -620,6 +627,17 @@ export const useRemoveFollower = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['followers'] });
       queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+};
+
+export const useDeleteRecordings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deleteRecordings,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pastLiveStreams'] });
+      queryClient.invalidateQueries({ queryKey: ['globalPastLiveStreams'] });
     },
   });
 };

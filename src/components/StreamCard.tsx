@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
-import { Users } from 'lucide-react';
+import React, { useCallback, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { Users, Trash2, MoreHorizontal } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,11 @@ export interface StreamCardProps {
   thumbnailUrl?: string;
   cardClickRedirectToLive?: boolean;
   isDefaultImage?: boolean;
+  onDelete?: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
+  onLongPress?: () => void;
 }
 
 export const StreamCard: React.FC<StreamCardProps> = ({
@@ -45,9 +50,35 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   thumbnailUrl: propThumbnailUrl,
   cardClickRedirectToLive = false,
   isDefaultImage = false,
+  onDelete,
+  selectable = false,
+  selected = false,
+  onSelect,
+  onLongPress,
 }) => {
+  const [showMenu, setShowMenu] = useState(false);
   const { user } = useAuthStore();
   const navigate = useNavigate();
+
+  const longPressTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  const isLongPress = React.useRef(false);
+
+  const startPress = useCallback(() => {
+    isLongPress.current = false;
+    longPressTimeout.current = setTimeout(() => {
+      if (onLongPress) {
+        onLongPress();
+        isLongPress.current = true;
+      }
+    }, 600);
+  }, [onLongPress]);
+
+  const endPress = useCallback(() => {
+    if (longPressTimeout.current) {
+      clearTimeout(longPressTimeout.current);
+      longPressTimeout.current = null;
+    }
+  }, []);
 
   const handleProfileClick = useCallback(
     (e: React.MouseEvent) => {
@@ -63,6 +94,18 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
+      if (isLongPress.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        isLongPress.current = false;
+        return;
+      }
+      if (selectable && onSelect) {
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect();
+        return;
+      }
       const isHost = user && createdByUserId && String(user.id) === String(createdByUserId);
 
       if (isHost && isLive) {
@@ -88,7 +131,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         } as any
       });
     },
-    [user, createdByUserId, isLive, streamerName, callId, title, mobileVideoUrl, propThumbnailUrl, thumbnailUrl, category, cohosts, navigate, cardClickRedirectToLive]
+    [user, createdByUserId, isLive, streamerName, callId, title, mobileVideoUrl, propThumbnailUrl, thumbnailUrl, category, cohosts, navigate, cardClickRedirectToLive, selectable, onSelect]
   );
 
   if (variant === 'explore') {
@@ -97,8 +140,23 @@ export const StreamCard: React.FC<StreamCardProps> = ({
     return (
       <div
         onClick={handleCardClick}
-        className="group relative block w-full aspect-[3/5.2] overflow-hidden rounded-2xl bg-neutral-900 shadow-2xl transition-all duration-500 hover:shadow-orange-900/20 cursor-pointer"
+        onMouseDown={startPress}
+        onMouseUp={endPress}
+        onMouseLeave={endPress}
+        onTouchStart={startPress}
+        onTouchEnd={endPress}
+        onTouchMove={endPress}
+        className={cn(
+          "group relative block w-full aspect-[3/5.2] overflow-hidden rounded-2xl bg-neutral-900 shadow-2xl transition-all duration-500 hover:shadow-orange-900/20 cursor-pointer border-2",
+          selected 
+            ? "border-[#FF7700] shadow-[0_0_20px_rgba(255,119,0,0.4)]" 
+            : "border-transparent hover:border-zinc-700/50"
+        )}
       >
+        {/* Selected Backdrop Overlay */}
+        {selected && (
+          <div className="absolute inset-0 bg-[#FF7700]/10 z-10 pointer-events-none transition-colors" />
+        )}
         {/* Background Image */}
         {isDefaultImage ? (
           <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/60 overflow-hidden">
@@ -140,9 +198,78 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           </div>
         )}
 
+        {/* Select Mode Checkbox */}
+        {selectable && (
+          <div
+            className={cn(
+              "absolute z-20 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-300 shadow-lg left-4",
+              (viewerCount !== 0 && viewerCount !== "0") ? "top-14" : "top-4",
+              selected
+                ? "bg-[#FF7700] border-[#FF7700] text-[#111213] scale-110"
+                : "bg-black/40 border-white/60 text-transparent"
+            )}
+          >
+            {selected && (
+              <svg className="h-4 w-4 stroke-[3px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        )}
+
+        {/* Menu Container */}
+        {!selectable && onDelete && (
+          <div className={cn("absolute z-30 left-4", (viewerCount !== 0 && viewerCount !== "0") ? "top-14" : "top-4")}>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white shadow-md backdrop-blur-md border border-white/10 transition-all duration-300 active:scale-90",
+                showMenu ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )}
+              title="Options"
+            >
+              <MoreHorizontal className="h-4.5 w-4.5" />
+            </button>
+
+            {showMenu && (
+              <>
+                {/* Click-away backdrop */}
+                <div
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowMenu(false);
+                  }}
+                  className="fixed inset-0 z-20 bg-transparent cursor-default"
+                />
+                
+                {/* Dropdown Menu */}
+                <div className="absolute left-0 top-9 z-30 w-28 bg-zinc-950/95 border border-zinc-800 rounded-xl p-1 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowMenu(false);
+                      onDelete();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer text-left"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Cohost Indicator */}
         {primaryCohost && (
-          <div className="absolute right-4 top-4 z-10">
+          <div className="absolute top-4 right-4 z-10">
             <div className="relative group/cohost transition-transform duration-300 hover:scale-110">
               <img
                 src={primaryCohost.profileImage || `https://i.pravatar.cc/150?u=${primaryCohost.username}`}
@@ -204,8 +331,23 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   return (
     <div
       onClick={handleCardClick}
-      className="group relative block w-full aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 shadow-lg transition-all hover:shadow-xl cursor-pointer"
+      onMouseDown={startPress}
+      onMouseUp={endPress}
+      onMouseLeave={endPress}
+      onTouchStart={startPress}
+      onTouchEnd={endPress}
+      onTouchMove={endPress}
+      className={cn(
+        "group relative block w-full aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 shadow-lg transition-all hover:shadow-xl cursor-pointer border-2",
+        selected 
+          ? "border-[#FF7700] shadow-[0_0_20px_rgba(255,119,0,0.4)]" 
+          : "border-transparent hover:border-zinc-700/50"
+      )}
     >
+      {/* Selected Backdrop Overlay */}
+      {selected && (
+        <div className="absolute inset-0 bg-[#FF7700]/10 z-10 pointer-events-none transition-colors" />
+      )}
       {isDefaultImage ? (
         <div className="absolute inset-0 flex items-center justify-center bg-neutral-900/60 overflow-hidden">
           <img
@@ -244,8 +386,77 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         </div>
       )}
 
+      {/* Select Mode Checkbox */}
+      {selectable && (
+        <div
+          className={cn(
+            "absolute z-20 flex h-5 w-5 items-center justify-center rounded-full border transition-all duration-300 shadow-md left-3",
+            (viewerCount !== 0 && viewerCount !== "0") ? "top-11" : "top-3",
+            selected
+              ? "bg-[#FF7700] border-[#FF7700] text-[#111213] scale-110"
+              : "bg-black/40 border-white/60 text-transparent"
+          )}
+        >
+          {selected && (
+            <svg className="h-3 w-3 stroke-[3px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </div>
+      )}
+
+      {/* Menu Container */}
+      {!selectable && onDelete && (
+        <div className={cn("absolute z-30 left-3", (viewerCount !== 0 && viewerCount !== "0") ? "top-11" : "top-3")}>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }}
+            className={cn(
+              "flex h-7 w-7 items-center justify-center rounded-full bg-black/40 hover:bg-black/60 text-white shadow-md backdrop-blur-md border border-white/10 transition-all duration-300 active:scale-90",
+              showMenu ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+            )}
+            title="Options"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+
+          {showMenu && (
+            <>
+              {/* Click-away backdrop */}
+              <div
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+                className="fixed inset-0 z-20 bg-transparent cursor-default"
+              />
+              
+              {/* Dropdown Menu */}
+              <div className="absolute left-0 top-8 z-30 w-28 bg-zinc-950/95 border border-zinc-800 rounded-xl p-1 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setShowMenu(false);
+                    onDelete();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer text-left"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {cohosts && cohosts.length > 0 ? (
-        <div className="absolute right-3 top-3 z-10 flex -space-x-3 items-center">
+        <div className="absolute top-3 right-3 z-10 flex -space-x-3 items-center">
           {cohosts.map((cohost, idx) => (
             <div
               key={idx}
@@ -264,7 +475,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           ))}
         </div>
       ) : collaboratorAvatarUrl ? (
-        <div className="absolute right-3 top-3 z-10">
+        <div className="absolute top-3 right-3 z-10">
           <div className="relative">
             <img
               src={collaboratorAvatarUrl}

@@ -158,7 +158,21 @@ export const channelToConversation = (
         lastMessageOriginal: lastMsgOriginal,
         lastMessageSenderId: lastMsg?.user?.id ?? (lastMsg as any)?.user_id ?? '',
         lastMessageTime: toIso(lastMsg?.created_at ?? channel.data?.created_at),
-        unreadCount: channel.countUnread(),
+        unreadCount: (() => {
+            const rawCount = channel.countUnread();
+            if (rawCount > 0) return rawCount;
+            // Fallback for muted channels where server-side countUnread() returns 0 by default
+            const myRead = channel.state.read[myId];
+            const lastReadTime = myRead?.last_read ? new Date(myRead.last_read).getTime() : 0;
+            const unreadMessages = allMsgs.filter(m => {
+                if ((m.user?.id || m.user_id) === myId) return false;
+                const text = m.text?.trim() || '';
+                if (text === 'has joined the live') return false;
+                const msgTime = new Date(m.created_at || '').getTime();
+                return msgTime > lastReadTime;
+            });
+            return unreadMessages.length;
+        })(),
         lastMessageStatus,
         isOnline: participant?.online ?? false,
         lastActive: participant?.last_active ? toIso(participant.last_active) : undefined,

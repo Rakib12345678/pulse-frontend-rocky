@@ -29,9 +29,17 @@ interface ConfirmModalProps {
     onConfirm: () => void;
     onCancel: () => void;
     useDrawer?: boolean;
+    headerIcon?: React.ReactNode;
 }
 
-const ModalHeaderIcon = ({ avatarUrl, avatarFallback }: { avatarUrl?: string, avatarFallback?: string }) => {
+const ModalHeaderIcon = ({ avatarUrl, avatarFallback, headerIcon }: { avatarUrl?: string, avatarFallback?: string, headerIcon?: React.ReactNode }) => {
+    if (headerIcon) {
+        return (
+            <div className="mb-4 flex justify-center text-white">
+                {headerIcon}
+            </div>
+        );
+    }
     if (avatarUrl || avatarFallback) {
         return (
             <div className="mb-5 flex justify-center">
@@ -116,7 +124,7 @@ const ConfirmModalContent = ({
 );
 
 export const ConfirmModal = (props: ConfirmModalProps) => {
-    const { isOpen, title, onCancel, useDrawer = true, confirmLabel, confirmIcon, confirmClassName = 'bg-[#FF7700] text-black hover:bg-[#ff9922]', cancelLabel = 'Cancel', isLoading, onConfirm, ...rest } = props;
+    const { isOpen, title, onCancel, useDrawer = true, confirmLabel, confirmIcon, confirmClassName = 'bg-[#FF7700] text-black hover:bg-[#ff9922]', cancelLabel = 'Cancel', isLoading, onConfirm, headerIcon, ...rest } = props;
     const isMobile = useIsMobile();
 
     if (!isOpen) return null;
@@ -131,7 +139,7 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
                         <DrawerDescription className="sr-only">{title}</DrawerDescription>
                     </DrawerHeader>
                     <div className="flex flex-col items-center px-2">
-                        <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
+                        <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} headerIcon={headerIcon} />
                         <ConfirmModalContent onCancel={onCancel} confirmLabel={confirmLabel} confirmIcon={confirmIcon} confirmClassName={confirmClassName} cancelLabel={cancelLabel} isLoading={isLoading} onConfirm={onConfirm} {...rest} />
                     </div>
                 </DrawerContent>
@@ -145,7 +153,7 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
                 <div className="absolute inset-0 bg-black/80" onClick={onCancel} />
                 <div className="relative bg-[#1D1F20] border border-white/10 rounded-[24px] w-full max-w-sm p-8 flex flex-col items-center text-center">
-                    <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
+                    <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} headerIcon={headerIcon} />
 
                     <h3 className="text-white text-2xl font-bold mb-1 leading-snug">{title}</h3>
 
@@ -176,7 +184,7 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
             <DialogContent showCloseButton={false} className="bg-[#1D1F20] border-white/10 rounded-3xl px-8 py-10 w-full max-w-md shadow-2xl flex flex-col items-center text-center">
-                <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} />
+                <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} headerIcon={headerIcon} />
                 <DialogTitle className="text-white text-2xl font-bold leading-snug">{title}</DialogTitle>
                 <ConfirmModalContent onCancel={onCancel} confirmLabel={confirmLabel} confirmIcon={confirmIcon} confirmClassName={confirmClassName} cancelLabel={cancelLabel} isLoading={isLoading} onConfirm={onConfirm} {...rest} />
             </DialogContent>

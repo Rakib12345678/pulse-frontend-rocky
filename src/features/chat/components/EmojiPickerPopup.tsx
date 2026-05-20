@@ -6,12 +6,13 @@ import { cn } from '@/lib/utils';
 interface EmojiPickerPopupProps {
     onSelect: (emoji: any) => void;
     onClose: () => void;
+    closeOnSelect?: boolean;
     className?: string;
     style?: React.CSSProperties;
     isMobile?: boolean;
 }
 
-export const EmojiPickerPopup = ({ onSelect, onClose, className, style, isMobile }: EmojiPickerPopupProps) => {
+export const EmojiPickerPopup = ({ onSelect, onClose, closeOnSelect = true, className, style, isMobile }: EmojiPickerPopupProps) => {
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -62,7 +63,9 @@ export const EmojiPickerPopup = ({ onSelect, onClose, className, style, isMobile
                 data={data}
                 onEmojiSelect={(emoji: any) => {
                     onSelect(emoji);
-                    onClose();
+                    if (closeOnSelect) {
+                        onClose();
+                    }
                 }}
                 theme="dark"
                 set="native"
