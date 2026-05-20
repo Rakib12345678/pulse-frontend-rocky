@@ -150,6 +150,7 @@ export const useGoLiveStore = create<GoLiveState>((set, get) => ({
             isMicEnabled: true,
             isLoading: false,
             streamData: null,
+            isEndingStream: false,
             showConflict: false,
             conflictStream: null,
             isRejoinBannerDismissed: false,

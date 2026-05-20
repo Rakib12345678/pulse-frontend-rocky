@@ -92,6 +92,7 @@ export const LiveStreamHeader: React.FC = () => {
     const [showDurationPopup, setShowDurationPopup] = React.useState(false);
     const [streamDuration, setStreamDuration] = React.useState(0); // in seconds
     const startTimestampRef = React.useRef<number | null>(null);
+    const isEndingRef = React.useRef(false);
     const [isReportOpen, setIsReportOpen] = React.useState(false);
     const [showReportSuccess, setShowReportSuccess] = React.useState(false);
     const [failedReportData, setFailedReportData] = React.useState<{ reportedUserId: string, reasonId: string, otherText?: string } | null>(null);
@@ -153,7 +154,7 @@ export const LiveStreamHeader: React.FC = () => {
             startTimestampRef.current = Date.now();
         }
         const durationInterval = setInterval(() => {
-            if (startTimestampRef.current) {
+            if (startTimestampRef.current && !isEndingRef.current) {
                 setStreamDuration(Math.floor((Date.now() - startTimestampRef.current) / 1000));
             }
         }, 1000);
@@ -188,6 +189,7 @@ export const LiveStreamHeader: React.FC = () => {
 
     const handleEndLiveChoice = React.useCallback(async (save: boolean) => {
         if (!streamData) return;
+        isEndingRef.current = true;
         setIsEndingProcess(true);
         // Set ending stream flag immediately to bypass navigation blockers
         setEndingStream(true);
@@ -221,10 +223,9 @@ export const LiveStreamHeader: React.FC = () => {
 
             const durationMins = streamDuration / 60;
             if (save && durationMins >= 0) {
-                // Show the summary modal — reset store after so the effect
-                // can't re-run as a viewer while the modal is still visible
+                // Show the summary modal — DO NOT reset store here so the layout
+                // keeps rendering children and the modal stays mounted.
                 setShowDurationPopup(true);
-                useGoLiveStore.getState().reset();
             } else {
                 // Navigate first so the route unmounts before reset() clears
                 // streamData; this prevents the layout effect from re-running
@@ -478,6 +479,9 @@ export const LiveStreamHeader: React.FC = () => {
                 if (!open) {
                     setShowDurationPopup(false);
                     navigate({ to: '/for-you' });
+                    setTimeout(() => {
+                        useGoLiveStore.getState().reset();
+                    }, 100);
                 }
             }}>
                 <DialogContent className="bg-[#1C1C1E] border-white/5 rounded-3xl sm:max-w-md p-8 gap-6 shadow-2xl flex flex-col items-center text-center">
@@ -498,6 +502,9 @@ export const LiveStreamHeader: React.FC = () => {
                         onClick={() => {
                             setShowDurationPopup(false);
                             navigate({ to: '/for-you' });
+                            setTimeout(() => {
+                                useGoLiveStore.getState().reset();
+                            }, 100);
                         }}
                         className="w-full py-7 rounded-full bg-[#FF8800] text-black font-bold text-lg hover:bg-[#ff9d2e] active:scale-95 transition-all shadow-lg mt-4"
                     >

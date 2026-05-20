@@ -308,7 +308,8 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
 
     useEffect(() => {
         const isHostMode = !!streamData;
-        const isViewerMode = !streamData && !!viewerCallId && !isEndingStream;
+        const isEnding = useGoLiveStore.getState().isEndingStream;
+        const isViewerMode = !streamData && !!viewerCallId && !isEnding;
 
         if (!isHostMode && !isViewerMode) return;
         setStreamEnded(false);
@@ -647,7 +648,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
             setChatClient(null);
             setCall(null);
         };
-    }, [streamData, viewerCallId, user?.id, isEndingStream]);
+    }, [streamData, viewerCallId, user?.id]);
 
 
 
@@ -673,7 +674,7 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
     // we return a blank background instead of the loader to avoid z-index conflicts
     // and let the Rejoin UI be the primary focus.
     if (!client || !call || !chatClient) {
-        if (isRejoining) {
+        if (isRejoining || isEndingStream) {
             return <div className="fixed inset-0 bg-[#0f1117] z-40" />;
         }
         return (
