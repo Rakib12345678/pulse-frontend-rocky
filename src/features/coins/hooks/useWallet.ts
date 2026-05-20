@@ -6,11 +6,12 @@ import { getStreamClient, isStreamConnected } from '@/features/chat/stream/strea
 
 export const useWalletBalance = () => {
   const queryClient = useQueryClient();
-  const { updateWallet } = useAuthStore();
+  const { updateWallet, isAuthenticated } = useAuthStore();
   const query = useQuery({
     queryKey: ['walletBalance'],
     queryFn: () => paymentService.getWalletBalance(),
     staleTime: 0,
+    enabled: isAuthenticated,
   });
 
   // Event-driven real-time updates (Instantly refresh when a gift arrives)

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import {
   // Bell,
@@ -66,6 +67,7 @@ export const Navbar: React.FC = () => {
   const { data: walletData } = useWalletBalance();
   const { reset: resetSignUp } = useSignUpStore();
   const { openModal: openCoinsModal } = useCoinsStore();
+  const queryClient = useQueryClient();
 
   const [hasMounted, setHasMounted] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -105,6 +107,8 @@ export const Navbar: React.FC = () => {
   const handleLogout = () => {
     clearAuth();
     resetSignUp();
+    // Remove cached wallet data so the next login always fetches fresh balance from backend
+    queryClient.removeQueries({ queryKey: ['walletBalance'] });
     setShowLogoutConfirm(false);
     navigate({ to: '/' });
   };
