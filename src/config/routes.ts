@@ -3,7 +3,7 @@
  */
 export const PUBLIC_ROUTES = [
     '/',        // Home
-    // '/explore', // Explore
+    '/explore', // Explore
     '/live',    // Live streams
     '/for-you', // For you
     '/live/:id',
