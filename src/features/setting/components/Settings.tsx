@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ShieldCheck, Clock, Users, Trash2, LogOut, Link2Off } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -20,6 +21,7 @@ export const SettingsPage = () => {
     const navigate = useNavigate();
     const { user, clearAuth } = useAuthStore();
     const { setStep, openModal, setOnAgeVerified, reset: resetSignUp } = useSignUpStore();
+    const queryClient = useQueryClient();
 
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -60,6 +62,8 @@ export const SettingsPage = () => {
     const handleLogout = () => {
         clearAuth();
         resetSignUp();
+        // Clear cached blocked users so stale data never persists across accounts
+        queryClient.removeQueries({ queryKey: ['blockedUsers'] });
         navigate({ to: '/' });
     };
 
@@ -115,6 +119,8 @@ export const SettingsPage = () => {
                     setShowDeleteSuccess(false);
                     clearAuth();
                     resetSignUp();
+                    // Clear cached blocked users on account deletion too
+                    queryClient.removeQueries({ queryKey: ['blockedUsers'] });
                     navigate({ to: '/' });
                 }}
             />

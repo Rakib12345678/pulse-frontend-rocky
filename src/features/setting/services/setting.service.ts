@@ -12,7 +12,7 @@ export const useBlockedUsers = () => {
   return useQuery({
     queryKey: ['blockedUsers'],
     queryFn: fetchBlockedUsers,
-    staleTime: 2 * 60 * 1000,
+    staleTime: 0,        // Always fetch fresh data when the Settings page mounts
     retry: false,
   });
 };
