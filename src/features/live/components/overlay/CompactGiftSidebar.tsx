@@ -213,10 +213,6 @@ export const CompactGiftSidebar: React.FC = () => {
         return (
             <div
                 className="absolute z-30 flex flex-col items-center gap-5 overflow-y-auto scrollbar-hide right-8 bottom-28 top-32 w-16"
-                style={{
-                    maskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)',
-                    WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)'
-                }}
             >
                 <div className="flex flex-col gap-6 py-4 items-center">
                     {gifts.map((gift) => (
@@ -230,10 +226,10 @@ export const CompactGiftSidebar: React.FC = () => {
                                 <img
                                     src={gift.iconUrl}
                                     alt={gift.name}
-                                    className="w-10 h-10 object-contain drop-shadow-[0_0_6px_rgba(255,136,0,0.3)] group-hover:drop-shadow-[0_0_8px_rgba(255,136,0,0.6)] transition-all"
+                                    className="w-10 h-10 object-contain transition-all"
                                 />
                             </div>
-                            <div className="flex items-center gap-1 bg-black/50 backdrop-blur-sm px-1.5 py-0.5 rounded-full border border-white/10">
+                            <div className="flex items-center gap-1 bg-black/80 px-1.5 py-0.5 rounded-full border border-white/10">
                                 <img src={coinIcon} alt="coins" className="w-2.5 h-2.5" />
                                 <span className="text-[10px] font-bold text-[#FFB800]">{gift.noOfCoin}</span>
                             </div>
@@ -281,7 +277,7 @@ export const CompactGiftSidebar: React.FC = () => {
                             <img
                                 src={gift.iconUrl}
                                 alt={gift.name}
-                                className="w-10 h-10 object-contain drop-shadow-[0_0_6px_rgba(255,136,0,0.3)]"
+                                className="w-10 h-10 object-contain"
                             />
                             <div className="flex items-center gap-0.5">
                                 <img src={coinIcon} alt="coins" className="w-3 h-3" />

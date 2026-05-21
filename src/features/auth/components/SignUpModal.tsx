@@ -825,7 +825,7 @@ const StepAge = () => {
 
 // --- 5. DETAILS STEP (FIXED TWO-COLUMN LAYOUT) ---
 const detailsSchema = z.object({
-    fullName: z.string({ message: "Full name is required" }).min(2, "Min 2 chars"),
+    fullName: z.string({ message: "Full name is required" }).min(2, "Minimum 2 characters"),
     location: z.string({ message: "Please select a location" }).min(2, "Please select a location"),
     bio: z.string().max(100).nullable().optional(),
 });
@@ -964,7 +964,7 @@ export const StepDetails = ({
 
     const onSubmit = async (data: DetailsFormData) => {
         if (mode === 'signup') {
-            if (username.length < 3) { setUsernameError('Min 3 chars'); return; }
+            if (username.length < 3) { setUsernameError('Minimum 3 characters'); return; }
             if (isUsernameAvailable === false) return;
         }
         setIsLoading(true);

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Virtuoso } from 'react-virtuoso';
 import { Lock, Heart, SendHorizonal, Share2, Volume2, VolumeX, MessageCircle } from 'lucide-react';
 import coinIcon from '@/assets/coin.svg';
 import giftSvg from '@/assets/gift.svg';
@@ -136,29 +137,14 @@ export const LiveStreamChat: React.FC = () => {
 
     if (!isChatVisible) return providers;
 
-    // Mobile: viewers need extra room for horizontal gift bar; host just clears the Invite Friends button
-    const bottomClass = isMobile ? (isViewer ? 'bottom-[96px]' : 'bottom-[96px]') : 'bottom-10';
-
     return (
         <Channel key={chatClient.userID || 'anonymous'} channel={channel as any}>
             {providers}
-            
+
             {channel ? (
                 <>
                     {/* Chat messages + input — transparent on mobile, dark card on desktop */}
-                    <div
-                        className={`absolute ${bottomClass} z-20 flex flex-col
-                            ${isMobile
-                                ? 'left-2 right-2 max-h-[52vh]'
-                                : 'left-4 xl:left-10 right-auto w-[280px] max-h-[min(400px,calc(100vh-280px))] rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl'
-                            }`}
-                    >
-                        <SuperchatTicker />
-                        <div className={`flex-1 flex flex-col overflow-hidden ${isMobile ? 'pt-2 px-2 pb-1' : 'bg-[#1D1F20] pt-4 px-4 pb-3'}`}>
-                            <LiveStreamMessageList />
-                            <LiveStreamMessageInput />
-                        </div>
-                    </div>
+                    <LiveStreamChatCard />
 
                     {/* Viewer: horizontal gift sidebar with join button at bottom */}
                     {isViewer && <ViewerBottomBar />}
@@ -176,16 +162,49 @@ export const LiveStreamChat: React.FC = () => {
             ) : (
                 /* Still show the gift sidebar even if chat channel is not ready, if possible */
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                   {/* Optional: <Loader2 className="h-6 w-6 animate-spin text-white/20" /> */}
+                    {/* Optional: <Loader2 className="h-6 w-6 animate-spin text-white/20" /> */}
                 </div>
             )}
         </Channel>
     );
 };
 
+const LiveStreamChatCard: React.FC = () => {
+    const { messages } = useChannelStateContext();
+    const { isViewer } = useLiveStreamContext();
+    const isMobile = useIsMobile();
+
+    const THRESHOLD = 15;
+    const useVirtuoso = (messages?.length || 0) > THRESHOLD;
+
+    // Mobile: viewers need extra room for horizontal gift bar; host just clears the Invite Friends button
+    const bottomClass = isMobile ? (isViewer ? 'bottom-[96px]' : 'bottom-[96px]') : 'bottom-10';
+
+    return (
+        <div
+            className={cn(
+                "absolute z-20 flex flex-col",
+                bottomClass,
+                isMobile
+                    ? cn("left-2 right-2 max-h-[52vh]", useVirtuoso ? "h-[52vh]" : "h-auto")
+                    : cn(
+                        "left-4 xl:left-10 right-auto w-[280px] max-h-[min(400px,calc(100vh-280px))]",
+                        useVirtuoso ? "h-[min(400px,calc(100vh-280px))]" : "h-auto",
+                        "rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl"
+                    )
+            )}
+        >
+            <SuperchatTicker />
+            <div className={cn("flex-1 flex flex-col overflow-hidden", isMobile ? "pt-2 px-2 pb-1" : "bg-[#1D1F20] pt-4 px-4 pb-3")}>
+                <LiveStreamMessageList />
+                <LiveStreamMessageInput />
+            </div>
+        </div>
+    );
+};
+
 const LiveStreamMessageList: React.FC = () => {
     const { messages } = useChannelStateContext();
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const { openModal: openProfileModal } = useUserProfileStore();
     const { openModal: openLoginModal, setMode } = useSignUpStore();
     const { isGuest, isViewer } = useLiveStreamContext();
@@ -193,6 +212,15 @@ const LiveStreamMessageList: React.FC = () => {
     const participants = useParticipantsList();
     const { user } = useAuthStore();
     const isMobile = useIsMobile();
+
+    const virtuosoRef = useRef<any>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const hasInitialScrolledRef = useRef(false);
+    const prevMessagesLengthRef = useRef(0);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+
+    const THRESHOLD = 15;
+    const useVirtuoso = (messages?.length || 0) > THRESHOLD;
 
     // Build a lookup map: userId -> fullName from custom fields
     const fullNameMap = useMemo(() => {
@@ -212,10 +240,6 @@ const LiveStreamMessageList: React.FC = () => {
         return fullNameMap.get(msgUser.id) || msgUser.name || msgUser.id || '';
     };
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
-
     const handleUserClick = (username?: string, userId?: string) => {
         if (!username && !userId) return;
         const finalUsername = username || userId;
@@ -229,99 +253,187 @@ const LiveStreamMessageList: React.FC = () => {
         }
     };
 
-    return (
-        <div
-            className={cn(
-                "flex-1 overflow-y-auto space-y-4 mb-4 scrollbar-hide pr-1",
-                isMobile && "max-w-[70%]"
-            )}
-            style={{
-                maskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 5%, black 100%)',
-            }}
-        >
-            {messages?.map((msg) => {
-                const giftMessage = isGiftMsg(msg);
-                const giftIconUrl = (msg as any)?.giftIconUrl;
-                const giftCost = (msg as any)?.giftCost;
+    const handleScroll = () => {
+        if (useVirtuoso || !containerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+        const atBottom = scrollHeight - scrollTop - clientHeight <= 120;
+        setIsAtBottom(atBottom);
+    };
 
-                if (giftMessage) {
-                    if (isViewer) return null;
+    const prevUseVirtuosoRef = useRef(useVirtuoso);
+    useEffect(() => {
+        if (prevUseVirtuosoRef.current !== useVirtuoso) {
+            hasInitialScrolledRef.current = false;
+            prevUseVirtuosoRef.current = useVirtuoso;
+        }
+    }, [useVirtuoso]);
 
-                    return (
-                        <div
-                            key={msg.id}
-                            className="flex items-start gap-3 bg-[#2C2F30] border border-[#494E50] rounded-2xl px-3 py-3"
-                        >
-                            <img
-                                src={msg.user?.image || 'https://i.pravatar.cc/150'}
-                                alt={getDisplayName(msg.user)}
-                                onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
-                                className="w-9 h-9 rounded-full border-2 border-[#FF8800]/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity mt-0.5"
-                            />
-                            <div className="flex-1 min-w-0">
-                                <span
-                                    className="text-xs font-semibold text-[#FF8800] cursor-pointer transition-colors mr-1"
-                                    onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
-                                >
-                                    @{getDisplayName(msg.user)}
-                                </span>
-                                <span className="text-xs text-white/70 break-words">{msg.text}</span>
-                                {giftCost && (
-                                    <div className="flex items-center gap-1 mt-0.5">
-                                        <img src={coinIcon} alt="coins" className="w-3 h-3" />
-                                        <span className="text-[10px] font-bold text-[#FFB800]">{giftCost}</span>
-                                    </div>
-                                )}
-                            </div>
-                            {giftIconUrl && (
-                                <img
-                                    src={giftIconUrl}
-                                    alt="gift"
-                                    className="w-10 h-10 object-contain shrink-0 drop-shadow-[0_0_6px_rgba(255,136,0,0.5)] animate-bounce"
-                                    style={{ animationDuration: '1.5s', animationIterationCount: 3 }}
-                                />
-                            )}
-                        </div>
-                    );
+    useEffect(() => {
+        if (!messages || messages.length === 0) return;
+
+        const isNewMessage = messages.length > prevMessagesLengthRef.current;
+        prevMessagesLengthRef.current = messages.length;
+
+        if (useVirtuoso) {
+            if (!hasInitialScrolledRef.current) {
+                hasInitialScrolledRef.current = true;
+                setTimeout(() => {
+                    virtuosoRef.current?.scrollToIndex({
+                        index: messages.length - 1,
+                        align: 'end',
+                        behavior: 'auto',
+                    });
+                }, 100);
+            } else if (isNewMessage) {
+                const lastMessage = messages[messages.length - 1];
+                const isMyMessage = lastMessage?.user?.id === String(user?.id);
+                if (isMyMessage || isAtBottom) {
+                    setTimeout(() => {
+                        virtuosoRef.current?.scrollToIndex({
+                            index: messages.length - 1,
+                            align: 'end',
+                            behavior: 'smooth',
+                        });
+                    }, 50);
                 }
+            }
+        } else {
+            if (!hasInitialScrolledRef.current) {
+                hasInitialScrolledRef.current = true;
+                setTimeout(() => {
+                    if (containerRef.current) {
+                        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+                    }
+                }, 100);
+            } else if (isNewMessage) {
+                const lastMessage = messages[messages.length - 1];
+                const isMyMessage = lastMessage?.user?.id === String(user?.id);
+                if (isMyMessage || isAtBottom) {
+                    setTimeout(() => {
+                        if (containerRef.current) {
+                            containerRef.current.scrollTo({
+                                top: containerRef.current.scrollHeight,
+                                behavior: 'smooth',
+                            });
+                        }
+                    }, 50);
+                }
+            }
+        }
+    }, [messages, user?.id, isAtBottom, useVirtuoso]);
 
-                return (
-                    <div key={msg.id} className="flex items-start gap-2.5">
+    const renderMessageItem = (msg: any, index: number) => {
+        const giftMessage = isGiftMsg(msg);
+        const giftIconUrl = (msg as any)?.giftIconUrl;
+        const giftCost = (msg as any)?.giftCost;
+
+        if (giftMessage) {
+            if (isViewer) return null;
+            return (
+                <div className="pb-4" key={msg?.id || index}>
+                    <div className="flex items-start gap-3 bg-[#2C2F30] border border-[#494E50] rounded-2xl px-3 py-3">
                         <img
                             src={msg.user?.image || 'https://i.pravatar.cc/150'}
                             alt={getDisplayName(msg.user)}
                             onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
-                            className="w-8 h-8 rounded-full border-2 border-transparent shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                            className="w-9 h-9 rounded-full border-2 border-[#FF8800]/60 shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity mt-0.5"
                         />
-                        <div className="flex flex-col min-w-0">
-                            <div className="text-sm break-words leading-relaxed">
-                                <span
-                                    className="font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors mr-1.5"
-                                    onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
-                                >
-                                    @{getDisplayName(msg.user)}
-                                </span>
-                                {typeof msg.text === 'string' && msg.text.split('\n').length > 1 ? (
-                                    <>
-                                        <span className="font-bold text-white">
-                                            {msg.text.split('\n')[0]}
-                                        </span>
-                                        <span className="block text-white/80 mt-1 whitespace-pre-wrap">
-                                            {msg.text.split('\n').slice(1).join('\n')}
-                                        </span>
-                                    </>
-                                ) : (
-                                    <span className={`font-bold ${(msg as any).isJoinMessage ? 'text-white/50 italic' : 'text-white'}`}>
-                                        {msg.text}
+                        <div className="flex-1 min-w-0">
+                            <span
+                                className="text-xs font-semibold text-[#FF8800] cursor-pointer transition-colors mr-1"
+                                onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
+                            >
+                                @{getDisplayName(msg.user)}
+                            </span>
+                            <span className="text-xs text-white/70 break-words">{msg.text}</span>
+                            {giftCost && (
+                                <div className="flex items-center gap-1 mt-0.5">
+                                    <img src={coinIcon} alt="coins" className="w-3 h-3" />
+                                    <span className="text-[10px] font-bold text-[#FFB800]">{giftCost}</span>
+                                </div>
+                            )}
+                        </div>
+                        {giftIconUrl && (
+                            <img
+                                src={giftIconUrl}
+                                alt="gift"
+                                className="w-10 h-10 object-contain shrink-0 animate-bounce"
+                                style={{ animationDuration: '1.5s', animationIterationCount: 3 }}
+                            />
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="pb-4" key={msg?.id || index}>
+                <div className="flex items-start gap-2.5">
+                    <img
+                        src={msg.user?.image || 'https://i.pravatar.cc/150'}
+                        alt={getDisplayName(msg.user)}
+                        onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
+                        className="w-8 h-8 rounded-full border-2 border-transparent shrink-0 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                    />
+                    <div className="flex flex-col min-w-0">
+                        <div className="text-sm break-words leading-relaxed">
+                            <span
+                                className="font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors mr-1.5"
+                                onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
+                            >
+                                @{getDisplayName(msg.user)}
+                            </span>
+                            {typeof msg.text === 'string' && msg.text.split('\n').length > 1 ? (
+                                <>
+                                    <span className="font-bold text-white">
+                                        {msg.text.split('\n')[0]}
                                     </span>
-                                )}
-                            </div>
+                                    <span className="block text-white/80 mt-1 whitespace-pre-wrap">
+                                        {msg.text.split('\n').slice(1).join('\n')}
+                                    </span>
+                                </>
+                            ) : (
+                                <span className={`font-bold ${(msg as any).isJoinMessage ? 'text-white/50 italic' : 'text-white'}`}>
+                                    {msg.text}
+                                </span>
+                            )}
                         </div>
                     </div>
-                );
-            })}
-            <div ref={messagesEndRef} />
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div
+            ref={containerRef}
+            onScroll={handleScroll}
+            className={cn(
+                "scrollbar-hide mb-4 pr-1 bg-gradient-to-b from-transparent via-black/10 to-transparent",
+                useVirtuoso ? "flex-1 min-h-0 overflow-hidden" : "h-auto max-h-full overflow-y-auto",
+                isMobile && "max-w-[70%]"
+            )}
+        >
+            {useVirtuoso ? (
+                <Virtuoso
+                    ref={virtuosoRef}
+                    style={{ height: '100%', width: '100%' }}
+                    className="scrollbar-hide"
+                    data={messages || []}
+                    computeItemKey={(index: number, msg: any) => msg?.id || index}
+                    initialTopMostItemIndex={Math.max(0, (messages?.length || 0) - 1)}
+                    alignToBottom
+                    atBottomStateChange={(atBottom) => {
+                        setIsAtBottom(atBottom);
+                    }}
+                    atBottomThreshold={120}
+                    itemContent={(index: number, msg: any) => renderMessageItem(msg, index)}
+                />
+            ) : (
+                <div className="flex flex-col justify-end min-h-full">
+                    {(messages || []).map((msg, index) => renderMessageItem(msg, index))}
+                </div>
+            )}
         </div>
     );
 };
@@ -410,7 +522,7 @@ const LiveStreamMessageInput: React.FC = () => {
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                         placeholder="Say Something..."
-                        className={`w-full h-11 border rounded-full pl-10 pr-10 text-sm text-white focus:outline-none transition-all backdrop-blur-sm ${inputClass}`}
+                        className={`w-full h-11 border rounded-full pl-10 pr-10 text-sm text-white focus:outline-none transition-all bg-[#1D1F20]/95 ${inputClass}`}
                     />
                     {/* Heart — left inside input */}
                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -437,7 +549,7 @@ const LiveStreamMessageInput: React.FC = () => {
                         onClick={() => setIsGiftingOpen(!isGiftingOpen)}
                         className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all border ${isGiftingOpen
                             ? 'bg-[#FF8800] border-[#FF8800]/50'
-                            : 'bg-white/10 border-white/20 backdrop-blur-sm'
+                            : 'bg-black/60 border-white/20'
                             }`}
                         title="Send a gift"
                     >
@@ -454,7 +566,7 @@ const LiveStreamMessageInput: React.FC = () => {
                 <div className="absolute left-3 top-1/2 -translate-y-1/2">
                     <Lock className="w-4 h-4 text-white/30" />
                 </div>
-                <div className={`w-full h-11 border rounded-full pl-10 pr-4 flex items-center backdrop-blur-sm ${inputClass}`}>
+                <div className={`w-full h-11 border rounded-full pl-10 pr-4 flex items-center bg-[#1D1F20]/95 ${inputClass}`}>
                     <span className="text-sm text-white/40">Say Something...</span>
                 </div>
             </div>
@@ -695,7 +807,7 @@ const ViewerBottomBar: React.FC = () => {
     const muteButton = (
         <button
             onClick={toggleMute}
-            className={`${isMobile ? 'w-12 h-12' : 'w-12 h-12'} rounded-full flex items-center justify-center transition-all backdrop-blur-md border shrink-0 ${isMuted
+            className={`${isMobile ? 'w-12 h-12' : 'w-12 h-12'} rounded-full flex items-center justify-center transition-all bg-black/60 border shrink-0 ${isMuted
                 ? 'bg-red-500 border-red-400/50 text-white hover:bg-red-600'
                 : 'bg-white/10 border-white/10 hover:bg-white/20'
                 }`}
@@ -712,7 +824,7 @@ const ViewerBottomBar: React.FC = () => {
     const giftButton = (
         <button
             onClick={() => setIsGiftingOpen(!isGiftingOpen)}
-            className={`${isMobile ? 'w-12 h-12' : 'w-12 h-12'} rounded-full flex items-center justify-center transition-all backdrop-blur-md border shrink-0 ${isGiftingOpen
+            className={`${isMobile ? 'w-12 h-12' : 'w-12 h-12'} rounded-full flex items-center justify-center transition-all bg-black/60 border shrink-0 ${isGiftingOpen
                 ? 'bg-[#FF8800] border-[#FF8800]/50 text-black hover:bg-[#ff9922]'
                 : 'bg-white/10 border-white/10 hover:bg-white/20'
                 }`}

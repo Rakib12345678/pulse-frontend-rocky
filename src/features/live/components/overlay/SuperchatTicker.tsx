@@ -130,7 +130,7 @@ export const SuperchatTicker: React.FC = () => {
                 });
                 return filtered;
             });
-        }, 250);
+        }, 1000);
 
         return () => clearInterval(timer);
     }, [entries.length]);

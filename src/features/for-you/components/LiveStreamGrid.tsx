@@ -50,8 +50,8 @@ export const LiveStreamGrid: React.FC<LiveStreamGridProps> = ({
         return (
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-360px)] w-full text-center">
                 <Video className="h-16 w-16 text-gray-500 mb-4" />
-                <h2 className="text-xl font-semibold text-white mb-2">No Live Streams</h2>
-                <p className="text-gray-200 mb-6">Be the first to go live!</p>
+                <h2 className="text-2xl font-semibold text-white mb-2">No Live Streams</h2>
+                <p className="text-gray-200 mb-6 text-sm">Be the first to go live!</p>
             </div>
         );
     }

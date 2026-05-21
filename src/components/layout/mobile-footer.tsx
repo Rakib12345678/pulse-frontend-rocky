@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link, useLocation } from '@tanstack/react-router';
 import LiveVideo from '@/assets/Live.svg';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,16 @@ interface NavItemProps {
 const NavItem = ({ to, label, customIcon, onClick, badgeCount = 0 }: NavItemProps) => {
     const { pathname } = useLocation();
     const isActive = pathname === to;
+    const { isOpen: isModalOpen, currentStep, closeModal } = useSignUpStore();
+
+    const handleClick = () => {
+        if (isModalOpen && currentStep === 'welcome') {
+            closeModal();
+        }
+        if (onClick) {
+            onClick();
+        }
+    };
 
     const content = (
         <div className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors">
@@ -60,7 +70,7 @@ const NavItem = ({ to, label, customIcon, onClick, badgeCount = 0 }: NavItemProp
     if (onClick) {
         return (
             <button
-                onClick={onClick}
+                onClick={handleClick}
                 className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors cursor-pointer"
             >
                 {content}
@@ -69,7 +79,7 @@ const NavItem = ({ to, label, customIcon, onClick, badgeCount = 0 }: NavItemProp
     }
 
     return (
-        <Link to={to} className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors">
+        <Link to={to} onClick={handleClick} className="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors">
             {content}
         </Link>
     );
@@ -80,8 +90,18 @@ export const MobileFooter: React.FC = () => {
     const handleGoLiveClick = useGoLive();
     const { pathname } = useLocation();
     const { isAuthenticated, accessToken } = useAuthStore();
-    const { openModal, setStep, setMode, isOpen: isModalOpen, currentStep } = useSignUpStore();
+    const { openModal, closeModal, setStep, setMode, isOpen: isModalOpen, currentStep } = useSignUpStore();
     const totalUnreadCount = useTotalUnreadCount();
+    const prevPathname = useRef(pathname);
+
+    useEffect(() => {
+        if (pathname !== prevPathname.current) {
+            prevPathname.current = pathname;
+            if (isModalOpen && currentStep === 'welcome') {
+                closeModal();
+            }
+        }
+    }, [pathname, isModalOpen, currentStep, closeModal]);
 
     const isChatWindowOpen = false; // overlay handles coverage via z-index
 

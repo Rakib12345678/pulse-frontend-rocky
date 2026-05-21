@@ -142,7 +142,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                     <button
                         onClick={toggleMicrophone}
                         className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border shadow-lg",
+                            "w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-lg",
                             !isMicMuted
                                 ? "bg-white/10 border-white/10 text-white hover:bg-white/20"
                                 : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
@@ -154,7 +154,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                     <button
                         onClick={toggleCamera}
                         className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border shadow-lg",
+                            "w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-lg",
                             !isCameraMuted
                                 ? "bg-white/10 border-white/10 text-white hover:bg-white/20"
                                 : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
@@ -173,7 +173,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                 <button
                     onClick={toggleCamera}
                     className={cn(
-                        "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
+                        "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl border",
                         !isCameraMuted
                             ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
                             : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] ring-4 ring-red-500/10 shadow-[0_0_20px_rgba(255,0,0,0.4)]"
@@ -186,7 +186,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                 <button
                     onClick={toggleMicrophone}
                     className={cn(
-                        "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
+                        "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl border",
                         !isMicMuted
                             ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
                             : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] ring-4 ring-red-500/10 shadow-[0_0_20px_rgba(255,0,0,0.4)]"
@@ -211,7 +211,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                 <button
                     onClick={toggleMicrophone}
                     className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border shadow-lg",
+                        "w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-lg",
                         !isMicMuted
                             ? "bg-white/10 border-white/10 text-white hover:bg-white/20"
                             : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
@@ -222,7 +222,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
                 <button
                     onClick={toggleCamera}
                     className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center transition-all backdrop-blur-md border shadow-lg",
+                        "w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-lg",
                         !isCameraMuted
                             ? "bg-white/10 border-white/10 text-white hover:bg-white/20"
                             : "bg-[#FF0000] border-red-500 text-white hover:bg-[#EE0000] shadow-[0_0_15px_rgba(255,0,0,0.3)]"
@@ -240,7 +240,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
             <button
                 onClick={toggleCamera}
                 className={cn(
-                    "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
+                    "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl border",
                     !isCameraMuted
                         ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
                         : "bg-red-500 border-red-400/50 text-white hover:bg-red-600 ring-4 ring-red-500/10"
@@ -252,7 +252,7 @@ export const LiveStreamControls: React.FC<LiveStreamControlsProps> = ({
             <button
                 onClick={toggleMicrophone}
                 className={cn(
-                    "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl backdrop-blur-md border",
+                    "w-[8vh] h-[8vh] max-w-[56px] max-h-[56px] min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center transition-all shadow-xl border",
                     !isMicMuted
                         ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
                         : "bg-red-500 border-red-400/50 text-white hover:bg-red-600 ring-4 ring-red-500/10"

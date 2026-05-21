@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
 import {
@@ -30,10 +30,18 @@ interface NavLinkProps {
 const NavLink = ({ to, label, badgeCount = 0 }: NavLinkProps) => {
   const { pathname } = useLocation();
   const isActive = pathname === to;
+  const { isOpen: isModalOpen, currentStep, closeModal } = useSignUpStore();
+
+  const handleClick = () => {
+    if (isModalOpen && currentStep === 'welcome') {
+      closeModal();
+    }
+  };
 
   return (
     <Link
       to={to}
+      onClick={handleClick}
       className={cn(
         "group flex flex-col items-center justify-center px-4 py-2 transition-colors relative",
         isActive ? "text-white" : "text-[#888888] hover:text-white"
@@ -78,7 +86,7 @@ export const Navbar: React.FC = () => {
     setHasMounted(true);
   }, []);
 
-  const { openModal, setStep, setMode, isOpen: isModalOpen, currentStep, pausedForLegal, resumeModal } = useSignUpStore();
+  const { openModal, closeModal, setStep, setMode, isOpen: isModalOpen, currentStep, pausedForLegal, resumeModal } = useSignUpStore();
 
   const shouldHide = isMobile && isModalOpen && currentStep !== 'welcome';
 
@@ -116,6 +124,16 @@ export const Navbar: React.FC = () => {
 
   const isLoggedIn = isAuthenticated && !!accessToken && !isNewUser;
   const { pathname } = useLocation();
+  const prevPathname = useRef(pathname);
+
+  useEffect(() => {
+    if (pathname !== prevPathname.current) {
+      prevPathname.current = pathname;
+      if (isModalOpen && currentStep === 'welcome') {
+        closeModal();
+      }
+    }
+  }, [pathname, isModalOpen, currentStep, closeModal]);
 
   if (shouldHide) return null;
 
@@ -137,7 +155,15 @@ export const Navbar: React.FC = () => {
 
           {/* ================= LEFT SECTION: Logo ================= */}
           <div className="flex items-center shrink-0">
-            <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+            <Link
+              to="/"
+              onClick={() => {
+                if (isModalOpen && currentStep === 'welcome') {
+                  closeModal();
+                }
+              }}
+              className="flex items-center gap-2 transition-opacity hover:opacity-80"
+            >
               <img src={LogoText} alt="PulseLive" className="hidden md:block h-20 w-36" />
               <img src={Logo} alt="PulseLive" className="block md:hidden h-9 w-9" />
               <span className="block md:hidden text-white font-bold text-lg">PulseLive</span>
@@ -234,6 +260,11 @@ export const Navbar: React.FC = () => {
                   {/* Profile Link */}
                   <Link
                     to="/profile"
+                    onClick={() => {
+                      if (isModalOpen && currentStep === 'welcome') {
+                        closeModal();
+                      }
+                    }}
                     className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/10 transition-transform hover:scale-105 active:scale-95 cursor-pointer bg-neutral-800 p-0"
                   >
                     {user?.profileImage ? (

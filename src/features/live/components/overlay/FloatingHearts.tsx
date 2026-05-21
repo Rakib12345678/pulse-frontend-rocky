@@ -91,7 +91,7 @@ export const FloatingHearts: React.FC = () => {
 
         setHearts((prev) => {
             const updated = [...prev, { id, color, x, rotation, delay, drift, size, emoji, imageUrl }];
-            return updated.length > 10 ? updated.slice(updated.length - 10) : updated;
+            return updated.length > 5 ? updated.slice(updated.length - 5) : updated;
         });
 
         setTimeout(() => {
@@ -115,14 +115,9 @@ export const FloatingHearts: React.FC = () => {
                         animate={{
                             opacity: [0, 1, 1, 0.8, 0],
                             y: -350,
-                            x: [
-                                heart.x,
-                                heart.x + heart.drift * 0.3,
-                                heart.x + heart.drift * 0.7,
-                                heart.x + heart.drift,
-                            ],
+                            x: heart.x + heart.drift,
                             scale: [0, heart.size * 1.1, heart.size, heart.size * 0.9, heart.size * 0.7],
-                            rotate: [heart.rotation, heart.rotation + 15, heart.rotation - 10, heart.rotation + 20],
+                            rotate: heart.rotation + 20,
                         }}
                         exit={{ opacity: 0, scale: 0 }}
                         transition={{
@@ -149,7 +144,6 @@ export const FloatingHearts: React.FC = () => {
                         className="absolute bottom-0 text-4xl drop-shadow-lg"
                         style={{
                             color: heart.emoji === '♥' ? heart.color : undefined, // Only color the default heart
-                            filter: 'drop-shadow(0 2px 8px rgba(255, 0, 0, 0.3))',
                         }}
                     >
                         {heart.imageUrl ? (

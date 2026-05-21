@@ -22,7 +22,7 @@ export const StreamFinishedOverlay: React.FC<StreamFinishedOverlayProps> = ({
 
     return (
         <div className={cn(
-            "absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/40 backdrop-blur-xl animate-in fade-in duration-500",
+            "absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-black/90 animate-in fade-in duration-500",
             className
         )}>
             {/* Background decorative elements */}
