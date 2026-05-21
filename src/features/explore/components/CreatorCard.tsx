@@ -7,6 +7,8 @@ import { UserAvatar } from '@/components/UserAvatar';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import coHostIcon from '@/assets/co-host.svg';
+import { useAuthStore } from '@/features/auth/stores/authStore';
+import { openAuthModal } from '@/hooks/useGuestGuard';
 
 interface CreatorCardProps {
     creator: Creator;
@@ -21,6 +23,13 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
     const handleFollowClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        // Guest guard — open auth modal instead of calling the API
+        if (!useAuthStore.getState().isAuthenticated) {
+            openAuthModal();
+            return;
+        }
+
         toggleFollow(
             { targetUserId: creator.id, followedByMe: creator.followedByMe || false },
             {
@@ -35,10 +44,27 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
     };
 
     const handleCardClick = () => {
-        if (creator.username && !/^\d+$/.test(creator.username)) {
+        // Profile navigation requires authentication
+        if (!useAuthStore.getState().isAuthenticated) {
+            openAuthModal();
+            return;
+        }
+        // If the creator has a stream/recording, go there; otherwise fall back to profile
+        if (creator.callId) {
+            navigate({
+                to: '/stream/$id' as any,
+                params: { id: creator.callId } as any,
+                search: {
+                    username: creator.username,
+                    thumbnailUrl: creator.profileImage,
+                } as any,
+            });
+        } else if (creator.username && !/^\d+$/.test(creator.username)) {
             navigate({ to: `/profile/${creator.username}` as any });
         }
     };
+
+    const isGuest = !useAuthStore.getState().isAuthenticated;
 
     return (
         <div
@@ -53,6 +79,11 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                             key={idx}
                             onClick={(e) => {
                                 e.stopPropagation();
+                                // Profile navigation requires authentication
+                                if (!useAuthStore.getState().isAuthenticated) {
+                                    openAuthModal();
+                                    return;
+                                }
                                 if (cohost.username && !/^\d+$/.test(cohost.username)) {
                                     navigate({ to: `/profile/${cohost.username}` as any });
                                 }
@@ -82,6 +113,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                 size="lg"
                 className="mb-5"
                 clickable={true}
+                guestMode={isGuest}
             />
 
             {/* Name & Username */}

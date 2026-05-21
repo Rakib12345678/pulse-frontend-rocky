@@ -10,6 +10,7 @@ import { useExplore } from '../hooks/useExplore';
 import { Loader2 } from 'lucide-react';
 import { formatViewerCount } from '@/features/for-you/hooks/useStreamFeed';
 import bunnyTeacher from '@/assets/bunnyTeacher.png';
+import { useAuthStore } from '@/features/auth/stores/authStore';
 
 export const ExplorePage: React.FC = () => {
     const {
@@ -27,6 +28,9 @@ export const ExplorePage: React.FC = () => {
         handleExploreMore,
         refreshData
     } = useExplore();
+
+    // Must be called before any early returns (Rules of Hooks)
+    const isGuest = !useAuthStore((s) => s.isAuthenticated);
 
     if (isLoading && !exploreData) {
         return (
@@ -140,6 +144,7 @@ export const ExplorePage: React.FC = () => {
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}
                                             isDefaultImage={item.isDefaultImage}
+                                            guestMode={isGuest}
                                         />
                                     </div>
                                 ))}
@@ -198,6 +203,7 @@ export const ExplorePage: React.FC = () => {
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}
                                             isDefaultImage={item.isDefaultImage}
+                                            guestMode={isGuest}
                                         />
                                     </div>
                                 ))}
@@ -228,6 +234,7 @@ export const ExplorePage: React.FC = () => {
                                             cohosts={item.cohosts}
                                             createdByUserId={(item as any).createdByUserId}
                                             isDefaultImage={item.isDefaultImage}
+                                            guestMode={isGuest}
                                         />
                                     </div>
                                 ))}

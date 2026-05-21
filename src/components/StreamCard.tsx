@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar';
 import coHostIcon from '@/assets/co-host.svg';
+import { openAuthModal } from '@/hooks/useGuestGuard';
 
 export interface StreamCardProps {
   callId: string;
@@ -30,6 +31,8 @@ export interface StreamCardProps {
   selected?: boolean;
   onSelect?: () => void;
   onLongPress?: () => void;
+  /** When true, profile-navigation clicks are blocked and open the auth modal. Recording/live-join card clicks are still allowed. */
+  guestMode?: boolean;
 }
 
 export const StreamCard: React.FC<StreamCardProps> = ({
@@ -55,6 +58,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   selected = false,
   onSelect,
   onLongPress,
+  guestMode = false,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
   const { user } = useAuthStore();
@@ -85,11 +89,17 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       e.preventDefault();
       e.stopPropagation();
 
+      // Profile navigation is auth-gated on explore for guests
+      if (guestMode) {
+        openAuthModal();
+        return;
+      }
+
       if (streamerName && !/^\d+$/.test(streamerName)) {
         navigate({ to: `/profile/${streamerName}` as any });
       }
     },
-    [navigate, streamerName]
+    [navigate, streamerName, guestMode]
   );
 
   const handleCardClick = useCallback(
@@ -174,7 +184,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 username={streamerName}
                 size="custom"
                 className="w-24 h-24 sm:w-28 sm:h-28 shadow-2xl"
-                clickable={true}
+                clickable={false}
                 showBadge={false}
               />
             </div>
@@ -287,8 +297,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         <div className="absolute bottom-0 left-0 right-0 px-4 pt-5 pb-6 bg-gradient-to-t from-black/80 to-transparent backdrop-blur-[2px]">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 overflow-hidden flex-1">
-              {!isDefaultImage && (
-                <UserAvatar
+              <UserAvatar
                   src={avatarUrl}
                   alt={streamerName}
                   isLive={isLive}
@@ -298,8 +307,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                   className="w-10 h-10"
                   clickable={true}
                   showBadge={false}
+                  guestMode={guestMode}
                 />
-              )}
 
               <div className="flex flex-col overflow-hidden">
                 <h3
@@ -366,6 +375,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
               className="w-24 h-24 sm:w-28 sm:h-28 shadow-2xl"
               clickable={true}
               showBadge={false}
+              guestMode={guestMode}
             />
           </div>
         </div>
@@ -503,6 +513,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 className="w-10 h-10"
                 clickable={true}
                 showBadge={false}
+                guestMode={guestMode}
               />
             )}
 

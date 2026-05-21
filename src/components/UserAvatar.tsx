@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { UserCircle2 } from 'lucide-react';
+import { openAuthModal } from '@/hooks/useGuestGuard';
 
 interface UserAvatarProps {
   src?: string | null;
@@ -13,6 +14,8 @@ interface UserAvatarProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'custom';
   clickable?: boolean;
   showBadge?: boolean;
+  /** When true, profile navigation is blocked and opens the auth modal instead. Live-join clicks are still allowed. */
+  guestMode?: boolean;
 }
 
 const sizeClasses = {
@@ -33,6 +36,7 @@ export const UserAvatar = ({
   size = 'md',
   clickable = true,
   showBadge = false,
+  guestMode = false,
 }: UserAvatarProps) => {
   const navigate = useNavigate();
   const [broken, setBroken] = React.useState(false);
@@ -46,8 +50,14 @@ export const UserAvatar = ({
     e.stopPropagation();
 
     if (isLive && callId) {
+      // Live-join is always allowed, even for guests
       window.location.href = `/live/${callId}`;
     } else if (username) {
+      // Profile navigation requires authentication
+      if (guestMode) {
+        openAuthModal();
+        return;
+      }
       navigate({ to: '/profile/$username', params: { username } });
     }
   };
