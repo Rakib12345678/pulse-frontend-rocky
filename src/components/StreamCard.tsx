@@ -158,8 +158,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         onTouchMove={endPress}
         className={cn(
           "group relative block w-full aspect-[3/5.2] overflow-hidden rounded-2xl bg-neutral-900 shadow-2xl transition-all duration-500 hover:shadow-orange-900/20 cursor-pointer border-2",
-          selected 
-            ? "border-[#FF7700] shadow-[0_0_20px_rgba(255,119,0,0.4)]" 
+          selected
+            ? "border-[#FF7700] shadow-[0_0_20px_rgba(255,119,0,0.4)]"
             : "border-transparent hover:border-zinc-700/50"
         )}
       >
@@ -202,8 +202,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
         {/* Top Left */}
         {viewerCount !== 0 && viewerCount !== "0" && (
-          <div className="absolute left-4 top-4 z-10 flex items-center gap-2 rounded-full bg-[#FFE9C0] px-3.5 py-1.5 text-xs font-bold text-[#8B5E3C] shadow-lg backdrop-blur-sm border border-white/20">
-            <Users className="h-3.5 w-3.5 fill-[#8B5E3C]" />
+          <div className="absolute left-2 sm:left-4 top-2 sm:top-4 z-10 flex items-center gap-1.5 sm:gap-2 rounded-full bg-[#FFE9C0] px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-[10px] sm:text-xs font-bold text-[#8B5E3C] shadow-lg backdrop-blur-sm border border-white/20">
+            <Users className="h-3 sm:h-3.5 w-3 sm:w-3.5 fill-[#8B5E3C]" />
             <span>{viewerCount}</span>
           </div>
         )}
@@ -212,8 +212,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         {selectable && (
           <div
             className={cn(
-              "absolute z-20 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-300 shadow-lg left-4",
-              (viewerCount !== 0 && viewerCount !== "0") ? "top-14" : "top-4",
+              "absolute z-20 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-300 shadow-lg left-2 sm:left-4",
+              (viewerCount !== 0 && viewerCount !== "0") ? "top-10 sm:top-14" : "top-2 sm:top-4",
               selected
                 ? "bg-[#FF7700] border-[#FF7700] text-[#111213] scale-110"
                 : "bg-black/40 border-white/60 text-transparent"
@@ -229,7 +229,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
         {/* Menu Container */}
         {!selectable && onDelete && (
-          <div className={cn("absolute z-30 left-4", (viewerCount !== 0 && viewerCount !== "0") ? "top-14" : "top-4")}>
+          <div className={cn("absolute z-30 left-2 sm:left-4", (viewerCount !== 0 && viewerCount !== "0") ? "top-10 sm:top-14" : "top-2 sm:top-4")}>
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -256,7 +256,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                   }}
                   className="fixed inset-0 z-20 bg-transparent cursor-default"
                 />
-                
+
                 {/* Dropdown Menu */}
                 <div className="absolute left-0 top-9 z-30 w-28 bg-zinc-950/95 border border-zinc-800 rounded-xl p-1 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
                   <button
@@ -279,7 +279,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
         {/* Cohost Indicator */}
         {primaryCohost && (
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10">
             <div className="relative group/cohost transition-transform duration-300 hover:scale-110">
               <img
                 src={primaryCohost.profileImage || `https://i.pravatar.cc/150?u=${primaryCohost.username}`}
@@ -294,38 +294,38 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         )}
 
         {/* Bottom Info Section */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 pt-5 pb-6 bg-gradient-to-t from-black/80 to-transparent backdrop-blur-[2px]">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 overflow-hidden flex-1">
+        <div className="absolute bottom-0 left-0 right-0 px-2 sm:px-4 pt-3 sm:pt-5 pb-4 sm:pb-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent backdrop-blur-[2px]">
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden flex-1 min-w-0">
               <UserAvatar
-                  src={avatarUrl}
-                  alt={streamerName}
-                  isLive={isLive}
-                  callId={callId}
-                  username={streamerName}
-                  size="custom"
-                  className="w-10 h-10"
-                  clickable={true}
-                  showBadge={false}
-                  guestMode={guestMode}
-                />
+                src={avatarUrl}
+                alt={streamerName}
+                isLive={isLive}
+                callId={callId}
+                username={streamerName}
+                size="custom"
+                className="w-8 h-8 sm:w-10 sm:h-10 shrink-0"
+                clickable={true}
+                showBadge={false}
+                guestMode={guestMode}
+              />
 
-              <div className="flex flex-col overflow-hidden">
+              <div className="flex flex-col overflow-hidden min-w-0 flex-1">
                 <h3
                   onClick={handleProfileClick}
-                  className="truncate text-sm font-bold text-white leading-tight [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%),_0_2px_6px_rgb(0_0_0_/_60%)] cursor-pointer hover:text-orange-400 transition-colors"
+                  className="truncate text-[11px] sm:text-sm font-bold text-white leading-tight [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%),_0_2px_6px_rgb(0_0_0_/_60%)] cursor-pointer hover:text-orange-400 transition-colors"
                 >
                   @{streamerName}
                 </h3>
-                <p className="truncate text-[9px] font-semibold text-gray-200 tracking-wide leading-normal [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
+                <p className="truncate text-[8px] sm:text-[9px] font-semibold text-gray-200 tracking-wide leading-normal [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
                   {followersCount} Followers
                 </p>
               </div>
             </div>
 
             {category && (
-              <div className="shrink-0 max-w-[45%]">
-                <div className="truncate rounded-full bg-white/30 px-3 py-1.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 shadow-lg capitalize leading-none">
+              <div className="shrink-0 max-w-[38%] sm:max-w-[45%]">
+                <div className="truncate rounded-full bg-white/20 sm:bg-white/30 px-1.5 sm:px-3 py-1 sm:py-1.5 text-[8px] sm:text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 shadow-lg capitalize leading-none text-center">
                   {category}
                 </div>
               </div>
@@ -348,8 +348,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       onTouchMove={endPress}
       className={cn(
         "group relative block w-full aspect-[3/4.5] overflow-hidden rounded-3xl bg-neutral-900 shadow-lg transition-all hover:shadow-xl cursor-pointer border-2",
-        selected 
-          ? "border-[#FF7700] shadow-[0_0_20px_rgba(255,119,0,0.4)]" 
+        selected
+          ? "border-[#FF7700] shadow-[0_0_20px_rgba(255,119,0,0.4)]"
           : "border-transparent hover:border-zinc-700/50"
       )}
     >
@@ -390,8 +390,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-black/10" />
 
       {viewerCount !== 0 && viewerCount !== "0" && (
-        <div className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-[#FFE9C0] px-2.5 py-1 text-[11px] font-bold text-[#8B5E3C] shadow-sm">
-          <Users className="h-3 w-3 fill-[#8B5E3C]" />
+        <div className="absolute left-2 sm:left-3 top-2 sm:top-3 z-10 flex items-center gap-1 sm:gap-1.5 rounded-full bg-[#FFE9C0] px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-[11px] font-bold text-[#8B5E3C] shadow-sm">
+          <Users className="h-2.5 sm:h-3 w-2.5 sm:w-3 fill-[#8B5E3C]" />
           <span>{viewerCount}</span>
         </div>
       )}
@@ -400,8 +400,8 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       {selectable && (
         <div
           className={cn(
-            "absolute z-20 flex h-5 w-5 items-center justify-center rounded-full border transition-all duration-300 shadow-md left-3",
-            (viewerCount !== 0 && viewerCount !== "0") ? "top-11" : "top-3",
+            "absolute z-20 flex h-5 w-5 items-center justify-center rounded-full border transition-all duration-300 shadow-md left-2 sm:left-3",
+            (viewerCount !== 0 && viewerCount !== "0") ? "top-9 sm:top-11" : "top-2 sm:top-3",
             selected
               ? "bg-[#FF7700] border-[#FF7700] text-[#111213] scale-110"
               : "bg-black/40 border-white/60 text-transparent"
@@ -417,7 +417,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
       {/* Menu Container */}
       {!selectable && onDelete && (
-        <div className={cn("absolute z-30 left-3", (viewerCount !== 0 && viewerCount !== "0") ? "top-11" : "top-3")}>
+        <div className={cn("absolute z-30 left-2 sm:left-3", (viewerCount !== 0 && viewerCount !== "0") ? "top-9 sm:top-11" : "top-2 sm:top-3")}>
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -444,7 +444,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 }}
                 className="fixed inset-0 z-20 bg-transparent cursor-default"
               />
-              
+
               {/* Dropdown Menu */}
               <div className="absolute left-0 top-8 z-30 w-28 bg-zinc-950/95 border border-zinc-800 rounded-xl p-1 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
                 <button
@@ -466,7 +466,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       )}
 
       {cohosts && cohosts.length > 0 ? (
-        <div className="absolute top-3 right-3 z-10 flex -space-x-3 items-center">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 z-10 flex -space-x-3 items-center">
           {cohosts.map((cohost, idx) => (
             <div
               key={idx}
@@ -485,7 +485,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
           ))}
         </div>
       ) : collaboratorAvatarUrl ? (
-        <div className="absolute top-3 right-3 z-10">
+        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 z-10">
           <div className="relative">
             <img
               src={collaboratorAvatarUrl}
@@ -499,9 +499,9 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         </div>
       ) : null}
 
-      <div className="absolute bottom-0 left-0 right-0 p-3">
-        <div className="flex items-end justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2 w-full">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden flex-1 min-w-0">
             {!isDefaultImage && (
               <UserAvatar
                 src={avatarUrl}
@@ -510,29 +510,29 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 callId={callId}
                 username={streamerName}
                 size="custom"
-                className="w-10 h-10"
+                className="w-8 h-8 sm:w-10 sm:h-10 shrink-0"
                 clickable={true}
                 showBadge={false}
                 guestMode={guestMode}
               />
             )}
 
-            <div className="flex flex-col min-w-0">
+            <div className="flex flex-col overflow-hidden min-w-0 flex-1">
               <h3
                 onClick={handleProfileClick}
-                className="truncate text-sm font-bold text-white leading-tight cursor-pointer hover:text-orange-400 transition-colors"
+                className="truncate text-[11px] sm:text-sm font-bold text-white leading-tight cursor-pointer hover:text-orange-400 transition-colors"
               >
                 @{streamerName}
               </h3>
-              <p className="truncate text-[10px] font-medium text-gray-300">
+              <p className="truncate text-[8px] sm:text-[10px] font-medium text-gray-300">
                 {followersCount} Followers
               </p>
             </div>
           </div>
 
           {category && (
-            <div className="shrink-0 max-w-[45%]">
-              <div className="truncate rounded-full bg-white/30 px-3 py-1.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 shadow-lg capitalize leading-none">
+            <div className="shrink-0 max-w-[38%] sm:max-w-[45%]">
+              <div className="truncate rounded-full bg-white/20 sm:bg-white/30 px-1.5 sm:px-3 py-1 sm:py-1.5 text-[8px] sm:text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 shadow-lg capitalize leading-none text-center">
                 {category}
               </div>
             </div>
