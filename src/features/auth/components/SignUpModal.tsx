@@ -23,6 +23,7 @@ import Logo from "@/assets/Logo.svg";
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AuthModalBackdrop } from './AuthModalBackdrop';
 import { inputSchema, InputFormData } from '@/features/auth/services/auth.schema';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // --- UI COMPONENTS ---
 import { Button } from '@/components/ui/button';
@@ -314,6 +315,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
     const { closeModal } = useSignUpStore();
     const { authenticate } = useAuth();
     const storeIdentifier = useSignUpStore((s) => s.identifier);
+    const isMobile = useIsMobile();
 
     const form = useForm<InputFormData>({
         resolver: zodResolver(inputSchema),
@@ -551,6 +553,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         useOneTap={false}
                         use_fedcm_for_prompt={false}
                         auto_select={false}
+                        ux_mode={isMobile ? 'redirect' : 'popup'}
                         theme="filled_black"
                         shape="pill"
                         size="medium"
