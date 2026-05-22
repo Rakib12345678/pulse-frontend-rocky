@@ -323,8 +323,20 @@ export const FollowersFollowingModal = ({
               <div className="w-24 h-24 mx-auto mb-6 bg-zinc-800/30 rounded-full flex items-center justify-center shadow-2xl">
                 <UserPlus className="w-10 h-10 opacity-20 text-[#FF7700]" />
               </div>
-              <p className="text-2xl font-extrabold text-white mb-2">Opss! No One {type === 'followers' ? 'Following' : 'Followed by'} you</p>
-              <p className="text-gray-500 font-medium">Start connecting with other creators!</p>
+              <p className="text-2xl font-extrabold text-white mb-2">
+                {isOwnList
+                  ? `Opss! No One ${type === 'followers' ? 'Following' : 'Followed by'} you`
+                  : type === 'followers'
+                    ? "Opss! No Followers Yet"
+                    : "Opss! Not Following Anyone"}
+              </p>
+              <p className="text-gray-500 font-medium">
+                {isOwnList
+                  ? "Start connecting with other creators!"
+                  : type === 'followers'
+                    ? "No one is following this creator yet."
+                    : "This creator isn't following anyone yet."}
+              </p>
             </div>
           </div>
         )}
