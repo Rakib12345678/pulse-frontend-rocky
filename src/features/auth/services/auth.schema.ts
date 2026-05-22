@@ -66,7 +66,7 @@ export const detailsSchema = z.object({
     fullName: z
         .string()
         .min(1, 'Full name is required')
-        .min(2, 'Name must be at least 2 characters')
+        .min(3, 'Name must be at least 3 characters')
         .max(50, 'Name cannot exceed 50 characters')
         .transform((val) => val.trim())
         .refine((val) => fullNameRegex.test(val), {

@@ -9,15 +9,7 @@ const getPersistedStreamData = (): { callId: string; callType: string; token: st
     }
 };
 
-export type Category =
-    | 'Lifestyle'
-    | 'Blogging'
-    | 'Coding'
-    | 'Dancing'
-    | 'Cooking'
-    | 'Speaking'
-    | 'Science & Tech'
-    | 'Others';
+export type Category = string;
 
 interface GoLiveState {
     isOpen: boolean;

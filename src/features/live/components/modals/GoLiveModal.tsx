@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useGoLiveStore, Category } from '@/features/live/stores/goLiveStore';
 import { liveService } from '@/features/live/services/live.service';
+import { exploreService } from '@/features/explore/services/explore.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -41,6 +42,27 @@ export const GoLiveModal = () => {
     const activeStreamRef = useRef<MediaStream | null>(null);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [permissionError, setPermissionError] = useState<string | null>(null);
+    const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const results = await exploreService.getCategories();
+                const filtered = results
+                    .map(c => c.name)
+                    .filter(name => {
+                        const lower = name.toLowerCase().trim();
+                        return lower !== 'all' && lower !== 'all category' && lower !== 'all categories';
+                    });
+                if (filtered.length > 0) {
+                    setCategories(filtered);
+                }
+            } catch (err) {
+                console.error("Failed to load categories from API:", err);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     const stopStream = useCallback(() => {
         // Synchronously stop the active stream reference to prevent races
@@ -310,10 +332,10 @@ export const GoLiveModal = () => {
                             <button
                                 onClick={toggleMic}
                                 className={cn(
-                                    "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                                    "w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-lg",
                                     isMicEnabled
-                                        ? "bg-[#FF8800] text-black"
-                                        : "bg-[#2a2c30] text-gray-400"
+                                        ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
+                                        : "bg-[#FF7700] border-[#FF7700]/50 text-white hover:bg-[#ff8811] ring-4 ring-[#FF7700]/20"
                                 )}
                             >
                                 {isMicEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
@@ -321,10 +343,10 @@ export const GoLiveModal = () => {
                             <button
                                 onClick={toggleCamera}
                                 className={cn(
-                                    "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                                    "w-10 h-10 rounded-full flex items-center justify-center transition-all border shadow-lg",
                                     isCameraEnabled
-                                        ? "bg-[#FF8800] text-black"
-                                        : "bg-[#2a2c30] text-gray-400"
+                                        ? "bg-white/10 border-white/20 text-white hover:bg-white/20"
+                                        : "bg-[#FF7700] border-[#FF7700]/50 text-white hover:bg-[#ff8811] ring-4 ring-[#FF7700]/20"
                                 )}
                             >
                                 {isCameraEnabled ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}
@@ -340,7 +362,7 @@ export const GoLiveModal = () => {
                                     <CameraOff className="w-12 h-12" />
                                 </div>
                                 <p className="text-sm font-semibold text-white">{permissionError}</p>
-                                <Button onClick={initiateMedia} variant="outline" className="mt-2 border-white/10 text-black hover:bg-white/5">
+                                <Button onClick={initiateMedia} variant="outline" className="mt-2 border-white/10 text-black hover:bg-white/5 hover:text-white cursor-pointer transition-all">
                                     Retry Access
                                 </Button>
                             </div>
@@ -366,7 +388,7 @@ export const GoLiveModal = () => {
                     {/* Bottom Form Section */}
                     <div className="px-5 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-4 space-y-5 shrink-0">
                         <div className="bg-[#1a1c24] rounded-2xl p-4 border border-white/5">
-                            <label className="text-xs font-semibold text-gray-400 tracking-wider mb-2 block">Stream Title</label>
+                            <label className="text-xs font-semibold text-gray-400 tracking-wider mb-3 block">Stream Title</label>
                             <Input
                                 value={streamTitle}
                                 onChange={(e) => setStreamTitle(e.target.value)}
@@ -376,9 +398,9 @@ export const GoLiveModal = () => {
                             />
 
                             {/* Category */}
-                            <label className="text-xs font-semibold text-gray-400 tracking-wider mt-4 mb-2 block">Category</label>
+                            <label className="text-xs font-semibold text-gray-400 tracking-wider mt-6 mb-3 block">Category</label>
                             <div className="flex flex-wrap gap-2">
-                                {CATEGORIES.map((category) => {
+                                {categories.map((category) => {
                                     const isSelected = selectedCategory === category;
                                     return (
                                         <button
@@ -446,7 +468,7 @@ export const GoLiveModal = () => {
                                             <Button
                                                 onClick={initiateMedia}
                                                 variant="outline"
-                                                className="mt-2 border-white/10 text-black hover:bg-white/5"
+                                                className="mt-2 border-white/10 text-black hover:bg-white/5 hover:text-white cursor-pointer transition-all"
                                             >
                                                 Retry Access
                                             </Button>
@@ -513,8 +535,8 @@ export const GoLiveModal = () => {
 
                                 <div className="space-y-8">
                                     {/* Stream Title */}
-                                    <div className="space-y-2.5">
-                                        <label className="text-xs font-semibold text-gray-400 tracking-widest ml-1 mb-1">
+                                    <div className="flex flex-col gap-3">
+                                        <label className="text-xs font-semibold text-gray-400 tracking-widest ml-1 block">
                                             Stream Title
                                         </label>
                                         <Input
@@ -527,12 +549,12 @@ export const GoLiveModal = () => {
                                     </div>
 
                                     {/* Category Selection */}
-                                    <div className="space-y-4">
-                                        <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest ml-1">
+                                    <div className="flex flex-col gap-4">
+                                        <label className="text-xs font-semibold text-gray-400 tracking-widest ml-1 block">
                                             Category
                                         </label>
                                         <div className="flex flex-wrap gap-2.5">
-                                            {CATEGORIES.map((category) => {
+                                            {categories.map((category) => {
                                                 const isSelected = selectedCategory === category;
                                                 return (
                                                     <button

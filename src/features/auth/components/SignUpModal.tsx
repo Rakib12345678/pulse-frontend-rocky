@@ -261,7 +261,7 @@ const StepWrapper = ({
 
 // --- 1. WELCOME STEP ---
 const StepWelcome = () => {
-    const { setStep } = useSignUpStore();
+    const { setStep, setMode } = useSignUpStore();
     return (
         <StepWrapper
             title="Welcome to PulseLive"
@@ -271,12 +271,28 @@ const StepWelcome = () => {
         >
             <div className="mt-8 w-full flex flex-col items-center m-auto">
                 <Button
-                    onClick={() => setStep('input')}
+                    onClick={() => {
+                        setMode('signup');
+                        setStep('input');
+                    }}
                     className="w-52 rounded-full bg-[#FF7700] py-6 text-base font-bold text-black hover:bg-[#ff9922] transition-transform active:scale-95"
                 >
                     Get Started →
                 </Button>
-                <p className="mt-16 text-[14px] text-white px-2 text-center max-w-md mx-auto leading-relaxed">
+                <p className="mt-4 text-[14px] text-white">
+                    Already have an account ?{''}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setMode('login');
+                            setStep('input');
+                        }}
+                        className="text-blue-500 cursor-pointer font-semibold bg-transparent border-none p-0 inline ml-1"
+                    >
+                        Log in
+                    </button>
+                </p>
+                <p className="mt-12 text-[14px] text-white px-2 text-center max-w-md mx-auto leading-relaxed">
                     By continuing, you agree to our{' '}
                     <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Terms of Service</Link> and{' '}
                     <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
@@ -825,7 +841,7 @@ const StepAge = () => {
 
 // --- 5. DETAILS STEP (FIXED TWO-COLUMN LAYOUT) ---
 const detailsSchema = z.object({
-    fullName: z.string({ message: "Full name is required" }).min(2, "Minimum 2 characters"),
+    fullName: z.string({ message: "Full name is required" }).min(3, "Name must be at least 3 characters"),
     location: z.string({ message: "Please select a location" }).min(2, "Please select a location"),
     bio: z.string().max(100).nullable().optional(),
 });
