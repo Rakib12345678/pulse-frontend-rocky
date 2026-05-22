@@ -549,7 +549,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         }}
                         onError={() => toast.error("Google Signup Failed")}
                         useOneTap={false}
-                        use_fedcm_for_prompt={true}
+                        use_fedcm_for_prompt={false}
                         auto_select={false}
                         theme="filled_black"
                         shape="pill"

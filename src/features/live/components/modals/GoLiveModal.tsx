@@ -162,6 +162,9 @@ export const GoLiveModal = () => {
             return;
         }
 
+        // Lazily initialize media patch when user opens Go Live modal
+        import('@/features/live/utils/mediaPatch').then(({ initMediaPatch }) => initMediaPatch());
+
         let isCancelled = false;
 
         const startMedia = async () => {

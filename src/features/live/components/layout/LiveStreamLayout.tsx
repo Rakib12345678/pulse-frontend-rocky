@@ -325,6 +325,9 @@ export const LiveStreamLayout: React.FC<LiveStreamLayoutProps> = ({ children, ca
         isTerminatingRef.current = false;
 
         const initCall = async () => {
+            // Lazily initialize media patch when entering a live stream layout
+            import('@/features/live/utils/mediaPatch').then(({ initMediaPatch }) => initMediaPatch());
+
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             if (!mounted) return;
