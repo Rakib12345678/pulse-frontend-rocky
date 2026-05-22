@@ -46,7 +46,7 @@ const NavItem = ({ to, label, customIcon, onClick, badgeCount = 0 }: NavItemProp
                     {customIcon}
                     {badgeCount > 0 && (
                         <span className={cn(
-                            "absolute -top-2.5 flex h-[17px] items-center justify-center rounded-full bg-[#FF7700] font-black text-white border-1 border-[#111213] shadow-lg z-20 leading-none transition-all duration-200",
+                            "absolute -top-2.5 flex h-[17px] items-center justify-center rounded-full bg-[#FF7700] font-black text-white border-1 border-[#111213] shadow-lg z-20 leading-none transition-colors duration-200",
                             badgeCount < 10 
                                 ? "w-[17px] -right-1 text-[11px]" 
                                 : "min-w-[26px] -right-3.5 px-1.5 text-[9.5px]"

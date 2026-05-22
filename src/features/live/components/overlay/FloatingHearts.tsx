@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
 import { useChatContext } from 'stream-chat-react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -21,6 +21,14 @@ export const FloatingHearts: React.FC = () => {
     const { call, isGuest, isViewer } = useLiveStreamContext();
     const { client: chatClient } = useChatContext();
     const [hearts, setHearts] = useState<Heart[]>([]);
+    const timeoutsRef = useRef<number[]>([]);
+
+    useEffect(() => {
+        return () => {
+            timeoutsRef.current.forEach(clearTimeout);
+            timeoutsRef.current = [];
+        };
+    }, []);
 
     useEffect(() => {
         if (!call) {
@@ -94,9 +102,11 @@ export const FloatingHearts: React.FC = () => {
             return updated.length > 5 ? updated.slice(updated.length - 5) : updated;
         });
 
-        setTimeout(() => {
+        const timerId = window.setTimeout(() => {
             setHearts((prev) => prev.filter((h) => h.id !== id));
+            timeoutsRef.current = timeoutsRef.current.filter(t => t !== timerId);
         }, 3000);
+        timeoutsRef.current.push(timerId);
     }, [isViewer]);
 
     return (

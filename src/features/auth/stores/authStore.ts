@@ -111,8 +111,11 @@ export const useAuthStore = create<AuthState>()(
         isNewUser: state.isNewUser,
         isAuthenticated: state.isAuthenticated
       }),
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated();
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.warn('[authStore] rehydrate failed:', error);
+        }
+        (state ?? useAuthStore.getState()).setHydrated();
       }
     }
   )

@@ -56,7 +56,7 @@ const NavLink = ({ to, label, badgeCount = 0 }: NavLinkProps) => {
         </span>
         {badgeCount > 0 && (
           <span className={cn(
-            "absolute -top-2.5 flex h-[19px] items-center justify-center rounded-full bg-[#FF7700] font-black text-white border-1.5 border-[#0f1117] shadow-xl z-20 leading-none transition-all duration-200",
+            "absolute -top-2.5 flex h-[19px] items-center justify-center rounded-full bg-[#FF7700] font-black text-white border-1.5 border-[#0f1117] shadow-xl z-20 leading-none transition-colors duration-200",
             badgeCount < 10
               ? "w-[19px] -right-4 text-[11px]"
               : "min-w-[30px] -right-6.5 px-2 text-[10px]"

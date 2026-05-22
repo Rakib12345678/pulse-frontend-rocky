@@ -41,6 +41,15 @@ const setArchived = (ids: string[]) => sessionStorage.setItem(ARCHIVED_STORAGE_K
 
 export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChatReturn => {
     const queryClient = useQueryClient();
+    const timeoutsRef = useRef<number[]>([]);
+
+    useEffect(() => {
+        return () => {
+            timeoutsRef.current.forEach(clearTimeout);
+            timeoutsRef.current = [];
+        };
+    }, []);
+
     const [channels, setChannels] = useState<Channel[]>([]);
     const [convLoading, setConvLoading] = useState(true);
     const [activeConvId, setActiveConvId] = useState<string | null>(null);
@@ -300,14 +309,16 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
             });
 
             // Clear optimistic preview after a short delay
-            setTimeout(() => {
+            const timerId = window.setTimeout(() => {
                 setOptimisticPreviews(prev => {
                     const next = { ...prev };
                     delete next[activeChannel.cid];
                     return next;
                 });
                 setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+                timeoutsRef.current = timeoutsRef.current.filter(t => t !== timerId);
             }, 1000);
+            timeoutsRef.current.push(timerId);
 
         } catch (err: any) {
             console.error('[StreamChat] Send failed:', err);
@@ -357,14 +368,16 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
             });
 
             // Clear optimistic preview after a short delay
-            setTimeout(() => {
+            const timerId = window.setTimeout(() => {
                 setOptimisticPreviews(prev => {
                     const next = { ...prev };
                     delete next[activeChannel.cid];
                     return next;
                 });
                 setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+                timeoutsRef.current = timeoutsRef.current.filter(t => t !== timerId);
             }, 1000);
+            timeoutsRef.current.push(timerId);
 
         } catch (err) {
             console.error('[StreamChat] Image send failed:', err);

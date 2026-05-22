@@ -42,14 +42,16 @@ export const useWalletBalance = () => {
       }
     };
 
+    const handleConnectionRecovered = () => {
+        queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+    };
+
     const attachListeners = () => {
         if (!client) return;
         client.on('message.new', handleEvent);
         client.on('notification.message_new', handleEvent);
         client.on('user.updated', handleEvent);
-        client.on('connection.recovered', () => {
-            queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
-        });
+        client.on('connection.recovered', handleConnectionRecovered);
     };
 
     return () => {
@@ -58,6 +60,7 @@ export const useWalletBalance = () => {
           client.off('message.new', handleEvent);
           client.off('notification.message_new', handleEvent);
           client.off('user.updated', handleEvent);
+          client.off('connection.recovered', handleConnectionRecovered);
       }
     };
   }, [queryClient]); 
