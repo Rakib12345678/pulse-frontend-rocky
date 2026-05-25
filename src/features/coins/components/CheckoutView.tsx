@@ -104,7 +104,7 @@ export const CheckoutView = () => {
                         rel="noopener noreferrer"
                         className="underline hover:text-white transition-colors"
                     >
-                        Terms and Conditions
+                        Terms & Conditions
                     </a>{" "}
                     and{" "}
                     <a

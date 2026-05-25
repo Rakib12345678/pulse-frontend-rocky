@@ -296,7 +296,7 @@ const StepWelcome = () => {
                 </p>
                 <p className="mt-12 text-[14px] text-white px-2 text-center max-w-md mx-auto leading-relaxed">
                     By continuing, you agree to our{' '}
-                    <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Terms of Service</Link> and{' '}
+                    <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Terms & Conditions</Link> and{' '}
                     <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
                 </p>
             </div>
@@ -774,8 +774,8 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
 
             <p className="text-[14px] text-white text-center">
                 By continuing, you agree to our{' '}
-                <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link> &{' '}
-                <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
+                <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Terms & Conditions</Link> &{' '}
+                <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
             </p>
         </StepWrapper>
     );
@@ -841,8 +841,8 @@ const StepAge = () => {
             </div>
             <p className="mt-5 text-[14px] text-white">
                 By continuing, you agree to our{' '}
-                <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link> &{' '}
-                <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
+                <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Terms & Conditions</Link> &{' '}
+                <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
             </p>
         </StepWrapper>
     );
@@ -1214,8 +1214,8 @@ export const StepDetails = ({
                                 </div>
                                 <p className="text-[11px] md:text-[15px] text-center md:text-left text-white mt-6 md:mt-4">
                                     By continuing, you agree to our <br className="md:hidden" />
-                                    <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">terms & conditions</Link>{' '}&{' '}
-                                    <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">privacy policy</Link>
+                                    <Link to="/terms-conditions" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Terms & Conditions</Link>{' '}&{' '}
+                                    <Link to="/privacy-policy" onClick={() => useSignUpStore.getState().pauseModal()} className="text-blue-500 cursor-pointer hover:underline">Privacy Policy</Link>
                                 </p>
                             </form>
                         </Form>
@@ -1328,7 +1328,7 @@ const StepInterests = () => {
 
 export const SignUpModal = () => {
     const { isOpen, currentStep, closeModal, openModal, setStep, isAdult, identifier, method, countryCode } = useSignUpStore();
-    const { isNewUser, isAuthenticated, isHydrated } = useAuthStore();
+    const { isNewUser, isAuthenticated, isHydrated, user } = useAuthStore();
     const location = useLocation();
     const isLiveStream = location.pathname.startsWith('/live');
 
@@ -1339,7 +1339,7 @@ export const SignUpModal = () => {
         switch (currentStep) {
             case 'otp': setStep('input'); break;
             case 'age':
-            case 'details': if (!isAuthenticated) { setStep('welcome'); } break;
+            case 'details': if (!isAuthenticated && !user) { setStep('welcome'); } break;
             default: break;
         }
     }, [isHydrated]);
