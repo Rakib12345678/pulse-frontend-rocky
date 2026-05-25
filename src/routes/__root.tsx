@@ -28,7 +28,7 @@ export interface RouterContext {
 
 const DevtoolsLazy =
   import.meta.env.DEV
-    ? lazy(() => import("@/components/Devtools.client"))
+    ? lazy(() => import("@/components/Devtools"))
     : null
 
 import { isPublicRoute } from "@/config/routes"

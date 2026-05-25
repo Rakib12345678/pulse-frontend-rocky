@@ -2,7 +2,7 @@ import { Suspense, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
 import { useAuthStore } from '@/features/auth/stores/authStore'
-import { LandingPageServer } from '@/features/landing/components/LandingPage.server'
+import { LandingPageServer } from '@/features/landing/components/LandingPage'
 import { LandingRailShell } from '@/features/landing/components/Landing.shell'
 import { LandingRailFallback } from '@/features/landing/components/LandingPage.fallback'
 import { LandingRailClient } from '@/features/landing/components/LandingPageNew'
