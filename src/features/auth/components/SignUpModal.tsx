@@ -22,6 +22,7 @@ import { countryCodes } from '@/lib/countries';
 import Logo from "@/assets/Logo.svg";
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AuthModalBackdrop } from './AuthModalBackdrop';
+import { isSafari } from '@/lib/browser';
 import { inputSchema, InputFormData } from '@/features/auth/services/auth.schema';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -316,6 +317,7 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
     const { authenticate } = useAuth();
     const storeIdentifier = useSignUpStore((s) => s.identifier);
     const isMobile = useIsMobile();
+    const safari = isSafari();
 
     const form = useForm<InputFormData>({
         resolver: zodResolver(inputSchema),
@@ -551,9 +553,10 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                         }}
                         onError={() => toast.error("Google Signup Failed")}
                         useOneTap={false}
-                        use_fedcm_for_prompt={false}
+                        use_fedcm_for_prompt={!safari}
+                        use_fedcm_for_button={!safari}
                         auto_select={false}
-                        ux_mode={isMobile ? 'redirect' : 'popup'}
+                        ux_mode="popup"
                         theme="filled_black"
                         shape="pill"
                         size="medium"
