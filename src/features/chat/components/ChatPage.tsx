@@ -11,6 +11,7 @@ import { SESSION_ACTIVE_KEY } from '@/features/chat/utils/chatConstants';
 import type { Conversation } from '../types/chat.types';
 import { useStreamChat } from '@/features/chat/hooks/useStreamChats';
 import background from '@/assets/background.png';
+import { ChatEmptyState } from './ChatEmptyState';
 
 const saveSession = (id: string) => sessionStorage.setItem(SESSION_ACTIVE_KEY, id);
 const loadSession = (): string | null => sessionStorage.getItem(SESSION_ACTIVE_KEY);
@@ -215,18 +216,26 @@ export const ChatPage: React.FC<ChatPageProps> = ({
 
             {/* MOBILE */}
             <div className="flex flex-1 min-h-0 md:hidden">
-                <div
-                    className={cn('flex-1 flex flex-col overflow-hidden', mobileShowList ? 'flex' : 'hidden')}
-                    style={{ background: '#111213' }}
-                >
-                    <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-3 py-2">
-                        {streamReady && <ChatSidebar {...sidebarProps} />}
+                {!user ? (
+                    <div className="flex-1 flex flex-col overflow-hidden bg-[#111213]">
+                        <ChatEmptyState />
                     </div>
-                </div>
-                {!mobileShowList && (
-                    <div className="fixed inset-0 z-350 flex flex-col bg-[#0d0d0d] md:hidden">
-                        <ChatWindow {...windowProps} mobileFullscreen />
-                    </div>
+                ) : (
+                    <>
+                        <div
+                            className={cn('flex-1 flex flex-col overflow-hidden', mobileShowList ? 'flex' : 'hidden')}
+                            style={{ background: '#111213' }}
+                        >
+                            <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-3 py-2">
+                                {streamReady && <ChatSidebar {...sidebarProps} />}
+                            </div>
+                        </div>
+                        {!mobileShowList && (
+                            <div className="fixed inset-0 z-350 flex flex-col bg-[#0d0d0d] md:hidden">
+                                <ChatWindow {...windowProps} mobileFullscreen />
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
