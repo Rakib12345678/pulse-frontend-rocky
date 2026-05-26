@@ -175,6 +175,7 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         onReact: chat.sendReaction,
         onDeleteReaction: chat.deleteReaction,
         onMarkAsRead: chat.markAsRead,
+        blockedUserIds: chat.blockedUserIds,
         draftValue: activeConversation ? (drafts[activeConversation.id] ?? '') : '',
         onDraftChange: (value: string) => {
             if (activeConversation) {

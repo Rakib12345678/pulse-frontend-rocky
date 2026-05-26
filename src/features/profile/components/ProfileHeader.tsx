@@ -31,29 +31,29 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 	const [showBlockModal, setShowBlockModal] = useState(false);
 	const [showBlockSuccess, setShowBlockSuccess] = useState(false);
 	const [showBlockError, setShowBlockError] = useState(false);
-  const [blockErrorMessage, setBlockErrorMessage] = useState('');
+	const [blockErrorMessage, setBlockErrorMessage] = useState('');
 	const [blockSuccessAction, setBlockSuccessAction] = useState<'block' | 'unblock' | null>(null);
 	const [showReportModal, setShowReportModal] = useState(false);
 	const [showReportSuccess, setShowReportSuccess] = useState(false);
 	const [showReportLimitModal, setShowReportLimitModal] = useState(false);
-  const [failedReportData, setFailedReportData] = useState<{ reasonId: string; otherText?: string } | null>(null);
-  const [followModal, setFollowModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
+	const [failedReportData, setFailedReportData] = useState<{ reasonId: string; otherText?: string } | null>(null);
+	const [followModal, setFollowModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
 		isOpen: false,
-    type: 'followers',
+		type: 'followers',
 	});
 	const [isAvatarEnlarged, setIsAvatarEnlarged] = useState(false);
 
 	const { mutate: toggleFollow, isPending } = useToggleFollow();
 	const { mutate: toggleBlock, isPending: isBlockPending } = useBlockUser();
-  const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
+	const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
 	const handleGoLiveClick = useGoLive();
 	const { user: currentUser } = useAuthStore();
 	const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
 
 	const handleReportClick = () => {
 		if (!currentUser) {
-      setMode('login');
-      setStep('input');
+			setMode('login');
+			setStep('input');
 			openLoginModal();
 			return;
 		}
@@ -71,9 +71,9 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 
 
 	const stats = [
-    { label: 'Post', value: user.postCount ?? 0 },
-    { label: 'Followers', value: (user.followerCount ?? 0).toLocaleString() },
-    { label: 'Following', value: user.followingCount ?? 0 },
+		{ label: 'Post', value: user.postCount ?? 0 },
+		{ label: 'Followers', value: (user.followerCount ?? 0).toLocaleString() },
+		{ label: 'Following', value: user.followingCount ?? 0 },
 	];
 
 	const handleFollowClick = () => {
@@ -98,7 +98,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				onError: (error: any) => {
 					const message =
 						error?.response?.data?.message ||
-            (isBlocked ? 'Failed to unblock user' : 'Failed to block user');
+						(isBlocked ? 'Failed to unblock user' : 'Failed to block user');
 					setBlockErrorMessage(message);
 					setShowBlockModal(false);
 					setShowBlockError(true);
@@ -112,7 +112,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 		submitReport(
 			{
 				reportedUserId: user.id,
-        contentType: 'USER_PROFILE',
+				contentType: 'USER_PROFILE',
 				contentId: String(user.id),
 				reason: reasonId,
 				note: otherText,
@@ -148,7 +148,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 		}
 	};
 
-  const openFollowModal = (type: 'followers' | 'following') => {
+	const openFollowModal = (type: 'followers' | 'following') => {
 		setFollowModal({ isOpen: true, type });
 	};
 
@@ -227,7 +227,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 			{/* Block / Unblock modal */}
 			<BlockUserModal
 				isOpen={showBlockModal}
-        username={user.username ?? ''}
+				username={user.username ?? ''}
 				avatarUrl={user.profileImage}
 				isBlocked={isBlocked}
 				isLoading={isBlockPending}
@@ -265,18 +265,18 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 			{/* Report success modal */}
 			<ReportSuccessModal
 				isOpen={showReportSuccess}
-        username={user.username ?? ''}
+				username={user.username ?? ''}
 				type="chat"
 				onMute={() => {
-          toast.success(`@${user.username ?? ''} has been muted`);
+					toast.success(`@${user.username ?? ''} has been muted`);
 					setShowReportSuccess(false);
 				}}
 				onBlock={async () => {
 					try {
 						await userService.blockUser(user.id);
-            toast.success(`Blocked @${user.username ?? ''}`);
+						toast.success(`Blocked @${user.username ?? ''}`);
 					} catch {
-            toast.error('Failed to block user');
+						toast.error('Failed to block user');
 					}
 					setShowReportSuccess(false);
 				}}
@@ -286,7 +286,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 			{/* Report modal */}
 			<ReportUserModal
 				isOpen={showReportModal}
-        username={user.username ?? ''}
+				username={user.username ?? ''}
 				isLoading={isReportPending}
 				onConfirm={handleReportConfirm}
 				onCancel={() => setShowReportModal(false)}
@@ -304,7 +304,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				isOpen={!!failedReportData}
 				onTryAgain={() => {
 					if (failedReportData) {
-            handleReportConfirm(failedReportData.reasonId, failedReportData.otherText);
+						handleReportConfirm(failedReportData.reasonId, failedReportData.otherText);
 						setFailedReportData(null);
 					}
 				}}
@@ -351,7 +351,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 									}}
 									className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200 hover:scale-110 transition-transform z-20"
 								>
-                  <img src={cameraLogo} alt="Edit profile" className="w-4 h-4" />
+									<img src={cameraLogo} alt="Edit profile" className="w-4 h-4" />
 								</button>
 							)}
 						</div>
@@ -373,7 +373,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 								)}
 							</div>
 							{user.bio && (
-                <p className="text-zinc-300 text-sm md:text-sm lg:text-sm xl:text-sm 2xl:text-base max-w-lg leading-relaxed text-center md:text-left mt-1 md:mt-2 lg:mt-2 px-2 md:px-0">{user.bio}</p>
+								<p className="text-zinc-300 text-sm md:text-sm lg:text-sm xl:text-sm 2xl:text-base max-w-lg leading-relaxed text-center md:text-left mt-1 md:mt-2 lg:mt-2 px-2 md:px-0">{user.bio}</p>
 							)}
 						</div>
 					</div>
@@ -403,17 +403,17 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 										</button>
 										{settingsOpen && (
 											<>
-                        <div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
+												<div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
 												<div className="absolute right-0 bottom-full w-36 mb-2 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
 													<button
-                            onClick={() => { setSettingsOpen(false); navigate({ to: '/profile/setting' }); }}
+														onClick={() => { setSettingsOpen(false); navigate({ to: '/profile/setting' }); }}
 														className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
 													>
 														Settings
 													</button>
 													<div className="h-px bg-zinc-800 mx-2" />
 													<button
-                            onClick={() => { setSettingsOpen(false); handleShare(); }}
+														onClick={() => { setSettingsOpen(false); handleShare(); }}
 														className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
 													>
 														Share Profile
@@ -454,14 +454,14 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 										</button>
 										{actionMenuOpen && (
 											<>
-                        <div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(false)} />
+												<div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(false)} />
 												<div className="absolute -right-15 bottom-full w-30 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
 													<button
-                            onClick={() => { setShowBlockModal(true); setActionMenuOpen(false); }}
+														onClick={() => { setShowBlockModal(true); setActionMenuOpen(false); }}
 														disabled={isBlockPending}
 														className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer disabled:opacity-60"
 													>
-                            {isBlocked ? 'Unblock User' : 'Block User'}
+														{isBlocked ? 'Unblock User' : 'Block User'}
 													</button>
 													<div className="h-px bg-zinc-800 mx-2" />
 													<button
@@ -487,13 +487,13 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 								key={i}
 								className={cn(
 									"flex flex-col items-center gap-1 md:gap-1.5 flex-1",
-                  stat.label !== 'Post' && !isBlocked && "cursor-pointer hover:opacity-80 transition-opacity",
+									stat.label !== 'Post' && !isBlocked && "cursor-pointer hover:opacity-80 transition-opacity",
 									isBlocked && "cursor-not-allowed opacity-50"
 								)}
-                onClick={stat.label !== 'Post' && !isBlocked ? () => openFollowModal(stat.label.toLowerCase() as any) : undefined}
+								onClick={stat.label !== 'Post' && !isBlocked ? () => openFollowModal(stat.label.toLowerCase() as any) : undefined}
 							>
-                <span className="text-[#FF7700] text-[9px] md:text-xs font-bold tracking-widest">{stat.label}</span>
-                <span className="text-base md:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-extrabold tracking-tight text-[#FFE2A5]">{stat.value}</span>
+								<span className="text-[#FF7700] text-[9px] md:text-xs font-bold tracking-widest">{stat.label}</span>
+								<span className="text-base md:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-extrabold tracking-tight text-[#FFE2A5]">{stat.value}</span>
 							</div>
 						))}
 					</div>

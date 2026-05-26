@@ -26,7 +26,8 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
     const attachments = msg.attachments?.map((a: any) => ({
         type: a.type || 'image',
         imageUrl: a.image_url || a.asset_url || a.thumb_url || a.url || '',
-    })).filter((a: any) => a.imageUrl) || [];
+        _isLinkPreview: !!(a.og_scrape_url || a.title_link || a.title),
+    })).filter((a: any) => a.imageUrl && !a._isLinkPreview) || [];
 
     // Also check custom fields if attachments were stripped
     if (msg.imageUrl || msg.image_url) {

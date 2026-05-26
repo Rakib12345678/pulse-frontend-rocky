@@ -14,6 +14,15 @@ import { Drawer, DrawerContent, DrawerTitle, DrawerHeader } from '@/components/u
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from '@/components/ui/dialog';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 
+export const isImageUrl = (url: string) => {
+    try {
+        const cleanUrl = url.split('?')[0].split('#')[0];
+        return /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(cleanUrl);
+    } catch {
+        return false;
+    }
+};
+
 export const isOnlyImage = (text: string, attachments?: any[]) => {
     const hasAttachments = !!(attachments && attachments.length > 0);
     const trimmed = (text || '').trim();
@@ -21,7 +30,11 @@ export const isOnlyImage = (text: string, attachments?: any[]) => {
     // Check if the message contains [IMAGE:...] or similar bracketed IMAGE tag
     const hasImagePrefix = /^[\[\(\【]\s*IMAGE:/i.test(trimmed);
 
-    if (hasImagePrefix || hasAttachments) {
+    // Also check if the message is solely a raw image URL
+    const rawUrlRegex = /^(https?:\/\/[^\s\n\r\]\)\】]+)$/i;
+    const isRawImageUrl = rawUrlRegex.test(trimmed) && isImageUrl(trimmed);
+
+    if (hasImagePrefix || hasAttachments || isRawImageUrl) {
         return true;
     }
     return false;
@@ -92,8 +105,8 @@ const renderMessageContent = (
         );
     }
 
-    // 2. Handle Images / URLs within brackets or raw URLs
-    const tagRegex = /([\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】])/gi;
+    // Split by both bracketed URL tags AND bare URLs in text
+    const tagRegex = /([\[\(\【][\s\S]*?https?:\/\/[\s\S]*?[\]\)\】]|https?:\/\/[^\s\n\r]+)/gi;
     const parts = text.split(tagRegex);
 
 
@@ -102,36 +115,66 @@ const renderMessageContent = (
         
         // Check if it is a bracketed IMAGE tag: e.g. [IMAGE:https://...]
         const isImageTag = /^[\[\(\【]\s*IMAGE:/i.test(trimmedPart) && 
-            (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('】')) &&
+            (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('\u3005')) &&
             trimmedPart.includes('http');
 
-        const isBracketedTag = (trimmedPart.startsWith('[') || trimmedPart.startsWith('(') || trimmedPart.startsWith('【')) &&
-            (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('】')) &&
+        const isBracketedTag = (trimmedPart.startsWith('[') || trimmedPart.startsWith('(') || trimmedPart.startsWith('\u3010')) &&
+            (trimmedPart.endsWith(']') || trimmedPart.endsWith(')') || trimmedPart.endsWith('\u3005')) &&
             trimmedPart.includes('http');
         
-        const rawUrlRegex = /^(https?:\/\/[^\s\n\r\]\)\】]+)$/i;
+        const rawUrlRegex = /^(https?:\/\/[^\s\n\r\]\)\u3005]+)$/i;
         const isRawUrl = rawUrlRegex.test(trimmedPart);
 
         if (isImageTag) {
-            const urlMatch = trimmedPart.match(/(https?:\/\/[^\s\n\r\]\)\】]+)/i);
+            const urlMatch = trimmedPart.match(/(https?:\/\/[^\s\n\r\]\)\u3005]+)/i);
             if (urlMatch) {
                 const url = urlMatch[1];
+                // Only render as image if the URL actually points to an image file
+                if (isImageUrl(url)) {
+                    return (
+                        <div key={index} className="my-2">
+                            <img
+                                src={url}
+                                alt="chat attachment"
+                                onLoad={onImageLoad}
+                                onClick={() => onImageClick?.(url)}
+                                className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5 cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all"
+                            />
+                        </div>
+                    );
+                }
+                // Non-image URL in an IMAGE tag — render as link
                 return (
-                    <div key={index} className="my-2">
-                        <img
-                            src={url}
-                            alt="chat attachment"
-                            onLoad={onImageLoad}
-                            onClick={() => onImageClick?.(url)}
-                            className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5 cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all"
-                        />
-                    </div>
+                    <a
+                        key={index}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#4A9EFF] hover:underline break-all"
+                    >
+                        {url}
+                    </a>
                 );
             }
         } else if (isBracketedTag || isRawUrl) {
-            const urlMatch = trimmedPart.match(/(https?:\/\/[^\s\n\r\]\)\】]+)/i);
+            const urlMatch = trimmedPart.match(/(https?:\/\/[^\s\n\r\]\)\u3005]+)/i);
             if (urlMatch) {
                 const url = urlMatch[1];
+                // Only show as image if it has a real image file extension
+                if (isImageUrl(url)) {
+                    return (
+                        <div key={index} className="my-2">
+                            <img
+                                src={url}
+                                alt="chat attachment"
+                                onLoad={onImageLoad}
+                                onClick={() => onImageClick?.(url)}
+                                className="max-w-full sm:max-w-[300px] max-h-[400px] object-contain rounded-lg bg-black/20 shadow-sm border border-white/5 cursor-pointer hover:opacity-90 active:scale-[0.99] transition-all"
+                            />
+                        </div>
+                    );
+                }
+                // Non-image URL — always render as a plain clickable link
                 return (
                     <a
                         key={index}

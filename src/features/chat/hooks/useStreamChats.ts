@@ -9,6 +9,7 @@ import { getDisplayName } from '../utils/ChatUtils';
 import type { Conversation, Message, MessageStatus } from '../types/chat.types';
 import { ARCHIVED_STORAGE_KEY, MUTED_STORAGE_KEY } from '../utils/chatConstants';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import api from '@/lib/api';
 
 
 export interface UseStreamChatReturn {
@@ -32,6 +33,7 @@ export interface UseStreamChatReturn {
     unarchiveConversation: (id: string) => void;
     muteConversation: (id: string) => void;
     unmuteConversation: (id: string) => void;
+    blockedUserIds: string[];
 }
 
 const getArchived = (): string[] => {
@@ -69,10 +71,33 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
     const [hasMore, setHasMore] = useState(true);
     const [mutedIds, setMutedIds] = useState<string[]>([]);
     const [archivedIds, setArchivedIds] = useState<string[]>(getArchived);
+    const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
 
     const activeChannel = useMemo(() => (
         activeConvId ? channels.find(c => c.cid === activeConvId) || null : null
     ), [channels, activeConvId]);
+
+    // ── fetch blocked users from backend ──────────────────────────────────────
+    const fetchBlockedUsers = useCallback(async () => {
+        try {
+            const { data } = await api.get('/users/blocked');
+            if (Array.isArray(data)) {
+                setBlockedUserIds(data.map((u: any) => String(u.id)));
+            }
+        } catch {
+            // silently ignore – block list is best-effort
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!streamReady) return;
+        fetchBlockedUsers();
+
+        // Re-fetch whenever block/unblock happens (dispatched by user.service)
+        const handleBlocksChanged = () => fetchBlockedUsers();
+        window.addEventListener('stream-blocks-changed', handleBlocksChanged);
+        return () => window.removeEventListener('stream-blocks-changed', handleBlocksChanged);
+    }, [streamReady, fetchBlockedUsers]);
 
     const nameCache = useRef<Record<string, string>>({});
     const cacheName = useCallback((ch: Channel) => {
@@ -156,20 +181,24 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
             const allConvs = channels.map(ch => {
                 const conv = channelToConversation(ch, myId, nameCache.current[ch.cid]);
                 const participantId = conv.participant.id;
-                const liveUser = client?.state?.users?.[participantId] as Record<string, any> | undefined;
-                
+                const isBlocked = blockedUserIds.includes(participantId);
+
+                const liveUser = isBlocked
+                    ? null
+                    : (client?.state?.users?.[participantId] as Record<string, any> | undefined);
+
                 // Robust online check:
                 // 1. Check live state from client.state.users (most accurate for watched users)
                 // 2. Check the conversation's initial mapping
                 // 3. Fallback: if they were active in the last 60 seconds, treat as online for UI responsiveness
                 const lastActiveTime = liveUser?.last_active || conv.lastActive;
-                const isRecentlyActive = lastActiveTime && (new Date().getTime() - new Date(lastActiveTime).getTime() < 60000);
-                
-                const isOnline = liveUser?.online === true || conv.isOnline === true || !!isRecentlyActive;
-                
-                const lastActive = lastActiveTime
+                const isRecentlyActive = !isBlocked && lastActiveTime && (new Date().getTime() - new Date(lastActiveTime).getTime() < 60000);
+
+                const isOnline = !isBlocked && (liveUser?.online === true || conv.isOnline === true || !!isRecentlyActive);
+
+                const lastActive = isBlocked ? undefined : (lastActiveTime
                     ? new Date(lastActiveTime).toISOString()
-                    : conv.lastActive;
+                    : conv.lastActive);
                 const unreadCount = ch.cid === activeConvId ? 0 : conv.unreadCount;
 
                 const isGift = conv.lastMessageOriginal?.startsWith('GIFT:') || conv.lastMessage?.startsWith('GIFT:');
@@ -184,6 +213,10 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
                     lastMessage: isGift ? '🎁 Gift' : conv.lastMessage,
                     lastMessageOriginal: isGift ? '🎁 Gift' : conv.lastMessageOriginal,
                     isGiftMessage: isGift,
+                    // Mask avatar for blocked participants
+                    participant: isBlocked
+                        ? { ...conv.participant, avatar: '' }
+                        : conv.participant,
                 };
 
                 const preview = optimisticPreviews[ch.cid];
@@ -202,7 +235,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
             return allConvs;
         },
-        [channels, myId, activeConvId, optimisticPreviews, mutedIds, archivedIds]
+        [channels, myId, activeConvId, optimisticPreviews, mutedIds, archivedIds, blockedUserIds]
     );
 
     // ── message events → chat view re-render ──────────────────────────────────
@@ -525,6 +558,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         sendMessage, sendImage, deleteMessage, markAsRead, startDirectChat,
         sendReaction, deleteReaction,
         archiveConversation, unarchiveConversation, muteConversation, unmuteConversation,
+        blockedUserIds,
     };
 
 };

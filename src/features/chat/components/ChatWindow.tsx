@@ -55,13 +55,14 @@ interface ChatWindowProps {
     onMarkAsRead: () => void;
     draftValue: string;
     onDraftChange: (v: string) => void;
+    blockedUserIds?: string[];
 }
 
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversation, isLoadingConversation = false, onBack, mobileFullscreen = false,
     messages, msgLoading, hasMore, loadMore, onSend, onSendImage, onDelete, onReact, onDeleteReaction, onMarkAsRead,
-    draftValue, onDraftChange,
+    draftValue, onDraftChange, blockedUserIds = [],
 }) => {
     const navigate = useNavigate();
     const { user, wallet } = useAuthStore();
@@ -69,6 +70,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     const isMobile = useIsMobile();
     const myId = String(user?.id ?? '');
     const isInternetConnected = useOnlineStatus();
+    // Derive block state for the active conversation participant
+    const isParticipantBlocked = conversation ? blockedUserIds.includes(conversation.participant.id) : false;
     const handleGoLiveClick = useGoLive();
     const [showLangModal, setShowLangModal] = useState(false);
     const [showTranslateDrawer, setShowTranslateDrawer] = useState(false);
@@ -263,7 +266,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
             const rawText = isMyMessage
                 ? (message.originalText ?? message.text ?? '')
                 : (translateEnabled ? (message.text || message.originalText || '') : (message.originalText || message.text || ''));
-            
+
             const isImageTag = /^[\[\(\【]\s*IMAGE:/i.test(rawText.trim());
             const urlMatch = rawText.match(/(https?:\/\/[^\s\n\r\]\)\】]+)/i);
 
@@ -299,7 +302,33 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         inputRef.current?.focus();
     };
 
-    const visibleMessages = messages.filter(m => !!m.text?.trim() || (m.attachments && m.attachments.length > 0));
+    const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.type.indexOf('image') !== -1) {
+                const file = item.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    if (!isInternetConnected || !conversation) return;
+                    if (file.size > 5 * 1024 * 1024) {
+                        toast.error('Image size must be less than 5MB');
+                        return;
+                    }
+                    setPendingImage({ file, url: URL.createObjectURL(file) });
+                    return;
+                }
+            }
+        }
+    };
+
+    const visibleMessages = messages.filter(m => {
+        // Hide messages from a blocked participant (only show our own messages)
+        if (isParticipantBlocked && m.senderId !== myId) return false;
+        return !!m.text?.trim() || (m.attachments && m.attachments.length > 0);
+    });
 
     if (!conversation) {
         if (isLoadingConversation) {
@@ -335,14 +364,14 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 >
                     <div className="relative shrink-0">
                         <Avatar
-                            src={conversation.participant.avatar}
+                            src={isParticipantBlocked ? '' : conversation.participant.avatar}
                             alt={conversation.participant.name}
                             className={cn(
                                 "w-10 h-10 sm:w-11 sm:h-11 transition-transform duration-200",
                                 conversation.participant.username && "group-hover:scale-105"
                             )}
                         />
-                        {conversation.isOnline && (
+                        {conversation.isOnline && !isParticipantBlocked && (
                             <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-green-400 ring-2 ring-[#0d0d0d]" />
                         )}
                     </div>
@@ -353,13 +382,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                         )}>
                             {capitalizeName(conversation.participant.name)}
                         </p>
-                        <p className={cn('text-[11px] font-medium', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
-                            {conversation.isOnline
-                                ? 'Online'
-                                : conversation.lastActive
-                                    ? formatLastSeen(conversation.lastActive)
-                                    : 'Offline'}
-                        </p>
+                        {!isParticipantBlocked && (
+                            <p className={cn('text-[11px] font-medium', conversation.isOnline ? 'text-green-400' : 'text-gray-500')}>
+                                {conversation.isOnline
+                                    ? 'Online'
+                                    : conversation.lastActive
+                                        ? formatLastSeen(conversation.lastActive)
+                                        : 'Offline'}
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -483,14 +514,18 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                 );
                                 lastDayKey = dayKey;
                             }
+                            // Cap message status at 'sent' (single tick) when the participant is blocked
+                            const displayMsg = isParticipantBlocked && msg.status && msg.status !== 'pending'
+                                ? { ...msg, status: 'sent' as const }
+                                : msg;
                             items.push(
                                 <div key={msg.id} className="flex flex-col gap-0.5">
                                     <MessageBubble
-                                        message={msg}
+                                        message={displayMsg}
                                         isMe={msg.senderId === myId}
                                         translateEnabled={translateEnabled}
                                         participantName={conversation.participant.name}
-                                        participantAvatar={conversation.participant.avatar}
+                                        participantAvatar={isParticipantBlocked ? '' : conversation.participant.avatar}
                                         myAvatar={user?.profileImage}
                                         onDelete={msg => setMsgToDelete(msg)}
                                         onReact={onReact}
@@ -580,7 +615,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                 <Drawer open={showEmoji} onOpenChange={setShowEmoji}>
                                     <DrawerContent className="bg-[#111213] border-none px-4 pb-6 max-h-[85vh] rounded-t-[32px] flex flex-col gap-4">
                                         <div className="mx-auto mt-2 h-1 w-12 shrink-0 rounded-full bg-white/20" />
-                                        
+
                                         {/* Input field inside the drawer for mobile */}
                                         <div
                                             className="flex items-center gap-2 w-full shrink-0"
@@ -592,6 +627,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                                     value={draftValue}
                                                     onChange={e => handleDraftChange(e.target.value)}
                                                     onKeyDown={handleKeyDown}
+                                                    onPaste={handlePaste}
                                                     placeholder="Type Message Here..."
                                                     className="flex-1 min-w-0 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
                                                     style={{ fontSize: '16px' }}
@@ -659,6 +695,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                                 value={draftValue}
                                 onChange={e => handleDraftChange(e.target.value)}
                                 onKeyDown={handleKeyDown}
+                                onPaste={handlePaste}
                                 placeholder={isInternetConnected ? 'Type Message Here...' : 'No connection...'}
                                 className="flex-1 min-w-0 border-none text-sm text-white focus:outline-none placeholder:text-gray-500 outline-none bg-transparent"
                                 style={{ fontSize: '16px' }}

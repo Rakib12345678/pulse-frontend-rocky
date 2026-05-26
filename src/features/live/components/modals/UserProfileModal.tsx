@@ -134,10 +134,10 @@ export const UserProfileModal: React.FC = () => {
 				setProfile((prev) =>
 					prev
 						? {
-								...prev,
-								followedByMe: false,
-								followerCount: Math.max(0, prev.followerCount - 1),
-							}
+							...prev,
+							followedByMe: false,
+							followerCount: Math.max(0, prev.followerCount - 1),
+						}
 						: null,
 				);
 				setFollowState(profile.id, false); // sync to shared store
@@ -147,10 +147,10 @@ export const UserProfileModal: React.FC = () => {
 				setProfile((prev) =>
 					prev
 						? {
-								...prev,
-								followedByMe: true,
-								followerCount: prev.followerCount + 1,
-							}
+							...prev,
+							followedByMe: true,
+							followerCount: prev.followerCount + 1,
+						}
 						: null,
 				);
 				setFollowState(profile.id, true); // sync to shared store
@@ -453,11 +453,10 @@ export const UserProfileModal: React.FC = () => {
 										</Button>
 									) : (
 										<Button
-											className={`w-full rounded-full h-11 font-bold text-sm ${
-												profile.followedByMe
+											className={`w-full rounded-full h-11 font-bold text-sm ${profile.followedByMe
 													? "bg-white/10 hover:bg-white/20 text-white"
 													: "bg-[#FF8800] hover:bg-[#FF9922] text-black"
-											}`}
+												}`}
 											onClick={handleFollowToggle}
 											disabled={isFollowLoading}
 										>
@@ -754,11 +753,10 @@ export const UserProfileModal: React.FC = () => {
 								{currentUser?.id !== profile.id && (
 									<div className="flex gap-3 px-6 pb-4 w-full">
 										<Button
-											className={`flex-1 rounded-full h-11 font-bold text-sm ${
-												profile.followedByMe
+											className={`flex-1 rounded-full h-11 font-bold text-sm ${profile.followedByMe
 													? "bg-white/10 hover:bg-white/20 text-white"
 													: "bg-[#FF8800] hover:bg-[#FF9922] text-black"
-											}`}
+												}`}
 											onClick={handleFollowToggle}
 											disabled={isFollowLoading}
 										>
@@ -1029,11 +1027,10 @@ export const UserProfileModal: React.FC = () => {
 								{currentUser?.id !== profile.id && (
 									<div className="flex gap-3 px-6 pb-4 w-full">
 										<Button
-											className={`flex-1 rounded-full h-11 font-bold text-sm ${
-												profile.followedByMe
+											className={`flex-1 rounded-full h-11 font-bold text-sm ${profile.followedByMe
 													? "bg-white/10 hover:bg-white/20 text-white"
 													: "bg-[#FF8800] hover:bg-[#FF9922] text-black"
-											}`}
+												}`}
 											onClick={handleFollowToggle}
 											disabled={isFollowLoading}
 										>

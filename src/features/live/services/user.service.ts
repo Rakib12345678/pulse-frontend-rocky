@@ -33,11 +33,15 @@ export const userService = {
     },
 
     blockUser: async (targetUserId: number) => {
-        return api.post('/users/block', { targetUserId, block: true });
+        const response = await api.post('/users/block', { targetUserId, block: true });
+        window.dispatchEvent(new CustomEvent('stream-blocks-changed'));
+        return response;
     },
 
     unblockUser: async (targetUserId: number) => {
-        return api.post('/users/unblock', { targetUserId, block: false });
+        const response = await api.post('/users/unblock', { targetUserId, block: false });
+        window.dispatchEvent(new CustomEvent('stream-blocks-changed'));
+        return response;
     },
 
     getFollowStatuses: async (users: { userId: number; username: string }[]) => {
