@@ -3,6 +3,12 @@ import { useNavigate } from '@tanstack/react-router';
 import background from '@/assets/background.png';
 import frame from '@/assets/Frame.svg';
 
+// Ensure the background image is cached in memory to avoid rendering delay/flickering
+if (typeof window !== 'undefined') {
+  const bgImg = new Image();
+  bgImg.src = background;
+}
+
 interface ChatErrorStateProps {
     onExplore?: () => void;
 }
@@ -21,6 +27,15 @@ export const ChatErrorState: React.FC<ChatErrorStateProps> = ({ onExplore }) => 
                 backgroundSize: '250px 250px',
             }}
         >
+            {/* High-priority eager LCP image tag for immediate browser HTML preloader discovery */}
+            <img
+                src={background}
+                alt=""
+                className="absolute opacity-0 pointer-events-none w-px h-px"
+                aria-hidden="true"
+                fetchPriority="high"
+                loading="eager"
+            />
             <div
                 className="absolute pointer-events-none"
                 style={{

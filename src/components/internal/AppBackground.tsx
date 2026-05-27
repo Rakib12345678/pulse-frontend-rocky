@@ -2,6 +2,12 @@ import React, { useEffect, useRef } from 'react';
 import background from '@/assets/background.png';
 import { cn } from '@/lib/utils';
 
+// Ensure the background image is cached in memory to avoid rendering delay/flickering
+if (typeof window !== 'undefined') {
+  const bgImg = new Image();
+  bgImg.src = background;
+}
+
 const conicMask = `conic-gradient(
   from 0deg,
   white        0%,    white        14.67%,
@@ -146,6 +152,15 @@ export const AppBackground: React.FC<AppBackgroundProps> = ({
     <div className="pointer-events-none absolute rounded-full" style={{ width: 169, height: 220, top: -108, right: -92, background: '#FF7700', filter: 'blur(180px)', mixBlendMode: 'color-dodge' }} />
     <div className="pointer-events-none absolute rounded-full" style={{ width: 220, height: 220, bottom: -110, left: -110, background: '#3E2AB5', filter: 'blur(354px)', mixBlendMode: 'color-dodge' }} />
     {displayRings && <FadingRings />}
+    {/* High-priority eager LCP image tag for immediate browser HTML preloader discovery */}
+    <img
+      src={background}
+      alt=""
+      className="absolute opacity-0 pointer-events-none w-px h-px"
+      aria-hidden="true"
+      fetchPriority="high"
+      loading="eager"
+    />
     <div className="absolute inset-0 mix-blend-overlay pointer-events-none" style={{ backgroundImage: `url(${background})`, backgroundRepeat: 'repeat', backgroundSize: '300px 300px' }} />
     {children && (
       <div className={cn("relative z-10 h-full overflow-y-auto", innerClassName)}>

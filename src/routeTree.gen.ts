@@ -20,7 +20,6 @@ import { Route as MainTermsConditionsIndexRouteImport } from './routes/_main/ter
 import { Route as MainRefundPolicyIndexRouteImport } from './routes/_main/refund-policy/index'
 import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
 import { Route as MainPrivacyPolicyIndexRouteImport } from './routes/_main/privacy-policy/index'
-import { Route as MainLiveIndexRouteImport } from './routes/_main/live/index'
 import { Route as MainStreamIdRouteImport } from './routes/_main/stream/$id'
 import { Route as MainProfileUsernameRouteImport } from './routes/_main/profile/$username'
 import { Route as MainLiveIdRouteImport } from './routes/_main/live/$id'
@@ -38,12 +37,16 @@ const MainStreamRouteRoute = MainStreamRouteRouteImport.update({
   id: '/stream',
   path: '/stream',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/stream/route.lazy').then((d) => d.Route),
+)
 const MainLiveRouteRoute = MainLiveRouteRouteImport.update({
   id: '/live',
   path: '/live',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/live/route.lazy').then((d) => d.Route),
+)
 const MainForYouRouteRoute = MainForYouRouteRouteImport.update({
   id: '/for-you',
   path: '/for-you',
@@ -53,12 +56,16 @@ const MainExploreRouteRoute = MainExploreRouteRouteImport.update({
   id: '/explore',
   path: '/explore',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/explore/route.lazy').then((d) => d.Route),
+)
 const MainChatsRouteRoute = MainChatsRouteRouteImport.update({
   id: '/chats',
   path: '/chats',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/chats/route.lazy').then((d) => d.Route),
+)
 const MainIndexRouteRoute = MainIndexRouteRouteImport.update({
   id: '/',
   path: '',
@@ -69,68 +76,87 @@ const MainTermsConditionsIndexRoute =
     id: '/terms-conditions/',
     path: '/terms-conditions/',
     getParentRoute: () => MainRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_main/terms-conditions/index.lazy').then((d) => d.Route),
+  )
 const MainRefundPolicyIndexRoute = MainRefundPolicyIndexRouteImport.update({
   id: '/refund-policy/',
   path: '/refund-policy/',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/refund-policy/index.lazy').then((d) => d.Route),
+)
 const MainProfileIndexRoute = MainProfileIndexRouteImport.update({
   id: '/profile/',
   path: '/profile/',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/profile/index.lazy').then((d) => d.Route),
+)
 const MainPrivacyPolicyIndexRoute = MainPrivacyPolicyIndexRouteImport.update({
   id: '/privacy-policy/',
   path: '/privacy-policy/',
   getParentRoute: () => MainRouteRoute,
-} as any)
-const MainLiveIndexRoute = MainLiveIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => MainLiveRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/privacy-policy/index.lazy').then((d) => d.Route),
+)
 const MainStreamIdRoute = MainStreamIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => MainStreamRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/stream/$id.lazy').then((d) => d.Route),
+)
 const MainProfileUsernameRoute = MainProfileUsernameRouteImport.update({
   id: '/profile/$username',
   path: '/profile/$username',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/profile/$username.lazy').then((d) => d.Route),
+)
 const MainLiveIdRoute = MainLiveIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => MainLiveRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/live/$id.lazy').then((d) => d.Route),
+)
 const MainWalletSuccessRouteRoute = MainWalletSuccessRouteRouteImport.update({
   id: '/wallet/success',
   path: '/wallet/success',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/wallet/success/route.lazy').then((d) => d.Route),
+)
 const MainWalletCancelRouteRoute = MainWalletCancelRouteRouteImport.update({
   id: '/wallet/cancel',
   path: '/wallet/cancel',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/wallet/cancel/route.lazy').then((d) => d.Route),
+)
 const MainProfileSettingIndexRoute = MainProfileSettingIndexRouteImport.update({
   id: '/profile/setting/',
   path: '/profile/setting/',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/profile/setting/index.lazy').then((d) => d.Route),
+)
 const MainProfileSettingDiamondsRoute =
   MainProfileSettingDiamondsRouteImport.update({
     id: '/profile/setting/diamonds',
     path: '/profile/setting/diamonds',
     getParentRoute: () => MainRouteRoute,
-  } as any)
+  } as any).lazy(() =>
+    import('./routes/_main/profile/setting/diamonds.lazy').then((d) => d.Route),
+  )
 const MainProfileSettingCoinsRoute = MainProfileSettingCoinsRouteImport.update({
   id: '/profile/setting/coins',
   path: '/profile/setting/coins',
   getParentRoute: () => MainRouteRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/_main/profile/setting/coins.lazy').then((d) => d.Route),
+)
 
 export interface FileRoutesByFullPath {
   '/': typeof MainIndexRouteRoute
@@ -144,7 +170,6 @@ export interface FileRoutesByFullPath {
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
   '/stream/$id': typeof MainStreamIdRoute
-  '/live/': typeof MainLiveIndexRoute
   '/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/profile/': typeof MainProfileIndexRoute
   '/refund-policy/': typeof MainRefundPolicyIndexRoute
@@ -158,13 +183,13 @@ export interface FileRoutesByTo {
   '/chats': typeof MainChatsRouteRoute
   '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
+  '/live': typeof MainLiveRouteRouteWithChildren
   '/stream': typeof MainStreamRouteRouteWithChildren
   '/wallet/cancel': typeof MainWalletCancelRouteRoute
   '/wallet/success': typeof MainWalletSuccessRouteRoute
   '/live/$id': typeof MainLiveIdRoute
   '/profile/$username': typeof MainProfileUsernameRoute
   '/stream/$id': typeof MainStreamIdRoute
-  '/live': typeof MainLiveIndexRoute
   '/privacy-policy': typeof MainPrivacyPolicyIndexRoute
   '/profile': typeof MainProfileIndexRoute
   '/refund-policy': typeof MainRefundPolicyIndexRoute
@@ -187,7 +212,6 @@ export interface FileRoutesById {
   '/_main/live/$id': typeof MainLiveIdRoute
   '/_main/profile/$username': typeof MainProfileUsernameRoute
   '/_main/stream/$id': typeof MainStreamIdRoute
-  '/_main/live/': typeof MainLiveIndexRoute
   '/_main/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
   '/_main/profile/': typeof MainProfileIndexRoute
   '/_main/refund-policy/': typeof MainRefundPolicyIndexRoute
@@ -210,7 +234,6 @@ export interface FileRouteTypes {
     | '/live/$id'
     | '/profile/$username'
     | '/stream/$id'
-    | '/live/'
     | '/privacy-policy/'
     | '/profile/'
     | '/refund-policy/'
@@ -224,13 +247,13 @@ export interface FileRouteTypes {
     | '/chats'
     | '/explore'
     | '/for-you'
+    | '/live'
     | '/stream'
     | '/wallet/cancel'
     | '/wallet/success'
     | '/live/$id'
     | '/profile/$username'
     | '/stream/$id'
-    | '/live'
     | '/privacy-policy'
     | '/profile'
     | '/refund-policy'
@@ -252,7 +275,6 @@ export interface FileRouteTypes {
     | '/_main/live/$id'
     | '/_main/profile/$username'
     | '/_main/stream/$id'
-    | '/_main/live/'
     | '/_main/privacy-policy/'
     | '/_main/profile/'
     | '/_main/refund-policy/'
@@ -345,13 +367,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MainPrivacyPolicyIndexRouteImport
       parentRoute: typeof MainRouteRoute
     }
-    '/_main/live/': {
-      id: '/_main/live/'
-      path: '/'
-      fullPath: '/live/'
-      preLoaderRoute: typeof MainLiveIndexRouteImport
-      parentRoute: typeof MainLiveRouteRoute
-    }
     '/_main/stream/$id': {
       id: '/_main/stream/$id'
       path: '/$id'
@@ -413,12 +428,10 @@ declare module '@tanstack/react-router' {
 
 interface MainLiveRouteRouteChildren {
   MainLiveIdRoute: typeof MainLiveIdRoute
-  MainLiveIndexRoute: typeof MainLiveIndexRoute
 }
 
 const MainLiveRouteRouteChildren: MainLiveRouteRouteChildren = {
   MainLiveIdRoute: MainLiveIdRoute,
-  MainLiveIndexRoute: MainLiveIndexRoute,
 }
 
 const MainLiveRouteRouteWithChildren = MainLiveRouteRoute._addFileChildren(

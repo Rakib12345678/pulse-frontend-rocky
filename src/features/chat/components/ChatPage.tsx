@@ -13,6 +13,12 @@ import { useStreamChat } from '@/features/chat/hooks/useStreamChats';
 import background from '@/assets/background.png';
 import { ChatEmptyState } from './ChatEmptyState';
 
+// Ensure the background image is cached in memory to avoid rendering delay/flickering
+if (typeof window !== 'undefined') {
+  const bgImg = new Image();
+  bgImg.src = background;
+}
+
 const saveSession = (id: string) => sessionStorage.setItem(SESSION_ACTIVE_KEY, id);
 const loadSession = (): string | null => sessionStorage.getItem(SESSION_ACTIVE_KEY);
 const clearSession = () => sessionStorage.removeItem(SESSION_ACTIVE_KEY);
@@ -191,6 +197,15 @@ export const ChatPage: React.FC<ChatPageProps> = ({
                     className="relative w-full max-w-240 h-[calc(100vh-1.5rem)] sm:h-[calc(100vh-2rem)] max-h-190 flex overflow-hidden rounded-2xl border border-white/8 shadow-2xl"
                     style={modalBg}
                 >
+                    {/* High-priority eager LCP image tag for immediate browser HTML preloader discovery */}
+                    <img
+                        src={background}
+                        alt=""
+                        className="absolute opacity-0 pointer-events-none w-px h-px"
+                        aria-hidden="true"
+                        fetchPriority="high"
+                        loading="eager"
+                    />
                     {user && (
                         <div className={cn(
                             'h-full w-full sm:w-70 md:w-77.5 shrink-0 flex flex-col bg-[#111213]/90 border-r border-white/8',

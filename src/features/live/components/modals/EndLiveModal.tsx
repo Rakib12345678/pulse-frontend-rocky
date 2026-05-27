@@ -57,16 +57,10 @@ export const EndLiveModal: React.FC<EndLiveModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !isLoading && !open && onClose()}>
-            <DialogContent 
+            <DialogContent
                 showCloseButton={false}
                 className="bg-[#1C1C1E] border-white/5 rounded-3xl sm:max-w-md p-8 gap-6 shadow-2xl overflow-hidden"
             >
-                <button 
-                    onClick={onClose}
-                    className="absolute right-6 top-6 text-gray-400 hover:text-white transition-colors z-50"
-                >
-                    <X className="w-6 h-6" />
-                </button>
 
                 <DialogHeader className="flex flex-col items-center gap-4 text-center">
                     <div className="relative w-24 h-24 mb-2 flex items-center justify-center">

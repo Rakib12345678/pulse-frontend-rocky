@@ -16,8 +16,15 @@ import { RejoinStreamBanner } from "@/features/live/components/overlay/RejoinStr
 import { AccountSuspendedModal } from "@/components/internal/AccountSuspendedModal"
 
 import appCss from "../styles.css?url"
+import background from "@/assets/background.png"
 import { Button } from "@/components/ui/button"
 import { GoogleOAuthProvider } from "@react-oauth/google"
+
+// Preload and cache background image in memory to prevent blinking and reload delays
+if (typeof window !== 'undefined') {
+  const bgImg = new Image();
+  bgImg.src = background;
+}
 
 // Media patch is loaded lazily on live stream routes to optimize initial page load
 
@@ -104,6 +111,10 @@ function RootComponent() {
         <title>Pulse Live</title>
 
         <HeadContent />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@600&family=Noto+Color+Emoji&display=swap" rel="stylesheet" />
+        <link rel="preload" href={background} as="image" type="image/png" fetchPriority="high" />
         <link rel="stylesheet" href={appCss} />
       </head>
 
