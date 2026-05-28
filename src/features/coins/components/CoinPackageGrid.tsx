@@ -116,9 +116,9 @@ export const CoinPackageGrid = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-[800px] mx-auto">
+        <div className="flex flex-col gap-6 w-full max-w-[800px] mx-auto h-full overflow-hidden pb-4">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between shrink-0">
                 <h2 className="text-white text-2xl font-bold">Add Coins</h2>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -150,7 +150,7 @@ export const CoinPackageGrid = () => {
             </div>
 
             {/* Balance Bar */}
-            <div className="flex items-center bg-[#1A1C1E] border border-white/5 rounded-2xl px-4 py-3 shadow-md">
+            <div className="flex items-center bg-[#1A1C1E] border border-white/5 rounded-2xl px-4 py-3 shadow-md shrink-0">
                 <div className="flex items-center gap-3">
                     <span className="text-white/80 text-sm font-medium">My Coins</span>
                     <div className="flex items-center gap-1.5">
@@ -161,25 +161,27 @@ export const CoinPackageGrid = () => {
             </div>
 
             {/* Packages Grid */}
-            {isLoading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#FF8800]" />
-                </div>
-            ) : coins.length === 0 ? (
-                <p className="text-gray-400 text-center py-10">No coin packages available</p>
-            ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-12">
-                    {coins.map((coin) => (
-                        <PackageCard
-                            key={coin.id}
-                            coin={coin}
-                            currency={currency}
-                            onBuy={() => handleBuy(coin)}
-                            isBuying={false}
-                        />
-                    ))}
-                </div>
-            )}
+            <div className="flex-1 overflow-y-auto pr-1 -mr-2 min-h-0 pb-6 scroll-smooth custom-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#FF8800]" />
+                    </div>
+                ) : coins.length === 0 ? (
+                    <p className="text-gray-400 text-center py-10">No coin packages available</p>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-4">
+                        {coins.map((coin) => (
+                            <PackageCard
+                                key={coin.id}
+                                coin={coin}
+                                currency={currency}
+                                onBuy={() => handleBuy(coin)}
+                                isBuying={false}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

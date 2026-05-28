@@ -426,7 +426,7 @@ export const MessageBubble = ({
                         <DrawerHeader className="pb-2">
                             <DrawerTitle className="text-center text-lg font-bold text-white">Reactions</DrawerTitle>
                         </DrawerHeader>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar pb-6">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar pb-6" data-vaul-no-drag>
                             {content}
                         </div>
                     </DrawerContent>
@@ -503,22 +503,43 @@ export const MessageBubble = ({
                     )}
 
                     {fullPickerOpen && (
-                        <Drawer open={fullPickerOpen} onOpenChange={(open) => {
-                            if (!open) {
-                                setFullPickerOpen(false);
-                                setQuickReactionOpen(false);
-                            }
-                        }}>
-                            <DrawerContent className="bg-[#111213] border-none px-4 pb-6 max-h-[85vh] rounded-t-[32px] z-[10002]">
-                                <div className="mx-auto mt-2 mb-4 h-1 w-12 shrink-0 rounded-full bg-white/20" />
-                                <EmojiPickerPopup
-                                    isMobile={isMobile}
-                                    onSelect={handleReaction}
-                                    onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
-                                    className="w-full bg-transparent shadow-none"
-                                />
-                            </DrawerContent>
-                        </Drawer>
+                        <>
+                            {/* Backdrop to close the picker on click outside */}
+                            <div 
+                                className="fixed inset-0 bg-black/60 z-[9998] animate-in fade-in duration-200"
+                                onClick={() => {
+                                    setFullPickerOpen(false);
+                                    setQuickReactionOpen(false);
+                                }}
+                            />
+                            <div
+                                className="fixed bottom-0 left-0 right-0 z-[9999] bg-[#111213] flex flex-col rounded-t-[24px] overflow-hidden border-t border-white/10 animate-in slide-in-from-bottom duration-300"
+                                style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+                            >
+                                {/* Header / close indicator bar */}
+                                <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                                    <span className="text-sm font-semibold text-white/90">Add Reaction</span>
+                                    <button
+                                        onClick={() => {
+                                            setFullPickerOpen(false);
+                                            setQuickReactionOpen(false);
+                                        }}
+                                        className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 text-white/80 active:scale-95 transition-all"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="px-4 pb-4">
+                                    <EmojiPickerPopup
+                                        isMobile={isMobile}
+                                        mobileHeight={320}
+                                        onSelect={handleReaction}
+                                        onClose={() => { setFullPickerOpen(false); setQuickReactionOpen(false); }}
+                                        className="w-full bg-transparent shadow-none"
+                                    />
+                                </div>
+                            </div>
+                        </>
                     )}
                 </div>
             );

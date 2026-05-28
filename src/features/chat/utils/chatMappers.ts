@@ -8,21 +8,22 @@ export const toIso = (d: any): string => {
     return d instanceof Date ? d.toISOString() : String(d);
 };
 
-export const deriveStatus = (msg: any, myId: string, read: Record<string, any>): MessageStatus => {
+export const deriveStatus = (msg: any, myId: string, read: Record<string, any>, isOnline?: boolean): MessageStatus => {
     if (msg.user?.id !== myId && msg.user_id !== myId) return undefined;
     if (msg.status === 'sending') return 'pending';
     const msgTime = new Date(toIso(msg.created_at));
-    let anyDelivered = false;
     for (const [uid, r] of Object.entries(read)) {
         if (uid === myId) continue;
         if (!r?.last_read) continue;
         if (new Date(r.last_read) >= msgTime) return 'read';
-        anyDelivered = true;
     }
-    return anyDelivered ? 'delivered' : 'sent';
+    if (isOnline !== undefined) {
+        return isOnline ? 'delivered' : 'sent';
+    }
+    return 'delivered';
 };
 
-export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Record<string, any>): Message => {
+export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Record<string, any>, isOnline?: boolean): Message => {
     const attachments = msg.attachments?.map((a: any) => ({
         type: a.type || 'image',
         imageUrl: a.image_url || a.asset_url || a.thumb_url || a.url || '',
@@ -47,7 +48,7 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
     const reactionCounts = msg.reaction_counts || {};
     const rawLatest = [...(msg.latest_reactions || msg.reactions || [])];
     const ownReactionsRaw = msg.own_reactions || [];
-    
+
     // Ensure own reactions are always included in latest (fixes optimistic update missing details)
     ownReactionsRaw.forEach((ownR: any) => {
         const exists = rawLatest.some(r => r.type === ownR.type && (r.user?.id || r.user_id) === (ownR.user?.id || ownR.user_id));
@@ -80,7 +81,7 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
         text: msg.text ?? '',
         originalText: textToUse || (attachmentsToUse ? '📷 Image' : ''),
         time: toIso(msg.created_at),
-        status: deriveStatus(msg, myId, read),
+        status: deriveStatus(msg, myId, read, isOnline),
         attachments: attachmentsToUse,
         reactions: {
             latest: latestReactions,
@@ -91,6 +92,7 @@ export const streamMsgToMessage = (msg: any, myId: string, cid: string, read: Re
         giftIconUrl: (msg as any).giftIconUrl,
         giftName: (msg as any).giftName,
         giftCost: (msg as any).giftCost,
+        customType: msg.custom_type || (msg as any).customType || msg.type,
     };
 };
 
@@ -107,7 +109,13 @@ export const channelToConversation = (
     const allMsgs = channel.state.messages;
     const lastMsg = allMsgs.slice().reverse().find(m =>
         m.text?.trim() !== 'has joined the live' &&
-        (m as any).original_text?.trim() !== 'has joined the live'
+        (m as any).original_text?.trim() !== 'has joined the live' &&
+        m.text !== 'block_signal' &&
+        m.text !== 'unblock_signal' &&
+        (m as any).custom_type !== 'block_signal' &&
+        (m as any).custom_type !== 'unblock_signal' &&
+        (m as any).customType !== 'block_signal' &&
+        (m as any).customType !== 'unblock_signal'
     );
 
     let lastMessageStatus: MessageStatus = undefined;
@@ -122,14 +130,22 @@ export const channelToConversation = (
 
     let lastMsgText = lastMsg?.text ?? '';
     let lastMsgOriginal = (lastMsg as any)?.original_text ?? lastMsg?.text ?? '';
-    const hasAttachments = !!(lastMsg?.attachments && lastMsg.attachments.length > 0);
+    const hasImageAttachments = !!(
+        lastMsg?.attachments &&
+        lastMsg.attachments.some((a: any) => 
+            (a.type === 'image' || (a.image_url || a.asset_url || a.thumb_url || a.url || '').match(/\.(jpg|jpeg|png|gif|webp|bmp)$/i)) && 
+            !a.og_scrape_url && 
+            !a.title_link && 
+            !a.title
+        )
+    );
 
     // Identify and clean image/gift tags even if translated.
     // We check both original and translated text to be safe.
-    const imageTagRegex = /\[?[\s\S]*?https?:\/\/[\s\S]*?\]?/i;
+    const imageTagRegex = /https?:\/\/\S+\.(jpg|jpeg|png|gif|webp|bmp)\b/i;
     const giftTagRegex = /\[?[\s\S]*?GIFT:[\s\S]*?\]?/i;
 
-    const isImageTag = hasAttachments ||
+    const isImageTag = hasImageAttachments ||
         imageTagRegex.test(lastMsgOriginal) ||
         imageTagRegex.test(lastMsgText);
 
@@ -143,6 +159,30 @@ export const channelToConversation = (
         lastMsgOriginal = '📷 Photo';
         lastMsgText = '📷 Photo';
     }
+    // Scan messages to find the latest block/unblock signal persistently
+    let blockedBy = (channel.data as any)?.blocked_by as string | undefined;
+    
+    const signalMsgs = allMsgs.slice().reverse();
+    const latestSignal = signalMsgs.find(m => 
+        m.text === 'block_signal' || 
+        m.text === 'unblock_signal' || 
+        (m as any).custom_type === 'block_signal' || 
+        (m as any).custom_type === 'unblock_signal' ||
+        (m as any).customType === 'block_signal' ||
+        (m as any).customType === 'unblock_signal'
+    );
+    if (latestSignal) {
+        if (latestSignal.text === 'block_signal' || (latestSignal as any).custom_type === 'block_signal' || (latestSignal as any).customType === 'block_signal') {
+            blockedBy = latestSignal.user?.id || (latestSignal as any).user_id || latestSignal.user_id;
+        } else {
+            blockedBy = undefined;
+        }
+    }
+    const isBlocked = !!blockedBy;
+
+    const participantAvatar = isBlocked ? '' : toAbsoluteUrl(streamUser?.image as string | undefined);
+    const participantOnline = isBlocked ? false : (participant?.online ?? false);
+    const participantLastActive = isBlocked ? undefined : (participant?.last_active ? toIso(participant.last_active) : undefined);
 
     return {
         id: channel.cid,
@@ -152,7 +192,7 @@ export const channelToConversation = (
             id: participant?.id ?? members[0]?.user_id ?? '',
             name: participantName,
             username: streamUser?.username || (streamUser?.name && !/^\d+$/.test(streamUser.name) ? streamUser.name : undefined),
-            avatar: toAbsoluteUrl(streamUser?.image as string | undefined),
+            avatar: participantAvatar,
             fullName: (streamUser?.fullName || streamUser?.full_name) as string | undefined,
         },
         lastMessage: lastMsgText,
@@ -175,7 +215,8 @@ export const channelToConversation = (
             return unreadMessages.length;
         })(),
         lastMessageStatus,
-        isOnline: participant?.online ?? false,
-        lastActive: participant?.last_active ? toIso(participant.last_active) : undefined,
+        isOnline: participantOnline,
+        lastActive: participantLastActive,
+        blockedBy,
     };
 };

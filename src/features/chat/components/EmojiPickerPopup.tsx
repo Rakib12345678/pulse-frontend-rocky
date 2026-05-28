@@ -10,9 +10,10 @@ interface EmojiPickerPopupProps {
     className?: string;
     style?: React.CSSProperties;
     isMobile?: boolean;
+    mobileHeight?: number;
 }
 
-export const EmojiPickerPopup = ({ onSelect, onClose, closeOnSelect = true, className, style, isMobile }: EmojiPickerPopupProps) => {
+export const EmojiPickerPopup = ({ onSelect, onClose, closeOnSelect = true, className, style, isMobile, mobileHeight = 320 }: EmojiPickerPopupProps) => {
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -42,9 +43,10 @@ export const EmojiPickerPopup = ({ onSelect, onClose, closeOnSelect = true, clas
             ref={ref}
             className={cn(
                 className || "absolute bottom-17 sm:bottom-18 right-3 sm:right-4 z-50",
-                isMobile && "w-full min-w-full flex flex-col"
+                isMobile && "w-full min-w-full"
             )}
             style={defaultStyle}
+            data-vaul-no-drag
         >
             {isMobile && (
                 <style>{`
@@ -53,9 +55,8 @@ export const EmojiPickerPopup = ({ onSelect, onClose, closeOnSelect = true, clas
                         min-width: 100% !important;
                         max-width: 100% !important;
                         --width: 100% !important;
-                    }
-                    div[data-emoji-picker] {
-                        width: 100% !important;
+                        border-radius: 0 !important;
+                        border: none !important;
                     }
                 `}</style>
             )}
@@ -75,6 +76,7 @@ export const EmojiPickerPopup = ({ onSelect, onClose, closeOnSelect = true, clas
                 navPosition={isMobile ? "bottom" : "top"}
                 perLine={isMobile ? 8 : 8}
                 dynamicWidth={isMobile}
+                {...(isMobile ? { height: mobileHeight } : {})}
             />
         </div>
     );

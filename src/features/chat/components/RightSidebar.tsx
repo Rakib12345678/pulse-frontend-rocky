@@ -4,7 +4,6 @@ import LiveIcon from '@/assets/Live.svg';
 import CoinIcon from '@/assets/Coin.svg';
 import { cn } from '@/lib/utils';
 import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
-import { AddCoinsModal } from '@/features/coins/components/AddCoinsModal';
 
 interface RightSidebarProps {
     className?: string;
@@ -16,7 +15,6 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({ className }) => {
 
     return (
         <>
-            <AddCoinsModal />
             <div className={cn("flex flex-col h-full bg-[#111213] w-20 lg:w-28 xl:w-36 items-center py-6 justify-end pb-24 gap-8", className)}>
                 {/* Add More Icon (Coins) */}
                 <button

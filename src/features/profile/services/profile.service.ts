@@ -4,6 +4,8 @@ import type { User, LiveStream, LiveStatus, FollowUser } from '@/features/profil
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/lib/api';
 
+import { userService } from '@/features/live/services/user.service';
+
 // Current logged-in user
 const fetchCurrentUser = async (): Promise<User> => {
   const { data } = await api.get('/users/me');
@@ -485,15 +487,14 @@ export const useToggleFollow = () => {
 // Block / Unblock 
 export const useBlockUser = () => {
   const queryClient = useQueryClient();
-
   return useMutation<void, unknown, { targetUserId: number; blockedByMe: boolean }>({
     mutationFn: async ({ targetUserId, blockedByMe }) => {
       if (blockedByMe) {
         // already blocked → unblock
-        await api.post('/users/unblock', { targetUserId, block: false });
+        await userService.unblockUser(targetUserId);
       } else {
         // not blocked → block
-        await api.post('/users/block', { targetUserId, block: true });
+        await userService.blockUser(targetUserId);
       }
     },
 

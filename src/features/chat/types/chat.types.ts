@@ -47,6 +47,7 @@ export interface Message {
     giftIconUrl?: string;
     giftName?: string;
     giftCost?: string;
+    customType?: string;
 }
 
 export interface Conversation {
@@ -65,6 +66,7 @@ export interface Conversation {
     isMuted?: boolean;
     isArchived?: boolean;
     isGiftMessage?: boolean;
+    blockedBy?: string;
 }
 
 export interface SendMessagePayload {

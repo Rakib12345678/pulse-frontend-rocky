@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -115,8 +115,19 @@ export const ChatPage: React.FC<ChatPageProps> = ({
         prevIdRef.current = localConvId;
         staleRef.current = null;
     }
-    if (displayConversation) staleRef.current = displayConversation;
-    const activeConversation = displayConversation ?? staleRef.current;
+    
+    // Always find the latest, live conversation from the stream chat list to support real-time state changes
+    const liveConversation = useMemo(() => {
+        if (!localConvId) return null;
+        return chat.conversations.find(c => c.id === localConvId) || null;
+    }, [localConvId, chat.conversations]);
+
+    if (liveConversation) {
+        staleRef.current = liveConversation;
+    } else if (displayConversation) {
+        staleRef.current = displayConversation;
+    }
+    const activeConversation = liveConversation ?? displayConversation ?? staleRef.current;
 
     const handleSelect = (conversation: Conversation) => {
         setLocalConvId(conversation.id);

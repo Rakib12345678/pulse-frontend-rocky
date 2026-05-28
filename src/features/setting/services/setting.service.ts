@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { BlockedUser } from '@/features/setting/services/setting.types';
 import api from '@/lib/api';
+import { userService } from '@/features/live/services/user.service';
 
 // Fetch blocked users 
 const fetchBlockedUsers = async (): Promise<BlockedUser[]> => {
@@ -23,7 +24,7 @@ export const useUnblockUser = () => {
 
   return useMutation<void, unknown, { targetUserId: number }>({
     mutationFn: async ({ targetUserId }) => {
-      await api.post('/users/unblock', { targetUserId, block: false });
+      await userService.unblockUser(targetUserId);
     },
 
     // Optimistic: remove from list immediately

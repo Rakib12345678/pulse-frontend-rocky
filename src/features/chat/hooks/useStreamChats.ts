@@ -4,11 +4,12 @@ import type { Channel } from 'stream-chat';
 import { getStreamClient, isStreamConnected } from '../stream/streamClient';
 import { chatService } from '../services/chat.service';
 import { giftsService } from '@/features/gifts/services/gifts.service';
-import { channelToConversation, streamMsgToMessage } from '../utils/chatMappers';
+import { channelToConversation, streamMsgToMessage, deriveStatus } from '../utils/chatMappers';
 import { getDisplayName } from '../utils/ChatUtils';
 import type { Conversation, Message, MessageStatus } from '../types/chat.types';
 import { ARCHIVED_STORAGE_KEY, MUTED_STORAGE_KEY } from '../utils/chatConstants';
 import { useAuthStore } from '@/features/auth/stores/authStore';
+import api from '@/lib/api';
 import api from '@/lib/api';
 
 
@@ -34,6 +35,7 @@ export interface UseStreamChatReturn {
     muteConversation: (id: string) => void;
     unmuteConversation: (id: string) => void;
     blockedUserIds: string[];
+    blockedUserIds: string[];
 }
 
 const getArchived = (): string[] => {
@@ -57,6 +59,26 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
     const [activeConvId, setActiveConvId] = useState<string | null>(null);
     const [streamMsgs, setStreamMsgs] = useState<Message[]>([]);
     const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
+    const [mockMessages, setMockMessages] = useState<Message[]>(() => {
+        try {
+            return JSON.parse(localStorage.getItem('stream_chat_mock_messages') || '[]');
+        } catch {
+            return [];
+        }
+    });
+
+    const saveMockMessage = useCallback((mockMsg: Message) => {
+        setMockMessages(prev => {
+            const next = [...prev, mockMsg];
+            try {
+                localStorage.setItem('stream_chat_mock_messages', JSON.stringify(next));
+            } catch (err) {
+                console.error('[BlockFlow] Failed to save mock messages:', err);
+            }
+            return next;
+        });
+    }, []);
+
     const { wallet, updateWallet } = useAuthStore();
 
     const messages = useMemo(() => {
@@ -64,8 +86,10 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         const activePending = pendingMessages.filter(pm =>
             pm.conversationId === activeConvId && !confirmedTexts.has(pm.originalText)
         );
-        return [...streamMsgs, ...activePending];
-    }, [streamMsgs, pendingMessages, activeConvId]);
+        const activeMocks = mockMessages.filter(m => m.conversationId === activeConvId);
+        const combined = [...streamMsgs, ...activePending, ...activeMocks];
+        return combined.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+    }, [streamMsgs, pendingMessages, mockMessages, activeConvId]);
 
     const [msgLoading, setMsgLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
@@ -99,6 +123,44 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         return () => window.removeEventListener('stream-blocks-changed', handleBlocksChanged);
     }, [streamReady, fetchBlockedUsers]);
 
+    // Auto-heal/sync block signal messages for blocked users in the list
+    useEffect(() => {
+        if (!streamReady || channels.length === 0 || blockedUserIds.length === 0) return;
+        
+        channels.forEach(async (ch) => {
+            const members = Object.values(ch.state.members).filter(
+                m => (m.user?.id || m.user_id) !== myId
+            );
+            const participantId = members[0]?.user?.id || members[0]?.user_id;
+            if (!participantId) return;
+            
+            // If we have blocked this participant
+            if (blockedUserIds.includes(participantId)) {
+                // Check if there is already a block signal in the channel history
+                const signalMsgs = ch.state.messages || [];
+                const hasBlockSignal = signalMsgs.some(m => 
+                    m.text === 'block_signal' || 
+                    (m as any).custom_type === 'block_signal' ||
+                    (m as any).customType === 'block_signal'
+                );
+                
+                if (!hasBlockSignal) {
+                    console.log(`[BlockFlow] Auto-healing: Sending missing block signal to channel ${ch.cid}`);
+                    try {
+                        await ch.sendMessage({
+                            text: 'block_signal',
+                            silent: true,
+                            custom_type: 'block_signal',
+                            blocked_by: myId,
+                        } as any);
+                    } catch (err) {
+                        console.error('[BlockFlow] Failed to auto-heal block signal:', err);
+                    }
+                }
+            }
+        });
+    }, [streamReady, channels, blockedUserIds, myId]);
+
     const nameCache = useRef<Record<string, string>>({});
     const cacheName = useCallback((ch: Channel) => {
         if (nameCache.current[ch.cid]) return;
@@ -116,9 +178,16 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
     >({});
 
     const syncMessages = useCallback((ch: Channel) => {
-        const mapped = ch.state.messages.map(m => streamMsgToMessage(m, myId, ch.cid, ch.state.read));
+        const members = Object.values(ch.state.members).filter(m => (m.user?.id || m.user_id) !== myId);
+        const participant = members[0]?.user;
+        const participantId = participant?.id || members[0]?.user_id || '';
+        const blockedByMetadata = (ch.data as any)?.blocked_by as string | undefined;
+        const isBlocked = blockedUserIds.includes(participantId) || (!!blockedByMetadata && blockedByMetadata !== myId);
+        const isOnline = isBlocked ? false : (participant?.online ?? false);
+
+        const mapped = ch.state.messages.map(m => streamMsgToMessage(m, myId, ch.cid, ch.state.read, isOnline));
         setStreamMsgs(mapped);
-    }, [myId]);
+    }, [myId, blockedUserIds]);
 
     // ── load channel list ─────────────────────────────────────────────────────
     const reloadChannels = useCallback(async () => {
@@ -166,6 +235,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
             client.on('notification.channel_mutes_updated', syncMutes),
             client.on('channel.deleted', reloadChannels),
             client.on('channel.hidden', reloadChannels),
+            client.on('channel.updated', reloadChannels),
             client.on('reaction.new', forceResync),
             client.on('reaction.deleted', forceResync),
             client.on('reaction.updated', forceResync),
@@ -181,7 +251,8 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
             const allConvs = channels.map(ch => {
                 const conv = channelToConversation(ch, myId, nameCache.current[ch.cid]);
                 const participantId = conv.participant.id;
-                const isBlocked = blockedUserIds.includes(participantId);
+                const blockedByMetadata = conv.blockedBy;
+                const isBlocked = blockedUserIds.includes(participantId) || (!!blockedByMetadata && blockedByMetadata !== myId);
 
                 const liveUser = isBlocked
                     ? null
@@ -197,13 +268,39 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
                 const isOnline = !isBlocked && (liveUser?.online === true || conv.isOnline === true || !!isRecentlyActive);
 
                 const lastActive = isBlocked ? undefined : (lastActiveTime
+                const isRecentlyActive = !isBlocked && lastActiveTime && (new Date().getTime() - new Date(lastActiveTime).getTime() < 60000);
+
+                const isOnline = !isBlocked && (liveUser?.online === true || conv.isOnline === true || !!isRecentlyActive);
+
+                const lastActive = isBlocked ? undefined : (lastActiveTime
                     ? new Date(lastActiveTime).toISOString()
+                    : conv.lastActive);
                     : conv.lastActive);
                 const unreadCount = ch.cid === activeConvId ? 0 : conv.unreadCount;
 
                 const isGift = conv.lastMessageOriginal?.startsWith('GIFT:') || conv.lastMessage?.startsWith('GIFT:');
 
-                const base: Conversation = {
+                const channelMockMsgs = mockMessages.filter(m => m.conversationId === ch.cid);
+                const latestMockMsg = channelMockMsgs[channelMockMsgs.length - 1];
+
+                let lastMessageStatus = conv.lastMessageStatus;
+                if (lastMessageStatus && conv.lastMessageSenderId === myId) {
+                    const lastMsg = ch.state.messages.slice().reverse().find(m =>
+                        m.text?.trim() !== 'has joined the live' &&
+                        (m as any).original_text?.trim() !== 'has joined the live' &&
+                        m.text !== 'block_signal' &&
+                        m.text !== 'unblock_signal' &&
+                        (m as any).custom_type !== 'block_signal' &&
+                        (m as any).custom_type !== 'unblock_signal' &&
+                        (m as any).customType !== 'block_signal' &&
+                        (m as any).customType !== 'unblock_signal'
+                    );
+                    if (lastMsg) {
+                        lastMessageStatus = deriveStatus(lastMsg, myId, ch.state.read, isOnline);
+                    }
+                }
+
+                let base: Conversation = {
                     ...conv,
                     isOnline,
                     lastActive,
@@ -213,11 +310,31 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
                     lastMessage: isGift ? '🎁 Gift' : conv.lastMessage,
                     lastMessageOriginal: isGift ? '🎁 Gift' : conv.lastMessageOriginal,
                     isGiftMessage: isGift,
+                    blockedBy: blockedByMetadata,
+                    lastMessageStatus,
                     // Mask avatar for blocked participants
                     participant: isBlocked
                         ? { ...conv.participant, avatar: '' }
                         : conv.participant,
                 };
+
+                if (latestMockMsg) {
+                    const mockMsgTime = new Date(latestMockMsg.time).getTime();
+                    const serverMsgTime = base.lastMessageTime ? new Date(base.lastMessageTime).getTime() : 0;
+                    
+                    if (mockMsgTime > serverMsgTime) {
+                        const isMockGift = latestMockMsg.text.includes('[GIFT:') || latestMockMsg.text.includes('GIFT:');
+                        base = {
+                            ...base,
+                            lastMessage: isMockGift ? '🎁 Gift' : latestMockMsg.text,
+                            lastMessageOriginal: latestMockMsg.text,
+                            lastMessageSenderId: latestMockMsg.senderId,
+                            lastMessageTime: latestMockMsg.time,
+                            lastMessageStatus: latestMockMsg.status,
+                            isGiftMessage: isMockGift,
+                        };
+                    }
+                }
 
                 const preview = optimisticPreviews[ch.cid];
                 if (!preview) return base;
@@ -235,13 +352,25 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
             return allConvs;
         },
-        [channels, myId, activeConvId, optimisticPreviews, mutedIds, archivedIds, blockedUserIds]
+        [channels, myId, activeConvId, optimisticPreviews, mutedIds, archivedIds, blockedUserIds, mockMessages]
     );
 
     // ── message events → chat view re-render ──────────────────────────────────
     useEffect(() => {
-        if (!activeChannel) { setStreamMsgs([]); return; }
+        if (!activeChannel) {
+            setStreamMsgs([]);
+            setHasMore(false);
+            return;
+        }
         syncMessages(activeChannel);
+        
+        // Reset hasMore state based on initial messages count loaded in the channel state
+        // If the channel has less than 15 messages loaded initially, there are no older messages to load!
+        if (activeChannel.state.messages.length < 15) {
+            setHasMore(false);
+        } else {
+            setHasMore(true);
+        }
 
         const subs = [
             activeChannel.on('message.new', () => syncMessages(activeChannel)),
@@ -355,6 +484,33 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
         } catch (err: any) {
             console.error('[StreamChat] Send failed:', err);
+            
+            const blockedByMetadata = conv.blockedBy;
+            const isBlocked = blockedUserIds.includes(conv.participant.id) || (!!blockedByMetadata && blockedByMetadata !== myId);
+            
+            if (isBlocked) {
+                console.log('[BlockFlow] Absorb send error silently for blocked user. Saving mock sent message.');
+                
+                // Remove from pending
+                setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+                
+                // Add to mockMessages as 'sent'
+                const mockMsg: Message = {
+                    ...tempMsg,
+                    status: 'sent',
+                };
+                saveMockMessage(mockMsg);
+                
+                // Clear optimistic preview
+                setOptimisticPreviews(prev => {
+                    const next = { ...prev };
+                    delete next[activeChannel.cid];
+                    return next;
+                });
+                
+                return;
+            }
+            
             setPendingMessages(prev => prev.filter(m => m.id !== tempId));
             setOptimisticPreviews(prev => {
                 const next = { ...prev };
@@ -414,6 +570,34 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
 
         } catch (err) {
             console.error('[StreamChat] Image send failed:', err);
+            
+            const blockedByMetadata = conv.blockedBy;
+            const isBlocked = blockedUserIds.includes(conv.participant.id) || (!!blockedByMetadata && blockedByMetadata !== myId);
+            
+            if (isBlocked) {
+                console.log('[BlockFlow] Absorb image send error silently for blocked user. Saving mock sent message.');
+                
+                // Remove from pending
+                setPendingMessages(prev => prev.filter(m => m.id !== tempId));
+                
+                // Add to mockMessages as 'sent' with a local preview URL
+                const mockMsg: Message = {
+                    ...tempMsg,
+                    status: 'sent',
+                    attachments: [{ type: 'image', imageUrl: URL.createObjectURL(file) }],
+                };
+                saveMockMessage(mockMsg);
+                
+                // Clear optimistic preview
+                setOptimisticPreviews(prev => {
+                    const next = { ...prev };
+                    delete next[activeChannel.cid];
+                    return next;
+                });
+                
+                return;
+            }
+            
             setPendingMessages(prev => prev.filter(m => m.id !== tempId));
             setOptimisticPreviews(prev => {
                 const next = { ...prev };
@@ -558,6 +742,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         sendMessage, sendImage, deleteMessage, markAsRead, startDirectChat,
         sendReaction, deleteReaction,
         archiveConversation, unarchiveConversation, muteConversation, unmuteConversation,
+        blockedUserIds,
         blockedUserIds,
     };
 

@@ -54,7 +54,7 @@ export const AddCoinsModal = () => {
             </div>
 
             {/* Content */}
-            <div className={`${isMobileView ? 'px-6' : 'px-16'} py-2 flex-1 overflow-y-auto min-h-0 pb-8 custom-scrollbar`}>
+            <div className={`${isMobileView ? 'px-6' : 'px-16'} py-2 flex-1 min-h-0 pb-8 flex flex-col ${step === 'select' ? 'overflow-hidden' : 'overflow-y-auto custom-scrollbar'}`}>
                 {step === 'select' && <CoinPackageGrid />}
                 {step === 'checkout' && <CheckoutView />}
                 {step === 'result' && <ResultView />}
@@ -100,7 +100,7 @@ export const AddCoinsModal = () => {
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
             <DialogContent
                 showCloseButton={false}
-                className="bg-transparent border border-white/10 rounded-3xl p-0 sm:max-w-[840px] h-full sm:h-auto max-h-[90vh] overflow-y-auto shadow-2xl focus:outline-none"
+                className="bg-transparent border border-white/10 rounded-3xl p-0 sm:max-w-[840px] h-[650px] max-h-[90vh] overflow-hidden shadow-2xl focus:outline-none flex flex-col"
             >
                 {renderContent(false)}
             </DialogContent>
