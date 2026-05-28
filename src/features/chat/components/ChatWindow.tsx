@@ -55,14 +55,12 @@ interface ChatWindowProps {
     draftValue: string;
     onDraftChange: (v: string) => void;
     blockedUserIds?: string[];
-    blockedUserIds?: string[];
 }
 
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
     conversation, isLoadingConversation = false, onBack, mobileFullscreen = false,
     messages, msgLoading, hasMore, loadMore, onSend, onSendImage, onDelete, onReact, onDeleteReaction, onMarkAsRead,
-    draftValue, onDraftChange, blockedUserIds = [],
     draftValue, onDraftChange, blockedUserIds = [],
 }) => {
     const navigate = useNavigate();

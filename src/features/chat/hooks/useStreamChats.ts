@@ -10,7 +10,6 @@ import type { Conversation, Message, MessageStatus } from '../types/chat.types';
 import { ARCHIVED_STORAGE_KEY, MUTED_STORAGE_KEY } from '../utils/chatConstants';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import api from '@/lib/api';
-import api from '@/lib/api';
 
 
 export interface UseStreamChatReturn {
@@ -34,7 +33,6 @@ export interface UseStreamChatReturn {
     unarchiveConversation: (id: string) => void;
     muteConversation: (id: string) => void;
     unmuteConversation: (id: string) => void;
-    blockedUserIds: string[];
     blockedUserIds: string[];
 }
 
@@ -268,13 +266,7 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
                 const isOnline = !isBlocked && (liveUser?.online === true || conv.isOnline === true || !!isRecentlyActive);
 
                 const lastActive = isBlocked ? undefined : (lastActiveTime
-                const isRecentlyActive = !isBlocked && lastActiveTime && (new Date().getTime() - new Date(lastActiveTime).getTime() < 60000);
-
-                const isOnline = !isBlocked && (liveUser?.online === true || conv.isOnline === true || !!isRecentlyActive);
-
-                const lastActive = isBlocked ? undefined : (lastActiveTime
                     ? new Date(lastActiveTime).toISOString()
-                    : conv.lastActive);
                     : conv.lastActive);
                 const unreadCount = ch.cid === activeConvId ? 0 : conv.unreadCount;
 
@@ -742,7 +734,6 @@ export const useStreamChat = (myId: string, streamReady: boolean): UseStreamChat
         sendMessage, sendImage, deleteMessage, markAsRead, startDirectChat,
         sendReaction, deleteReaction,
         archiveConversation, unarchiveConversation, muteConversation, unmuteConversation,
-        blockedUserIds,
         blockedUserIds,
     };
 
