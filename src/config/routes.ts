@@ -10,7 +10,8 @@ export const PUBLIC_ROUTES = [
     '/chats',
     '/privacy-policy',
     '/terms-conditions',
-    '/refund-policy'
+    '/refund-policy',
+    '/auth/google/callback'
 ];
 
 /**

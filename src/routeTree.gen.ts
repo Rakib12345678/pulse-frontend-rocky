@@ -8,118 +8,143 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createFileRoute } from '@tanstack/react-router'
+
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MainRouteRouteImport } from './routes/_main/route'
-import { Route as MainStreamRouteRouteImport } from './routes/_main/stream/route'
-import { Route as MainLiveRouteRouteImport } from './routes/_main/live/route'
 import { Route as MainForYouRouteRouteImport } from './routes/_main/for-you/route'
-import { Route as MainExploreRouteRouteImport } from './routes/_main/explore/route'
-import { Route as MainChatsRouteRouteImport } from './routes/_main/chats/route'
 import { Route as MainIndexRouteRouteImport } from './routes/_main/index/route'
-import { Route as MainTermsConditionsIndexRouteImport } from './routes/_main/terms-conditions/index'
-import { Route as MainRefundPolicyIndexRouteImport } from './routes/_main/refund-policy/index'
-import { Route as MainProfileIndexRouteImport } from './routes/_main/profile/index'
-import { Route as MainPrivacyPolicyIndexRouteImport } from './routes/_main/privacy-policy/index'
+import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google.callback'
 import { Route as MainStreamIdRouteImport } from './routes/_main/stream/$id'
-import { Route as MainProfileUsernameRouteImport } from './routes/_main/profile/$username'
-import { Route as MainLiveIdRouteImport } from './routes/_main/live/$id'
 import { Route as MainWalletSuccessRouteRouteImport } from './routes/_main/wallet/success/route'
 import { Route as MainWalletCancelRouteRouteImport } from './routes/_main/wallet/cancel/route'
-import { Route as MainProfileSettingIndexRouteImport } from './routes/_main/profile/setting/index'
-import { Route as MainProfileSettingDiamondsRouteImport } from './routes/_main/profile/setting/diamonds'
-import { Route as MainProfileSettingCoinsRouteImport } from './routes/_main/profile/setting/coins'
+
+const MainStreamRouteLazyRouteImport = createFileRoute('/_main/stream')()
+const MainLiveRouteLazyRouteImport = createFileRoute('/_main/live')()
+const MainExploreRouteLazyRouteImport = createFileRoute('/_main/explore')()
+const MainChatsRouteLazyRouteImport = createFileRoute('/_main/chats')()
+const MainTermsConditionsIndexLazyRouteImport = createFileRoute(
+  '/_main/terms-conditions/',
+)()
+const MainRefundPolicyIndexLazyRouteImport = createFileRoute(
+  '/_main/refund-policy/',
+)()
+const MainProfileIndexLazyRouteImport = createFileRoute('/_main/profile/')()
+const MainPrivacyPolicyIndexLazyRouteImport = createFileRoute(
+  '/_main/privacy-policy/',
+)()
+const MainProfileUsernameLazyRouteImport = createFileRoute(
+  '/_main/profile/$username',
+)()
+const MainLiveIdLazyRouteImport = createFileRoute('/_main/live/$id')()
+const MainProfileSettingIndexLazyRouteImport = createFileRoute(
+  '/_main/profile/setting/',
+)()
+const MainProfileSettingDiamondsLazyRouteImport = createFileRoute(
+  '/_main/profile/setting/diamonds',
+)()
+const MainProfileSettingCoinsLazyRouteImport = createFileRoute(
+  '/_main/profile/setting/coins',
+)()
 
 const MainRouteRoute = MainRouteRouteImport.update({
   id: '/_main',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MainStreamRouteRoute = MainStreamRouteRouteImport.update({
+const MainStreamRouteLazyRoute = MainStreamRouteLazyRouteImport.update({
   id: '/stream',
   path: '/stream',
   getParentRoute: () => MainRouteRoute,
 } as any).lazy(() =>
   import('./routes/_main/stream/route.lazy').then((d) => d.Route),
 )
-const MainLiveRouteRoute = MainLiveRouteRouteImport.update({
+const MainLiveRouteLazyRoute = MainLiveRouteLazyRouteImport.update({
   id: '/live',
   path: '/live',
   getParentRoute: () => MainRouteRoute,
 } as any).lazy(() =>
   import('./routes/_main/live/route.lazy').then((d) => d.Route),
 )
-const MainForYouRouteRoute = MainForYouRouteRouteImport.update({
-  id: '/for-you',
-  path: '/for-you',
-  getParentRoute: () => MainRouteRoute,
-} as any)
-const MainExploreRouteRoute = MainExploreRouteRouteImport.update({
+const MainExploreRouteLazyRoute = MainExploreRouteLazyRouteImport.update({
   id: '/explore',
   path: '/explore',
   getParentRoute: () => MainRouteRoute,
 } as any).lazy(() =>
   import('./routes/_main/explore/route.lazy').then((d) => d.Route),
 )
-const MainChatsRouteRoute = MainChatsRouteRouteImport.update({
+const MainChatsRouteLazyRoute = MainChatsRouteLazyRouteImport.update({
   id: '/chats',
   path: '/chats',
   getParentRoute: () => MainRouteRoute,
 } as any).lazy(() =>
   import('./routes/_main/chats/route.lazy').then((d) => d.Route),
 )
+const MainForYouRouteRoute = MainForYouRouteRouteImport.update({
+  id: '/for-you',
+  path: '/for-you',
+  getParentRoute: () => MainRouteRoute,
+} as any)
 const MainIndexRouteRoute = MainIndexRouteRouteImport.update({
   id: '/',
   path: '',
   getParentRoute: () => MainRouteRoute,
 } as any)
-const MainTermsConditionsIndexRoute =
-  MainTermsConditionsIndexRouteImport.update({
+const MainTermsConditionsIndexLazyRoute =
+  MainTermsConditionsIndexLazyRouteImport.update({
     id: '/terms-conditions/',
     path: '/terms-conditions/',
     getParentRoute: () => MainRouteRoute,
   } as any).lazy(() =>
     import('./routes/_main/terms-conditions/index.lazy').then((d) => d.Route),
   )
-const MainRefundPolicyIndexRoute = MainRefundPolicyIndexRouteImport.update({
-  id: '/refund-policy/',
-  path: '/refund-policy/',
-  getParentRoute: () => MainRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_main/refund-policy/index.lazy').then((d) => d.Route),
-)
-const MainProfileIndexRoute = MainProfileIndexRouteImport.update({
+const MainRefundPolicyIndexLazyRoute =
+  MainRefundPolicyIndexLazyRouteImport.update({
+    id: '/refund-policy/',
+    path: '/refund-policy/',
+    getParentRoute: () => MainRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_main/refund-policy/index.lazy').then((d) => d.Route),
+  )
+const MainProfileIndexLazyRoute = MainProfileIndexLazyRouteImport.update({
   id: '/profile/',
   path: '/profile/',
   getParentRoute: () => MainRouteRoute,
 } as any).lazy(() =>
   import('./routes/_main/profile/index.lazy').then((d) => d.Route),
 )
-const MainPrivacyPolicyIndexRoute = MainPrivacyPolicyIndexRouteImport.update({
-  id: '/privacy-policy/',
-  path: '/privacy-policy/',
-  getParentRoute: () => MainRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_main/privacy-policy/index.lazy').then((d) => d.Route),
-)
-const MainStreamIdRoute = MainStreamIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => MainStreamRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_main/stream/$id.lazy').then((d) => d.Route),
-)
-const MainProfileUsernameRoute = MainProfileUsernameRouteImport.update({
+const MainPrivacyPolicyIndexLazyRoute =
+  MainPrivacyPolicyIndexLazyRouteImport.update({
+    id: '/privacy-policy/',
+    path: '/privacy-policy/',
+    getParentRoute: () => MainRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_main/privacy-policy/index.lazy').then((d) => d.Route),
+  )
+const MainProfileUsernameLazyRoute = MainProfileUsernameLazyRouteImport.update({
   id: '/profile/$username',
   path: '/profile/$username',
   getParentRoute: () => MainRouteRoute,
 } as any).lazy(() =>
   import('./routes/_main/profile/$username.lazy').then((d) => d.Route),
 )
-const MainLiveIdRoute = MainLiveIdRouteImport.update({
+const MainLiveIdLazyRoute = MainLiveIdLazyRouteImport.update({
   id: '/$id',
   path: '/$id',
-  getParentRoute: () => MainLiveRouteRoute,
+  getParentRoute: () => MainLiveRouteLazyRoute,
 } as any).lazy(() =>
   import('./routes/_main/live/$id.lazy').then((d) => d.Route),
+)
+const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
+  id: '/auth/google/callback',
+  path: '/auth/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MainStreamIdRoute = MainStreamIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => MainStreamRouteLazyRoute,
+} as any).lazy(() =>
+  import('./routes/_main/stream/$id.lazy').then((d) => d.Route),
 )
 const MainWalletSuccessRouteRoute = MainWalletSuccessRouteRouteImport.update({
   id: '/wallet/success',
@@ -135,105 +160,111 @@ const MainWalletCancelRouteRoute = MainWalletCancelRouteRouteImport.update({
 } as any).lazy(() =>
   import('./routes/_main/wallet/cancel/route.lazy').then((d) => d.Route),
 )
-const MainProfileSettingIndexRoute = MainProfileSettingIndexRouteImport.update({
-  id: '/profile/setting/',
-  path: '/profile/setting/',
-  getParentRoute: () => MainRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_main/profile/setting/index.lazy').then((d) => d.Route),
-)
-const MainProfileSettingDiamondsRoute =
-  MainProfileSettingDiamondsRouteImport.update({
+const MainProfileSettingIndexLazyRoute =
+  MainProfileSettingIndexLazyRouteImport.update({
+    id: '/profile/setting/',
+    path: '/profile/setting/',
+    getParentRoute: () => MainRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_main/profile/setting/index.lazy').then((d) => d.Route),
+  )
+const MainProfileSettingDiamondsLazyRoute =
+  MainProfileSettingDiamondsLazyRouteImport.update({
     id: '/profile/setting/diamonds',
     path: '/profile/setting/diamonds',
     getParentRoute: () => MainRouteRoute,
   } as any).lazy(() =>
     import('./routes/_main/profile/setting/diamonds.lazy').then((d) => d.Route),
   )
-const MainProfileSettingCoinsRoute = MainProfileSettingCoinsRouteImport.update({
-  id: '/profile/setting/coins',
-  path: '/profile/setting/coins',
-  getParentRoute: () => MainRouteRoute,
-} as any).lazy(() =>
-  import('./routes/_main/profile/setting/coins.lazy').then((d) => d.Route),
-)
+const MainProfileSettingCoinsLazyRoute =
+  MainProfileSettingCoinsLazyRouteImport.update({
+    id: '/profile/setting/coins',
+    path: '/profile/setting/coins',
+    getParentRoute: () => MainRouteRoute,
+  } as any).lazy(() =>
+    import('./routes/_main/profile/setting/coins.lazy').then((d) => d.Route),
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof MainIndexRouteRoute
-  '/chats': typeof MainChatsRouteRoute
-  '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
-  '/live': typeof MainLiveRouteRouteWithChildren
-  '/stream': typeof MainStreamRouteRouteWithChildren
+  '/chats': typeof MainChatsRouteLazyRoute
+  '/explore': typeof MainExploreRouteLazyRoute
+  '/live': typeof MainLiveRouteLazyRouteWithChildren
+  '/stream': typeof MainStreamRouteLazyRouteWithChildren
   '/wallet/cancel': typeof MainWalletCancelRouteRoute
   '/wallet/success': typeof MainWalletSuccessRouteRoute
-  '/live/$id': typeof MainLiveIdRoute
-  '/profile/$username': typeof MainProfileUsernameRoute
   '/stream/$id': typeof MainStreamIdRoute
-  '/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
-  '/profile/': typeof MainProfileIndexRoute
-  '/refund-policy/': typeof MainRefundPolicyIndexRoute
-  '/terms-conditions/': typeof MainTermsConditionsIndexRoute
-  '/profile/setting/coins': typeof MainProfileSettingCoinsRoute
-  '/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
-  '/profile/setting/': typeof MainProfileSettingIndexRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/live/$id': typeof MainLiveIdLazyRoute
+  '/profile/$username': typeof MainProfileUsernameLazyRoute
+  '/privacy-policy/': typeof MainPrivacyPolicyIndexLazyRoute
+  '/profile/': typeof MainProfileIndexLazyRoute
+  '/refund-policy/': typeof MainRefundPolicyIndexLazyRoute
+  '/terms-conditions/': typeof MainTermsConditionsIndexLazyRoute
+  '/profile/setting/coins': typeof MainProfileSettingCoinsLazyRoute
+  '/profile/setting/diamonds': typeof MainProfileSettingDiamondsLazyRoute
+  '/profile/setting/': typeof MainProfileSettingIndexLazyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof MainIndexRouteRoute
-  '/chats': typeof MainChatsRouteRoute
-  '/explore': typeof MainExploreRouteRoute
   '/for-you': typeof MainForYouRouteRoute
-  '/live': typeof MainLiveRouteRouteWithChildren
-  '/stream': typeof MainStreamRouteRouteWithChildren
+  '/chats': typeof MainChatsRouteLazyRoute
+  '/explore': typeof MainExploreRouteLazyRoute
+  '/live': typeof MainLiveRouteLazyRouteWithChildren
+  '/stream': typeof MainStreamRouteLazyRouteWithChildren
   '/wallet/cancel': typeof MainWalletCancelRouteRoute
   '/wallet/success': typeof MainWalletSuccessRouteRoute
-  '/live/$id': typeof MainLiveIdRoute
-  '/profile/$username': typeof MainProfileUsernameRoute
   '/stream/$id': typeof MainStreamIdRoute
-  '/privacy-policy': typeof MainPrivacyPolicyIndexRoute
-  '/profile': typeof MainProfileIndexRoute
-  '/refund-policy': typeof MainRefundPolicyIndexRoute
-  '/terms-conditions': typeof MainTermsConditionsIndexRoute
-  '/profile/setting/coins': typeof MainProfileSettingCoinsRoute
-  '/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
-  '/profile/setting': typeof MainProfileSettingIndexRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/live/$id': typeof MainLiveIdLazyRoute
+  '/profile/$username': typeof MainProfileUsernameLazyRoute
+  '/privacy-policy': typeof MainPrivacyPolicyIndexLazyRoute
+  '/profile': typeof MainProfileIndexLazyRoute
+  '/refund-policy': typeof MainRefundPolicyIndexLazyRoute
+  '/terms-conditions': typeof MainTermsConditionsIndexLazyRoute
+  '/profile/setting/coins': typeof MainProfileSettingCoinsLazyRoute
+  '/profile/setting/diamonds': typeof MainProfileSettingDiamondsLazyRoute
+  '/profile/setting': typeof MainProfileSettingIndexLazyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_main': typeof MainRouteRouteWithChildren
   '/_main/': typeof MainIndexRouteRoute
-  '/_main/chats': typeof MainChatsRouteRoute
-  '/_main/explore': typeof MainExploreRouteRoute
   '/_main/for-you': typeof MainForYouRouteRoute
-  '/_main/live': typeof MainLiveRouteRouteWithChildren
-  '/_main/stream': typeof MainStreamRouteRouteWithChildren
+  '/_main/chats': typeof MainChatsRouteLazyRoute
+  '/_main/explore': typeof MainExploreRouteLazyRoute
+  '/_main/live': typeof MainLiveRouteLazyRouteWithChildren
+  '/_main/stream': typeof MainStreamRouteLazyRouteWithChildren
   '/_main/wallet/cancel': typeof MainWalletCancelRouteRoute
   '/_main/wallet/success': typeof MainWalletSuccessRouteRoute
-  '/_main/live/$id': typeof MainLiveIdRoute
-  '/_main/profile/$username': typeof MainProfileUsernameRoute
   '/_main/stream/$id': typeof MainStreamIdRoute
-  '/_main/privacy-policy/': typeof MainPrivacyPolicyIndexRoute
-  '/_main/profile/': typeof MainProfileIndexRoute
-  '/_main/refund-policy/': typeof MainRefundPolicyIndexRoute
-  '/_main/terms-conditions/': typeof MainTermsConditionsIndexRoute
-  '/_main/profile/setting/coins': typeof MainProfileSettingCoinsRoute
-  '/_main/profile/setting/diamonds': typeof MainProfileSettingDiamondsRoute
-  '/_main/profile/setting/': typeof MainProfileSettingIndexRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
+  '/_main/live/$id': typeof MainLiveIdLazyRoute
+  '/_main/profile/$username': typeof MainProfileUsernameLazyRoute
+  '/_main/privacy-policy/': typeof MainPrivacyPolicyIndexLazyRoute
+  '/_main/profile/': typeof MainProfileIndexLazyRoute
+  '/_main/refund-policy/': typeof MainRefundPolicyIndexLazyRoute
+  '/_main/terms-conditions/': typeof MainTermsConditionsIndexLazyRoute
+  '/_main/profile/setting/coins': typeof MainProfileSettingCoinsLazyRoute
+  '/_main/profile/setting/diamonds': typeof MainProfileSettingDiamondsLazyRoute
+  '/_main/profile/setting/': typeof MainProfileSettingIndexLazyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/for-you'
     | '/chats'
     | '/explore'
-    | '/for-you'
     | '/live'
     | '/stream'
     | '/wallet/cancel'
     | '/wallet/success'
+    | '/stream/$id'
+    | '/auth/google/callback'
     | '/live/$id'
     | '/profile/$username'
-    | '/stream/$id'
     | '/privacy-policy/'
     | '/profile/'
     | '/refund-policy/'
@@ -244,16 +275,17 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/for-you'
     | '/chats'
     | '/explore'
-    | '/for-you'
     | '/live'
     | '/stream'
     | '/wallet/cancel'
     | '/wallet/success'
+    | '/stream/$id'
+    | '/auth/google/callback'
     | '/live/$id'
     | '/profile/$username'
-    | '/stream/$id'
     | '/privacy-policy'
     | '/profile'
     | '/refund-policy'
@@ -265,16 +297,17 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_main'
     | '/_main/'
+    | '/_main/for-you'
     | '/_main/chats'
     | '/_main/explore'
-    | '/_main/for-you'
     | '/_main/live'
     | '/_main/stream'
     | '/_main/wallet/cancel'
     | '/_main/wallet/success'
+    | '/_main/stream/$id'
+    | '/auth/google/callback'
     | '/_main/live/$id'
     | '/_main/profile/$username'
-    | '/_main/stream/$id'
     | '/_main/privacy-policy/'
     | '/_main/profile/'
     | '/_main/refund-policy/'
@@ -286,6 +319,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   MainRouteRoute: typeof MainRouteRouteWithChildren
+  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -301,14 +335,28 @@ declare module '@tanstack/react-router' {
       id: '/_main/stream'
       path: '/stream'
       fullPath: '/stream'
-      preLoaderRoute: typeof MainStreamRouteRouteImport
+      preLoaderRoute: typeof MainStreamRouteLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/live': {
       id: '/_main/live'
       path: '/live'
       fullPath: '/live'
-      preLoaderRoute: typeof MainLiveRouteRouteImport
+      preLoaderRoute: typeof MainLiveRouteLazyRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/explore': {
+      id: '/_main/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof MainExploreRouteLazyRouteImport
+      parentRoute: typeof MainRouteRoute
+    }
+    '/_main/chats': {
+      id: '/_main/chats'
+      path: '/chats'
+      fullPath: '/chats'
+      preLoaderRoute: typeof MainChatsRouteLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/for-you': {
@@ -316,20 +364,6 @@ declare module '@tanstack/react-router' {
       path: '/for-you'
       fullPath: '/for-you'
       preLoaderRoute: typeof MainForYouRouteRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/explore': {
-      id: '/_main/explore'
-      path: '/explore'
-      fullPath: '/explore'
-      preLoaderRoute: typeof MainExploreRouteRouteImport
-      parentRoute: typeof MainRouteRoute
-    }
-    '/_main/chats': {
-      id: '/_main/chats'
-      path: '/chats'
-      fullPath: '/chats'
-      preLoaderRoute: typeof MainChatsRouteRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/': {
@@ -343,50 +377,57 @@ declare module '@tanstack/react-router' {
       id: '/_main/terms-conditions/'
       path: '/terms-conditions'
       fullPath: '/terms-conditions/'
-      preLoaderRoute: typeof MainTermsConditionsIndexRouteImport
+      preLoaderRoute: typeof MainTermsConditionsIndexLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/refund-policy/': {
       id: '/_main/refund-policy/'
       path: '/refund-policy'
       fullPath: '/refund-policy/'
-      preLoaderRoute: typeof MainRefundPolicyIndexRouteImport
+      preLoaderRoute: typeof MainRefundPolicyIndexLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/profile/': {
       id: '/_main/profile/'
       path: '/profile'
       fullPath: '/profile/'
-      preLoaderRoute: typeof MainProfileIndexRouteImport
+      preLoaderRoute: typeof MainProfileIndexLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/privacy-policy/': {
       id: '/_main/privacy-policy/'
       path: '/privacy-policy'
       fullPath: '/privacy-policy/'
-      preLoaderRoute: typeof MainPrivacyPolicyIndexRouteImport
+      preLoaderRoute: typeof MainPrivacyPolicyIndexLazyRouteImport
       parentRoute: typeof MainRouteRoute
-    }
-    '/_main/stream/$id': {
-      id: '/_main/stream/$id'
-      path: '/$id'
-      fullPath: '/stream/$id'
-      preLoaderRoute: typeof MainStreamIdRouteImport
-      parentRoute: typeof MainStreamRouteRoute
     }
     '/_main/profile/$username': {
       id: '/_main/profile/$username'
       path: '/profile/$username'
       fullPath: '/profile/$username'
-      preLoaderRoute: typeof MainProfileUsernameRouteImport
+      preLoaderRoute: typeof MainProfileUsernameLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/live/$id': {
       id: '/_main/live/$id'
       path: '/$id'
       fullPath: '/live/$id'
-      preLoaderRoute: typeof MainLiveIdRouteImport
-      parentRoute: typeof MainLiveRouteRoute
+      preLoaderRoute: typeof MainLiveIdLazyRouteImport
+      parentRoute: typeof MainLiveRouteLazyRoute
+    }
+    '/auth/google/callback': {
+      id: '/auth/google/callback'
+      path: '/auth/google/callback'
+      fullPath: '/auth/google/callback'
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_main/stream/$id': {
+      id: '/_main/stream/$id'
+      path: '/$id'
+      fullPath: '/stream/$id'
+      preLoaderRoute: typeof MainStreamIdRouteImport
+      parentRoute: typeof MainStreamRouteLazyRoute
     }
     '/_main/wallet/success': {
       id: '/_main/wallet/success'
@@ -406,86 +447,84 @@ declare module '@tanstack/react-router' {
       id: '/_main/profile/setting/'
       path: '/profile/setting'
       fullPath: '/profile/setting/'
-      preLoaderRoute: typeof MainProfileSettingIndexRouteImport
+      preLoaderRoute: typeof MainProfileSettingIndexLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/profile/setting/diamonds': {
       id: '/_main/profile/setting/diamonds'
       path: '/profile/setting/diamonds'
       fullPath: '/profile/setting/diamonds'
-      preLoaderRoute: typeof MainProfileSettingDiamondsRouteImport
+      preLoaderRoute: typeof MainProfileSettingDiamondsLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
     '/_main/profile/setting/coins': {
       id: '/_main/profile/setting/coins'
       path: '/profile/setting/coins'
       fullPath: '/profile/setting/coins'
-      preLoaderRoute: typeof MainProfileSettingCoinsRouteImport
+      preLoaderRoute: typeof MainProfileSettingCoinsLazyRouteImport
       parentRoute: typeof MainRouteRoute
     }
   }
 }
 
-interface MainLiveRouteRouteChildren {
-  MainLiveIdRoute: typeof MainLiveIdRoute
+interface MainLiveRouteLazyRouteChildren {
+  MainLiveIdLazyRoute: typeof MainLiveIdLazyRoute
 }
 
-const MainLiveRouteRouteChildren: MainLiveRouteRouteChildren = {
-  MainLiveIdRoute: MainLiveIdRoute,
+const MainLiveRouteLazyRouteChildren: MainLiveRouteLazyRouteChildren = {
+  MainLiveIdLazyRoute: MainLiveIdLazyRoute,
 }
 
-const MainLiveRouteRouteWithChildren = MainLiveRouteRoute._addFileChildren(
-  MainLiveRouteRouteChildren,
-)
+const MainLiveRouteLazyRouteWithChildren =
+  MainLiveRouteLazyRoute._addFileChildren(MainLiveRouteLazyRouteChildren)
 
-interface MainStreamRouteRouteChildren {
+interface MainStreamRouteLazyRouteChildren {
   MainStreamIdRoute: typeof MainStreamIdRoute
 }
 
-const MainStreamRouteRouteChildren: MainStreamRouteRouteChildren = {
+const MainStreamRouteLazyRouteChildren: MainStreamRouteLazyRouteChildren = {
   MainStreamIdRoute: MainStreamIdRoute,
 }
 
-const MainStreamRouteRouteWithChildren = MainStreamRouteRoute._addFileChildren(
-  MainStreamRouteRouteChildren,
-)
+const MainStreamRouteLazyRouteWithChildren =
+  MainStreamRouteLazyRoute._addFileChildren(MainStreamRouteLazyRouteChildren)
 
 interface MainRouteRouteChildren {
   MainIndexRouteRoute: typeof MainIndexRouteRoute
-  MainChatsRouteRoute: typeof MainChatsRouteRoute
-  MainExploreRouteRoute: typeof MainExploreRouteRoute
   MainForYouRouteRoute: typeof MainForYouRouteRoute
-  MainLiveRouteRoute: typeof MainLiveRouteRouteWithChildren
-  MainStreamRouteRoute: typeof MainStreamRouteRouteWithChildren
+  MainChatsRouteLazyRoute: typeof MainChatsRouteLazyRoute
+  MainExploreRouteLazyRoute: typeof MainExploreRouteLazyRoute
+  MainLiveRouteLazyRoute: typeof MainLiveRouteLazyRouteWithChildren
+  MainStreamRouteLazyRoute: typeof MainStreamRouteLazyRouteWithChildren
   MainWalletCancelRouteRoute: typeof MainWalletCancelRouteRoute
   MainWalletSuccessRouteRoute: typeof MainWalletSuccessRouteRoute
-  MainProfileUsernameRoute: typeof MainProfileUsernameRoute
-  MainPrivacyPolicyIndexRoute: typeof MainPrivacyPolicyIndexRoute
-  MainProfileIndexRoute: typeof MainProfileIndexRoute
-  MainRefundPolicyIndexRoute: typeof MainRefundPolicyIndexRoute
-  MainTermsConditionsIndexRoute: typeof MainTermsConditionsIndexRoute
-  MainProfileSettingCoinsRoute: typeof MainProfileSettingCoinsRoute
-  MainProfileSettingDiamondsRoute: typeof MainProfileSettingDiamondsRoute
-  MainProfileSettingIndexRoute: typeof MainProfileSettingIndexRoute
+  MainProfileUsernameLazyRoute: typeof MainProfileUsernameLazyRoute
+  MainPrivacyPolicyIndexLazyRoute: typeof MainPrivacyPolicyIndexLazyRoute
+  MainProfileIndexLazyRoute: typeof MainProfileIndexLazyRoute
+  MainRefundPolicyIndexLazyRoute: typeof MainRefundPolicyIndexLazyRoute
+  MainTermsConditionsIndexLazyRoute: typeof MainTermsConditionsIndexLazyRoute
+  MainProfileSettingCoinsLazyRoute: typeof MainProfileSettingCoinsLazyRoute
+  MainProfileSettingDiamondsLazyRoute: typeof MainProfileSettingDiamondsLazyRoute
+  MainProfileSettingIndexLazyRoute: typeof MainProfileSettingIndexLazyRoute
 }
 
 const MainRouteRouteChildren: MainRouteRouteChildren = {
   MainIndexRouteRoute: MainIndexRouteRoute,
-  MainChatsRouteRoute: MainChatsRouteRoute,
-  MainExploreRouteRoute: MainExploreRouteRoute,
   MainForYouRouteRoute: MainForYouRouteRoute,
-  MainLiveRouteRoute: MainLiveRouteRouteWithChildren,
-  MainStreamRouteRoute: MainStreamRouteRouteWithChildren,
+  MainChatsRouteLazyRoute: MainChatsRouteLazyRoute,
+  MainExploreRouteLazyRoute: MainExploreRouteLazyRoute,
+  MainLiveRouteLazyRoute: MainLiveRouteLazyRouteWithChildren,
+  MainStreamRouteLazyRoute: MainStreamRouteLazyRouteWithChildren,
   MainWalletCancelRouteRoute: MainWalletCancelRouteRoute,
   MainWalletSuccessRouteRoute: MainWalletSuccessRouteRoute,
-  MainProfileUsernameRoute: MainProfileUsernameRoute,
-  MainPrivacyPolicyIndexRoute: MainPrivacyPolicyIndexRoute,
-  MainProfileIndexRoute: MainProfileIndexRoute,
-  MainRefundPolicyIndexRoute: MainRefundPolicyIndexRoute,
-  MainTermsConditionsIndexRoute: MainTermsConditionsIndexRoute,
-  MainProfileSettingCoinsRoute: MainProfileSettingCoinsRoute,
-  MainProfileSettingDiamondsRoute: MainProfileSettingDiamondsRoute,
-  MainProfileSettingIndexRoute: MainProfileSettingIndexRoute,
+  MainProfileUsernameLazyRoute: MainProfileUsernameLazyRoute,
+  MainPrivacyPolicyIndexLazyRoute: MainPrivacyPolicyIndexLazyRoute,
+  MainProfileIndexLazyRoute: MainProfileIndexLazyRoute,
+  MainRefundPolicyIndexLazyRoute: MainRefundPolicyIndexLazyRoute,
+  MainTermsConditionsIndexLazyRoute: MainTermsConditionsIndexLazyRoute,
+  MainProfileSettingCoinsLazyRoute: MainProfileSettingCoinsLazyRoute,
+  MainProfileSettingDiamondsLazyRoute: MainProfileSettingDiamondsLazyRoute,
+  MainProfileSettingIndexLazyRoute: MainProfileSettingIndexLazyRoute,
 }
 
 const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(
@@ -494,6 +533,7 @@ const MainRouteRouteWithChildren = MainRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   MainRouteRoute: MainRouteRouteWithChildren,
+  AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

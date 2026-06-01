@@ -8,6 +8,7 @@ import {
 import type { QueryClient } from "@tanstack/react-query"
 import { Suspense, lazy } from "react"
 import { useAuthStore } from "@/features/auth/stores/authStore"
+import { GoogleOAuthProvider } from "@react-oauth/google"
 
 import { Toaster } from "@/components/ui/sonner"
 import { SignUpModal } from "@/features/auth/components/SignUpModal"
@@ -18,7 +19,6 @@ import { AccountSuspendedModal } from "@/components/internal/AccountSuspendedMod
 import appCss from "../styles.css?url"
 import background from "@/assets/background.png"
 import { Button } from "@/components/ui/button"
-import { GoogleOAuthProvider } from "@react-oauth/google"
 
 // Preload and cache background image in memory to prevent blinking and reload delays
 if (typeof window !== 'undefined') {
@@ -119,23 +119,23 @@ function RootComponent() {
       </head>
 
       <body className="min-h-screen bg-[#0f1117] text-foreground overscroll-none" style={{ WebkitTextSizeAdjust: '100%', WebkitTapHighlightColor: 'transparent', touchAction: 'pan-x pan-y' }}>
-        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || "missing-client-id"}>
+        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
           <Outlet />
           <Toaster />
           <SignUpModal />
           <GoLiveModal />
           <RejoinStreamBanner />
           <AccountSuspendedModal />
+
+
+
+          {/* Devtools oNly in development */}
+          {DevtoolsLazy && (
+            <Suspense fallback={null}>
+              <DevtoolsLazy />
+            </Suspense>
+          )}
         </GoogleOAuthProvider>
-
-
-
-        {/* Devtools oNly in development */}
-        {DevtoolsLazy && (
-          <Suspense fallback={null}>
-            <DevtoolsLazy />
-          </Suspense>
-        )}
 
         <Scripts />
       </body>

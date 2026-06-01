@@ -11,7 +11,7 @@ import {
     ChevronLeft,
     X,
 } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
 import { cn } from '@/lib/utils';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -20,9 +20,9 @@ import { toast } from 'sonner';
 import { mediaService } from '../services/media.service';
 import { countryCodes } from '@/lib/countries';
 import Logo from "@/assets/Logo.svg";
+import GoogleIcon from "@/assets/google.svg";
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AuthModalBackdrop } from './AuthModalBackdrop';
-import { isSafari } from '@/lib/browser';
 import { inputSchema, InputFormData } from '@/features/auth/services/auth.schema';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -317,7 +317,12 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
     const { authenticate } = useAuth();
     const storeIdentifier = useSignUpStore((s) => s.identifier);
     const isMobile = useIsMobile();
-    const safari = isSafari();
+
+    const loginWithGoogle = useGoogleLogin({
+        flow: 'auth-code',
+        ux_mode: 'redirect',
+        redirect_uri: `${window.location.origin}/auth/google/callback`,
+    });
 
     const form = useForm<InputFormData>({
         resolver: zodResolver(inputSchema),
@@ -540,30 +545,19 @@ const StepInput = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                     </span>
                 </button>
 
-                <div className="flex justify-center mt-1 md:mt-0">
-                    <GoogleLogin
-                        onSuccess={(credentialResponse) => {
-                            if (credentialResponse.credential) {
-                                authenticate({
-                                    url: '/auth/google',
-                                    payload: { idToken: credentialResponse.credential },
-                                    redirect: !isLiveStream
-                                });
-                            }
-                        }}
-                        onError={() => toast.error("Google Signup Failed")}
-                        useOneTap={false}
-                        use_fedcm_for_prompt={!safari}
-                        use_fedcm_for_button={!safari}
-                        auto_select={false}
-                        ux_mode="popup"
-                        theme="filled_black"
-                        shape="pill"
-                        size="medium"
-                        text={mode === 'login' ? 'continue_with' : 'signup_with'}
-                        width="200"
-                    />
-                </div>
+                <button
+                    type="button"
+                    onClick={() => {
+                        sessionStorage.setItem('postAuthRedirect', window.location.pathname + window.location.search);
+                        loginWithGoogle();
+                    }}
+                    className="flex items-center justify-center gap-2 w-50 h-9 rounded-full bg-[#131314] hover:bg-[#1e1e1e] border border-white/10 text-white transition-colors text-sm font-medium tracking-wide"
+                >
+                    <img src={GoogleIcon} alt="Google" className="w-4 h-4 shrink-0" />
+                    <span className="text-[#e3e3e3]">
+                        {mode === 'login' ? 'Continue with Google' : 'Sign up with Google'}
+                    </span>
+                </button>
             </div>
 
             <p className="md:hidden text-[14px] text-white px-2 text-center">
@@ -673,7 +667,7 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                 <p className="text-gray-400 text-base flex items-center justify-center gap-1.5 flex-wrap">
                     OTP has been sent to
                     <span className="text-white font-semibold">
-                        {method === 'phone' ? `${countryCode}-${identifier}` : identifier}
+                        {method === 'phone' ? `${countryCode} -${identifier} ` : identifier}
                     </span>
                 </p>
                 <button
@@ -735,7 +729,7 @@ const StepOTP = ({ isLiveStream }: { isLiveStream?: boolean }) => {
                                 Resend in{' '}
                                 <span className="inline-flex items-baseline gap-0.5">
                                     <span className="text-white font-mono">
-                                        {resendCooldown < 10 ? `0${resendCooldown}` : resendCooldown}
+                                        {resendCooldown < 10 ? `0${resendCooldown} ` : resendCooldown}
                                     </span>
                                     <span className="text-gray-400">sec</span>
                                 </span>
