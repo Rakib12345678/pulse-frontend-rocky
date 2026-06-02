@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/contexts/LiveStreamContext';
 import { useChatContext } from 'stream-chat-react';
 import { AnimatePresence, motion } from 'motion/react';
 

@@ -13,7 +13,7 @@ import {
     useChatContext,
 } from 'stream-chat-react';
 import { Channel as StreamChannel } from 'stream-chat';
-import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/contexts/LiveStreamContext';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { useIsMobile } from '@/hooks/use-mobile';

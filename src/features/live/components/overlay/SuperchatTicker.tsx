@@ -6,7 +6,7 @@ import giftBoxLottie from '@/assets/GiftBoxAnimation.lottie';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/contexts/LiveStreamContext';
 
 const DEFAULT_DURATION_SECONDS = 16;
 

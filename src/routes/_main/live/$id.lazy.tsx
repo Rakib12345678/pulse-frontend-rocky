@@ -1,5 +1,6 @@
 import { createLazyFileRoute, getRouteApi } from '@tanstack/react-router'
-import { LiveStreamLayout, useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout'
+import { LiveStreamLayout } from '@/features/live/components/layout/LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/contexts/LiveStreamContext';
 import { LiveStreamHeader } from '@/features/live/components/layout/LiveStreamHeader'
 import { LiveStreamVideoPlayer } from '@/features/live/components/layout/LiveStreamVideoPlayer'
 import { LiveStreamChat } from '@/features/live/components/layout/LiveStreamChat'

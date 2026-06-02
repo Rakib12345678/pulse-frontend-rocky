@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useCallStateHooks, ParticipantView, hasVideo, hasAudio, OwnCapability } from '@stream-io/video-react-sdk';
 import { useChatContext } from 'stream-chat-react';
-import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/contexts/LiveStreamContext';
 import { useNavigate } from '@tanstack/react-router';
 import { StreamerInfoOverlay } from '@/features/live/components/overlay/StreamerInfoOverlay';
 import { MicOff, VideoOff, PhoneOff, Mic, Pin } from 'lucide-react';

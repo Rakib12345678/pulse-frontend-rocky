@@ -33,7 +33,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from "@/features/auth/stores/authStore";
 import { useSignUpStore } from "@/features/auth/stores/signUpStore";
-import { useLiveStreamContext } from "@/features/live/components/layout/LiveStreamLayout";
+import { useLiveStreamContext } from "@/features/live/contexts/LiveStreamContext";
 import { liveService } from "@/features/live/services/live.service";
 import {
 	type UserProfile,

@@ -60,7 +60,7 @@ function AuthCallbackComponent() {
         }
 
         if (!accessToken || !refreshToken) {
-          toast.error('Authentication failed. Missing tokens.')
+          toast.error('Authentication failed.')
           navigate({ to: '/for-you' })
           return
         }
@@ -103,6 +103,8 @@ function AuthCallbackComponent() {
         })
 
         const onboardingState = user.onboardingState
+        const returnPath = sessionStorage.getItem('postAuthRedirect')
+        sessionStorage.removeItem('postAuthRedirect')
 
         if (onboardingState && onboardingState !== 'COMPLETED') {
           // User has a pending onboarding step — route them to the correct step.
@@ -114,17 +116,22 @@ function AuthCallbackComponent() {
             setSignUpStep('interests')
           }
           openSignUp()
+
+          // Navigate away from the callback route so it's replaced in history
+          if (returnPath && returnPath !== '/auth/google/callback') {
+            navigate({ to: returnPath, replace: true })
+          } else {
+            navigate({ to: '/for-you', replace: true })
+          }
         } else {
           // Onboarding complete — close modal and navigate to stashed return path or /for-you
           closeSignUp()
-          const returnPath = sessionStorage.getItem('postAuthRedirect')
-          sessionStorage.removeItem('postAuthRedirect')
 
           toast.success('Welcome back!')
           if (returnPath && returnPath !== '/auth/google/callback') {
-            navigate({ to: returnPath })
+            navigate({ to: returnPath, replace: true })
           } else {
-            navigate({ to: '/for-you' })
+            navigate({ to: '/for-you', replace: true })
           }
         }
       } catch (error: any) {
@@ -135,7 +142,7 @@ function AuthCallbackComponent() {
         navigate({ to: '/for-you' })
       }
     }
-
+ 
     handleCallback()
   }, [initialAccessToken, initialRefreshToken, initialNewUser, code, setAuth, setShowSuspendedModal, clearAuth, setSignUpStep, openSignUp, closeSignUp, navigate])
 

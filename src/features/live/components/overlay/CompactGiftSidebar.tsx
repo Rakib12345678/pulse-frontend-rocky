@@ -6,7 +6,7 @@ import { useCoinsStore } from '@/features/coins/hooks/useCoinsStore';
 import { useWalletBalance } from '@/features/coins/hooks/useWallet';
 import { giftsService, GiftEntity } from '@/features/gifts/services/gifts.service';
 import coinIcon from '@/assets/coin.svg';
-import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/contexts/LiveStreamContext';
 import { useChannelStateContext } from 'stream-chat-react';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { toast } from 'sonner';

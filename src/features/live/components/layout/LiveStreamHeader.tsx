@@ -6,7 +6,7 @@ import { liveService } from '@/features/live/services/live.service';
 import { toast } from 'sonner';
 import { useNavigate } from '@tanstack/react-router';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
-import { useLiveStreamContext } from '@/features/live/components/layout/LiveStreamLayout';
+import { useLiveStreamContext } from '@/features/live/contexts/LiveStreamContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { EndLiveModal } from '@/features/live/components/modals/EndLiveModal';
 import { useSubmitReport } from '@/features/report/services/report.service';

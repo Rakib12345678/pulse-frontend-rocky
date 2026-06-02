@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
     StreamVideo,
     StreamVideoClient,
@@ -28,32 +28,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useViewerRejoinStore } from '@/features/live/stores/viewerRejoinStore';
 import { useCohostStore } from '@/features/live/stores/cohostStore';
 
-// Context for sharing viewer state with child components
-interface LiveStreamContextValue {
-    isViewer: boolean;
-    isGuest: boolean;
-    call: Call | null;
-    isChatVisible: boolean;
-    setChatVisible: (visible: boolean) => void;
-    isGiftingOpen: boolean;
-    setIsGiftingOpen: (open: boolean) => void;
-    streamEnded: boolean;
-    setStreamEnded: (ended: boolean) => void;
-}
-
-const LiveStreamContext = createContext<LiveStreamContextValue>({
-    isViewer: false,
-    isGuest: false,
-    call: null,
-    isChatVisible: true,
-    setChatVisible: () => { },
-    isGiftingOpen: false,
-    setIsGiftingOpen: () => { },
-    streamEnded: false,
-    setStreamEnded: () => { },
-});
-
-export const useLiveStreamContext = () => useContext(LiveStreamContext);
+import { LiveStreamContext } from '@/features/live/contexts/LiveStreamContext';
 
 interface LiveStreamLayoutProps {
     children: React.ReactNode;
