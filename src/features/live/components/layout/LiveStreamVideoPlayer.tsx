@@ -254,7 +254,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900">
                         <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 mb-3">
                             {p.image ? (
-                                <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                <img src={p.image} alt={p.name} className="w-full h-full object-cover rounded-full" />
                             ) : (
                                 <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
                                     <span className="text-3xl font-bold text-[#FF8800]">
@@ -329,7 +329,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-800">
                         <div className={`rounded-full overflow-hidden border border-white/10 ${isMobile ? 'w-10 h-10' : 'w-14 h-14'}`}>
                             {p.image ? (
-                                <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                <img src={p.image} alt={p.name} className="w-full h-full object-cover rounded-full" />
                             ) : (
                                 <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
                                     <span className={`font-bold text-[#FF8800] ${isMobile ? 'text-lg' : 'text-xl'}`}>
@@ -463,7 +463,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
                                             <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900">
                                                 <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 mb-3">
                                                     {p.image ? (
-                                                        <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                                        <img src={p.image} alt={p.name} className="w-full h-full object-cover rounded-full" />
                                                     ) : (
                                                         <div className="w-full h-full bg-[#FF8800]/20 flex items-center justify-center">
                                                             <span className="text-2xl font-bold text-[#FF8800]">
