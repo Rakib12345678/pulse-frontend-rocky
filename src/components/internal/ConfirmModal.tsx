@@ -47,7 +47,7 @@ const ModalHeaderIcon = ({ avatarUrl, avatarFallback, headerIcon }: { avatarUrl?
                     <img
                         src={avatarUrl}
                         alt="user"
-                        className="w-24 h-24 rounded-full object-cover"
+                        className="w-16 h-16 sm:w-24 sm:h-24 rounded-full object-cover"
                         style={{
                             border: '3px solid transparent',
                             background: 'linear-gradient(#18191f, #18191f) padding-box, linear-gradient(135deg, #7b2ff7, #ff7700) border-box',
@@ -55,7 +55,7 @@ const ModalHeaderIcon = ({ avatarUrl, avatarFallback, headerIcon }: { avatarUrl?
                     />
                 ) : (
                     <div
-                        className="w-24 h-24 rounded-full flex items-center justify-center text-2xl font-bold text-white"
+                        className="w-16 h-16 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-white"
                         style={{
                             border: '3px solid transparent',
                             background: 'linear-gradient(#3a3a3a, #3a3a3a) padding-box, linear-gradient(135deg, #7b2ff7, #ff7700) border-box',
@@ -70,7 +70,7 @@ const ModalHeaderIcon = ({ avatarUrl, avatarFallback, headerIcon }: { avatarUrl?
 
     return (
         <div className="mb-4 text-white flex justify-center">
-            <LogOut className="w-12 h-12 mx-auto stroke-[1.5px]" />
+            <LogOut className="w-8 h-8 sm:w-12 sm:h-12 mx-auto stroke-[1.5px]" />
         </div>
     );
 };
@@ -91,15 +91,15 @@ const ConfirmModalContent = ({
     <>
         {/* Description */}
         {descriptionPrefix && username && (
-            <p className="text-gray-400 text-md leading-relaxed text-center">
+            <p className="text-gray-400 text-sm sm:text-base leading-relaxed text-center">
                 {descriptionPrefix}{' '}
-                <span className="text-white font-semibold">@{username}</span>
+                <span className="text-white font-semibold text-sm sm:text-base">@{username}</span>
             </p>
         )}
 
         {/* Fallback plain description */}
         {description && !descriptionPrefix && (
-            <p className="text-gray-400 text-sm mb-4 leading-relaxed text-center">{description}</p>
+            <p className="text-gray-400 text-xs sm:text-sm mb-4 leading-relaxed text-center">{description}</p>
         )}
 
         {/* Buttons */}
@@ -107,7 +107,7 @@ const ConfirmModalContent = ({
             <button
                 onClick={onConfirm}
                 disabled={isLoading}
-                className={`flex-1 flex items-center cursor-pointer justify-center gap-2 py-3 rounded-full text-base font-semibold transition-all disabled:opacity-60 ${confirmClassName}`}
+                className={`flex-1 flex items-center cursor-pointer justify-center gap-2 py-2.5 sm:py-3 rounded-full text-sm sm:text-base font-semibold transition-all disabled:opacity-60 ${confirmClassName}`}
             >
                 {confirmIcon}
                 {isLoading ? 'Please wait...' : confirmLabel}
@@ -115,7 +115,7 @@ const ConfirmModalContent = ({
             <button
                 onClick={onCancel}
                 disabled={isLoading}
-                className="flex-1 py-3 rounded-full text-base font-semibold border-2 border-[#FF7700] text-[#FF7700] hover:bg-white/5 transition-all cursor-pointer"
+                className="flex-1 py-2.5 sm:py-3 rounded-full text-sm sm:text-base font-semibold border-2 border-[#FF7700] text-[#FF7700] hover:bg-white/5 transition-all cursor-pointer"
             >
                 {cancelLabel}
             </button>
@@ -135,7 +135,7 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
             <Drawer open={isOpen} onOpenChange={(open: boolean) => !open && onCancel()}>
                 <DrawerContent className="bg-[#1D1F20] border-t border-white/10 rounded-t-3xl px-6 pb-8">
                     <DrawerHeader className="pt-2 pb-4">
-                        <DrawerTitle className="text-white text-xl font-bold text-center">{title}</DrawerTitle>
+                        <DrawerTitle className="text-white text-lg sm:text-xl font-bold text-center">{title}</DrawerTitle>
                         <DrawerDescription className="sr-only">{title}</DrawerDescription>
                     </DrawerHeader>
                     <div className="flex flex-col items-center px-2">
@@ -152,17 +152,17 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
                 <div className="absolute inset-0 bg-black/80" onClick={onCancel} />
-                <div className="relative bg-[#1D1F20] border border-white/10 rounded-[24px] w-full max-w-sm p-8 flex flex-col items-center text-center">
+                <div className="relative bg-[#1D1F20] border border-white/10 rounded-[24px] w-full max-w-sm p-6 sm:p-8 flex flex-col items-center text-center">
                     <ModalHeaderIcon avatarUrl={rest.avatarUrl} avatarFallback={rest.avatarFallback} headerIcon={headerIcon} />
 
-                    <h3 className="text-white text-2xl font-bold mb-1 leading-snug">{title}</h3>
+                    <h3 className="text-white text-lg sm:text-2xl font-bold mb-1 leading-snug">{title}</h3>
 
                     {/* Stacked buttons */}
-                    <div className="flex flex-col gap-4 w-full">
+                    <div className="flex flex-col gap-3 w-full mt-4">
                         <button
                             onClick={onConfirm}
                             disabled={isLoading}
-                            className={`w-full flex items-center cursor-pointer justify-center gap-2 py-4 rounded-full text-base font-bold transition-all disabled:opacity-60 ${confirmClassName}`}
+                            className={`w-full flex items-center cursor-pointer justify-center gap-2 py-2.5 sm:py-4 rounded-full text-sm sm:text-base font-bold transition-all disabled:opacity-60 ${confirmClassName}`}
                         >
                             {confirmIcon}
                             {isLoading ? 'Please wait...' : confirmLabel}
@@ -170,7 +170,7 @@ export const ConfirmModal = (props: ConfirmModalProps) => {
                         <button
                             onClick={onCancel}
                             disabled={isLoading}
-                            className="w-full py-4 rounded-full text-base font-bold border-2 border-[#FF7700] text-[#FF7700] hover:bg-white/5 transition-all cursor-pointer"
+                            className="w-full py-2.5 sm:py-4 rounded-full text-sm sm:text-base font-bold border-2 border-[#FF7700] text-[#FF7700] hover:bg-white/5 transition-all cursor-pointer"
                         >
                             {cancelLabel}
                         </button>

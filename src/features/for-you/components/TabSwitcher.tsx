@@ -24,7 +24,7 @@ export const TabSwitcher: React.FC<TabSwitcherProps> = ({
             <button
                 onClick={() => onTabChange('live')}
                 className={cn(
-                    'flex-1 py-2.5 text-md font-semibold transition-all duration-200',
+                    'flex-1 py-2.5 text-md font-semibold transition-all duration-200 cursor-pointer',
                     activeTab === 'live'
                         ? 'text-white bg-[#2C2F30]'
                         : 'text-white/40'
@@ -39,7 +39,7 @@ export const TabSwitcher: React.FC<TabSwitcherProps> = ({
             <button
                 onClick={() => onTabChange('following')}
                 className={cn(
-                    'flex-1 py-2.5 text-md font-semibold transition-all duration-200',
+                    'flex-1 py-2.5 text-md font-semibold transition-all duration-200 cursor-pointer',
                     activeTab === 'following'
                         ? 'text-white bg-[#2C2F30]'
                         : 'text-white/40'

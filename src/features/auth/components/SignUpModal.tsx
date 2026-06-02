@@ -1060,7 +1060,10 @@ export const StepDetails = ({
                 showClose={false}
             />
             <div className="flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar flex flex-col">
-                <div className="flex flex-col md:flex-row w-full items-start p-4 md:p-5 h-full">
+                <div className={cn(
+                    "flex flex-col md:flex-row w-full items-start p-4 md:p-5 h-auto md:h-full",
+                    mode === 'edit' && "pb-24 md:pb-5"
+                )}>
                     {/* Left Card */}
                     <div className="flex flex-col items-center gap-6 md:gap-8 bg-[#1D1F20] rounded-xl py-8 md:py-16.5 px-6 md:px-8 w-full md:w-97.5 shrink-0 border border-white/5">
                         {identifierPill && (

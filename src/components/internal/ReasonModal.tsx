@@ -201,7 +201,7 @@ const ReasonModalContent = ({
                 <button
                     onClick={onConfirm}
                     disabled={!canSubmit || isLoading}
-                    className={`flex-1 flex items-center justify-center cursor-pointer gap-2 py-3 rounded-full text-sm font-bold transition-all disabled:opacity-40 ${confirmClassName}`}
+                    className={`flex-1 flex items-center justify-center cursor-pointer gap-2 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold transition-all disabled:opacity-40 ${confirmClassName}`}
                 >
                     {confirmIcon}
                     {isLoading ? 'Please wait...' : confirmLabel}
@@ -209,7 +209,7 @@ const ReasonModalContent = ({
                 <button
                     onClick={onCancel}
                     disabled={isLoading}
-                    className="flex-1 py-3 rounded-full text-sm cursor-pointer font-bold border border-[#FF7700] text-[#FF7700] hover:bg-white/5 transition-all"
+                    className="flex-1 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm cursor-pointer font-bold border border-[#FF7700] text-[#FF7700] hover:bg-white/5 transition-all"
                 >
                     Cancel
                 </button>
@@ -465,7 +465,7 @@ export const ReportLimitModal = ({
 
     const content = (
         <div className="flex flex-col items-center text-center">
-            <div className="relative mb-6 w-24 h-24 flex items-center justify-center">
+            <div className="relative mb-4 sm:mb-6 w-16 h-16 sm:w-24 sm:h-24 flex items-center justify-center">
                 <AlarmClock className="w-full h-full text-[#8c8c8c]" strokeWidth={1.5} />
                 <div
                     className="absolute bg-[#FF0000] rounded-full flex items-center justify-center"
@@ -477,25 +477,25 @@ export const ReportLimitModal = ({
                         transform: 'translate(-50%, -50%)',
                     }}
                 >
-                    <span className="text-white text-4xl font-black font-sans relative z-10 mb-1">!</span>
+                    <span className="text-white text-2xl sm:text-4xl font-black font-sans relative z-10 mb-0.5 sm:mb-1">!</span>
                 </div>
             </div>
 
-            <h2 className="text-white text-2xl font-bold mb-3">Report Limit Reached</h2>
-            <p className="text-gray-400 text-[15px] mb-8">
+            <h2 className="text-white text-lg sm:text-2xl font-bold mb-3">Report Limit Reached</h2>
+            <p className="text-gray-400 text-xs sm:text-[15px] mb-6 sm:mb-8">
                 You've reported too many times. Try later.
             </p>
 
             <div className="flex gap-4 w-full mt-2">
                 <button
                     onClick={onTryLater}
-                    className="flex-1 py-3.5 rounded-full bg-[#FF7700] text-black text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                    className="flex-1 py-2.5 sm:py-3.5 rounded-full bg-[#FF7700] text-black text-xs sm:text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
                 >
                     Try Later
                 </button>
                 <button
                     onClick={onExplore}
-                    className="flex-1 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-[15px] font-bold hover:bg-white/5 transition-all cursor-pointer"
+                    className="flex-1 py-2.5 sm:py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-xs sm:text-[15px] font-bold hover:bg-white/5 transition-all cursor-pointer"
                 >
                     Explore
                 </button>
@@ -550,24 +550,24 @@ export const ReportSuccessModal = ({
 
     const content = (
         <div className="flex flex-col items-center text-center">
-            <h2 className="text-white text-2xl font-bold mb-6 leading-snug">
+            <h2 className="text-white text-lg sm:text-2xl font-bold mb-4 sm:mb-6 leading-snug">
                 You Reported @{username} Successfully
             </h2>
-            <p className="text-gray-400 text-[20px] mb-8 leading-relaxed max-w-[280px]">
+            <p className="text-gray-400 text-sm sm:text-[20px] mb-6 sm:mb-8 leading-relaxed max-w-[280px]">
                 We appreciate you helping us keep PulseLive Safe.
             </p>
 
             {type === 'chat' ? (
-                <div className="flex gap-6 w-full mt-2">
+                <div className="flex gap-4 sm:gap-6 w-full mt-2">
                     <button
                         onClick={() => { onMute?.(); onClose(); }}
-                        className="flex-1 py-3.5 rounded-full bg-[#FF7700] text-black text-lg font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                        className="flex-1 py-2.5 sm:py-3.5 rounded-full bg-[#FF7700] text-black text-sm sm:text-lg font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
                     >
                         Mute
                     </button>
                     <button
                         onClick={() => { onBlock?.(); onClose(); }}
-                        className="flex-1 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-lg font-bold hover:bg-white/5 transition-all cursor-pointer"
+                        className="flex-1 py-2.5 sm:py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-sm sm:text-lg font-bold hover:bg-white/5 transition-all cursor-pointer"
                     >
                         Block
                     </button>
@@ -576,7 +576,7 @@ export const ReportSuccessModal = ({
                 <div className="w-full flex justify-center mt-2">
                     <button
                         onClick={() => { onExplore?.(); onClose(); }}
-                        className="px-8 py-3.5 rounded-full bg-[#FF7700] text-black text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                        className="px-6 py-2.5 sm:px-8 sm:py-3.5 rounded-full bg-[#FF7700] text-black text-xs sm:text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
                     >
                         Explore More
                     </button>
@@ -624,27 +624,27 @@ export const ReportFailureModal = ({
 
     const content = (
         <div className="flex flex-col items-center text-center p-2">
-            <svg width="84" height="74" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-6">
+            <svg width="60" height="52" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-4 sm:mb-6 sm:w-[84px] sm:h-[74px]">
                 <path d="M42.3 6.4C45.9 -0.1 54.1 -0.1 57.7 6.4L95.7 75.4C99.2 81.7 94.3 89.5 87 89.5H13C5.7 89.5 0.8 81.7 4.3 75.4L42.3 6.4Z" fill="#FF0000" />
                 <path d="M46 25L48 55H52L54 25H46Z" fill="white" />
                 <rect x="47" y="62" width="6" height="8" fill="white" />
             </svg>
 
-            <h2 className="text-white text-2xl font-bold mb-4">Report Failed</h2>
-            <p className="text-gray-400 text-[20px] mb-8 leading-relaxed max-w-[280px]">
+            <h2 className="text-white text-lg sm:text-2xl font-bold mb-3 sm:mb-4">Report Failed</h2>
+            <p className="text-gray-400 text-sm sm:text-[20px] mb-6 sm:mb-8 leading-relaxed max-w-[280px]">
                 Your report could not be submitted at this time. Please try again later.
             </p>
 
             <div className="flex gap-4 w-full">
                 <button
                     onClick={onTryAgain}
-                    className="flex-1 py-3.5 rounded-full bg-[#FF7700] text-black text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                    className="flex-1 py-2.5 sm:py-3.5 rounded-full bg-[#FF7700] text-black text-xs sm:text-[15px] font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
                 >
                     Try Again
                 </button>
                 <button
                     onClick={onCancel}
-                    className="flex-1 py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-[15px] font-bold hover:bg-white/5 transition-all cursor-pointer"
+                    className="flex-1 py-2.5 sm:py-3.5 rounded-full border-2 border-[#FF7700] text-[#FF7700] bg-transparent text-xs sm:text-[15px] font-bold hover:bg-white/5 transition-all cursor-pointer"
                 >
                     Cancel
                 </button>
