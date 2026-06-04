@@ -277,7 +277,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
 
         {/* Cohost Indicator */}
         {cohosts && cohosts.length > 0 && (
-          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10 flex -space-x-3 items-center">
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10 flex -space-x-2 sm:-space-x-3 items-center">
             {cohosts.map((cohost, idx) => (
               <div
                 key={idx}
@@ -285,12 +285,20 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 style={{ zIndex: (cohosts?.length || 0) - idx }}
               >
                 <img
-                  src={cohost.profileImage || `https://i.pravatar.cc/150?u=${cohost.username}`}
+                  src={
+                    cohost.profileImage ||
+                    `https://i.pravatar.cc/150?u=${cohost.username}`
+                  }
                   alt={cohost.username}
-                  className="h-10 w-10 rounded-full border-2 border-white object-cover bg-zinc-800 shadow-lg"
+                  className="h-7 w-7 sm:h-10 sm:w-10 rounded-full border-2 border-white object-cover bg-zinc-800 shadow-lg"
                 />
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE9C0] shadow-sm">
-                  <img src={coHostIcon} className="h-3 w-3" alt="co-host" />
+
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[#FFE9C0] shadow-sm">
+                  <img
+                    src={coHostIcon}
+                    className="h-2.5 w-2.5 sm:h-3 sm:w-3"
+                    alt="co-host"
+                  />
                 </div>
               </div>
             ))}
