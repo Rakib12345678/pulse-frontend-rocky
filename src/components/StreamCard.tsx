@@ -145,8 +145,6 @@ export const StreamCard: React.FC<StreamCardProps> = ({
   );
 
   if (variant === 'explore') {
-    const primaryCohost = cohosts && cohosts.length > 0 ? cohosts[0] : null;
-
     return (
       <div
         onClick={handleCardClick}
@@ -278,18 +276,24 @@ export const StreamCard: React.FC<StreamCardProps> = ({
         )}
 
         {/* Cohost Indicator */}
-        {primaryCohost && (
-          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10">
-            <div className="relative group/cohost transition-transform duration-300 hover:scale-110">
-              <img
-                src={primaryCohost.profileImage || `https://i.pravatar.cc/150?u=${primaryCohost.username}`}
-                alt={primaryCohost.username}
-                className="h-10 w-10 rounded-full object-cover shadow-lg"
-              />
-              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE9C0] shadow-sm">
-                <img src={coHostIcon} className="h-3 w-3" alt="co-host" />
+        {cohosts && cohosts.length > 0 && (
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10 flex -space-x-3 items-center">
+            {cohosts.map((cohost, idx) => (
+              <div
+                key={idx}
+                className="relative transition-transform duration-300 hover:scale-110 hover:z-20"
+                style={{ zIndex: (cohosts?.length || 0) - idx }}
+              >
+                <img
+                  src={cohost.profileImage || `https://i.pravatar.cc/150?u=${cohost.username}`}
+                  alt={cohost.username}
+                  className="h-10 w-10 rounded-full border-2 border-white object-cover bg-zinc-800 shadow-lg"
+                />
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-[#FFE9C0] shadow-sm">
+                  <img src={coHostIcon} className="h-3 w-3" alt="co-host" />
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         )}
 
