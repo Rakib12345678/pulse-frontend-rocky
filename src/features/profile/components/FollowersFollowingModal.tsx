@@ -89,12 +89,12 @@ export const FollowersFollowingModal = ({
   const currentList = useMemo(() => {
     const data = type === 'followers' ? followersData : followingData;
     const baseList = data?.pages.flatMap((page) => page.data) || [];
-    
+
     if (!searchQuery) return baseList;
-    
+
     const query = searchQuery.toLowerCase();
-    return baseList.filter(user => 
-      user.username?.toLowerCase().includes(query) || 
+    return baseList.filter(user =>
+      user.username?.toLowerCase().includes(query) ||
       user.fullName?.toLowerCase().includes(query) ||
       (user as any).displayName?.toLowerCase().includes(query)
     );
@@ -126,7 +126,7 @@ export const FollowersFollowingModal = ({
       {
         onSuccess: () => {
           setConfirmUnfollow(null);
-          toast.success(`Unfollowed @${confirmUnfollow.username}`);
+          toast.success(`Unfollowed ${confirmUnfollow.username}`);
         }
       }
     );
@@ -137,25 +137,25 @@ export const FollowersFollowingModal = ({
     const uId = user.userId || (user as any).id;
     setIsMessaging(uId);
     try {
-        const { channelCid } = await chatService.startDirectChat(
-            uId,
-            { 
-              id: String(currentUser.id), 
-              name: currentUser.fullName || currentUser.username || '', 
-              avatar: currentUser.profileImage || '' 
-            },
-            { 
-              name: user.fullName || user.username || '', 
-              avatar: user.profileImage || '' 
-            }
-        );
-        sessionStorage.setItem(SESSION_ACTIVE_KEY, channelCid);
-        onClose();
-        navigate({ to: '/chats' as any });
+      const { channelCid } = await chatService.startDirectChat(
+        uId,
+        {
+          id: String(currentUser.id),
+          name: currentUser.fullName || currentUser.username || '',
+          avatar: currentUser.profileImage || ''
+        },
+        {
+          name: user.fullName || user.username || '',
+          avatar: user.profileImage || ''
+        }
+      );
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, channelCid);
+      onClose();
+      navigate({ to: '/chats' as any });
     } catch (error) {
-        toast.error('Failed to start chat');
+      toast.error('Failed to start chat');
     } finally {
-        setIsMessaging(null);
+      setIsMessaging(null);
     }
   };
 
@@ -165,7 +165,7 @@ export const FollowersFollowingModal = ({
     removeFollower(uId, {
       onSuccess: () => {
         setConfirmRemove(null);
-        toast.success(`Removed @${confirmRemove.username} from your followers`);
+        toast.success(`Removed ${confirmRemove.username} from your followers`);
       },
       onError: () => toast.error('Failed to remove follower'),
     });
@@ -325,10 +325,10 @@ export const FollowersFollowingModal = ({
               </div>
               <p className="text-lg sm:text-2xl font-extrabold text-white mb-2">
                 {isOwnList
-                  ? `Opss! No One ${type === 'followers' ? 'Following' : 'Followed by'} you`
+                  ? `Oops! No One ${type === 'followers' ? 'Following' : 'Followed by'} you`
                   : type === 'followers'
-                    ? "Opss! No Followers Yet"
-                    : "Opss! Not Following Anyone"}
+                    ? "Oops! No Followers Yet"
+                    : "Oops! Not Following Anyone"}
               </p>
               <p className="text-gray-500 font-medium text-sm sm:text-base">
                 {isOwnList
@@ -345,7 +345,7 @@ export const FollowersFollowingModal = ({
       {/* Stacked Confirmation Modals */}
       <ConfirmModal
         isOpen={!!confirmRemove}
-        title={`Remove @${confirmRemove?.username}?`}
+        title={`Remove ${confirmRemove?.username}?`}
         descriptionPrefix="Are you sure you want to remove"
         username={confirmRemove?.username || ''}
         avatarUrl={confirmRemove?.profileImage}
@@ -358,7 +358,7 @@ export const FollowersFollowingModal = ({
 
       <ConfirmModal
         isOpen={!!confirmUnfollow}
-        title={`Unfollow @${confirmUnfollow?.username}?`}
+        title={`Unfollow ${confirmUnfollow?.username}?`}
         descriptionPrefix="Are you sure you want to unfollow"
         username={confirmUnfollow?.username || ''}
         avatarUrl={confirmUnfollow?.profileImage}

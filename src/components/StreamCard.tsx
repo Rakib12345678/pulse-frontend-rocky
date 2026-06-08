@@ -327,7 +327,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                   onClick={handleProfileClick}
                   className="truncate text-[11px] sm:text-sm font-bold text-white leading-tight [text-shadow:_0_1px_3px_rgb(0_0_0_/_80%),_0_2px_6px_rgb(0_0_0_/_60%)] cursor-pointer hover:text-orange-400 transition-colors"
                 >
-                  @{streamerName}
+                  {streamerName}
                 </h3>
                 <p className="truncate text-[8px] sm:text-[9px] font-semibold text-gray-200 tracking-wide leading-normal [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
                   {followersCount} Followers
@@ -534,7 +534,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
                 onClick={handleProfileClick}
                 className="truncate text-[11px] sm:text-sm font-bold text-white leading-tight cursor-pointer hover:text-orange-400 transition-colors"
               >
-                @{streamerName}
+                {streamerName}
               </h3>
               <p className="truncate text-[8px] sm:text-[10px] font-medium text-gray-300">
                 {followersCount} Followers

@@ -93,7 +93,7 @@ const ConfirmModalContent = ({
         {descriptionPrefix && username && (
             <p className="text-gray-400 text-sm sm:text-base leading-relaxed text-center">
                 {descriptionPrefix}{' '}
-                <span className="text-white font-semibold text-sm sm:text-base">@{username}</span>
+                <span className="text-white font-semibold text-sm sm:text-base">{username}</span>
             </p>
         )}
 
@@ -335,7 +335,7 @@ export const ReportSuccessModal = ({
                 </div>
 
                 <DialogTitle className="text-white text-2xl font-bold leading-snug mb-2">
-                    You Reported @{username} Successfully
+                    You Reported {username} Successfully
                 </DialogTitle>
 
                 <p className="text-gray-400 text-sm leading-relaxed mb-8">

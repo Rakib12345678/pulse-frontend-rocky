@@ -346,7 +346,7 @@ export const ReportUserModal = ({
     return (
         <ReasonModal
             isOpen={isOpen}
-            title={`Report @${username}`}
+            title={`Report ${username}`}
             options={options}
             requiresNoteIds={requiresNoteIds}
             confirmLabel="Submit Report"
@@ -436,7 +436,7 @@ export const ReportChatModal = ({
     return (
         <ReasonModal
             isOpen={isOpen}
-            title={username ? `Report @${username}` : 'Report Message'}
+            title={username ? `Report ${username}` : 'Report Message'}
             options={options}
             requiresNoteIds={requiresNoteIds}
             confirmLabel="Submit Report"
@@ -531,6 +531,7 @@ export const ReportSuccessModal = ({
     isOpen,
     username,
     type,
+    isMuted,
     onMute,
     onBlock,
     onExplore,
@@ -539,6 +540,7 @@ export const ReportSuccessModal = ({
     isOpen: boolean;
     username: string;
     type: 'chat' | 'other';
+    isMuted?: boolean;
     onMute?: () => void;
     onBlock?: () => void;
     onExplore?: () => void;
@@ -551,7 +553,7 @@ export const ReportSuccessModal = ({
     const content = (
         <div className="flex flex-col items-center text-center">
             <h2 className="text-white text-lg sm:text-2xl font-bold mb-4 sm:mb-6 leading-snug">
-                You Reported @{username} Successfully
+                You Reported {username} Successfully
             </h2>
             <p className="text-gray-400 text-sm sm:text-[20px] mb-6 sm:mb-8 leading-relaxed max-w-[280px]">
                 We appreciate you helping us keep PulseLive Safe.
@@ -561,9 +563,11 @@ export const ReportSuccessModal = ({
                 <div className="flex gap-4 sm:gap-6 w-full mt-2">
                     <button
                         onClick={() => { onMute?.(); onClose(); }}
-                        className="flex-1 py-2.5 sm:py-3.5 rounded-full bg-[#FF7700] text-black text-sm sm:text-lg font-bold hover:bg-[#ff9922] transition-all cursor-pointer"
+                        disabled={isMuted}
+                        className={`flex-1 py-2.5 sm:py-3.5 rounded-full bg-[#FF7700] text-black text-sm sm:text-lg font-bold transition-all ${isMuted ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#ff9922] cursor-pointer'
+                            }`}
                     >
-                        Mute
+                        {isMuted ? 'Muted' : 'Mute'}
                     </button>
                     <button
                         onClick={() => { onBlock?.(); onClose(); }}

@@ -212,13 +212,13 @@ export const LiveStreamVideoPlayer: React.FC = () => {
 
             if (channel) {
                 try {
-                    await channel.sendMessage({ text: `@${userName} was removed as cohost` });
+                    await channel.sendMessage({ text: `${userName} was removed as cohost` });
                 } catch (e) {
                     console.error('Failed to send kick chat message:', e);
                 }
             }
 
-            toast.success(`Removed @${userName} from stage`);
+            toast.success(`Removed ${userName} from stage`);
         } catch (err) {
             console.error('[Kick] Failed to kick co-host:', err);
             toast.error('Failed to remove co-host');
@@ -230,7 +230,7 @@ export const LiveStreamVideoPlayer: React.FC = () => {
         if (!call || isViewer) return;
         try {
             await call.muteUser(userId, 'audio');
-            toast.success(`Muted @${userName}`);
+            toast.success(`Muted ${userName}`);
         } catch (err) {
             console.error('[Mute] Failed to mute co-host:', err);
             toast.error('Failed to mute co-host');

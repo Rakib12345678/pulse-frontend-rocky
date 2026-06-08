@@ -15,6 +15,7 @@ import { SignUpModal } from "@/features/auth/components/SignUpModal"
 import { GoLiveModal } from "@/features/live/components/modals/GoLiveModal"
 import { RejoinStreamBanner } from "@/features/live/components/overlay/RejoinStreamBanner"
 import { AccountSuspendedModal } from "@/components/internal/AccountSuspendedModal"
+import Logo from "@/assets/Logo.png";
 
 import appCss from "../styles.css?url"
 import background from "@/assets/background.png"
@@ -107,6 +108,8 @@ function RootComponent() {
         <meta name="apple-mobile-web-app-title" content="Pulse Live" />
         <meta name="theme-color" content="#0f1117" />
         <meta name="format-detection" content="telephone=no" />
+        <meta property="og:image" content={Logo} />
+
         {/* <meta name="referrer" content="no-referrer" /> */}
         <title>Pulse Live</title>
 

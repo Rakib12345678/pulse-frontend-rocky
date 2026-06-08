@@ -551,6 +551,7 @@ export const LiveStreamHeader: React.FC = () => {
                 onTryLater={() => setShowReportLimitModal(false)}
                 onExplore={() => {
                     setShowReportLimitModal(false);
+                    navigate({ to: '/explore' });
                 }}
             />
 

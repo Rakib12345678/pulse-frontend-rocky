@@ -127,7 +127,7 @@ export const StreamerInfoOverlay: React.FC<StreamerInfoOverlayProps> = ({
                     onClick={handleProfileClick}
                     onTouchEnd={handleProfileClick}
                 >
-                    {streamerName.startsWith('@') ? streamerName : `@${streamerName}`}
+                    {streamerName.startsWith('@') ? streamerName : `${streamerName}`}
                 </span>
                 <span className="text-white/60 text-[10px] text-left truncate">
                     {followerCount} Followers

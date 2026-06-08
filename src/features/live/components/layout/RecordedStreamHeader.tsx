@@ -158,7 +158,7 @@ const ParticipantsList: React.FC<{
 						</Avatar>
 						<div className="text-left">
                             <p className={`font-bold text-white leading-tight ${host !== currentUsername && 'group-hover:text-[#FF8800]'} transition-colors`}>
-                                @{host} {host === currentUsername && '(You)'}
+                                {host} {host === currentUsername && '(You)'}
 							</p>
                             <p className="text-xs text-[#FF8800] mt-0.5 font-medium uppercase tracking-wider">Host</p>
 						</div>
@@ -190,7 +190,7 @@ const ParticipantsList: React.FC<{
 						</Avatar>
 						<div className="text-left">
                             <p className={`font-bold text-white leading-tight ${cohost.username !== currentUsername && 'group-hover:text-[#FF8800]'} transition-colors`}>
-                                @{cohost.username} {cohost.username === currentUsername && '(You)'}
+                                {cohost.username} {cohost.username === currentUsername && '(You)'}
 							</p>
                             <p className="text-xs text-white/40 mt-0.5 font-medium uppercase tracking-wider">Co-host</p>
 						</div>

@@ -518,7 +518,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     const isMobile = useIsMobile();
-    // const navigate = useNavigate(); // Temporarily commenting out if unused
+    const navigate = useNavigate();
     const { translateEnabled } = useTranslationPreference(myId);
     const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
     const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
@@ -1096,6 +1096,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 onTryLater={() => setShowReportLimitModal(false)}
                 onExplore={() => {
                     setShowReportLimitModal(false);
+                    navigate({ to: '/explore' });
                 }}
             />
 
@@ -1103,6 +1104,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 isOpen={!!reportedSuccessConv}
                 username={reportedSuccessConv?.participant.name || ''}
                 type="chat"
+                isMuted={reportedSuccessConv?.isMuted ?? false}
                 onMute={() => {
                     if (reportedSuccessConv) {
                         handleMuteToggle(reportedSuccessConv);
@@ -1112,7 +1114,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     if (reportedSuccessConv) {
                         try {
                             await userService.blockUser(Number(reportedSuccessConv.participant.id));
-                            toast.success(`Blocked @${reportedSuccessConv.participant.name}`);
+                            toast.success(`Blocked ${reportedSuccessConv.participant.name}`);
                         } catch (error) {
                             toast.error('Failed to block user');
                         }

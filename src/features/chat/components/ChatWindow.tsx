@@ -970,6 +970,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 onTryLater={() => setShowReportLimitModal(false)}
                 onExplore={() => {
                     setShowReportLimitModal(false);
+                    navigate({ to: '/explore' });
                 }}
             />
 
@@ -977,6 +978,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                 isOpen={!!reportedSuccessInfo}
                 username={reportedSuccessInfo?.name || ''}
                 type="chat"
+                isMuted={conversation?.isMuted ?? false}
                 onMute={() => {
                     toast.info('Mute feature coming soon');
                 }}
@@ -984,7 +986,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
                     if (reportedSuccessInfo) {
                         try {
                             await userService.blockUser(Number(reportedSuccessInfo.id));
-                            toast.success(`Blocked @${reportedSuccessInfo.name}`);
+                            toast.success(`Blocked ${reportedSuccessInfo.name}`);
                         } catch (error) {
                             toast.error('Failed to block user');
                         }

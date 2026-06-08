@@ -118,7 +118,7 @@ export const MobileParticipantPopup: React.FC<MobileParticipantPopupProps> = ({ 
                                 </Avatar>
                                 <div className="flex flex-col min-w-0 flex-1">
                                     <span className="text-white text-sm font-semibold truncate">
-                                        @{participant.name || displayName || 'anonymous'}
+                                        {participant.name || displayName || 'anonymous'}
                                     </span>
                                     {/* follower count if available */}
                                     <span className="text-white/40 text-xs">Viewer</span>

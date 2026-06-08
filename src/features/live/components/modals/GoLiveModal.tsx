@@ -92,6 +92,39 @@ export const GoLiveModal = () => {
             // We rely on the useEffect cleanup or the check below to handle stopping.
             // Redundant stopStream() calls here can cause race conditions.
 
+            if (!camEnabled && !micEnabled) {
+                let hasBothPermissions = false;
+                try {
+                    if (navigator.permissions && typeof navigator.permissions.query === 'function') {
+                        const camPermission = await navigator.permissions.query({ name: 'camera' as PermissionName });
+                        const micPermission = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+                        if (camPermission.state === 'granted' && micPermission.state === 'granted') {
+                            hasBothPermissions = true;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("navigator.permissions.query not fully supported for camera/microphone", e);
+                }
+
+                if (!hasBothPermissions) {
+                    // Try to request both permissions to see if they can be granted
+                    const tempStream = await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true
+                    });
+                    // Successfully acquired, so permissions are granted. Stop immediately.
+                    tempStream.getTracks().forEach(track => track.stop());
+                }
+
+                // If we get here, both permissions are granted. No active stream needed.
+                activeStreamRef.current = null;
+                setStream(null);
+                if (videoRef.current) {
+                    videoRef.current.srcObject = null;
+                }
+                return null;
+            }
+
             let newStream: MediaStream;
 
             try {
@@ -102,7 +135,7 @@ export const GoLiveModal = () => {
                 });
             } catch (err: any) {
                 console.warn("Could not get requested media combination, trying fallbacks...", err);
-                
+
                 // Fallback logic: only try to get what the user has enabled
                 if (camEnabled && micEnabled) {
                     try {
@@ -130,7 +163,7 @@ export const GoLiveModal = () => {
             if (videoRef.current) {
                 videoRef.current.srcObject = newStream;
             }
-            
+
             return newStream;
 
         } catch (err: any) {
@@ -175,7 +208,7 @@ export const GoLiveModal = () => {
             }
 
             const newStream = await initiateMedia();
-            
+
             if (isCancelled && newStream) {
                 // If the modal was closed/changed while getUserMedia was pending,
                 // destroy the newly acquired stream immediately.

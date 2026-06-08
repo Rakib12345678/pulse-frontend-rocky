@@ -44,8 +44,10 @@ import { ProfilePage } from "@/features/profile";
 import { useGlobalPastLiveStreams } from "@/features/profile/services/profile.service";
 import { useSubmitReport } from "@/features/report/services/report.service";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "@tanstack/react-router";
 
 export const UserProfileModal: React.FC = () => {
+	const navigate = useNavigate();
 	const {
 		isOpen,
 		username: targetUsername,
@@ -141,7 +143,7 @@ export const UserProfileModal: React.FC = () => {
 						: null,
 				);
 				setFollowState(profile.id, false); // sync to shared store
-				toast.success(`Unfollowed @${profile.username}`);
+				toast.success(`Unfollowed ${profile.username}`);
 			} else {
 				await userService.followUser(profile.id);
 				setProfile((prev) =>
@@ -154,7 +156,7 @@ export const UserProfileModal: React.FC = () => {
 						: null,
 				);
 				setFollowState(profile.id, true); // sync to shared store
-				toast.success(`Followed @${profile.username}`);
+				toast.success(`Followed ${profile.username}`);
 			}
 		} catch (error) {
 			toast.error("Failed to update follow status");
@@ -180,12 +182,12 @@ export const UserProfileModal: React.FC = () => {
 				await userService.unblockUser(profile.id);
 				setProfile((prev) => (prev ? { ...prev, blockedByMe: false } : null));
 				setIsBlockDrawerOpen(false);
-				toast.success(`Unblocked @${profile.username}`);
+				toast.success(`Unblocked ${profile.username}`);
 			} else {
 				await userService.blockUser(profile.id);
 				setProfile((prev) => (prev ? { ...prev, blockedByMe: true } : null));
 				setIsBlockDrawerOpen(false);
-				toast.success(`Blocked @${profile.username}`);
+				toast.success(`Blocked ${profile.username}`);
 
 				// If we're the host in an active stream, kick the blocked user immediately
 				if (call && !isViewer) {
@@ -310,7 +312,7 @@ export const UserProfileModal: React.FC = () => {
 					)}
 
 					<p className="text-white/60 mb-2">Are you sure you want to block</p>
-					<p className="text-white font-bold mb-8">@{profile?.username}</p>
+					<p className="text-white font-bold mb-8">{profile?.username}</p>
 
 					<div className="flex w-full gap-4 max-w-sm">
 						<Button
@@ -364,6 +366,7 @@ export const UserProfileModal: React.FC = () => {
 				onExplore={() => {
 					setShowReportLimitModal(false);
 					closeModal();
+					navigate({ to: '/explore' });
 				}}
 			/>
 
@@ -426,7 +429,7 @@ export const UserProfileModal: React.FC = () => {
 							<h2 className="text-xl font-bold text-white mb-1">
 								{profile.fullName || profile.username}
 							</h2>
-							<p className="text-white/40 text-sm mb-1">@{profile.username}</p>
+							<p className="text-white/40 text-sm mb-1">{profile.username}</p>
 							{profile.location && (
 								<p className="text-white/30 text-xs mb-2">{profile.location}</p>
 							)}
@@ -657,7 +660,7 @@ export const UserProfileModal: React.FC = () => {
 								{/* Header: @username ... X */}
 								<div className="flex items-center justify-between px-6 pt-2 pb-3">
 									<h2 className="text-base font-bold text-white">
-										@{profile.username}
+										{profile.username}
 									</h2>
 									<div className="flex items-center gap-3">
 										<DropdownMenu>
@@ -934,7 +937,7 @@ export const UserProfileModal: React.FC = () => {
 							<div className="p-6 pb-2 relative">
 								<div className="flex justify-between items-start mb-6">
 									<h2 className="text-lg text-white font-medium">
-										@{profile.username}
+										{profile.username}
 									</h2>
 									<div className="flex items-center gap-4">
 										<DropdownMenu>

@@ -177,8 +177,8 @@ importers:
         specifier: ^9.31.0
         version: 9.32.0
       stream-chat-react:
-        specifier: ^13.13.6
-        version: 13.13.6(@emoji-mart/data@1.2.1)(@emoji-mart/react@1.1.1(emoji-mart@5.6.0)(react@19.2.4))(@types/react@19.2.14)(emoji-mart@5.6.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(stream-chat@9.32.0)(typescript@5.9.3)
+        specifier: ^14.3.0
+        version: 14.3.0(@emoji-mart/data@1.2.1)(@emoji-mart/react@1.1.1(emoji-mart@5.6.0)(react@19.2.4))(@types/react@19.2.14)(emoji-mart@5.6.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(stream-chat@9.32.0)(typescript@5.9.3)
       tailwind-merge:
         specifier: ^3.0.2
         version: 3.4.0
@@ -2604,6 +2604,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@virtuoso.dev/react-urx@0.2.13':
     resolution: {integrity: sha512-MY0ugBDjFb5Xt8v2HY7MKcRGqw/3gTpMlLXId2EwQvYJoC8sP7nnXjAxcBtTB50KTZhO0SbzsFimaZ7pSdApwA==}
@@ -3844,9 +3845,6 @@ packages:
   lodash.deburr@4.1.0:
     resolution: {integrity: sha512-m/M1U1f3ddMCs6Hq2tAsYThTBDaAKFDX3dwDo97GEYzamXi9SqUpjWi/Rrj/gf3X2n8ktwgZrlP1z6E3v/IExQ==}
 
-  lodash.defaultsdeep@4.6.1:
-    resolution: {integrity: sha512-3j8wdDzYuWO3lM3Reg03MuQR957t287Rpcxp1njpEa8oDrikb+FwGdW3n+FELh/A6qib6yPit0j/pv9G/yeAqA==}
-
   lodash.includes@4.3.0:
     resolution: {integrity: sha512-W3Bx6mdkRTGtlJISOvVD/lbqjTlPPUDTMnlXZFnVwi9NKJ6tiAk6LVdlhZMm17VZisqhKcgzpO5Wz91PCt5b0w==}
 
@@ -4416,11 +4414,6 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
 
-  react-image-gallery@1.2.12:
-    resolution: {integrity: sha512-JIh85lh0Av/yewseGJb/ycg00Y/weQiZEC/BQueC2Z5jnYILGB6mkxnrOevNhsM2NdZJpvcDekCluhy6uzEoTA==}
-    peerDependencies:
-      react: ^16.0.0 || ^17.0.0 || ^18.0.0
-
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
@@ -4720,16 +4713,17 @@ packages:
     resolution: {integrity: sha512-UhDfHmA92YAlNnCfhmq0VeNL5bDbiZGg7sZ2IvPsXubGkiNa9EC+tUTsjBRsYUAz87btI6/1wf4XoVvQ3uRnmQ==}
     engines: {node: '>=18'}
 
-  stream-chat-react@13.13.6:
-    resolution: {integrity: sha512-W9kAgpwL/sKg5pxJcpqLbTJ5P3cN17QPzBSPcgXM56QTa0D/7NlmCELQSqiJF618b0o5ZKztLdkYx92AUxd19g==}
+  stream-chat-react@14.3.0:
+    resolution: {integrity: sha512-Pw7YwyrbVeEn7S6kGoJYX3iqDeH5xGuvi2Ch9ILkqZ9O9Gg13Cpv1kFBriId4cYCR9wkb8TWL87md83M83P/cg==}
     peerDependencies:
       '@breezystack/lamejs': ^1.2.7
       '@emoji-mart/data': ^1.1.0
       '@emoji-mart/react': ^1.1.0
       emoji-mart: ^5.4.0
+      modern-normalize: ^3.0.1
       react: ^19.0.0 || ^18.0.0 || ^17.0.0
       react-dom: ^19.0.0 || ^18.0.0 || ^17.0.0
-      stream-chat: ^9.27.2
+      stream-chat: ^9.44.2
     peerDependenciesMeta:
       '@breezystack/lamejs':
         optional: true
@@ -4738,6 +4732,8 @@ packages:
       '@emoji-mart/react':
         optional: true
       emoji-mart:
+        optional: true
+      modern-normalize:
         optional: true
 
   stream-chat@9.32.0:
@@ -4857,6 +4853,9 @@ packages:
 
   ts-morph@26.0.0:
     resolution: {integrity: sha512-ztMO++owQnz8c/gIENcM9XfCEzgoGphTv+nKpYNM1bgsdOVC/jRZuEBf6N+mLLDNg68Kl+GgUZfOySaRiG1/Ug==}
+
+  ts-pattern@5.9.0:
+    resolution: {integrity: sha512-6s5V71mX8qBUmlgbrfL33xDUwO0fq48rxAu2LBE11WBeGdpCPOsXksQbZJHvHwhrd3QjUusd3mAOM5Gg0mFBLg==}
 
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
@@ -8829,8 +8828,6 @@ snapshots:
   lodash.deburr@4.1.0:
     optional: true
 
-  lodash.defaultsdeep@4.6.1: {}
-
   lodash.includes@4.3.0: {}
 
   lodash.isboolean@3.0.3: {}
@@ -9643,10 +9640,6 @@ snapshots:
     dependencies:
       react: 19.2.4
 
-  react-image-gallery@1.2.12(react@19.2.4):
-    dependencies:
-      react: 19.2.4
-
   react-is@16.13.1: {}
 
   react-is@17.0.2: {}
@@ -10056,7 +10049,7 @@ snapshots:
 
   stdin-discarder@0.2.2: {}
 
-  stream-chat-react@13.13.6(@emoji-mart/data@1.2.1)(@emoji-mart/react@1.1.1(emoji-mart@5.6.0)(react@19.2.4))(@types/react@19.2.14)(emoji-mart@5.6.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(stream-chat@9.32.0)(typescript@5.9.3):
+  stream-chat-react@14.3.0(@emoji-mart/data@1.2.1)(@emoji-mart/react@1.1.1(emoji-mart@5.6.0)(react@19.2.4))(@types/react@19.2.14)(emoji-mart@5.6.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(stream-chat@9.32.0)(typescript@5.9.3):
     dependencies:
       '@braintree/sanitize-url': 6.0.4
       '@floating-ui/react': 0.27.17(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -10069,7 +10062,6 @@ snapshots:
       i18next: 25.8.6(typescript@5.9.3)
       linkifyjs: 4.3.2
       lodash.debounce: 4.0.8
-      lodash.defaultsdeep: 4.6.1
       lodash.mergewith: 4.6.2
       lodash.throttle: 4.1.1
       lodash.uniqby: 4.7.0
@@ -10078,13 +10070,13 @@ snapshots:
       react-dom: 19.2.4(react@19.2.4)
       react-dropzone: 14.4.1(react@19.2.4)
       react-fast-compare: 3.2.2
-      react-image-gallery: 1.2.12(react@19.2.4)
       react-markdown: 9.1.0(@types/react@19.2.14)(react@19.2.4)
       react-player: 2.10.1(react@19.2.4)
       react-textarea-autosize: 8.5.9(@types/react@19.2.14)(react@19.2.4)
       react-virtuoso: 2.19.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       remark-gfm: 4.0.1
       stream-chat: 9.32.0
+      ts-pattern: 5.9.0
       tslib: 2.8.1
       unist-builder: 4.0.0
       unist-util-visit: 5.1.0
@@ -10216,6 +10208,8 @@ snapshots:
     dependencies:
       '@ts-morph/common': 0.27.0
       code-block-writer: 13.0.3
+
+  ts-pattern@5.9.0: {}
 
   tsconfck@3.1.6(typescript@5.9.3):
     optionalDependencies:

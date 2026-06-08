@@ -34,7 +34,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
             { targetUserId: creator.id, followedByMe: creator.followedByMe || false },
             {
                 onSuccess: () => {
-                    toast.success(creator.followedByMe ? `Unfollowed @${creator.username}` : `Follow @${creator.username}`);
+                    toast.success(creator.followedByMe ? `Unfollowed ${creator.username}` : `Follow ${creator.username}`);
                 },
                 onError: (err: any) => {
                     toast.error(err?.message || 'Failed to update follow status');
@@ -122,7 +122,7 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
                     {creator.displayName || creator.username}
                 </h3>
                 <p className="text-gray-500 text-[11px] mt-0.5 truncate">
-                    @{creator.username}
+                    {creator.username}
                 </p>
                 <div className="mt-3 flex flex-wrap justify-center gap-2">
                     {creator.category && (

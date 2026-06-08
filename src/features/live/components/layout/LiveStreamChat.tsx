@@ -343,7 +343,7 @@ const LiveStreamMessageList: React.FC = () => {
                                 className="text-xs font-semibold text-[#FF8800] cursor-pointer transition-colors mr-1"
                                 onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
                             >
-                                @{getDisplayName(msg.user)}
+                                {getDisplayName(msg.user)}
                             </span>
                             <span className="text-xs text-white/70 break-words">{msg.text}</span>
                             {giftCost && (
@@ -381,7 +381,7 @@ const LiveStreamMessageList: React.FC = () => {
                                 className="font-semibold text-white/60 cursor-pointer hover:text-white hover:underline transition-colors mr-1.5"
                                 onClick={() => handleUserClick(msg.user?.name, msg.user?.id)}
                             >
-                                @{getDisplayName(msg.user)}
+                                {getDisplayName(msg.user)}
                             </span>
                             {typeof msg.text === 'string' && msg.text.split('\n').length > 1 ? (
                                 <>

@@ -77,7 +77,7 @@ const LivestreamCard = ({
             alt={username}
           />
           <div>
-            <p className="text-xs font-bold text-white shadow-black drop-shadow-md">@{username}</p>
+            <p className="text-xs font-bold text-white shadow-black drop-shadow-md">{username}</p>
             {viewers && <span className="text-[10px] font-medium text-white/80">LIVE</span>}
           </div>
         </div>

@@ -17,6 +17,8 @@ import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useAuthStore } from '@/features/auth/stores/authStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
+import { chatService } from '@/features/chat/services/chat.service';
+import { SESSION_ACTIVE_KEY } from '@/features/chat/utils/chatConstants';
 
 interface ProfileHeaderProps {
 	user: User;
@@ -49,6 +51,37 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 	const handleGoLiveClick = useGoLive();
 	const { user: currentUser } = useAuthStore();
 	const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
+	const [isMessaging, setIsMessaging] = useState<number | null>(null);
+
+	const handleMessage = async () => {
+		if (!currentUser) {
+			setMode('login');
+			setStep('input');
+			openLoginModal();
+			return;
+		}
+		setIsMessaging(user.id);
+		try {
+			const { channelCid } = await chatService.startDirectChat(
+				user.id,
+				{ 
+					id: String(currentUser.id), 
+					name: currentUser.fullName || currentUser.username || '', 
+					avatar: currentUser.profileImage || '' 
+				},
+				{ 
+					name: user.fullName || user.username || '', 
+					avatar: user.profileImage || '' 
+				}
+			);
+			sessionStorage.setItem(SESSION_ACTIVE_KEY, channelCid);
+			navigate({ to: '/chats' as any });
+		} catch (error) {
+			toast.error('Failed to start chat');
+		} finally {
+			setIsMessaging(null);
+		}
+	};
 
 	const handleReportClick = () => {
 		if (!currentUser) {
@@ -203,7 +236,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 										{user.fullName || user.username}
 									</span>
 									<span className="text-white/60 text-sm">
-										@{user.username}
+										{user.username}
 									</span>
 								</div>
 								{/* {user.profileImage && (
@@ -240,8 +273,8 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				isOpen={showBlockSuccess}
 				title={
 					blockSuccessAction === 'unblock'
-						? `Unblocked @${user.username ?? ""}`
-						: `Blocked @${user.username ?? ""}`
+						? `Unblocked ${user.username ?? ""}`
+						: `Blocked ${user.username ?? ""}`
 				}
 				description={
 					blockSuccessAction === 'unblock'
@@ -268,13 +301,13 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				username={user.username ?? ''}
 				type="chat"
 				onMute={() => {
-					toast.success(`@${user.username ?? ''} has been muted`);
+					toast.success(`${user.username ?? ''} has been muted`);
 					setShowReportSuccess(false);
 				}}
 				onBlock={async () => {
 					try {
 						await userService.blockUser(user.id);
-						toast.success(`Blocked @${user.username ?? ''}`);
+						toast.success(`Blocked ${user.username ?? ''}`);
 					} catch {
 						toast.error('Failed to block user');
 					}
@@ -297,6 +330,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				onTryLater={() => setShowReportLimitModal(false)}
 				onExplore={() => {
 					setShowReportLimitModal(false);
+					navigate({ to: '/explore' });
 				}}
 			/>
 
@@ -364,7 +398,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 							</div>
 
 							<div className="flex items-center gap-4 text-[#494E50] text-sm justify-center md:justify-start w-full">
-								<span className="font-medium">@{user.username}</span>
+								<span className="font-medium">{user.username}</span>
 								{user.location && (
 									<div className="flex items-center gap-1">
 										<MapPin className="w-3.5 h-3.5" />
@@ -438,11 +472,11 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 								)}
 								<div className="flex gap-3 w-full md:w-auto">
 									<button
-										onClick={handleShare}
-										disabled={isBlocked}
+										onClick={handleMessage}
+										disabled={isBlocked || isMessaging === user.id}
 										className="flex-1 md:flex-none md:w-48 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 md:py-3 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 									>
-										Share Profile
+										{isMessaging === user.id ? 'Please wait...' : 'Message'}
 									</button>
 									<div className="relative">
 										<button
@@ -455,7 +489,14 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 										{actionMenuOpen && (
 											<>
 												<div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(false)} />
-												<div className="absolute -right-15 bottom-full w-30 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+												<div className="absolute -right-15 bottom-full w-36 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+													<button
+														onClick={() => { setActionMenuOpen(false); handleShare(); }}
+														className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+													>
+														Share Profile
+													</button>
+													<div className="h-px bg-zinc-800 mx-2" />
 													<button
 														onClick={() => { setShowBlockModal(true); setActionMenuOpen(false); }}
 														disabled={isBlockPending}

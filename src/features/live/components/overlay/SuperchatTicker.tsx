@@ -202,7 +202,7 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
                     className="text-xs font-semibold text-white truncate flex-1 cursor-pointer hover:underline transition-colors"
                     onClick={() => onUserClick(entry.senderUsername, entry.senderId)}
                 >
-                    @{entry.senderName}
+                    {entry.senderName}
                 </span>
                 {entry.giftIconUrl && (
                     <img

@@ -109,12 +109,12 @@ export const JoinRequestPopup: React.FC = () => {
                 await liveService.addCoHost(call.id, request.userName);
             }
 
-            toast.success(`@${request.userName} joined as co-host`);
+            toast.success(`${request.userName} joined as co-host`);
             // Remove request from local list to close the popup
             setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to grant permissions:', err);
-            toast.error(`Failed to add @${request.userName} as co-host`);
+            toast.error(`Failed to add ${request.userName} as co-host`);
             // Optional: could add it back to joinRequests here if we wanted the host to retry
         } finally {
             approvingCountRef.current -= 1;
@@ -127,10 +127,10 @@ export const JoinRequestPopup: React.FC = () => {
             await call.sendCustomEvent({
                 type: 'join-response', userId: request.userId, accepted: false,
             });
-            toast(`Declined @${request.userName}'s request`);
+            toast(`Declined ${request.userName}'s request`);
         } catch (err) {
             console.error('[JoinRequestPopup] Failed to send decline:', err);
-            toast.error(`Failed to decline @${request.userName}'s request`);
+            toast.error(`Failed to decline ${request.userName}'s request`);
         }
         setJoinRequests((prev) => prev.filter((r) => r.userId !== request.userId));
     };
@@ -157,7 +157,7 @@ export const JoinRequestPopup: React.FC = () => {
                                 </AvatarFallback>
                             </Avatar>
                             <div className="flex flex-wrap items-center gap-x-2">
-                                <span className="text-[#a0a0a0] text-[17px]">@{request.userName}</span>
+                                <span className="text-[#a0a0a0] text-[17px]">{request.userName}</span>
                                 <span className="text-white text-[17px] font-medium cursor-pointer">wants to join your live stream.</span>
                             </div>
                         </div>
@@ -175,11 +175,10 @@ export const JoinRequestPopup: React.FC = () => {
                         <button
                             onClick={() => handleApprove(request)}
                             disabled={isStageFull}
-                            className={`flex-1 py-3 rounded-full font-medium text-[19px] transition-all active:scale-95 ${
-                                isStageFull
-                                    ? 'bg-white/10 text-white/40 cursor-not-allowed'
-                                    : 'bg-[#FF7B00] text-black hover:bg-[#ff8822]'
-                            }`}
+                            className={`flex-1 py-3 rounded-full font-medium text-[19px] transition-all active:scale-95 ${isStageFull
+                                ? 'bg-white/10 text-white/40 cursor-not-allowed'
+                                : 'bg-[#FF7B00] text-black hover:bg-[#ff8822]'
+                                }`}
                         >
                             {isStageFull ? 'Stage Full' : 'Accept'}
                         </button>
@@ -297,7 +296,7 @@ export const ViewerPendingRequestPopup: React.FC = () => {
                             </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-wrap items-center gap-x-2">
-                            <span className="text-[#a0a0a0] text-[17px]">@{hostName}</span>
+                            <span className="text-[#a0a0a0] text-[17px]">{hostName}</span>
                             <span className="text-white text-[17px] font-medium">Join Request Pending</span>
                         </div>
                     </div>
