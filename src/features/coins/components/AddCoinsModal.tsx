@@ -100,7 +100,11 @@ export const AddCoinsModal = () => {
         <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
             <DialogContent
                 showCloseButton={false}
-                className="bg-transparent border border-white/10 rounded-3xl p-0 sm:max-w-[840px] h-[650px] max-h-[90vh] overflow-hidden shadow-2xl focus:outline-none flex flex-col"
+                className={`bg-transparent border border-white/10 rounded-3xl p-0 overflow-hidden shadow-2xl focus:outline-none flex flex-col ${
+                    step === 'result'
+                        ? 'sm:max-w-[480px] h-auto'
+                        : 'sm:max-w-[840px] h-[650px] max-h-[90vh]'
+                }`}
             >
                 {renderContent(false)}
             </DialogContent>

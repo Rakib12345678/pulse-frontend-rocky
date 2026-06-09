@@ -49,17 +49,8 @@ export const CreatorCard: React.FC<CreatorCardProps> = ({ creator }) => {
             openAuthModal();
             return;
         }
-        // If the creator has a stream/recording, go there; otherwise fall back to profile
-        if (creator.callId) {
-            navigate({
-                to: '/stream/$id' as any,
-                params: { id: creator.callId } as any,
-                search: {
-                    username: creator.username,
-                    thumbnailUrl: creator.profileImage,
-                } as any,
-            });
-        } else if (creator.username && !/^\d+$/.test(creator.username)) {
+        // Card click always goes to profile; live-join is handled by the UserAvatar
+        if (creator.username && !/^\d+$/.test(creator.username)) {
             navigate({ to: `/profile/${creator.username}` as any });
         }
     };

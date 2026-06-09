@@ -1,24 +1,33 @@
-import { useState } from 'react';
-import { MapPin, MoreHorizontal, X } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
-import { useToggleFollow, useUserLiveStatus, useBlockUser } from '@/features/profile/services/profile.service';
-import type { User } from '@/features/profile/services/profile.types';
-import cameraLogo from "@/assets/Camera.png"
-import { toast } from 'sonner';
-import { useGoLive } from '@/features/profile/hooks/useGoLive';
-import { userService } from '@/features/live/services/user.service';
-import { EditProfile } from '@/features/profile/components/EditProfile';
-import { useSubmitReport } from '@/features/report/services/report.service';
-import { BlockUserModal, ErrorModal } from '@/components/internal/ConfirmModal';
-import { ReportUserModal, ReportLimitModal, ReportSuccessModal, ReportFailureModal } from '@/components/internal/ReasonModal';
-import { SuccessModal } from '@/features/setting/components/SuccessModal';
-import { FollowersFollowingModal } from '@/features/profile/components/FollowersFollowingModal';
-import { cn } from '@/lib/utils';
-import { UserAvatar } from '@/components/UserAvatar';
-import { useAuthStore } from '@/features/auth/stores/authStore';
-import { useSignUpStore } from '@/features/auth/stores/signUpStore';
-import { chatService } from '@/features/chat/services/chat.service';
-import { SESSION_ACTIVE_KEY } from '@/features/chat/utils/chatConstants';
+import { useState } from "react";
+import { MapPin, MoreHorizontal, X } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import {
+	useToggleFollow,
+	useUserLiveStatus,
+	useBlockUser,
+} from "@/features/profile/services/profile.service";
+import type { User } from "@/features/profile/services/profile.types";
+import cameraLogo from "@/assets/Camera.png";
+import { toast } from "sonner";
+import { useGoLive } from "@/features/profile/hooks/useGoLive";
+import { userService } from "@/features/live/services/user.service";
+import { EditProfile } from "@/features/profile/components/EditProfile";
+import { useSubmitReport } from "@/features/report/services/report.service";
+import { BlockUserModal, ErrorModal } from "@/components/internal/ConfirmModal";
+import {
+	ReportUserModal,
+	ReportLimitModal,
+	ReportSuccessModal,
+	ReportFailureModal,
+} from "@/components/internal/ReasonModal";
+import { SuccessModal } from "@/features/setting/components/SuccessModal";
+import { FollowersFollowingModal } from "@/features/profile/components/FollowersFollowingModal";
+import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/UserAvatar";
+import { useAuthStore } from "@/features/auth/stores/authStore";
+import { useSignUpStore } from "@/features/auth/stores/signUpStore";
+import { chatService } from "@/features/chat/services/chat.service";
+import { SESSION_ACTIVE_KEY } from "@/features/chat/utils/chatConstants";
 
 interface ProfileHeaderProps {
 	user: User;
@@ -33,21 +42,30 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 	const [showBlockModal, setShowBlockModal] = useState(false);
 	const [showBlockSuccess, setShowBlockSuccess] = useState(false);
 	const [showBlockError, setShowBlockError] = useState(false);
-	const [blockErrorMessage, setBlockErrorMessage] = useState('');
-	const [blockSuccessAction, setBlockSuccessAction] = useState<'block' | 'unblock' | null>(null);
+	const [blockErrorMessage, setBlockErrorMessage] = useState("");
+	const [blockSuccessAction, setBlockSuccessAction] = useState<
+		"block" | "unblock" | null
+	>(null);
 	const [showReportModal, setShowReportModal] = useState(false);
 	const [showReportSuccess, setShowReportSuccess] = useState(false);
 	const [showReportLimitModal, setShowReportLimitModal] = useState(false);
-	const [failedReportData, setFailedReportData] = useState<{ reasonId: string; otherText?: string } | null>(null);
-	const [followModal, setFollowModal] = useState<{ isOpen: boolean; type: 'followers' | 'following' }>({
+	const [failedReportData, setFailedReportData] = useState<{
+		reasonId: string;
+		otherText?: string;
+	} | null>(null);
+	const [followModal, setFollowModal] = useState<{
+		isOpen: boolean;
+		type: "followers" | "following";
+	}>({
 		isOpen: false,
-		type: 'followers',
+		type: "followers",
 	});
 	const [isAvatarEnlarged, setIsAvatarEnlarged] = useState(false);
 
 	const { mutate: toggleFollow, isPending } = useToggleFollow();
 	const { mutate: toggleBlock, isPending: isBlockPending } = useBlockUser();
-	const { mutate: submitReport, isPending: isReportPending } = useSubmitReport();
+	const { mutate: submitReport, isPending: isReportPending } =
+		useSubmitReport();
 	const handleGoLiveClick = useGoLive();
 	const { user: currentUser } = useAuthStore();
 	const { openModal: openLoginModal, setMode, setStep } = useSignUpStore();
@@ -55,8 +73,8 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 
 	const handleMessage = async () => {
 		if (!currentUser) {
-			setMode('login');
-			setStep('input');
+			setMode("login");
+			setStep("input");
 			openLoginModal();
 			return;
 		}
@@ -64,20 +82,20 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 		try {
 			const { channelCid } = await chatService.startDirectChat(
 				user.id,
-				{ 
-					id: String(currentUser.id), 
-					name: currentUser.fullName || currentUser.username || '', 
-					avatar: currentUser.profileImage || '' 
+				{
+					id: String(currentUser.id),
+					name: currentUser.fullName || currentUser.username || "",
+					avatar: currentUser.profileImage || "",
 				},
-				{ 
-					name: user.fullName || user.username || '', 
-					avatar: user.profileImage || '' 
-				}
+				{
+					name: user.fullName || user.username || "",
+					avatar: user.profileImage || "",
+				},
 			);
 			sessionStorage.setItem(SESSION_ACTIVE_KEY, channelCid);
-			navigate({ to: '/chats' as any });
+			navigate({ to: "/chats" as any });
 		} catch (error) {
-			toast.error('Failed to start chat');
+			toast.error("Failed to start chat");
 		} finally {
 			setIsMessaging(null);
 		}
@@ -85,8 +103,8 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 
 	const handleReportClick = () => {
 		if (!currentUser) {
-			setMode('login');
-			setStep('input');
+			setMode("login");
+			setStep("input");
 			openLoginModal();
 			return;
 		}
@@ -102,11 +120,10 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 	const isLive = !isOwnProfile && liveStatus?.isLive === true;
 	const isBlocked = user.blockedByMe ?? false;
 
-
 	const stats = [
-		{ label: 'Post', value: user.postCount ?? 0 },
-		{ label: 'Followers', value: (user.followerCount ?? 0).toLocaleString() },
-		{ label: 'Following', value: user.followingCount ?? 0 },
+		{ label: "Post", value: user.postCount ?? 0 },
+		{ label: "Followers", value: (user.followerCount ?? 0).toLocaleString() },
+		{ label: "Following", value: user.followingCount ?? 0 },
 	];
 
 	const handleFollowClick = () => {
@@ -118,7 +135,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 
 	// Block / Unblock
 	const handleBlockConfirm = () => {
-		const action = isBlocked ? 'unblock' : 'block';
+		const action = isBlocked ? "unblock" : "block";
 		toggleBlock(
 			{ targetUserId: user.id, blockedByMe: isBlocked },
 			{
@@ -131,7 +148,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				onError: (error: any) => {
 					const message =
 						error?.response?.data?.message ||
-						(isBlocked ? 'Failed to unblock user' : 'Failed to block user');
+						(isBlocked ? "Failed to unblock user" : "Failed to block user");
 					setBlockErrorMessage(message);
 					setShowBlockModal(false);
 					setShowBlockError(true);
@@ -145,7 +162,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 		submitReport(
 			{
 				reportedUserId: user.id,
-				contentType: 'USER_PROFILE',
+				contentType: "USER_PROFILE",
 				contentId: String(user.id),
 				reason: reasonId,
 				note: otherText,
@@ -181,7 +198,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 		}
 	};
 
-	const openFollowModal = (type: 'followers' | 'following') => {
+	const openFollowModal = (type: "followers" | "following") => {
 		setFollowModal({ isOpen: true, type });
 	};
 
@@ -235,9 +252,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 									<span className="text-white font-semibold text-lg">
 										{user.fullName || user.username}
 									</span>
-									<span className="text-white/60 text-sm">
-										{user.username}
-									</span>
+									<span className="text-white/60 text-sm">{user.username}</span>
 								</div>
 								{/* {user.profileImage && (
 									<a
@@ -260,7 +275,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 			{/* Block / Unblock modal */}
 			<BlockUserModal
 				isOpen={showBlockModal}
-				username={user.username ?? ''}
+				username={user.username ?? ""}
 				avatarUrl={user.profileImage}
 				isBlocked={isBlocked}
 				isLoading={isBlockPending}
@@ -272,12 +287,12 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 			<SuccessModal
 				isOpen={showBlockSuccess}
 				title={
-					blockSuccessAction === 'unblock'
+					blockSuccessAction === "unblock"
 						? `Unblocked ${user.username ?? ""}`
 						: `Blocked ${user.username ?? ""}`
 				}
 				description={
-					blockSuccessAction === 'unblock'
+					blockSuccessAction === "unblock"
 						? `${user.username ?? ""} was unblocked successfully.`
 						: `${user.username ?? ""} was blocked successfully.`
 				}
@@ -298,18 +313,18 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 			{/* Report success modal */}
 			<ReportSuccessModal
 				isOpen={showReportSuccess}
-				username={user.username ?? ''}
+				username={user.username ?? ""}
 				type="chat"
 				onMute={() => {
-					toast.success(`${user.username ?? ''} has been muted`);
+					toast.success(`${user.username ?? ""} has been muted`);
 					setShowReportSuccess(false);
 				}}
 				onBlock={async () => {
 					try {
 						await userService.blockUser(user.id);
-						toast.success(`Blocked ${user.username ?? ''}`);
+						toast.success(`Blocked ${user.username ?? ""}`);
 					} catch {
-						toast.error('Failed to block user');
+						toast.error("Failed to block user");
 					}
 					setShowReportSuccess(false);
 				}}
@@ -319,7 +334,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 			{/* Report modal */}
 			<ReportUserModal
 				isOpen={showReportModal}
-				username={user.username ?? ''}
+				username={user.username ?? ""}
 				isLoading={isReportPending}
 				onConfirm={handleReportConfirm}
 				onCancel={() => setShowReportModal(false)}
@@ -330,7 +345,7 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				onTryLater={() => setShowReportLimitModal(false)}
 				onExplore={() => {
 					setShowReportLimitModal(false);
-					navigate({ to: '/explore' });
+					navigate({ to: "/explore" });
 				}}
 			/>
 
@@ -338,7 +353,10 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				isOpen={!!failedReportData}
 				onTryAgain={() => {
 					if (failedReportData) {
-						handleReportConfirm(failedReportData.reasonId, failedReportData.otherText);
+						handleReportConfirm(
+							failedReportData.reasonId,
+							failedReportData.otherText,
+						);
 						setFailedReportData(null);
 					}
 				}}
@@ -352,16 +370,22 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 				userId={user.id}
 			/>
 
-			<div className="bg-[#111213] flex flex-col rounded-2xl p-3 md:p-4 lg:p-5 xl:p-6 2xl:p-14 border-x-0 border-y-2 md:border-2 border-[#1D1F20] mb-3 md:mb-5 lg:mb-8 xl:mb-10 2xl:mb-15">
-				<div className="flex flex-col md:flex-row gap-3 md:gap-4 lg:gap-6 xl:gap-6 2xl:gap-8 justify-between items-center mb-2 md:mb-4 lg:mb-5 xl:mb-6 2xl:mb-10">
-					<div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center text-center md:text-left">
+			<div className="bg-[#111213]/85 backdrop-blur-md md:bg-[#111213] flex flex-col rounded-3xl md:rounded-2xl p-6 md:p-4 lg:p-5 xl:p-6 2xl:p-14 border border-white/5 md:border-2 border-x-0 border-y-2 md:border-[#1D1F20] mb-5 md:mb-5 lg:mb-8 xl:mb-10 2xl:mb-15">
+				{/* Mobile Header Layout (visible on mobile, hidden on desktop/tablet) */}
+				<div className="flex md:hidden flex-col w-full">
+					{/* Avatar & Info Row */}
+					<div className="flex flex-row items-start gap-4 w-full">
 						<div
 							className={cn(
 								"relative shrink-0 group/avatar",
 								!isLive && !isBlocked && "cursor-pointer",
 								isBlocked && "cursor-not-allowed opacity-80",
 							)}
-							onClick={!isLive && !isBlocked ? () => setIsAvatarEnlarged(true) : undefined}
+							onClick={
+								!isLive && !isBlocked
+									? () => setIsAvatarEnlarged(true)
+									: undefined
+							}
 						>
 							<UserAvatar
 								src={user.profileImage}
@@ -371,8 +395,8 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 								username={user.username}
 								size="custom"
 								className={cn(
-									"w-24 h-24 md:w-20 md:h-20 lg:w-22 lg:h-22 xl:w-24 xl:h-24 2xl:w-32 2xl:h-32 transition-transform duration-300",
-									!isBlocked && "group-hover/avatar:scale-102"
+									"w-24 h-24 transition-transform duration-300",
+									!isBlocked && "group-hover/avatar:scale-102",
 								)}
 								clickable={isLive && !isBlocked}
 								showBadge={true}
@@ -383,160 +407,430 @@ export const ProfileHeader = ({ user, isOwnProfile }: ProfileHeaderProps) => {
 										e.stopPropagation();
 										setEditProfileOpen(true);
 									}}
-									className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200 hover:scale-110 transition-transform z-20"
+									className="absolute bottom-0 right-0 bg-white p-1.5 rounded-full shadow-lg border border-gray-200 hover:scale-110 transition-transform z-20"
 								>
-									<img src={cameraLogo} alt="Edit profile" className="w-4 h-4" />
+									<img
+										src={cameraLogo}
+										alt="Edit profile"
+										className="w-3.5 h-3.5"
+									/>
 								</button>
 							)}
 						</div>
 
-						<div className="flex flex-col items-center md:items-start w-full mt-2 md:mt-0">
-							<div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
-								<h1 className="text-xl md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold text-white mb-1">
-									{user.fullName || user.username}
-								</h1>
-							</div>
-
-							<div className="flex items-center gap-4 text-[#494E50] text-sm justify-center md:justify-start w-full">
-								<span className="font-medium">{user.username}</span>
+						<div className="flex flex-col items-start min-w-0 flex-1">
+							<h1 className="text-xl font-bold text-white leading-tight truncate max-w-full">
+								{user.fullName || user.username}
+							</h1>
+							<div className="flex items-center gap-3 text-[#a1a1aa] text-sm mt-2 flex-wrap w-full">
+								<span className="font-medium truncate max-w-[150px]">
+									{user.username}
+								</span>
 								{user.location && (
-									<div className="flex items-center gap-1">
-										<MapPin className="w-3.5 h-3.5" />
+									<div className="flex items-center gap-1 text-xs shrink-0">
+										<MapPin className="w-3.5 h-3.5 text-[#FF7700]" />
 										<span>{user.location}</span>
 									</div>
 								)}
 							</div>
 							{user.bio && (
-								<p className="text-zinc-300 text-sm md:text-sm lg:text-sm xl:text-sm 2xl:text-base max-w-lg leading-relaxed text-center md:text-left mt-1 md:mt-2 lg:mt-2 px-2 md:px-0">{user.bio}</p>
+								<p className="text-zinc-300 text-sm mt-4 leading-relaxed text-left max-w-full">
+									{user.bio}
+								</p>
 							)}
 						</div>
 					</div>
 
-					<div className="flex flex-col gap-3 w-full md:w-auto md:mt-0">
+					{/* Action Buttons Row */}
+					<div className="flex gap-2.5 w-full mt-6">
 						{isOwnProfile ? (
 							<>
 								<button
 									onClick={handleGoLiveClick}
-									className="bg-[#FF7700] text-[#111213] py-3 px-12 rounded-full font-bold hover:bg-[#FF7700] transition-colors cursor-pointer"
+									className="flex-1 bg-[#FF7700] text-[#111213] py-2.5 rounded-full font-bold text-sm hover:bg-[#FF7700] transition-colors cursor-pointer"
 								>
 									Go Live
 								</button>
-								<div className="flex gap-3 w-full md:w-auto">
+								<button
+									onClick={() => setEditProfileOpen(true)}
+									className="flex-1 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 px-4 font-bold text-sm hover:bg-orange-500/10 transition-colors cursor-pointer"
+								>
+									Edit Profile
+								</button>
+								<div className="relative">
 									<button
-										onClick={() => setEditProfileOpen(true)}
-										className="flex-1 md:flex-none md:w-48 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 md:py-3 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
+										onClick={() => setSettingsOpen((prev) => !prev)}
+										className="w-11 h-11 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer"
 									>
-										Edit Profile
+										<MoreHorizontal className="w-5 h-5" />
 									</button>
-									<div className="relative">
-										<button
-											onClick={() => setSettingsOpen((prev) => !prev)}
-											className="w-12 h-12 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer"
-										>
-											<MoreHorizontal className="w-6 h-6" />
-										</button>
-										{settingsOpen && (
-											<>
-												<div className="fixed inset-0 z-40" onClick={() => setSettingsOpen(false)} />
-												<div className="absolute right-0 bottom-full w-36 mb-2 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
-													<button
-														onClick={() => { setSettingsOpen(false); navigate({ to: '/profile/setting' }); }}
-														className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
-													>
-														Settings
-													</button>
-													<div className="h-px bg-zinc-800 mx-2" />
-													<button
-														onClick={() => { setSettingsOpen(false); handleShare(); }}
-														className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
-													>
-														Share Profile
-													</button>
-												</div>
-											</>
-										)}
-									</div>
+									{settingsOpen && (
+										<>
+											<div
+												className="fixed inset-0 z-40"
+												onClick={() => setSettingsOpen(false)}
+											/>
+											<div className="absolute right-0 bottom-full w-36 mb-2 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+												<button
+													onClick={() => {
+														setSettingsOpen(false);
+														navigate({ to: "/profile/setting" });
+													}}
+													className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+												>
+													Settings
+												</button>
+												<div className="h-px bg-zinc-800 mx-2" />
+												<button
+													onClick={() => {
+														setSettingsOpen(false);
+														handleShare();
+													}}
+													className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+												>
+													Share Profile
+												</button>
+											</div>
+										</>
+									)}
 								</div>
 							</>
 						) : (
 							<>
-								{/* Follow / Unblock button */}
 								{!isBlocked && (
 									<button
 										onClick={handleFollowClick}
 										disabled={isPending}
-										className="w-full md:w-64 bg-[#FF7700] text-[#111213] font-bold py-3.5 rounded-full disabled:opacity-60 hover:bg-[#FF7700] transition-colors cursor-pointer"
+										className="flex-1 bg-[#FF7700] text-[#111213] font-bold py-2.5 rounded-full text-sm disabled:opacity-60 hover:bg-[#FF7700] transition-colors cursor-pointer"
 									>
-										{isPending ? 'Please wait...' : user.followedByMe ? 'Unfollow' : 'Follow'}
+										{isPending
+											? "Please wait..."
+											: user.followedByMe
+												? "Unfollow"
+												: "Follow"}
 									</button>
 								)}
-								<div className="flex gap-3 w-full md:w-auto">
+								<button
+									onClick={handleMessage}
+									disabled={isBlocked || isMessaging === user.id}
+									className="flex-1 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 px-4 font-bold text-sm hover:bg-orange-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									{isMessaging === user.id ? "Please wait..." : "Message"}
+								</button>
+								<div className="relative">
 									<button
-										onClick={handleMessage}
-										disabled={isBlocked || isMessaging === user.id}
-										className="flex-1 md:flex-none md:w-48 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 md:py-3 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+										onClick={() =>
+											!isBlocked && setActionMenuOpen((prev) => !prev)
+										}
+										disabled={isBlocked}
+										className="w-11 h-11 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 									>
-										{isMessaging === user.id ? 'Please wait...' : 'Message'}
+										<MoreHorizontal className="w-5 h-5" />
 									</button>
-									<div className="relative">
-										<button
-											onClick={() => !isBlocked && setActionMenuOpen((prev) => !prev)}
-											disabled={isBlocked}
-											className="w-12 h-12 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-										>
-											<MoreHorizontal className="w-6 h-6" />
-										</button>
-										{actionMenuOpen && (
-											<>
-												<div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(false)} />
-												<div className="absolute -right-15 bottom-full w-36 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
-													<button
-														onClick={() => { setActionMenuOpen(false); handleShare(); }}
-														className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
-													>
-														Share Profile
-													</button>
-													<div className="h-px bg-zinc-800 mx-2" />
-													<button
-														onClick={() => { setShowBlockModal(true); setActionMenuOpen(false); }}
-														disabled={isBlockPending}
-														className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer disabled:opacity-60"
-													>
-														{isBlocked ? 'Unblock User' : 'Block User'}
-													</button>
-													<div className="h-px bg-zinc-800 mx-2" />
-													<button
-														onClick={handleReportClick}
-														className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
-													>
-														Report User
-													</button>
-												</div>
-											</>
-										)}
-									</div>
+									{actionMenuOpen && (
+										<>
+											<div
+												className="fixed inset-0 z-40"
+												onClick={() => setActionMenuOpen(false)}
+											/>
+											<div className="absolute right-0 bottom-full w-36 mb-2 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+												<button
+													onClick={() => {
+														setActionMenuOpen(false);
+														handleShare();
+													}}
+													className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+												>
+													Share Profile
+												</button>
+												<div className="h-px bg-zinc-800 mx-2" />
+												<button
+													onClick={() => {
+														setShowBlockModal(true);
+														setActionMenuOpen(false);
+													}}
+													disabled={isBlockPending}
+													className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer disabled:opacity-60"
+												>
+													{isBlocked ? "Unblock User" : "Block User"}
+												</button>
+												<div className="h-px bg-zinc-800 mx-2" />
+												<button
+													onClick={handleReportClick}
+													className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+												>
+													Report User
+												</button>
+											</div>
+										</>
+									)}
 								</div>
 							</>
 						)}
 					</div>
+
+					{/* Stats Section */}
+					<div className="bg-[#1D1F20]/50 backdrop-blur-sm rounded-2xl py-3 px-4 mt-6 border border-white/5 w-full">
+						<div className="flex justify-between items-center w-full">
+							{stats.map((stat, i) => (
+								<div
+									key={i}
+									className={cn(
+										"flex flex-col items-center gap-0.5 flex-1",
+										stat.label !== "Post" &&
+											!isBlocked &&
+											"cursor-pointer hover:opacity-80 transition-opacity",
+										isBlocked && "cursor-not-allowed opacity-50",
+									)}
+									onClick={
+										stat.label !== "Post" && !isBlocked
+											? () => openFollowModal(stat.label.toLowerCase() as any)
+											: undefined
+									}
+								>
+									<span className="text-zinc-400 text-[10px] font-bold tracking-wider uppercase">
+										{stat.label}
+									</span>
+									<span className="text-lg font-extrabold text-[#FFE2A5]">
+										{stat.value}
+									</span>
+								</div>
+							))}
+						</div>
+					</div>
 				</div>
 
-				<div className="bg-[#1D1F20] rounded-2xl md:rounded-3xl lg:rounded-3xl xl:rounded-3xl 2xl:rounded-4xl py-1 md:py-2 lg:py-2.5 2xl:py-4 px-4 md:px-10 lg:px-14 xl:px-16 2xl:px-20 border border-zinc-800/40 shadow-2xl w-full">
-					<div className="flex justify-between items-center w-full">
-						{stats.map((stat, i) => (
+				{/* Desktop Header Layout (visible on desktop/tablet, hidden on mobile) */}
+				<div className="hidden md:flex flex-col w-full">
+					<div className="flex flex-col md:flex-row gap-3 md:gap-4 lg:gap-6 xl:gap-6 2xl:gap-8 justify-between items-center mb-2 md:mb-4 lg:mb-5 xl:mb-6 2xl:mb-10">
+						<div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center text-center md:text-left">
 							<div
-								key={i}
 								className={cn(
-									"flex flex-col items-center gap-1 md:gap-1.5 flex-1",
-									stat.label !== 'Post' && !isBlocked && "cursor-pointer hover:opacity-80 transition-opacity",
-									isBlocked && "cursor-not-allowed opacity-50"
+									"relative shrink-0 group/avatar",
+									!isLive && !isBlocked && "cursor-pointer",
+									isBlocked && "cursor-not-allowed opacity-80",
 								)}
-								onClick={stat.label !== 'Post' && !isBlocked ? () => openFollowModal(stat.label.toLowerCase() as any) : undefined}
+								onClick={
+									!isLive && !isBlocked
+										? () => setIsAvatarEnlarged(true)
+										: undefined
+								}
 							>
-								<span className="text-[#FF7700] text-[9px] md:text-xs font-bold tracking-widest">{stat.label}</span>
-								<span className="text-base md:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-extrabold tracking-tight text-[#FFE2A5]">{stat.value}</span>
+								<UserAvatar
+									src={user.profileImage}
+									alt={user.username}
+									isLive={isLive && !isBlocked}
+									callId={liveStatus?.callId}
+									username={user.username}
+									size="custom"
+									className={cn(
+										"w-24 h-24 md:w-20 md:h-20 lg:w-22 lg:h-22 xl:w-24 xl:h-24 2xl:w-32 2xl:h-32 transition-transform duration-300",
+										!isBlocked && "group-hover/avatar:scale-102",
+									)}
+									clickable={isLive && !isBlocked}
+									showBadge={true}
+								/>
+								{isOwnProfile && (
+									<button
+										onClick={(e) => {
+											e.stopPropagation();
+											setEditProfileOpen(true);
+										}}
+										className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200 hover:scale-110 transition-transform z-20"
+									>
+										<img
+											src={cameraLogo}
+											alt="Edit profile"
+											className="w-4 h-4"
+										/>
+									</button>
+								)}
 							</div>
-						))}
+
+							<div className="flex flex-col items-center md:items-start w-full mt-2 md:mt-0">
+								<div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+									<h1 className="text-xl md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold text-white mb-1">
+										{user.fullName || user.username}
+									</h1>
+								</div>
+
+								<div className="flex items-center gap-4 text-[#494E50] text-sm justify-center md:justify-start w-full">
+									<span className="font-medium">{user.username}</span>
+									{user.location && (
+										<div className="flex items-center gap-1">
+											<MapPin className="w-3.5 h-3.5" />
+											<span>{user.location}</span>
+										</div>
+									)}
+								</div>
+								{user.bio && (
+									<p className="text-zinc-300 text-sm md:text-sm lg:text-sm xl:text-sm 2xl:text-base max-w-lg leading-relaxed text-center md:text-left mt-1 md:mt-2 lg:mt-2 px-2 md:px-0">
+										{user.bio}
+									</p>
+								)}
+							</div>
+						</div>
+
+						<div className="flex flex-col gap-3 w-full md:w-auto md:mt-0">
+							{isOwnProfile ? (
+								<>
+									<button
+										onClick={handleGoLiveClick}
+										className="bg-[#FF7700] text-[#111213] py-3 px-12 rounded-full font-bold hover:bg-[#FF7700] transition-colors cursor-pointer"
+									>
+										Go Live
+									</button>
+									<div className="flex gap-3 w-full md:w-auto">
+										<button
+											onClick={() => setEditProfileOpen(true)}
+											className="flex-1 md:flex-none md:w-48 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 md:py-3 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer"
+										>
+											Edit Profile
+										</button>
+										<div className="relative">
+											<button
+												onClick={() => setSettingsOpen((prev) => !prev)}
+												className="w-12 h-12 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer"
+											>
+												<MoreHorizontal className="w-6 h-6" />
+											</button>
+											{settingsOpen && (
+												<>
+													<div
+														className="fixed inset-0 z-40"
+														onClick={() => setSettingsOpen(false)}
+													/>
+													<div className="absolute right-0 bottom-full w-36 mb-2 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+														<button
+															onClick={() => {
+																setSettingsOpen(false);
+																navigate({ to: "/profile/setting" });
+															}}
+															className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+														>
+															Settings
+														</button>
+														<div className="h-px bg-zinc-800 mx-2" />
+														<button
+															onClick={() => {
+																setSettingsOpen(false);
+																handleShare();
+															}}
+															className="w-full px-4 py-3 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+														>
+															Share Profile
+														</button>
+													</div>
+												</>
+											)}
+										</div>
+									</div>
+								</>
+							) : (
+								<>
+									{/* Follow / Unblock button */}
+									{!isBlocked && (
+										<button
+											onClick={handleFollowClick}
+											disabled={isPending}
+											className="w-full md:w-64 bg-[#FF7700] text-[#111213] font-bold py-3.5 rounded-full disabled:opacity-60 hover:bg-[#FF7700] transition-colors cursor-pointer"
+										>
+											{isPending
+												? "Please wait..."
+												: user.followedByMe
+													? "Unfollow"
+													: "Follow"}
+										</button>
+									)}
+									<div className="flex gap-3 w-full md:w-auto">
+										<button
+											onClick={handleMessage}
+											disabled={isBlocked || isMessaging === user.id}
+											className="flex-1 md:flex-none md:w-48 border-2 border-[#FF7700] text-[#FF7700] rounded-full py-2.5 md:py-3 px-8 font-bold hover:bg-orange-500/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											{isMessaging === user.id ? "Please wait..." : "Message"}
+										</button>
+										<div className="relative">
+											<button
+												onClick={() =>
+													!isBlocked && setActionMenuOpen((prev) => !prev)
+												}
+												disabled={isBlocked}
+												className="w-12 h-12 bg-[#FF7700] text-[#111213] rounded-full flex items-center justify-center hover:bg-orange-300 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+												<MoreHorizontal className="w-6 h-6" />
+											</button>
+											{actionMenuOpen && (
+												<>
+													<div
+														className="fixed inset-0 z-40"
+														onClick={() => setActionMenuOpen(false)}
+													/>
+													<div className="absolute -right-15 bottom-full w-36 -mb-4 bg-[#121212] border border-zinc-800 rounded-lg shadow-2xl z-50 py-1">
+														<button
+															onClick={() => {
+																setActionMenuOpen(false);
+																handleShare();
+															}}
+															className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+														>
+															Share Profile
+														</button>
+														<div className="h-px bg-zinc-800 mx-2" />
+														<button
+															onClick={() => {
+																setShowBlockModal(true);
+																setActionMenuOpen(false);
+															}}
+															disabled={isBlockPending}
+															className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer disabled:opacity-60"
+														>
+															{isBlocked ? "Unblock User" : "Block User"}
+														</button>
+														<div className="h-px bg-zinc-800 mx-2" />
+														<button
+															onClick={handleReportClick}
+															className="w-full px-4 py-2 text-left text-sm text-white hover:bg-zinc-800 cursor-pointer"
+														>
+															Report User
+														</button>
+													</div>
+												</>
+											)}
+										</div>
+									</div>
+								</>
+							)}
+						</div>
+					</div>
+
+					<div className="bg-[#1D1F20] rounded-2xl md:rounded-3xl lg:rounded-3xl xl:rounded-3xl 2xl:rounded-4xl py-1 md:py-2 lg:py-2.5 2xl:py-4 px-4 md:px-10 lg:px-14 xl:px-16 2xl:px-20 border border-zinc-800/40 shadow-2xl w-full">
+						<div className="flex justify-between items-center w-full">
+							{stats.map((stat, i) => (
+								<div
+									key={i}
+									className={cn(
+										"flex flex-col items-center gap-1 md:gap-1.5 flex-1",
+										stat.label !== "Post" &&
+											!isBlocked &&
+											"cursor-pointer hover:opacity-80 transition-opacity",
+										isBlocked && "cursor-not-allowed opacity-50",
+									)}
+									onClick={
+										stat.label !== "Post" && !isBlocked
+											? () => openFollowModal(stat.label.toLowerCase() as any)
+											: undefined
+									}
+								>
+									<span className="text-[#FF7700] text-[9px] md:text-xs font-bold tracking-widest">
+										{stat.label}
+									</span>
+									<span className="text-base md:text-2xl lg:text-3xl xl:text-3xl 2xl:text-4xl font-extrabold tracking-tight text-[#FFE2A5]">
+										{stat.value}
+									</span>
+								</div>
+							))}
+						</div>
 					</div>
 				</div>
 			</div>

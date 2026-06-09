@@ -174,7 +174,7 @@ export const FollowersFollowingModal = ({
   const handleUserClick = (user: FollowUser) => {
     if (user.isLive && user.callId) {
       onClose();
-      window.location.href = `/live/${user.callId}`;
+      navigate({ to: '/live/$id' as any, params: { id: user.callId } as any });
     } else if (user.username && !/^\d+$/.test(user.username)) {
       onClose();
       navigate({ to: `/profile/${user.username}` as any });

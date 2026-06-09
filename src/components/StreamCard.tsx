@@ -124,7 +124,7 @@ export const StreamCard: React.FC<StreamCardProps> = ({
       }
 
       if (isLive && cardClickRedirectToLive) {
-        window.location.href = `/live/${callId}`;
+        navigate({ to: '/live/$id' as any, params: { id: callId } as any });
         return;
       }
 

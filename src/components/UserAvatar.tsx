@@ -51,7 +51,7 @@ export const UserAvatar = ({
 
     if (isLive && callId) {
       // Live-join is always allowed, even for guests
-      window.location.href = `/live/${callId}`;
+      navigate({ to: '/live/$id' as any, params: { id: callId } as any });
     } else if (username) {
       // Profile navigation requires authentication
       if (guestMode) {
