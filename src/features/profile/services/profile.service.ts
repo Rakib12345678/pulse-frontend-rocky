@@ -101,6 +101,7 @@ export const useCurrentUser = () => {
   const updateUserStore = useAuthStore((s) => s.updateUser);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const setShowSuspendedModal = useAuthStore((s) => s.setShowSuspendedModal);
+  const setSuspendedUserInfo = useAuthStore((s) => s.setSuspendedUserInfo);
   const authUser = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const userId = authUser?.id;
@@ -130,6 +131,13 @@ export const useCurrentUser = () => {
     queryFn: async () => {
       const user = await fetchCurrentUser();
       if (user.status === 'SUSPENDED') {
+        // Save user info before clearing auth so the modal can display it
+        setSuspendedUserInfo({
+          id: user.id,
+          fullName: user.fullName,
+          username: user.username,
+          suspensionReportId: user.suspensionReportId,
+        });
         // Sign out immediately and show the suspended modal
         setShowSuspendedModal(true);
         clearAuth();

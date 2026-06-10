@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useChannelStateContext } from 'stream-chat-react';
 import { useCallStateHooks } from '@stream-io/video-react-sdk';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import giftBoxLottie from '@/assets/GiftBoxAnimation.lottie';
 import { useUserProfileStore } from '@/features/live/stores/userProfileStore';
 import { useSignUpStore } from '@/features/auth/stores/signUpStore';
 import { useAuthStore } from '@/features/auth/stores/authStore';
@@ -155,7 +154,6 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
     const animationSpeed = useMemo(() => {
         return Math.max(0.1, Math.min(4, DEFAULT_DURATION_SECONDS / entry.durationSeconds));
     }, [entry.durationSeconds]);
-
     const isFrameSetRef = useRef(false);
     const handleDotLottieRefCallback = useCallback((dotLottie: any) => {
         if (!dotLottie || isFrameSetRef.current) return;
@@ -169,11 +167,13 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
             dotLottie.setFrame(targetFrame);
             isFrameSetRef.current = true;
         };
-
         dotLottie.addEventListener('ready', initFrame);
         dotLottie.addEventListener('load', initFrame);
         initFrame(); // Trigger in case it's already ready
     }, [entry.createdAt, entry.durationSeconds]);
+
+    // console.log(typeof giftBoxLottie);
+    // console.log(giftBoxLottie);
 
     return (
         <div
@@ -182,7 +182,7 @@ const SuperchatCard: React.FC<{ entry: SuperchatEntry; onUserClick: (username?: 
         >
             <div className="absolute inset-0 z-0">
                 <DotLottieReact
-                    src={giftBoxLottie}
+                    src='/GiftBoxAnimation.lottie'
                     loop
                     autoplay
                     speed={animationSpeed}

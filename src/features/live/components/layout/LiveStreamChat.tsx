@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Virtuoso } from 'react-virtuoso';
 import { Lock, Heart, SendHorizonal, Share2, Volume2, VolumeX, MessageCircle } from 'lucide-react';
 import coinIcon from '@/assets/coin.svg';
 import giftSvg from '@/assets/gift.svg';
@@ -170,12 +169,8 @@ export const LiveStreamChat: React.FC = () => {
 };
 
 const LiveStreamChatCard: React.FC = () => {
-    const { messages } = useChannelStateContext();
     const { isViewer } = useLiveStreamContext();
     const isMobile = useIsMobile();
-
-    const THRESHOLD = 15;
-    const useVirtuoso = (messages?.length || 0) > THRESHOLD;
 
     // Mobile: viewers need extra room for horizontal gift bar; host just clears the Invite Friends button
     const bottomClass = isMobile ? (isViewer ? 'bottom-[96px]' : 'bottom-[96px]') : 'bottom-10';
@@ -186,12 +181,8 @@ const LiveStreamChatCard: React.FC = () => {
                 "absolute z-20 flex flex-col",
                 bottomClass,
                 isMobile
-                    ? cn("left-2 right-2 max-h-[52vh]", useVirtuoso ? "h-[52vh]" : "h-auto")
-                    : cn(
-                        "left-4 xl:left-10 right-auto w-[280px] max-h-[min(400px,calc(100vh-280px))]",
-                        useVirtuoso ? "h-[min(400px,calc(100vh-280px))]" : "h-auto",
-                        "rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl"
-                    )
+                    ? "left-2 right-2 max-h-[52vh] h-auto"
+                    : "left-4 xl:left-10 right-auto w-[280px] max-h-[min(400px,calc(100vh-280px))] h-auto rounded-[24px] overflow-hidden border border-[#494E50] shadow-2xl"
             )}
         >
             <SuperchatTicker />
@@ -203,6 +194,8 @@ const LiveStreamChatCard: React.FC = () => {
     );
 };
 
+const MAX_VISIBLE_MESSAGES = 200;
+
 const LiveStreamMessageList: React.FC = () => {
     const { messages } = useChannelStateContext();
     const { openModal: openProfileModal } = useUserProfileStore();
@@ -213,14 +206,16 @@ const LiveStreamMessageList: React.FC = () => {
     const { user } = useAuthStore();
     const isMobile = useIsMobile();
 
-    const virtuosoRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const hasInitialScrolledRef = useRef(false);
     const prevMessagesLengthRef = useRef(0);
     const [isAtBottom, setIsAtBottom] = useState(true);
 
-    const THRESHOLD = 15;
-    const useVirtuoso = (messages?.length || 0) > THRESHOLD;
+    // Bound the DOM to prevent unbounded growth on long streams
+    const visibleMessages = useMemo(
+        () => (messages || []).slice(-MAX_VISIBLE_MESSAGES),
+        [messages]
+    );
 
     // Build a lookup map: userId -> fullName from custom fields
     const fullNameMap = useMemo(() => {
@@ -254,73 +249,44 @@ const LiveStreamMessageList: React.FC = () => {
     };
 
     const handleScroll = () => {
-        if (useVirtuoso || !containerRef.current) return;
+        if (!containerRef.current) return;
         const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
         const atBottom = scrollHeight - scrollTop - clientHeight <= 120;
         setIsAtBottom(atBottom);
     };
 
-    const prevUseVirtuosoRef = useRef(useVirtuoso);
+    // Scroll to bottom on initial mount and on new messages when user is at bottom
     useEffect(() => {
-        if (prevUseVirtuosoRef.current !== useVirtuoso) {
-            hasInitialScrolledRef.current = false;
-            prevUseVirtuosoRef.current = useVirtuoso;
-        }
-    }, [useVirtuoso]);
+        if (!visibleMessages || visibleMessages.length === 0) return;
 
-    useEffect(() => {
-        if (!messages || messages.length === 0) return;
+        const isNewMessage = visibleMessages.length > prevMessagesLengthRef.current;
+        prevMessagesLengthRef.current = visibleMessages.length;
 
-        const isNewMessage = messages.length > prevMessagesLengthRef.current;
-        prevMessagesLengthRef.current = messages.length;
-
-        if (useVirtuoso) {
-            if (!hasInitialScrolledRef.current) {
-                hasInitialScrolledRef.current = true;
-                setTimeout(() => {
-                    virtuosoRef.current?.scrollToIndex({
-                        index: messages.length - 1,
-                        align: 'end',
-                        behavior: 'auto',
-                    });
-                }, 100);
-            } else if (isNewMessage) {
-                const lastMessage = messages[messages.length - 1];
-                const isMyMessage = lastMessage?.user?.id === String(user?.id);
-                if (isMyMessage || isAtBottom) {
-                    setTimeout(() => {
-                        virtuosoRef.current?.scrollToIndex({
-                            index: messages.length - 1,
-                            align: 'end',
-                            behavior: 'smooth',
-                        });
-                    }, 50);
+        if (!hasInitialScrolledRef.current) {
+            hasInitialScrolledRef.current = true;
+            setTimeout(() => {
+                if (containerRef.current) {
+                    containerRef.current.scrollTop = containerRef.current.scrollHeight;
                 }
-            }
-        } else {
-            if (!hasInitialScrolledRef.current) {
-                hasInitialScrolledRef.current = true;
+            }, 100);
+        } else if (isNewMessage) {
+            const lastMessage = visibleMessages[visibleMessages.length - 1];
+            const isMyMessage = lastMessage?.user?.id === String(user?.id);
+            const isGiftMessage = isGiftMsg(lastMessage);
+            // Always scroll for gift messages (host needs to see them) or user's own messages,
+            // or when the user is already at the bottom
+            if (isMyMessage || isGiftMessage || isAtBottom) {
                 setTimeout(() => {
                     if (containerRef.current) {
-                        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+                        containerRef.current.scrollTo({
+                            top: containerRef.current.scrollHeight,
+                            behavior: 'smooth',
+                        });
                     }
-                }, 100);
-            } else if (isNewMessage) {
-                const lastMessage = messages[messages.length - 1];
-                const isMyMessage = lastMessage?.user?.id === String(user?.id);
-                if (isMyMessage || isAtBottom) {
-                    setTimeout(() => {
-                        if (containerRef.current) {
-                            containerRef.current.scrollTo({
-                                top: containerRef.current.scrollHeight,
-                                behavior: 'smooth',
-                            });
-                        }
-                    }, 50);
-                }
+                }, 50);
             }
         }
-    }, [messages, user?.id, isAtBottom, useVirtuoso]);
+    }, [visibleMessages, user?.id, isAtBottom]);
 
     const renderMessageItem = (msg: any, index: number) => {
         const giftMessage = isGiftMsg(msg);
@@ -410,30 +376,13 @@ const LiveStreamMessageList: React.FC = () => {
             onScroll={handleScroll}
             className={cn(
                 "scrollbar-hide mb-4 pr-1 bg-gradient-to-b from-transparent via-black/10 to-transparent",
-                useVirtuoso ? "flex-1 min-h-0 overflow-hidden" : "h-auto max-h-full overflow-y-auto",
+                "h-auto max-h-full overflow-y-auto",
                 isMobile && "max-w-[70%]"
             )}
         >
-            {useVirtuoso ? (
-                <Virtuoso
-                    ref={virtuosoRef}
-                    style={{ height: '100%', width: '100%' }}
-                    className="scrollbar-hide"
-                    data={messages || []}
-                    computeItemKey={(index: number, msg: any) => msg?.id || index}
-                    initialTopMostItemIndex={Math.max(0, (messages?.length || 0) - 1)}
-                    alignToBottom
-                    atBottomStateChange={(atBottom) => {
-                        setIsAtBottom(atBottom);
-                    }}
-                    atBottomThreshold={120}
-                    itemContent={(index: number, msg: any) => renderMessageItem(msg, index)}
-                />
-            ) : (
-                <div className="flex flex-col justify-end min-h-full">
-                    {(messages || []).map((msg, index) => renderMessageItem(msg, index))}
-                </div>
-            )}
+            <div className="flex flex-col justify-end min-h-full">
+                {visibleMessages.map((msg, index) => renderMessageItem(msg, index))}
+            </div>
         </div>
     );
 };

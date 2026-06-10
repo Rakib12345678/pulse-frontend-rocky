@@ -34,6 +34,15 @@ export interface User {
   followedByMe?: boolean;
   preferredLanguage?: string;
   onboardingState?: OnboardingState;
+  suspensionReason?: string;
+  suspensionReportId?: number;
+}
+
+export interface SuspendedUserInfo {
+  id: number;
+  fullName?: string;
+  username?: string;
+  suspensionReportId?: number;
 }
 
 interface AuthState {
@@ -45,7 +54,9 @@ interface AuthState {
   isNewUser: boolean;
   isHydrated: boolean;
   showSuspendedModal: boolean;
+  suspendedUserInfo: SuspendedUserInfo | null;
   setShowSuspendedModal: (val: boolean) => void;
+  setSuspendedUserInfo: (info: SuspendedUserInfo | null) => void;
   setAuth: (payload: { accessToken: string; refreshToken: string; user: User; newUser: boolean; wallet: Wallet }) => void;
   updateUser: (userData: Partial<User>) => void;
   updateWallet: (walletData: Partial<Wallet>) => void;
@@ -64,7 +75,9 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isNewUser: false,
       showSuspendedModal: false,
+      suspendedUserInfo: null,
       setShowSuspendedModal: (val) => set({ showSuspendedModal: val }),
+      setSuspendedUserInfo: (info) => set({ suspendedUserInfo: info }),
 
       setAuth: (payload) => set({
         accessToken: payload.accessToken,
@@ -96,6 +109,8 @@ export const useAuthStore = create<AuthState>()(
         isNewUser: false,
         // preserve showSuspendedModal so the modal stays visible after sign-out
         showSuspendedModal: state.showSuspendedModal,
+        // preserve suspendedUserInfo so the modal can display it after sign-out
+        suspendedUserInfo: state.suspendedUserInfo,
       })),
 
       isHydrated: false,

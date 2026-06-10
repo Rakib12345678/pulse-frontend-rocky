@@ -1,23 +1,32 @@
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
-import { Trash2 } from "lucide-react"
-import { useAuthStore } from "@/features/auth/stores/authStore"
-import { useCurrentUser } from "@/features/profile/services/profile.service"
+} from "@/components/ui/dialog";
+import { Trash2 } from "lucide-react";
+import { useAuthStore } from "@/features/auth/stores/authStore";
+import { useCurrentUser } from "@/features/profile/services/profile.service";
 
 export const AccountSuspendedModal = () => {
-  const showSuspendedModal = useAuthStore((s) => s.showSuspendedModal)
-  const setShowSuspendedModal = useAuthStore((s) => s.setShowSuspendedModal)
+  const showSuspendedModal = useAuthStore((s) => s.showSuspendedModal);
+  const setShowSuspendedModal = useAuthStore((s) => s.setShowSuspendedModal);
+  const suspendedUserInfo = useAuthStore((s) => s.suspendedUserInfo);
 
-  useCurrentUser()
+  useCurrentUser();
 
   const handleDismiss = () => {
-    setShowSuspendedModal(false)
-  }
+    setShowSuspendedModal(false);
+  };
+
+  const mailtoBody = `Hi Support Team,
+
+Name: ${suspendedUserInfo?.fullName ?? "N/A"}
+Username: ${suspendedUserInfo?.username ?? "N/A"}
+User ID: ${suspendedUserInfo?.id ?? "N/A"}
+Support Ticket #: ${suspendedUserInfo?.suspensionReportId ?? "N/A"}
+Description:
+I need help with:
+
+Thanks`;
 
   return (
     <Dialog open={showSuspendedModal} onOpenChange={handleDismiss}>
@@ -28,7 +37,6 @@ export const AccountSuspendedModal = () => {
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <div className="flex flex-col items-center text-center gap-6">
-
           {/* Icon */}
           <div className="bg-[#121314] p-5 rounded-full">
             <Trash2 className="w-14 h-14 text-red-500" />
@@ -47,17 +55,19 @@ export const AccountSuspendedModal = () => {
           {/* Buttons */}
           <div className="flex gap-3 w-full pt-4 flex-col sm:flex-row">
             <a
-              href="mailto:support@pulselive.com"
+              href={`mailto:support@abc.com?subject=${encodeURIComponent(
+                "Support Request"
+              )}&body=${encodeURIComponent(mailtoBody)}`}
               className="
-      w-full sm:flex-1 text-center
-      py-2.5 sm:py-3
-      px-4 sm:px-6
-      rounded-lg sm:rounded-full
-      font-semibold
-      bg-[#FF7A00] text-black
-      hover:bg-[#ff922e]
-      transition
-    "
+    w-full sm:flex-1 text-center
+    py-2.5 sm:py-3
+    px-4 sm:px-6
+    rounded-lg sm:rounded-full
+    font-semibold
+    bg-[#FF7A00] text-black
+    hover:bg-[#ff922e]
+    transition
+  "
             >
               Contact Support
             </a>
@@ -79,9 +89,8 @@ export const AccountSuspendedModal = () => {
               Cancel
             </button>
           </div>
-
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};

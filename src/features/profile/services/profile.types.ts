@@ -23,6 +23,8 @@ export interface User {
   blockedByMe?: boolean;
   isLive?: boolean;
   callId?: string | null;
+  suspensionReason?: string;
+  suspensionReportId?: number;
 }
 
 export interface LiveStream {

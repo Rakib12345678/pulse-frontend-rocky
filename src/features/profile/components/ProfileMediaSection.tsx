@@ -124,8 +124,8 @@ export const ProfileMediaSection = ({
     return () => observer.disconnect();
   }, [handleObserver, activeTab]);
 
-  const displayData = isMoments 
-    ? (momentsQuery.data || []) 
+  const displayData = isMoments
+    ? (momentsQuery.data || [])
     : (globalPastLivesData?.pages.flatMap(page => page.data) || []);
 
   return (
@@ -220,14 +220,14 @@ export const ProfileMediaSection = ({
               }
               actionLabel={
                 isMoments
-                  ? 'Add Moments'
+                  ? (isOwnProfile ? 'Add Moments' : undefined)
                   : isOwnProfile
                     ? 'Go Live'
                     : undefined
               }
               onAction={
                 isMoments
-                  ? () => { window.location.href = '/for-you'; }
+                  ? (isOwnProfile ? () => { window.location.href = '/for-you'; } : undefined)
                   : isOwnProfile
                     ? onGoLive
                     : undefined

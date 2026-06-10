@@ -488,7 +488,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 							className={cn(
 								"text-white font-bold text-[15px] truncate transition-colors",
 								conversation.participant.username &&
-									"group-hover:text-[#FF7700]",
+								"group-hover:text-[#FF7700]",
 							)}
 						>
 							{capitalizeName(conversation.participant.name)}
@@ -920,7 +920,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 											"h-11 sm:h-12 w-20 sm:w-28 lg:w-36 rounded-full text-sm font-bold transition-all flex items-center justify-center gap-2 shrink cursor-pointer",
 											canSend
 												? "bg-[#FF7700] text-white hover:bg-[#ff8800] active:scale-95 shadow-lg shadow-orange-500/20"
-												: "bg-[#111213] text-gray-500 cursor-not-allowed",
+												: "bg-[#242526] text-gray-300 cursor-not-allowed",
 										)}
 									>
 										{!isInternetConnected ? (
